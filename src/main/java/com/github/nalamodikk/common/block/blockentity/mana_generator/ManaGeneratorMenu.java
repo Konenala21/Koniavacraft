@@ -113,7 +113,7 @@ public class ManaGeneratorMenu extends AbstractContainerMenu {
     }
 
     public int getCurrentMode() {
-        return syncHelper.getContainerData().get(0); // 這裡我們知道 Mode 是第三個註冊的 (index 2)，但我們會陸續修正 BE 裡的引用
+        return syncHelper.getContainerData().get(2); // Mode 是第 3 個註冊欄位 (index 2)
     }
 
     // 建議將這些獲取數據的方法改為直接從 Helper 獲取緩存值

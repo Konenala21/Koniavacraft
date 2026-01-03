@@ -16,7 +16,8 @@ public class ClientForgeEvents {
     @SubscribeEvent
     public static void onRegisterClientCommands(RegisterClientCommandsEvent event) {
         event.getDispatcher().register(
-            Commands.literal("ui_test")
+            Commands.literal("koniava")
+                .then(Commands.literal("ui_test")
                 .executes(context -> {
                     // 打開測試介面
                     // 必須在主執行緒執行
@@ -25,6 +26,7 @@ public class ClientForgeEvents {
                     });
                     return 1;
                 })
+                )
         );
     }
 }

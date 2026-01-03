@@ -21,10 +21,11 @@ public class TestCommand {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
-            Commands.literal("test")
+            Commands.literal("koniava")
+                .then(Commands.literal("test")
                 .requires(source -> source.hasPermission(2)) // 需要 OP 權限
 
-                // /test all - 測試所有機器
+                // /koniava test all - 測試所有機器
                 .then(Commands.literal("all")
                     .executes(context -> {
                         ServerPlayer player = context.getSource().getPlayerOrException();
@@ -66,7 +67,7 @@ public class TestCommand {
                     })
                 )
 
-                // /test mana_generator - 測試魔力發電機
+                // /koniava test mana_generator - 測試魔力發電機
                 .then(Commands.literal("mana_generator")
                     .executes(context -> {
                         ServerPlayer player = context.getSource().getPlayerOrException();
@@ -77,7 +78,7 @@ public class TestCommand {
                     })
                 )
 
-                // /test mana_infuser - 測試魔力注入機
+                // /koniava test mana_infuser - 測試魔力注入機
                 .then(Commands.literal("mana_infuser")
                     .executes(context -> {
                         ServerPlayer player = context.getSource().getPlayerOrException();
@@ -88,7 +89,7 @@ public class TestCommand {
                     })
                 )
 
-                // /test sync - 測試數據同步系統
+                // /koniava test sync - 測試數據同步系統
                 .then(Commands.literal("sync")
                     .executes(context -> {
                         ServerPlayer player = context.getSource().getPlayerOrException();
@@ -104,7 +105,7 @@ public class TestCommand {
 
                         return 1;
                     })
-                )
+                ))
         );
     }
 
