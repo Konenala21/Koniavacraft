@@ -16,6 +16,8 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.world.phys.AABB;
+import net.neoforged.neoforge.client.extensions.IBlockEntityRendererExtension;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -25,7 +27,7 @@ import java.util.*;
 /**
  * 🔮 魔力發電機修復版渲染器 - 正確的方塊旋轉和 UV 映射
  */
-public class ManaGeneratorRenderer implements BlockEntityRenderer<ManaGeneratorBlockEntity> {
+public class ManaGeneratorRenderer implements BlockEntityRenderer<ManaGeneratorBlockEntity>, IBlockEntityRendererExtension<ManaGeneratorBlockEntity> {
 
     // 🎨 材質資源
     private static final ResourceLocation TEXTURE_IDLE =
@@ -481,11 +483,26 @@ public class ManaGeneratorRenderer implements BlockEntityRenderer<ManaGeneratorB
         }
     }
 
+    /**
+     * 🎨 是否在屏幕外也渲染
+     * 設為 true 可以防止轉動視角時上半部分消失
+     */
     @Override
     public boolean shouldRenderOffScreen(ManaGeneratorBlockEntity blockEntity) {
-        return false;
+        return true;  // ✅ 強制渲染，避免 1x2x1 機器上半部被剔除
     }
 
+    @Override
+    public AABB getRenderBoundingBox(ManaGeneratorBlockEntity blockEntity) {
+        int x = blockEntity.getBlockPos().getX();
+        int y = blockEntity.getBlockPos().getY();
+        int z = blockEntity.getBlockPos().getZ();
+        return new AABB(x, y, z, x + 1, y + 2, z + 1);
+    }
+
+    /**
+     * 📏 渲染距離（單位：方塊）
+     */
     @Override
     public int getViewDistance() {
         return 128;

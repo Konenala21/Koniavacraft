@@ -6,7 +6,7 @@ import com.github.nalamodikk.client.screenAPI.component.EnergyBarWidget;
 import com.github.nalamodikk.client.screenAPI.component.ManaBarWidget;
 import com.github.nalamodikk.client.screenAPI.framework.AbstractWidget;
 import com.github.nalamodikk.client.screenAPI.framework.ButtonWidget;
-import com.github.nalamodikk.client.screenAPI.framework.ModularScreen;
+import com.github.nalamodikk.client.screenAPI.framework.AutoSizedModularScreen;
 import com.github.nalamodikk.client.screenAPI.framework.Panel;
 import com.github.nalamodikk.common.network.packet.server.OpenUpgradeGuiPacket;
 import com.github.nalamodikk.common.network.packet.server.manatool.ToggleModePacket;
@@ -20,19 +20,21 @@ import net.minecraft.world.entity.player.Inventory;
 
 import java.util.List;
 
-public class ManaGeneratorScreen extends ModularScreen<ManaGeneratorMenu> {
+/**
+ * 🔥 魔力發電機 GUI 界面 (v2 - 自動尺寸)
+ */
+public class ManaGeneratorScreen extends AutoSizedModularScreen<ManaGeneratorMenu> {
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/mana_generator_gui.png");
     private static final ResourceLocation BUTTON_TEXTURE = ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/widget/mana_generator_button_texture.png");
     private static final ResourceLocation UPGRADE_BUTTON_TEXTURE = ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/widget/upgrade_button.png");
-    
+
     // 警告相關
     private boolean showWarning = false;
     private long warningStartTime = 0;
 
     public ManaGeneratorScreen(ManaGeneratorMenu menu, Inventory inv, Component title) {
-        super(menu, inv, title);
-        this.imageWidth = 176;
-        this.imageHeight = 166;
+        // ✨ v2: 自動檢測尺寸並繪製背景
+        super(menu, inv, title, TEXTURE, 176, 166);
     }
 
     @Override
@@ -123,11 +125,7 @@ public class ManaGeneratorScreen extends ModularScreen<ManaGeneratorMenu> {
         }).setTooltip(() -> List.of(Component.translatable("screen.koniava.upgrade_button.tooltip"))));
     }
 
-    @Override
-    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
-        graphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
-        super.renderBg(graphics, partialTick, mouseX, mouseY);
-    }
+    // ✨ v2: renderBg 完全刪除，AutoSizedModularScreen 會自動處理
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {

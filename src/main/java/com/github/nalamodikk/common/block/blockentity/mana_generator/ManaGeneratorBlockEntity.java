@@ -108,6 +108,7 @@
 
         }
 
+
         @Override
         public void drops(Level level, BlockPos pos) {
             super.drops(level, pos);
@@ -613,4 +614,5 @@
                 syncHelper.syncFrom(this);
             }
         }
+
     }
