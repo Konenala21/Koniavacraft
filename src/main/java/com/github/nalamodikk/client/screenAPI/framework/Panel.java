@@ -1,5 +1,6 @@
 package com.github.nalamodikk.client.screenAPI.framework;
 
+import com.github.nalamodikk.client.screenAPI.layout.FlexLayout;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 
@@ -10,6 +11,7 @@ import java.util.List;
 /**
  * 容器元件。
  * 可以包含多個子元件，並自動處理座標偏移和事件傳遞。
+ * 支持 FlexLayout 自动布局系统。
  */
 public class Panel extends AbstractWidget {
     protected final List<AbstractWidget> children = new ArrayList<>();
@@ -18,6 +20,9 @@ public class Panel extends AbstractWidget {
     private boolean drawBackground = false;
     private int backgroundColor = 0x00000000;
 
+    // 🆕 布局管理器（可选）
+    private FlexLayout layout = null;
+
     public Panel(int x, int y, int width, int height) {
         super(x, y, width, height);
     }
@@ -25,7 +30,34 @@ public class Panel extends AbstractWidget {
     public Panel add(AbstractWidget widget) {
         children.add(widget);
         widget.setParent(this);
+
+        // 🆕 如果有布局管理器，立即应用
+        if (layout != null) {
+            applyLayout();
+        }
+
         return this;
+    }
+
+    /**
+     * 设置布局管理器
+     *
+     * @param layout FlexLayout 布局管理器
+     * @return this
+     */
+    public Panel setLayout(FlexLayout layout) {
+        this.layout = layout;
+        applyLayout();
+        return this;
+    }
+
+    /**
+     * 应用布局（重新计算所有子组件位置）
+     */
+    public void applyLayout() {
+        if (layout != null && !children.isEmpty()) {
+            layout.apply(children, width, height);
+        }
     }
 
     @Override
