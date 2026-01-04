@@ -3,28 +3,26 @@ package com.github.nalamodikk.common.block.blockentity.mana_infuser;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.client.screenAPI.component.ManaBarWidget;
 import com.github.nalamodikk.client.screenAPI.framework.AbstractWidget;
-import com.github.nalamodikk.client.screenAPI.framework.ModularScreen;
+import com.github.nalamodikk.client.screenAPI.framework.AutoSizedModularScreen;
 import com.github.nalamodikk.client.screenAPI.framework.Panel;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
- * 🔮 魔力注入機 GUI 界面 (模組化版本)
+ * 🔮 魔力注入機 GUI 界面 (v2 - 自動尺寸)
  */
-public class ManaInfuserScreen extends ModularScreen<ManaInfuserMenu> {
+public class ManaInfuserScreen extends AutoSizedModularScreen<ManaInfuserMenu> {
 
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/mana_infuser_gui.png");
 
     public ManaInfuserScreen(ManaInfuserMenu menu, Inventory playerInventory, Component title) {
-        super(menu, playerInventory, title);
-        this.imageWidth = 176;
-        this.imageHeight = 166;
+        // ✨ v2: 自動檢測尺寸並繪製背景
+        super(menu, playerInventory, title, TEXTURE, 176, 166);
     }
 
     @Override
@@ -64,12 +62,5 @@ public class ManaInfuserScreen extends ModularScreen<ManaInfuserMenu> {
         });
     }
 
-    @Override
-    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
-        // 繪製背景圖
-        graphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
-        
-        // 繪製 Widget
-        super.renderBg(graphics, partialTick, mouseX, mouseY);
-    }
+    // ✨ v2: renderBg 完全刪除，AutoSizedModularScreen 會自動處理
 }
