@@ -110,6 +110,26 @@ public class SolarManaCollectorMenu extends AbstractContainerMenu {
         return syncHelper.isDaytime();
     }
 
+    public boolean isOverworld() {
+        return syncHelper.isOverworld();
+    }
+
+    public boolean hasSkyLight() {
+        return syncHelper.hasSkyLight();
+    }
+
+    public boolean isOpenToSky() {
+        return syncHelper.isOpenToSky();
+    }
+
+    public boolean isRaining() {
+        return syncHelper.isRaining();
+    }
+
+    public boolean isThundering() {
+        return syncHelper.isThundering();
+    }
+
     // 🔧 修復的 getter 方法
     public int getSpeedLevel() {
         return syncHelper.getSpeedLevel();

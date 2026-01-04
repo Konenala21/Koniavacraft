@@ -16,6 +16,8 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.world.phys.AABB;
+import net.neoforged.neoforge.client.extensions.IBlockEntityRendererExtension;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -24,7 +26,7 @@ import org.slf4j.Logger;
 import java.io.InputStreamReader;
 import java.util.*;
 
-public class SolarCollectorRenderer implements BlockEntityRenderer<SolarManaCollectorBlockEntity> {
+public class SolarCollectorRenderer implements BlockEntityRenderer<SolarManaCollectorBlockEntity>, IBlockEntityRendererExtension<SolarManaCollectorBlockEntity> {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -52,7 +54,7 @@ public class SolarCollectorRenderer implements BlockEntityRenderer<SolarManaColl
 
         // 🎨 使用材質
         ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/block/solar_mana_collector.png");
-        VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.entitySolid(texture));
+        VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.entityTranslucentCull(texture));
 
         poseStack.pushPose();
 
@@ -83,6 +85,14 @@ public class SolarCollectorRenderer implements BlockEntityRenderer<SolarManaColl
         float floatY = (float) Math.sin(time * 1.5) * 0.05F;
 
         renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "bone", 0, floatY, 0, 0);
+    }
+
+    @Override
+    public AABB getRenderBoundingBox(SolarManaCollectorBlockEntity blockEntity) {
+        int x = blockEntity.getBlockPos().getX();
+        int y = blockEntity.getBlockPos().getY();
+        int z = blockEntity.getBlockPos().getZ();
+        return new AABB(x, y, z, x + 1, y + 2, z + 1);
     }
 
     /**
