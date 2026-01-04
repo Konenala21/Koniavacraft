@@ -79,6 +79,7 @@ public class BiomeIntegration {
 
         // 清理 Surface Rules 緩存
         LazySurfaceRules.clearCache();
+        UniversalTerrainEcosystemLibrary.clearAllRulesCache();
 
         isInitialized = false;
         LOGGER.info("✅ 生物群系系統清理完成");

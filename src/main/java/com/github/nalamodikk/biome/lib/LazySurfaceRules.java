@@ -1,15 +1,16 @@
 // 🔄 懶加載 Surface Rules 系統 - 庫版本
 package com.github.nalamodikk.biome.lib;
 
+import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.levelgen.SurfaceRules;
+import org.slf4j.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
-import java.util.logging.Logger;
 
 /**
  * 🔄 懶加載 Surface Rules - 庫版本
@@ -22,7 +23,7 @@ import java.util.logging.Logger;
  */
 public class LazySurfaceRules {
 
-    private static final Logger LOGGER = Logger.getLogger("BiomeTerrainLib");
+    public static final Logger LOGGER = LogUtils.getLogger();
 
     // 🗃️ 規則供應商註冊表
     private static final Map<ResourceKey<Biome>, Supplier<SurfaceRules.RuleSource>> RULE_SUPPLIERS = new HashMap<>();
@@ -48,7 +49,7 @@ public class LazySurfaceRules {
 
         if (validRules.isEmpty()) {
             if (!LOGGED_SUCCESS) {
-                LOGGER.warning("⚠️ 沒有可用的 Surface Rules，使用原版規則");
+                LOGGER.warn("⚠️ 沒有可用的 Surface Rules，使用原版規則");
             }
             return null; // 讓原版規則接管
         }
@@ -80,11 +81,11 @@ public class LazySurfaceRules {
             SurfaceRules.RuleSource rule = supplier.get();
             if (rule != null) {
                 CACHED_RULES.put(biome, rule);
-                LOGGER.fine("✨ 成功創建規則: " + biome.location());
+                LOGGER.debug("✨ 成功創建規則: " + biome.location());
                 return rule;
             }
         } catch (Exception e) {
-            LOGGER.warning("❌ 創建規則失敗: " + biome.location() + " - " + e.getMessage());
+            LOGGER.warn("❌ 創建規則失敗: " + biome.location() + " - " + e.getMessage());
         }
 
         return null;
@@ -107,7 +108,7 @@ public class LazySurfaceRules {
      */
     public static void registerRuleSupplier(ResourceKey<Biome> biome, Supplier<SurfaceRules.RuleSource> supplier) {
         RULE_SUPPLIERS.put(biome, supplier);
-        LOGGER.fine("📝 註冊規則供應商: " + biome.location());
+        LOGGER.debug("📝 註冊規則供應商: " + biome.location());
     }
 
     /**
@@ -116,7 +117,7 @@ public class LazySurfaceRules {
     public static void clearCache() {
         CACHED_RULES.clear();
         LOGGED_SUCCESS = false;
-        LOGGER.fine("🧹 清理 Surface Rules 緩存");
+        LOGGER.debug("🧹 清理 Surface Rules 緩存");
     }
 
     /**
@@ -164,7 +165,7 @@ public class LazySurfaceRules {
         return () -> {
             // 檢查方塊是否存在
             if (!doesBlockExist(surfaceBlock) || !doesBlockExist(soilBlock)) {
-                LOGGER.warning("⚠️ 生物群系所需方塊不存在，跳過: " + biome.location());
+                LOGGER.warn("⚠️ 生物群系所需方塊不存在，跳過: " + biome.location());
                 return null;
             }
 
@@ -191,7 +192,7 @@ public class LazySurfaceRules {
                         )
                 );
             } catch (Exception e) {
-                LOGGER.warning("❌ 創建基本生物群系規則失敗: " + biome.location() + " - " + e.getMessage());
+                LOGGER.warn("❌ 創建基本生物群系規則失敗: " + biome.location() + " - " + e.getMessage());
                 return null;
             }
         };

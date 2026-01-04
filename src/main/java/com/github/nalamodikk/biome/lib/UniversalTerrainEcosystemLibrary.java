@@ -56,6 +56,8 @@ public class UniversalTerrainEcosystemLibrary {
 
     // 📦 已創建的規則緩存
     private static final Map<ResourceKey<Biome>, SurfaceRules.RuleSource> RULE_CACHE = new ConcurrentHashMap<>();
+    private static volatile SurfaceRules.RuleSource ALL_RULES_CACHE = null;
+    private static volatile boolean ALL_RULES_CACHED = false;
 
     // 🔇 日誌控制
     private static boolean LOGGED_INITIALIZATION = false;
@@ -69,6 +71,8 @@ public class UniversalTerrainEcosystemLibrary {
     public static void registerEcosystem(ResourceKey<Biome> biome, EcosystemConfig config) {
         ECOSYSTEM_REGISTRY.put(biome, config);
         RULE_CACHE.remove(biome); // 清除緩存，強制重新生成
+        ALL_RULES_CACHE = null;
+        ALL_RULES_CACHED = false;
 
         if (KoniavacraftMod.IS_DEV) {
             KoniavacraftMod.LOGGER.info("🌱 已註冊地形生態系統: {} (優先級: {})",
@@ -80,6 +84,9 @@ public class UniversalTerrainEcosystemLibrary {
      * 🎯 創建所有已註冊生態系統的 Surface Rules
      */
     public static SurfaceRules.RuleSource createAllEcosystemRules() {
+        if (ALL_RULES_CACHED) {
+            return ALL_RULES_CACHE;
+        }
         List<SurfaceRules.RuleSource> validRules = new ArrayList<>();
 
         // 按優先級排序處理
@@ -98,6 +105,8 @@ public class UniversalTerrainEcosystemLibrary {
                 KoniavacraftMod.LOGGER.warn("⚠️ 沒有找到有效的地形生態系統規則");
                 LOGGED_INITIALIZATION = true;
             }
+            ALL_RULES_CACHE = null;
+            ALL_RULES_CACHED = true;
             return null;
         }
 
@@ -106,7 +115,14 @@ public class UniversalTerrainEcosystemLibrary {
             LOGGED_INITIALIZATION = true;
         }
 
-        return SurfaceRules.sequence(validRules.toArray(new SurfaceRules.RuleSource[0]));
+        ALL_RULES_CACHE = SurfaceRules.sequence(validRules.toArray(new SurfaceRules.RuleSource[0]));
+        ALL_RULES_CACHED = true;
+        return ALL_RULES_CACHE;
+    }
+
+    public static void clearAllRulesCache() {
+        ALL_RULES_CACHE = null;
+        ALL_RULES_CACHED = false;
     }
 
     /**
