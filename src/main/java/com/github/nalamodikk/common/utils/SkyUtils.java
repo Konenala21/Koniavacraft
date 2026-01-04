@@ -16,17 +16,16 @@ import net.minecraft.world.level.levelgen.Heightmap;
 public final class SkyUtils {
 
     /**
-     * 🔍 使用高度圖檢測方塊是否能見天空
+     * 🔍 檢測方塊是否能見天空（適配多格高機器）
      *
      * @param level 伺服器世界
-     * @param pos 要檢測的方塊位置
+     * @param pos BlockEntity 位置（底部方塊）
      * @return true 如果該位置能見天空
      */
     public static boolean isOpenToSkyByHeightmap(ServerLevel level, BlockPos pos) {
-        // MOTION_BLOCKING: 第一個會阻擋運動的方塊高度（包括阻擋天空光的方塊）
-        int h = level.getHeight(Heightmap.Types.MOTION_BLOCKING, pos.getX(), pos.getZ());
-
-        // 如果我們的方塊 Y >= 阻擋高度 - 1，就算見天
-        return pos.getY() >= h - 1;
+        // 🔧 直接使用 Minecraft 原版方法，最穩定
+        // 檢測 BlockEntity 頂部上方（Y+2）是否能見天
+        // 對於 1x2x1 機器：底部 Y=100，頂部 Y=101，檢測 Y=102
+        return level.canSeeSky(pos.above(2));
     }
 }
