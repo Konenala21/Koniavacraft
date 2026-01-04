@@ -32,6 +32,8 @@
     import net.minecraft.world.entity.player.Inventory;
     import net.minecraft.world.entity.player.Player;
     import net.minecraft.world.inventory.AbstractContainerMenu;
+    import net.minecraft.world.level.Level;
+    import net.minecraft.world.level.LightLayer;
     import net.minecraft.world.level.block.entity.BlockEntity;
     import net.minecraft.world.level.block.state.BlockState;
     import net.neoforged.neoforge.capabilities.BlockCapabilityCache;
@@ -68,6 +70,16 @@
         private boolean generating = false;
         private final EnumMap<Direction, IOHandlerUtils.IOType> ioMap = new EnumMap<>(Direction.class);
 
+        // === ⚡ 性能優化 ===
+        private int stateCheckInterval = 20; // 🔧 每 20 tick 檢查一次狀態（1秒）
+        private int lastSyncedMana = 0; // 🔧 上次同步的魔力值
+        private boolean lastSyncedDaytime = true; // 🔧 上次同步的日夜狀態
+        private boolean lastSyncedOverworld = true;
+        private boolean lastSyncedHasSkyLight = true;
+        private boolean lastSyncedOpenToSky = true;
+        private boolean lastSyncedRaining = false;
+        private boolean lastSyncedThundering = false;
+
         // === ⚡ 性能緩存 ===
         private final EnumMap<Direction, BlockCapabilityCache<IUnifiedManaHandler, Direction>> manaCaches = new EnumMap<>(Direction.class);
         private final EnumMap<Direction, BlockCapabilityCache<IEnergyStorage, Direction>> energyCaches = new EnumMap<>(Direction.class);
@@ -84,6 +96,7 @@
             }
             LOGGER.debug("🌞 太陽能收集器初始化：位置 {}", pos);
         }
+
 
         // === 📊 公開接口 ===
 
@@ -104,10 +117,14 @@
 
         @Override
         public void tickMachine() {
-            // 🔄 狀態管理：委派給專門方法
-            updateGeneratingState();
+            long gameTime = level.getGameTime();
 
-            // 📊 數據同步：每 tick 都執行
+            // 🔄 狀態管理：降低檢查頻率（每 20 tick = 1秒）
+            if (gameTime % stateCheckInterval == 0) {
+                updateGeneratingState();
+            }
+
+            // 📊 數據同步：只在有變化時執行
             handleDataSync();
 
             // ⚡ 魔力生成：按間隔執行
@@ -123,21 +140,58 @@
             // 🎯 真正的生成狀態：能發電 + 有空間
             this.generating = canGenerate && hasSpace;
 
-            // 🔧 狀態變化時通知客戶端
+            // 🔧 狀態變化時通知客戶端並同步
             if (oldGenerating != this.generating && level instanceof ServerLevel) {
                 level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
                 setChanged();
 
-                LOGGER.debug("🔄 狀態變化: {} -> {}, 條件: 可發電={}, 有空間={}",
+                // ⚡ 狀態變化時立即同步（確保 GUI 即時更新）
+                syncHelper.syncFrom(this);
+                lastSyncedMana = manaStorage.getManaStored();
+                lastSyncedDaytime = isDaytime();
+                lastSyncedOverworld = isOverworld();
+                updateSyncedSkyFlags((ServerLevel) level);
+
+                LOGGER.info("🔄 狀態變化: {} -> {}, 條件: 可發電={}, 有空間={}",
                         oldGenerating, this.generating, canGenerate, hasSpace);
             }
         }
 
-        // 📊 數據同步邏輯
+        // 📊 數據同步邏輯（優化版）
         private void handleDataSync() {
-            // 🔧 修復：只在伺服器端且有打開的 Menu 時才同步
-            if (level instanceof ServerLevel && syncHelper.getContainerData() != null) {
+            if (!(level instanceof ServerLevel)) return;
+            ServerLevel server = (ServerLevel) level;
+
+            // ⚡ 優化：只在數據真正變化時才同步
+            int currentMana = manaStorage.getManaStored();
+            boolean manaChanged = currentMana != lastSyncedMana;
+            boolean daytimeChanged = isDaytime() != lastSyncedDaytime;
+            boolean isOverworld = isOverworld(server);
+            boolean hasSkyLight = hasSkyLight(server);
+            boolean openToSky = isOpenToSky(server);
+            boolean isRaining = isRainingAt(server);
+            boolean isThundering = isThundering(server);
+            boolean skyStateChanged = isOverworld != lastSyncedOverworld
+                || hasSkyLight != lastSyncedHasSkyLight
+                || openToSky != lastSyncedOpenToSky
+                || isRaining != lastSyncedRaining
+                || isThundering != lastSyncedThundering;
+
+            // 檢查魔力變化是否顯著（變化超過 1% 或每 20 tick 強制同步一次）
+            boolean shouldSync = daytimeChanged || skyStateChanged || (manaChanged && (
+                Math.abs(currentMana - lastSyncedMana) > MAX_MANA / 100 || // 變化超過 1%
+                level.getGameTime() % 20 == 0 // 或每秒強制同步一次
+            ));
+
+            if (shouldSync) {
                 syncHelper.syncFrom(this);
+                lastSyncedMana = currentMana;
+                lastSyncedDaytime = isDaytime();
+                lastSyncedOverworld = isOverworld;
+                lastSyncedHasSkyLight = hasSkyLight;
+                lastSyncedOpenToSky = openToSky;
+                lastSyncedRaining = isRaining;
+                lastSyncedThundering = isThundering;
             }
         }
 
@@ -211,10 +265,64 @@
 
             final BlockPos skyPos = worldPosition;
             return server.isDay()
-                && server.dimensionType().hasSkyLight()
-                && SkyUtils.isOpenToSkyByHeightmap(server, skyPos) // 🚀 使用高度圖，極速穩定
-                && !server.isRainingAt(skyPos.above())
-                && !server.isThundering();
+                && hasSkyLight(server)
+                && isOpenToSky(server) // 🚀 使用高度圖，極速穩定
+                && !isRainingAt(server)
+                && !isThundering(server);
+        }
+
+        public boolean hasSkyLight() {
+            if (level == null) return false;
+            return hasSkyLight(level);
+        }
+
+        public boolean isOverworld() {
+            if (level == null) return false;
+            return isOverworld(level);
+        }
+
+        public boolean isOpenToSky() {
+            if (level == null) return false;
+            return isOpenToSky(level);
+        }
+
+        public boolean isRainingAtCollector() {
+            if (level == null) return false;
+            return isRainingAt(level);
+        }
+
+        public boolean isThundering() {
+            if (level == null) return false;
+            return isThundering(level);
+        }
+
+        private boolean isOverworld(Level level) {
+            return "minecraft:overworld".equals(level.dimension().location().toString());
+        }
+
+        private boolean hasSkyLight(Level level) {
+            int skyLight = level.getBrightness(LightLayer.SKY, worldPosition.above());
+            return skyLight > 0 || level.dimensionType().hasSkyLight();
+        }
+
+        private boolean isOpenToSky(Level level) {
+            return level.canSeeSkyFromBelowWater(worldPosition.above(2));
+        }
+
+        private boolean isRainingAt(Level level) {
+            return level.isRainingAt(worldPosition.above());
+        }
+
+        private boolean isThundering(Level level) {
+            return level.isThundering();
+        }
+
+        private void updateSyncedSkyFlags(Level level) {
+            lastSyncedOverworld = isOverworld(level);
+            lastSyncedHasSkyLight = hasSkyLight(level);
+            lastSyncedOpenToSky = isOpenToSky(level);
+            lastSyncedRaining = isRainingAt(level);
+            lastSyncedThundering = isThundering(level);
         }
 
 
@@ -234,8 +342,8 @@
                 upgradeManager.saveToNBT(tag, registries); // ✅ 傳入 registries
                 NbtUtils.writeEnumIOTypeMap(tag, "IOMap", ioMap);
 
-                // 📊 保存狀態
-                tag.putBoolean("Generating", generating);
+                // ❌ 不保存 generating 狀態 - 這是衍生狀態，應該每次重新計算
+                // tag.putBoolean("Generating", generating);
 
                 // 🔍 調試日誌
 //                LOGGER.debug("🌞 保存太陽能收集器: 位置 {}, 魔力 {}, 升級管理器已保存",
@@ -254,14 +362,29 @@
             try {
                 // 🔧 委派給組件加載 - 傳入正確的 registries
                 NbtUtils.read(tag, "Mana", manaStorage, registries);
+                if (!tag.contains("Mana") && tag.contains("ManaStorage")) {
+                    manaStorage.deserializeNBT(registries, tag.getCompound("ManaStorage"));
+                }
                 upgradeManager.loadFromNBT(tag, registries); // ✅ 使用修復後的方法
-                setIOMap(NbtUtils.readEnumIOTypeMap(tag, "IOMap"));
+                if (!tag.contains("SolarUpgradeManager") && tag.contains("UpgradeInventory")) {
+                    upgradeManager.getUpgradeInventory().deserializeNBT(registries, tag.getCompound("UpgradeInventory"));
+                    upgradeManager.markEffectsDirty();
+                }
+                EnumMap<Direction, IOHandlerUtils.IOType> loadedIoMap = NbtUtils.readEnumIOTypeMap(tag, "IOMap");
+                if (loadedIoMap.isEmpty()) {
+                    applyDefaultIOMap();
+                } else {
+                    setIOMap(loadedIoMap);
+                }
 
-                // 📊 加載狀態
-                generating = tag.getBoolean("Generating");
+                // ✅ 不從 NBT 載入 generating 狀態 - 將在 onLoad() 時重新計算
+                // generating = tag.getBoolean("Generating");
+                generating = false; // 初始化為 false，等待第一次 tick 更新
 
-                // 🆕 關鍵修復：載入完成後立即同步數據
-                syncHelper.syncFrom(this);
+                // 🆕 關鍵修復：僅伺服器端同步數據，避免客戶端覆寫同步狀態
+                if (level != null && !level.isClientSide()) {
+                    syncHelper.syncFrom(this);
+                }
 
                 LOGGER.debug("🌞 載入太陽能收集器: 位置 {}, 魔力 {}, 升級管理器已載入",
                         worldPosition, manaStorage.getManaStored());
@@ -269,6 +392,16 @@
             } catch (Exception e) {
                 LOGGER.error("💥 載入太陽能收集器失敗: {}", worldPosition, e);
                 generating = false;
+            }
+        }
+
+        private void applyDefaultIOMap() {
+            ioMap.clear();
+            ioMap.put(Direction.DOWN, IOHandlerUtils.IOType.OUTPUT);
+            for (Direction dir : Direction.values()) {
+                if (!ioMap.containsKey(dir)) {
+                    ioMap.put(dir, IOHandlerUtils.IOType.DISABLED);
+                }
             }
         }
 
@@ -323,18 +456,32 @@
             if (level instanceof ServerLevel serverLevel) {
                 initializeCapabilityCaches(serverLevel);
 
+                // ✅ 關鍵修復：載入後立即重新計算發電狀態
+                updateGeneratingState();
 
-                // 🆕 伺服器端載入後立即同步一次數據
-                syncHelper.syncFrom(this);
+                // 🆕 強制刷新同步狀態，避免重開世界後鎖定在舊狀態
+                forceInitialSync(serverLevel);
 
                 // 🆕 通知客戶端更新
                 serverLevel.scheduleTick(worldPosition, getBlockState().getBlock(), 1);
 
-                LOGGER.debug("🌞 伺服器端載入完成: 位置={}, 已排程同步", worldPosition);
+                LOGGER.info("🌞 伺服器端載入完成: 位置={}, 初始狀態 generating={}, canGenerate={}",
+                        worldPosition, generating, canGenerate());
             } else if (level != null && level.isClientSide()) {
                 // 🆕 客戶端載入時的日誌
                 LOGGER.debug("🌞 客戶端載入完成: 位置={}", worldPosition);
             }
+        }
+
+        private void forceInitialSync(ServerLevel serverLevel) {
+            lastSyncedMana = -1;
+            lastSyncedDaytime = !isDaytime();
+            lastSyncedOverworld = !isOverworld(serverLevel);
+            lastSyncedHasSkyLight = !hasSkyLight(serverLevel);
+            lastSyncedOpenToSky = !isOpenToSky(serverLevel);
+            lastSyncedRaining = !isRainingAt(serverLevel);
+            lastSyncedThundering = !isThundering(serverLevel);
+            syncHelper.syncFrom(this);
         }
 
         private void initializeCapabilityCaches(ServerLevel serverLevel) {
@@ -454,9 +601,6 @@
         public void handleUpdateTag(CompoundTag tag, HolderLookup.Provider registries) {
             // 🔧 載入所有同步的數據
             loadAdditional(tag, registries);
-
-            // 🆕 載入完成後立即同步到GUI
-            syncHelper.syncFrom(this);
 
             LOGGER.debug("🌐 客戶端收到同步標籤: 位置={}, 升級數據已更新", worldPosition);
         }
