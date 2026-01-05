@@ -7,6 +7,7 @@ import com.github.nalamodikk.narasystem.nara.network.client.OpenNaraInitScreenPa
 import com.github.nalamodikk.narasystem.nara.network.server.NaraSyncPacket;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID)
@@ -15,6 +16,9 @@ public class ModNetworkingServer {
 
     @SubscribeEvent
     public static void register(RegisterPayloadHandlersEvent event) {
+        if (FMLEnvironment.dist.isClient()) {
+            return;
+        }
         var registrar = event.registrar("1");
 
         ManaUpdatePacket.registerToServer(registrar);
