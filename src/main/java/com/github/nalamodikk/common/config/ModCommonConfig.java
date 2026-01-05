@@ -26,6 +26,8 @@ public class ModCommonConfig {
     // ===============================
     public final ModConfigSpec.IntValue manaRecipeRefreshInterval;
     public final ModConfigSpec.BooleanValue showIntroAnimation;
+    public final ModConfigSpec.IntValue manaGeneratorSignificantManaChange;
+    public final ModConfigSpec.IntValue manaGeneratorSignificantEnergyChange;
 
 
 
@@ -44,6 +46,18 @@ public class ModCommonConfig {
                 .comment("Enable intro animation on player login (default: true)")
                 .translation("koniava.config.showIntroAnimation")
                 .define("showIntroAnimation", true);
+
+        manaGeneratorSignificantManaChange = builder
+                .comment("魔力發電機：同步所需的魔力顯著變化量")
+                .comment("Mana generator: significant mana delta to trigger sync")
+                .translation("koniava.config.manaGeneratorSignificantManaChange")
+                .defineInRange("manaGeneratorSignificantManaChange", 100, 0, 100000);
+
+        manaGeneratorSignificantEnergyChange = builder
+                .comment("魔力發電機：同步所需的能量顯著變化量")
+                .comment("Mana generator: significant energy delta to trigger sync")
+                .translation("koniava.config.manaGeneratorSignificantEnergyChange")
+                .defineInRange("manaGeneratorSignificantEnergyChange", 100, 0, 100000);
 
         // ===============================
         // 🌍 生物群系處理配置區段
@@ -65,6 +79,9 @@ public class ModCommonConfig {
                     INSTANCE.manaRecipeRefreshInterval.get());
             KoniavacraftMod.LOGGER.info("載入動畫設定: showIntroAnimation = {}",
                     INSTANCE.showIntroAnimation.get());
+            KoniavacraftMod.LOGGER.info("載入魔力發電機同步設定: manaChange = {}, energyChange = {}",
+                    INSTANCE.manaGeneratorSignificantManaChange.get(),
+                    INSTANCE.manaGeneratorSignificantEnergyChange.get());
 
 
         }
@@ -78,6 +95,9 @@ public class ModCommonConfig {
                     INSTANCE.manaRecipeRefreshInterval.get());
             KoniavacraftMod.LOGGER.info("重新載入動畫設定: showIntroAnimation = {}",
                     INSTANCE.showIntroAnimation.get());
+            KoniavacraftMod.LOGGER.info("重新載入魔力發電機同步設定: manaChange = {}, energyChange = {}",
+                    INSTANCE.manaGeneratorSignificantManaChange.get(),
+                    INSTANCE.manaGeneratorSignificantEnergyChange.get());
 
             // 重新載入生物群系配置
             KoniavacraftMod.LOGGER.info("🔄 重新載入生物群系處理設定");

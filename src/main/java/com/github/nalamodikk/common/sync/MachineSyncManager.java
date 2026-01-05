@@ -33,6 +33,7 @@ public class MachineSyncManager implements ContainerData {
     private final List<ISyncableData> syncables = new ArrayList<>();
     private int totalIntCount = 0;
     private boolean isDirty = false;
+    private int[] lastSnapshot;
 
     public boolean isDirty() {
         return isDirty;
@@ -40,6 +41,47 @@ public class MachineSyncManager implements ContainerData {
     
     public void markDirty(boolean dirty) {
         this.isDirty = dirty;
+    }
+
+    /**
+     * 重新掃描同步資料，若有變化則標記 dirty。
+     * 會順便更新快照，避免重複觸發。
+     */
+    public boolean refreshDirty() {
+        if (totalIntCount <= 0) {
+            return false;
+        }
+        if (lastSnapshot == null || lastSnapshot.length != totalIntCount) {
+            lastSnapshot = new int[totalIntCount];
+            captureSnapshot();
+            return false;
+        }
+
+        boolean changed = false;
+        int index = 0;
+        for (ISyncableData data : syncables) {
+            for (int i = 0; i < data.getSize(); i++) {
+                int value = data.get(i);
+                if (lastSnapshot[index] != value) {
+                    lastSnapshot[index] = value;
+                    changed = true;
+                }
+                index++;
+            }
+        }
+        if (changed) {
+            isDirty = true;
+        }
+        return changed;
+    }
+
+    private void captureSnapshot() {
+        int index = 0;
+        for (ISyncableData data : syncables) {
+            for (int i = 0; i < data.getSize(); i++) {
+                lastSnapshot[index++] = data.get(i);
+            }
+        }
     }
 
     // --- 自動註冊邏輯 ---
@@ -93,25 +135,18 @@ public class MachineSyncManager implements ContainerData {
 
     private void registerMethod(Object provider, Method m) {
         Class<?> returnType = m.getReturnType();
-        Sync sync = m.getAnnotation(Sync.class);
-        boolean readOnly = sync != null && sync.readOnly();
-        
         // 嘗試尋找對應的 Setter
         String name = m.getName();
         if (name.startsWith("get") || name.startsWith("is")) {
             String baseName = name.startsWith("get") ? name.substring(3) : name.substring(2);
             String setterName = "set" + baseName;
             try {
-                if (!readOnly) {
-                    Method setter = provider.getClass().getMethod(setterName, returnType);
-                    setter.setAccessible(true);
-                    bindMethod(provider, m, setter, returnType);
-                    return;
-                }
+                Method setter = provider.getClass().getMethod(setterName, returnType);
+                setter.setAccessible(true);
+                bindMethod(provider, m, setter, returnType);
+                return;
             } catch (NoSuchMethodException ignored) {
-                if (!readOnly) {
-                    LOGGER.warn("找不到同步 Setter：{}.{}({})", provider.getClass().getSimpleName(), setterName, returnType.getSimpleName());
-                }
+                LOGGER.warn("找不到同步 Setter：{}.{}({})", provider.getClass().getSimpleName(), setterName, returnType.getSimpleName());
             }
         }
 
@@ -166,8 +201,6 @@ public class MachineSyncManager implements ContainerData {
 
     private void registerField(Object provider, Field f) {
         Class<?> type = f.getType();
-        Sync sync = f.getAnnotation(Sync.class);
-        boolean readOnly = sync != null && sync.readOnly();
         AtomicBoolean warned = new AtomicBoolean(false);
         
         try {
@@ -178,25 +211,25 @@ public class MachineSyncManager implements ContainerData {
                 trackInt(() -> {
                     try { return f.getInt(provider); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); return 0; }
                 }, v -> {
-                    if (!readOnly) try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
+                    try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
                 });
             } else if (type == boolean.class || type == Boolean.class) {
                 trackBoolean(() -> {
                     try { return f.getBoolean(provider); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); return false; }
                 }, v -> {
-                    if (!readOnly) try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
+                    try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
                 });
             } else if (type == float.class || type == Float.class) {
                 trackFloat(() -> {
                     try { return f.getFloat(provider); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); return 0f; }
                 }, v -> {
-                    if (!readOnly) try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
+                    try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
                 });
             } else if (type == long.class || type == Long.class) {
                 trackLong(() -> {
                     try { return f.getLong(provider); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); return 0L; }
                 }, v -> {
-                    if (!readOnly) try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
+                    try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
                 });
             } else if (type.isEnum()) {
                 Object[] constants = type.getEnumConstants();
@@ -206,21 +239,19 @@ public class MachineSyncManager implements ContainerData {
                         return val instanceof Enum<?> e ? e.ordinal() : 0;
                     } catch (Exception e) { logInvokeFailureOnce(warned, f, e); return 0; }
                 }, v -> {
-                    if (!readOnly) {
-                        try {
-                            if (v >= 0 && v < constants.length) {
-                                f.set(provider, constants[v]);
-                            }
-                        } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
-                    }
+                    try {
+                        if (v >= 0 && v < constants.length) {
+                            f.set(provider, constants[v]);
+                        }
+                    } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
                 });
             } else if (type == ManaStorage.class) {
                 ManaStorage storage = (ManaStorage) value;
-                trackInt(storage::getManaStored, readOnly ? null : storage::setMana);
-                trackInt(storage::getMaxManaStored, readOnly ? null : storage::setCapacity);
+                trackInt(storage::getManaStored, storage::setMana);
+                trackInt(storage::getMaxManaStored, storage::setCapacity);
             } else if (type == ModNeoNalaEnergyStorage.class) {
                 ModNeoNalaEnergyStorage storage = (ModNeoNalaEnergyStorage) value;
-                trackInt(storage::getEnergyStored, readOnly ? null : v -> storage.setEnergyStored(BigInteger.valueOf(v)));
+                trackInt(storage::getEnergyStored, v -> storage.setEnergyStored(BigInteger.valueOf(v)));
                 trackInt(storage::getMaxEnergyStored, null);
             }
         } catch (IllegalAccessException e) {

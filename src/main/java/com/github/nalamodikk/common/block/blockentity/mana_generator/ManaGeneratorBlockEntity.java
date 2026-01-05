@@ -9,6 +9,7 @@ import com.github.nalamodikk.common.block.blockentity.manabase.AbstractManaMachi
 import com.github.nalamodikk.common.capability.IUnifiedManaHandler;
 import com.github.nalamodikk.common.capability.ManaStorage;
 import com.github.nalamodikk.common.compat.energy.ModNeoNalaEnergyStorage;
+import com.github.nalamodikk.common.config.ModCommonConfig;
 import com.github.nalamodikk.common.coreapi.machine.logic.gen.EnergyGenerationHandler;
 import com.github.nalamodikk.common.coreapi.machine.logic.gen.FuelManaGenHelper;
 import com.github.nalamodikk.common.sync.MachineSyncManager;
@@ -148,9 +149,6 @@ import com.github.nalamodikk.common.utils.upgrade.api.IUpgradeableMachine;
         // ✅ 性能優化：從每 0.5 秒改為每 1 秒同步，減少網絡流量
         private static final int CLIENT_SYNC_INTERVAL = 20; // 每20 tick (1秒) 同步一次到客戶端
 
-        // ✅ 性能優化：追蹤上次同步的值，只在有顯著變化時才同步
-        private static final int SIGNIFICANT_MANA_CHANGE = 100;
-        private static final int SIGNIFICANT_ENERGY_CHANGE = 100;
         private int lastSyncedMana = 0;
         private int lastSyncedEnergy = 0;
         private int lastSyncedMode = 0;
@@ -289,12 +287,15 @@ import com.github.nalamodikk.common.utils.upgrade.api.IUpgradeableMachine;
                 if (clientSyncTimer >= CLIENT_SYNC_INTERVAL) {
                     clientSyncTimer = 0;
 
-                    // ✅ 只在有顯著變化時才同步，減少網絡流量
-                    if (hasSignificantChanges()) {
+                    boolean dirty = syncManager.refreshDirty();
+                    if (dirty && hasSignificantChanges()) {
                         syncToClient();
 
                         // 更新上次同步的值
                         updateLastSyncedValues();
+                    }
+                    if (dirty) {
+                        syncManager.markDirty(false);
                     }
                 }
             }
@@ -308,10 +309,12 @@ import com.github.nalamodikk.common.utils.upgrade.api.IUpgradeableMachine;
             int currentMana = manaStorage.getManaStored();
             int currentEnergy = energyStorage.getEnergyStored();
             int currentMode = stateManager.getCurrentMode().ordinal();
+            int manaThreshold = ModCommonConfig.INSTANCE.manaGeneratorSignificantManaChange.get();
+            int energyThreshold = ModCommonConfig.INSTANCE.manaGeneratorSignificantEnergyChange.get();
 
             // 檢查是否有顯著變化
-            boolean manaChanged = Math.abs(currentMana - lastSyncedMana) >= SIGNIFICANT_MANA_CHANGE;
-            boolean energyChanged = Math.abs(currentEnergy - lastSyncedEnergy) >= SIGNIFICANT_ENERGY_CHANGE;
+            boolean manaChanged = Math.abs(currentMana - lastSyncedMana) >= manaThreshold;
+            boolean energyChanged = Math.abs(currentEnergy - lastSyncedEnergy) >= energyThreshold;
             boolean modeChanged = currentMode != lastSyncedMode;
 
             return manaChanged || energyChanged || modeChanged;
