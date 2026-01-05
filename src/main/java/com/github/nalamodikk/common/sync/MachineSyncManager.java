@@ -196,11 +196,23 @@ public class MachineSyncManager implements ContainerData {
                     } catch (Exception e) { logInvokeFailureOnce(warned, setter, e); }
                 }
             });
+        } else if (type == String.class) {
+            int maxLength = 64;
+            Sync sync = getter.getAnnotation(Sync.class);
+            if (sync != null) {
+                maxLength = Math.max(0, sync.maxLength());
+            }
+            trackString(() -> {
+                try { return (String) getter.invoke(provider); } catch (Exception e) { logInvokeFailureOnce(warned, getter, e); return ""; }
+            }, v -> {
+                if (setter != null) try { setter.invoke(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, setter, e); }
+            }, maxLength);
         }
     }
 
     private void registerField(Object provider, Field f) {
         Class<?> type = f.getType();
+        Sync sync = f.getAnnotation(Sync.class);
         AtomicBoolean warned = new AtomicBoolean(false);
         
         try {
@@ -253,6 +265,16 @@ public class MachineSyncManager implements ContainerData {
                 ModNeoNalaEnergyStorage storage = (ModNeoNalaEnergyStorage) value;
                 trackInt(storage::getEnergyStored, v -> storage.setEnergyStored(BigInteger.valueOf(v)));
                 trackInt(storage::getMaxEnergyStored, null);
+            } else if (type == String.class) {
+                int maxLength = sync != null ? Math.max(0, sync.maxLength()) : 64;
+                trackString(() -> {
+                    try {
+                        Object val = f.get(provider);
+                        return val != null ? val.toString() : "";
+                    } catch (Exception e) { logInvokeFailureOnce(warned, f, e); return ""; }
+                }, v -> {
+                    try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
+                }, maxLength);
             }
         } catch (IllegalAccessException e) {
             LOGGER.error("同步欄位註冊失敗：{}.{}", provider.getClass().getSimpleName(), f.getName(), e);
@@ -293,6 +315,15 @@ public class MachineSyncManager implements ContainerData {
     public void trackLong(Supplier<Long> getter, Consumer<Long> setter) {
         syncables.add(new LongSyncData(getter, setter, totalIntCount, this));
         totalIntCount += 2;
+    }
+
+    /**
+     * 追蹤一個字串 (佔用 maxLength + 1 個 slot，第一格為長度)
+     */
+    public void trackString(Supplier<String> getter, Consumer<String> setter, int maxLength) {
+        int length = Math.max(0, maxLength);
+        syncables.add(new StringSyncData(getter, setter, totalIntCount, length, this));
+        totalIntCount += length + 1;
     }
     
     /**
@@ -463,6 +494,64 @@ public class MachineSyncManager implements ContainerData {
         
         @Override public int getStartIndex() { return startIndex; }
         @Override public int getSize() { return 2; }
+    }
+
+    private static class StringSyncData implements ISyncableData {
+        private final Supplier<String> getter;
+        private final Consumer<String> setter;
+        private final int startIndex;
+        private final int maxLength;
+        private final MachineSyncManager manager;
+        private final char[] buffer;
+        private int length;
+
+        public StringSyncData(Supplier<String> getter, Consumer<String> setter, int startIndex, int maxLength, MachineSyncManager manager) {
+            this.getter = getter;
+            this.setter = setter;
+            this.startIndex = startIndex;
+            this.maxLength = maxLength;
+            this.manager = manager;
+            this.buffer = new char[maxLength];
+            this.length = 0;
+        }
+
+        @Override
+        public int get(int i) {
+            String value = getter.get();
+            if (value == null) {
+                value = "";
+            }
+            int len = Math.min(maxLength, value.length());
+            if (i == 0) {
+                return len;
+            }
+            int charIndex = i - 1;
+            if (charIndex >= 0 && charIndex < len) {
+                return value.charAt(charIndex);
+            }
+            return 0;
+        }
+
+        @Override
+        public void set(int i, int v) {
+            if (setter == null) return;
+            if (i == 0) {
+                length = Math.max(0, Math.min(v, maxLength));
+            } else {
+                int charIndex = i - 1;
+                if (charIndex >= 0 && charIndex < maxLength) {
+                    buffer[charIndex] = (char) v;
+                }
+            }
+            String newValue = length > 0 ? new String(buffer, 0, length) : "";
+            if (!newValue.equals(getter.get())) {
+                setter.accept(newValue);
+                manager.markDirty(true);
+            }
+        }
+
+        @Override public int getStartIndex() { return startIndex; }
+        @Override public int getSize() { return maxLength + 1; }
     }
 
     private static void logInvokeFailureOnce(AtomicBoolean warned, Object member, Exception e) {
