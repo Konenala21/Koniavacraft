@@ -1,12 +1,10 @@
 package com.github.nalamodikk.common.block.blockentity.mana_generator;
 
-import com.github.nalamodikk.common.block.blockentity.mana_generator.sync.ManaGeneratorSyncHelper;
 import com.github.nalamodikk.register.ModMenuTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -18,15 +16,12 @@ import org.jetbrains.annotations.NotNull;
 public class ManaGeneratorMenu extends AbstractContainerMenu {
     private final ManaGeneratorBlockEntity blockEntity;
     private final ContainerLevelAccess access;
-    private final ManaGeneratorSyncHelper syncHelper;
 
     public ManaGeneratorMenu(int id, Inventory inv, ManaGeneratorBlockEntity blockEntity) {
         super(ModMenuTypes.MANA_GENERATOR_MENU.get(), id);
         this.blockEntity = blockEntity;
         this.access = ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos());
-        this.syncHelper = blockEntity.getSyncHelper(); // ✅ 使用 BE 傳過來的同步器
-
-        this.addDataSlots(syncHelper.getContainerData());
+        this.addDataSlots(blockEntity.getContainerData());
 
         IItemHandler blockInventory = blockEntity.getInventory();
         this.addSlot(new SlotItemHandler(blockInventory, 0, 80, 40) {
@@ -97,63 +92,44 @@ public class ManaGeneratorMenu extends AbstractContainerMenu {
         return this.blockEntity.getBlockPos();
     }
 
-    public void toggleCurrentMode() {
-        int currentMode = this.getCurrentMode();
-        this.setModeIndex(currentMode == 0 ? 1 : 0);
-    }
-
-    public void setModeIndex(int modeIndex) {
-        syncHelper.setModeIndex(modeIndex);
-    }
-
-    public void saveModeState() {
-        if (blockEntity != null) {
-            blockEntity.markUpdated(); // 確保保存當前模式到世界中
-        }
-    }
-
     public int getCurrentMode() {
-        return syncHelper.getContainerData().get(2); // Mode 是第 3 個註冊欄位 (index 2)
+        return blockEntity.getCurrentMode();
     }
 
     // 建議將這些獲取數據的方法改為直接從 Helper 獲取緩存值
     public int getManaStored() {
-        return syncHelper.getContainerData().get(0);
+        return blockEntity.getManaStorage() != null ? blockEntity.getManaStorage().getManaStored() : 0;
     }
 
     public int getEnergyStored() {
-        return syncHelper.getContainerData().get(1);
+        return blockEntity.getEnergyStorage() != null ? blockEntity.getEnergyStorage().getEnergyStored() : 0;
     }
 
     public int getBurnTime() {
-        return syncHelper.getContainerData().get(3);
+        return blockEntity.getBurnTime();
     }
 
     public int getCurrentBurnTime() {
-        return syncHelper.getContainerData().get(4);
-    }
-
-    public ContainerData getContainerData() {
-        return syncHelper.getContainerData();
+        return blockEntity.getCurrentBurnTime();
     }
 
     // 便利方法，方便Screen獲取數據
 
     public boolean isWorking() {
-        return syncHelper.getContainerData().get(5) != 0;
+        return blockEntity.isWorking();
     }
 
     // 💡 新增 Getter 方法
     public boolean hasDiagnosticDisplay() {
-        return syncHelper.hasDiagnosticDisplay();
+        return blockEntity.hasDiagnosticDisplay();
     }
 
     public int getManaRate() {
-        return syncHelper.getManaRate();
+        return blockEntity.getManaRate();
     }
 
     public int getEnergyRate() {
-        return syncHelper.getEnergyRate();
+        return blockEntity.getEnergyRate();
     }
 
 }

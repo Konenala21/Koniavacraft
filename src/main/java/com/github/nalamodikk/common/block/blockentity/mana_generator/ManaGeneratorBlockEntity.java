@@ -5,16 +5,17 @@
     import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitBlockEntity;
     import com.github.nalamodikk.common.block.blockentity.mana_generator.logic.*;
     import com.github.nalamodikk.common.block.blockentity.mana_generator.recipe.loader.ManaGenFuelRateLoader;
-    import com.github.nalamodikk.common.block.blockentity.mana_generator.sync.ManaGeneratorSyncHelper;
-    import com.github.nalamodikk.common.block.blockentity.manabase.AbstractManaMachineEntityBlock;
-    import com.github.nalamodikk.common.capability.IUnifiedManaHandler;
-    import com.github.nalamodikk.common.capability.ManaStorage;
-    import com.github.nalamodikk.common.compat.energy.ModNeoNalaEnergyStorage;
-    import com.github.nalamodikk.common.coreapi.machine.logic.gen.EnergyGenerationHandler;
-    import com.github.nalamodikk.common.coreapi.machine.logic.gen.FuelManaGenHelper;
-    import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
-    import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
-    import com.github.nalamodikk.common.utils.upgrade.api.IUpgradeableMachine;
+import com.github.nalamodikk.common.block.blockentity.manabase.AbstractManaMachineEntityBlock;
+import com.github.nalamodikk.common.capability.IUnifiedManaHandler;
+import com.github.nalamodikk.common.capability.ManaStorage;
+import com.github.nalamodikk.common.compat.energy.ModNeoNalaEnergyStorage;
+import com.github.nalamodikk.common.coreapi.machine.logic.gen.EnergyGenerationHandler;
+import com.github.nalamodikk.common.coreapi.machine.logic.gen.FuelManaGenHelper;
+import com.github.nalamodikk.common.sync.MachineSyncManager;
+import com.github.nalamodikk.common.sync.annotation.Sync;
+import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
+import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
+import com.github.nalamodikk.common.utils.upgrade.api.IUpgradeableMachine;
     import com.github.nalamodikk.register.ModBlockEntities;
     import com.github.nalamodikk.register.ModCapabilities;
     import net.minecraft.core.BlockPos;
@@ -66,10 +67,9 @@
         private static final int FUEL_SLOT_COUNT = 1;
         private static final int UPGRADE_SLOT_COUNT = 4;
         private static final int DEFAULT_ENERGY_PER_TICK = 40; // 或你想用的預設值
-        // 替代原本的 UnifiedSyncManager syncManager
-        private final ManaGeneratorSyncHelper syncHelper = new ManaGeneratorSyncHelper();
-        private final FuelManaGenHelper manaGenHandler;
-        private final EnergyGenerationHandler energyGenHandler;
+        private final MachineSyncManager syncManager = new MachineSyncManager();
+        private FuelManaGenHelper manaGenHandler;
+        private EnergyGenerationHandler energyGenHandler;
         private final ManaGeneratorTicker ticker = new ManaGeneratorTicker(this);
         private final EnumMap<Direction, IOHandlerUtils.IOType> ioMap = new EnumMap<>(Direction.class);
         private final OutputHandler.OutputThrottleController outputThrottle = new OutputHandler.OutputThrottleController();
@@ -93,18 +93,13 @@
             if (this.level != null) {
                 this.access = ContainerLevelAccess.create(this.level, this.worldPosition);
             }
-            this.manaGenHandler = new FuelManaGenHelper(this.manaStorage, this::getCurrentFuelRate, (amount) -> {});
-
-            this.energyGenHandler = new EnergyGenerationHandler(this.energyStorage, () -> {
-                Optional<ManaGenFuelRateLoader.FuelRate> rate = getCurrentFuelRate();
-                return rate.map(ManaGenFuelRateLoader.FuelRate::getEnergyRate).orElse(DEFAULT_ENERGY_PER_TICK);
-            });
             for (Direction dir : Direction.values()) {
                 ioMap.put(dir, IOHandlerUtils.IOType.DISABLED); // 或從 NBT、DataComponent 還原
             }
 
             // 🔧 設置升級處理器到燃料邏輯
             fuelLogic.setUpgradeHandler(upgradeHandler);
+            syncManager.autoRegister(this);
 
         }
 
@@ -129,12 +124,26 @@
         public static int getMaxMana() {return MAX_MANA;}
         public static int getMaxEnergy() {return MAX_ENERGY;}
         public ManaGeneratorStateManager getStateManager() {return stateManager;}
-        public FuelManaGenHelper getManaGenHandler() {return manaGenHandler;}
-        public EnergyGenerationHandler getEnergyGenHandler() {return energyGenHandler;}
+        public FuelManaGenHelper getManaGenHandler() {
+            if (manaGenHandler == null) {
+                manaGenHandler = new FuelManaGenHelper(this.manaStorage, this::getCurrentFuelRate, (amount) -> {});
+            }
+            return manaGenHandler;
+        }
+
+        public EnergyGenerationHandler getEnergyGenHandler() {
+            if (energyGenHandler == null) {
+                energyGenHandler = new EnergyGenerationHandler(this.energyStorage, () -> {
+                    Optional<ManaGenFuelRateLoader.FuelRate> rate = getCurrentFuelRate();
+                    return rate.map(ManaGenFuelRateLoader.FuelRate::getEnergyRate).orElse(DEFAULT_ENERGY_PER_TICK);
+                });
+            }
+            return energyGenHandler;
+        }
         public ManaStorage getManaStorage() {return manaStorage;}
         public ModNeoNalaEnergyStorage getEnergyStorage() {return energyStorage;}
         private final ManaGeneratorNbtManager nbtManager = new ManaGeneratorNbtManager(this);
-        public ManaGeneratorSyncHelper getSyncHelper() {return syncHelper;}
+        public MachineSyncManager getSyncManager() {return syncManager;}
         private int clientSyncTimer = 0;
         // ✅ 性能優化：從每 0.5 秒改為每 1 秒同步，減少網絡流量
         private static final int CLIENT_SYNC_INTERVAL = 20; // 每20 tick (1秒) 同步一次到客戶端
@@ -282,17 +291,10 @@
 
                     // ✅ 只在有顯著變化時才同步，減少網絡流量
                     if (hasSignificantChanges()) {
-                        // 確保數據最新
-                        syncHelper.syncFrom(this);
+                        syncToClient();
 
-                        // 如果有變化，同步到客戶端
-                        if (syncHelper.hasDirty()) {
-                            syncToClient();
-                            syncHelper.flushSyncState(this);
-
-                            // 更新上次同步的值
-                            updateLastSyncedValues();
-                        }
+                        // 更新上次同步的值
+                        updateLastSyncedValues();
                     }
                 }
             }
@@ -337,15 +339,9 @@
             isSyncing = true;
             try {
                 if (this.level != null && !this.level.isClientSide()) {
-                    // 更新同步數據
-                    syncHelper.syncFrom(this);
-
                     // 立即同步到客戶端
                     super.setChanged();
                     this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
-
-                    // 清除dirty狀態
-                    syncHelper.flushSyncState(this);
                 }
             } finally {
                 isSyncing = false;
@@ -353,7 +349,7 @@
         }
 
         public ContainerData getContainerData() {
-            return syncHelper.getContainerData();
+            return syncManager;
         }
 
         @Override
@@ -368,7 +364,6 @@
             if (stateManager.toggleMode(this.getBurnTime())) {
                 this.setChanged();
                 this.syncToClient();
-                syncHelper.setModeIndex(stateManager.getCurrentModeIndex());
             }
         }
 
@@ -380,8 +375,46 @@
         }
 
 
+        @Sync(readOnly = true)
         public int getCurrentMode() {
             return stateManager.getCurrentModeIndex();
+        }
+
+        @Sync(readOnly = true)
+        public int getBurnTime() {
+            return fuelLogic.getBurnTime();
+        }
+
+        @Sync(readOnly = true)
+        public int getCurrentBurnTime() {
+            return fuelLogic.getCurrentBurnTime();
+        }
+
+        @Sync(readOnly = true)
+        public boolean isWorking() {
+            return stateManager.isWorking();
+        }
+
+        @Sync(readOnly = true)
+        public boolean isPaused() {
+            return fuelLogic.isPaused();
+        }
+
+        @Sync(readOnly = true)
+        public boolean hasDiagnosticDisplay() {
+            return upgradeHandler.hasDiagnosticDisplay();
+        }
+
+        @Sync(readOnly = true)
+        public int getManaRate() {
+            Optional<ManaGenFuelRateLoader.FuelRate> currentRate = getCurrentFuelRate();
+            return currentRate.map(ManaGenFuelRateLoader.FuelRate::getManaRate).orElse(0);
+        }
+
+        @Sync(readOnly = true)
+        public int getEnergyRate() {
+            Optional<ManaGenFuelRateLoader.FuelRate> currentRate = getCurrentFuelRate();
+            return currentRate.map(ManaGenFuelRateLoader.FuelRate::getEnergyRate).orElse(0);
         }
 
 
@@ -489,19 +522,6 @@
             return this;
         }
 
-        public int getBurnTime() {
-            return fuelLogic.getBurnTime();
-        }
-
-        public int getCurrentBurnTime() {
-            return fuelLogic.getCurrentBurnTime();
-        }
-
-        public boolean isWorking() {
-            return stateManager.isWorking();
-        }
-
-
         public static <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockEntityType<T> type) {
             return (lvl, pos, state, blockEntity) -> {
                 if (blockEntity instanceof ManaGeneratorBlockEntity entity) {
@@ -608,11 +628,6 @@
         @Override
         public void setChanged() {
             super.setChanged();
-
-            // 立即更新同步數據
-            if (level != null && !level.isClientSide && !isSyncing) {
-                syncHelper.syncFrom(this);
-            }
         }
 
     }

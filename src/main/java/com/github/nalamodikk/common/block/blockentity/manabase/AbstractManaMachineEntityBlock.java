@@ -38,12 +38,12 @@ public abstract class AbstractManaMachineEntityBlock extends BlockEntity impleme
     private static final int MAX_MANA = 200000;
 
     @Nullable
-    @Sync
+    @Sync(readOnly = true)
     protected final  ManaStorage manaStorage;
 
     /** 能量儲存（可選） */
     @Nullable
-    @Sync
+    @Sync(readOnly = true)
     protected final ModNeoNalaEnergyStorage energyStorage;
 
     /** 物品儲存槽（可選） */
@@ -62,11 +62,11 @@ public abstract class AbstractManaMachineEntityBlock extends BlockEntity impleme
     protected int manaPerCycle;
 
     /** 當前進度 */
-    @Sync
+    @Sync(readOnly = true)
     protected int progress = 0;
 
     /** 所需最大進度 */
-    @Sync
+    @Sync(readOnly = true)
     protected int maxProgress = 100;
 
     /** 每 tick 所需能量（如需支援能耗） */

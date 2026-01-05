@@ -4,6 +4,8 @@ import com.github.nalamodikk.common.capability.ManaStorage;
 import com.github.nalamodikk.common.compat.energy.ModNeoNalaEnergyStorage;
 import com.github.nalamodikk.common.sync.annotation.Sync;
 import net.minecraft.world.inventory.ContainerData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -12,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -24,7 +27,7 @@ import java.util.function.Supplier;
  * sync.autoRegister(this); // 自動掃描標有 @Sync 的欄位與方法
  */
 public class MachineSyncManager implements ContainerData {
-    
+    private static final Logger LOGGER = LoggerFactory.getLogger(MachineSyncManager.class);
     private static final Map<Class<?>, List<Field>> FIELD_CACHE = new ConcurrentHashMap<>();
     private static final Map<Class<?>, List<Method>> METHOD_CACHE = new ConcurrentHashMap<>();
     private final List<ISyncableData> syncables = new ArrayList<>();
@@ -90,6 +93,8 @@ public class MachineSyncManager implements ContainerData {
 
     private void registerMethod(Object provider, Method m) {
         Class<?> returnType = m.getReturnType();
+        Sync sync = m.getAnnotation(Sync.class);
+        boolean readOnly = sync != null && sync.readOnly();
         
         // 嘗試尋找對應的 Setter
         String name = m.getName();
@@ -97,11 +102,17 @@ public class MachineSyncManager implements ContainerData {
             String baseName = name.startsWith("get") ? name.substring(3) : name.substring(2);
             String setterName = "set" + baseName;
             try {
-                Method setter = provider.getClass().getMethod(setterName, returnType);
-                setter.setAccessible(true);
-                bindMethod(provider, m, setter, returnType);
-                return;
-            } catch (NoSuchMethodException ignored) {}
+                if (!readOnly) {
+                    Method setter = provider.getClass().getMethod(setterName, returnType);
+                    setter.setAccessible(true);
+                    bindMethod(provider, m, setter, returnType);
+                    return;
+                }
+            } catch (NoSuchMethodException ignored) {
+                if (!readOnly) {
+                    LOGGER.warn("找不到同步 Setter：{}.{}({})", provider.getClass().getSimpleName(), setterName, returnType.getSimpleName());
+                }
+            }
         }
 
         // 沒找到 Setter 則作為唯讀
@@ -109,23 +120,55 @@ public class MachineSyncManager implements ContainerData {
     }
 
     private void bindMethod(Object provider, Method getter, Method setter, Class<?> type) {
+        AtomicBoolean warned = new AtomicBoolean(false);
         if (type == int.class || type == Integer.class) {
             trackInt(() -> {
-                try { return (Integer) getter.invoke(provider); } catch (Exception e) { return 0; }
+                try { return (Integer) getter.invoke(provider); } catch (Exception e) { logInvokeFailureOnce(warned, getter, e); return 0; }
             }, v -> {
-                if (setter != null) try { setter.invoke(provider, v); } catch (Exception ignored) {}
+                if (setter != null) try { setter.invoke(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, setter, e); }
             });
         } else if (type == boolean.class || type == Boolean.class) {
             trackBoolean(() -> {
-                try { return (Boolean) getter.invoke(provider); } catch (Exception e) { return false; }
+                try { return (Boolean) getter.invoke(provider); } catch (Exception e) { logInvokeFailureOnce(warned, getter, e); return false; }
             }, v -> {
-                if (setter != null) try { setter.invoke(provider, v); } catch (Exception ignored) {}
+                if (setter != null) try { setter.invoke(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, setter, e); }
+            });
+        } else if (type == float.class || type == Float.class) {
+            trackFloat(() -> {
+                try { return (Float) getter.invoke(provider); } catch (Exception e) { logInvokeFailureOnce(warned, getter, e); return 0f; }
+            }, v -> {
+                if (setter != null) try { setter.invoke(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, setter, e); }
+            });
+        } else if (type == long.class || type == Long.class) {
+            trackLong(() -> {
+                try { return (Long) getter.invoke(provider); } catch (Exception e) { logInvokeFailureOnce(warned, getter, e); return 0L; }
+            }, v -> {
+                if (setter != null) try { setter.invoke(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, setter, e); }
+            });
+        } else if (type.isEnum()) {
+            Object[] constants = type.getEnumConstants();
+            trackInt(() -> {
+                try {
+                    Object val = getter.invoke(provider);
+                    return val instanceof Enum<?> e ? e.ordinal() : 0;
+                } catch (Exception e) { logInvokeFailureOnce(warned, getter, e); return 0; }
+            }, v -> {
+                if (setter != null) {
+                    try {
+                        if (v >= 0 && v < constants.length) {
+                            setter.invoke(provider, constants[v]);
+                        }
+                    } catch (Exception e) { logInvokeFailureOnce(warned, setter, e); }
+                }
             });
         }
     }
 
     private void registerField(Object provider, Field f) {
         Class<?> type = f.getType();
+        Sync sync = f.getAnnotation(Sync.class);
+        boolean readOnly = sync != null && sync.readOnly();
+        AtomicBoolean warned = new AtomicBoolean(false);
         
         try {
             Object value = f.get(provider);
@@ -133,27 +176,27 @@ public class MachineSyncManager implements ContainerData {
 
             if (type == int.class || type == Integer.class) {
                 trackInt(() -> {
-                    try { return f.getInt(provider); } catch (Exception e) { return 0; }
+                    try { return f.getInt(provider); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); return 0; }
                 }, v -> {
-                    try { f.set(provider, v); } catch (Exception e) {}
+                    if (!readOnly) try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
                 });
             } else if (type == boolean.class || type == Boolean.class) {
                 trackBoolean(() -> {
-                    try { return f.getBoolean(provider); } catch (Exception e) { return false; }
+                    try { return f.getBoolean(provider); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); return false; }
                 }, v -> {
-                    try { f.set(provider, v); } catch (Exception e) {}
+                    if (!readOnly) try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
                 });
             } else if (type == float.class || type == Float.class) {
                 trackFloat(() -> {
-                    try { return f.getFloat(provider); } catch (Exception e) { return 0f; }
+                    try { return f.getFloat(provider); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); return 0f; }
                 }, v -> {
-                    try { f.set(provider, v); } catch (Exception e) {}
+                    if (!readOnly) try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
                 });
             } else if (type == long.class || type == Long.class) {
                 trackLong(() -> {
-                    try { return f.getLong(provider); } catch (Exception e) { return 0L; }
+                    try { return f.getLong(provider); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); return 0L; }
                 }, v -> {
-                    try { f.set(provider, v); } catch (Exception e) {}
+                    if (!readOnly) try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
                 });
             } else if (type.isEnum()) {
                 Object[] constants = type.getEnumConstants();
@@ -161,25 +204,27 @@ public class MachineSyncManager implements ContainerData {
                     try {
                         Object val = f.get(provider);
                         return val instanceof Enum<?> e ? e.ordinal() : 0;
-                    } catch (Exception e) { return 0; }
+                    } catch (Exception e) { logInvokeFailureOnce(warned, f, e); return 0; }
                 }, v -> {
-                    try {
-                        if (v >= 0 && v < constants.length) {
-                            f.set(provider, constants[v]);
-                        }
-                    } catch (Exception e) {}
+                    if (!readOnly) {
+                        try {
+                            if (v >= 0 && v < constants.length) {
+                                f.set(provider, constants[v]);
+                            }
+                        } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
+                    }
                 });
             } else if (type == ManaStorage.class) {
                 ManaStorage storage = (ManaStorage) value;
-                trackInt(storage::getManaStored, storage::setMana);
-                trackInt(storage::getMaxManaStored, storage::setCapacity);
+                trackInt(storage::getManaStored, readOnly ? null : storage::setMana);
+                trackInt(storage::getMaxManaStored, readOnly ? null : storage::setCapacity);
             } else if (type == ModNeoNalaEnergyStorage.class) {
                 ModNeoNalaEnergyStorage storage = (ModNeoNalaEnergyStorage) value;
-                trackInt(storage::getEnergyStored, v -> storage.setEnergyStored(BigInteger.valueOf(v)));
-                trackInt(storage::getMaxEnergyStored, v -> {});
+                trackInt(storage::getEnergyStored, readOnly ? null : v -> storage.setEnergyStored(BigInteger.valueOf(v)));
+                trackInt(storage::getMaxEnergyStored, null);
             }
         } catch (IllegalAccessException e) {
-            // Should not happen
+            LOGGER.error("同步欄位註冊失敗：{}.{}", provider.getClass().getSimpleName(), f.getName(), e);
         }
     }
 
@@ -283,6 +328,7 @@ public class MachineSyncManager implements ContainerData {
 
         @Override public int get(int i) { return getter.get(); }
         @Override public void set(int i, int v) { 
+            if (setter == null) return;
             if (getter.get() != v) {
                 setter.accept(v); 
                 manager.markDirty(true);
@@ -307,6 +353,7 @@ public class MachineSyncManager implements ContainerData {
 
         @Override public int get(int i) { return getter.get() ? 1 : 0; }
         @Override public void set(int i, int v) { 
+            if (setter == null) return;
             boolean newVal = v != 0;
             if (getter.get() != newVal) {
                 setter.accept(newVal); 
@@ -332,6 +379,7 @@ public class MachineSyncManager implements ContainerData {
 
         @Override public int get(int i) { return Float.floatToIntBits(getter.get()); }
         @Override public void set(int i, int v) { 
+            if (setter == null) return;
             float newVal = Float.intBitsToFloat(v);
             if (Math.abs(getter.get() - newVal) > 0.0001f) {
                 setter.accept(newVal);
@@ -364,6 +412,7 @@ public class MachineSyncManager implements ContainerData {
         
         @Override 
         public void set(int i, int v) { 
+            if (setter == null) return;
             long current = getter.get();
             long newVal = current;
             if (i == 0) {
@@ -383,6 +432,13 @@ public class MachineSyncManager implements ContainerData {
         
         @Override public int getStartIndex() { return startIndex; }
         @Override public int getSize() { return 2; }
+    }
+
+    private static void logInvokeFailureOnce(AtomicBoolean warned, Object member, Exception e) {
+        if (warned.compareAndSet(false, true)) {
+            String name = member instanceof Method m ? m.getName() : member instanceof Field f ? f.getName() : member.toString();
+            LOGGER.error("同步反射失敗：{}", name, e);
+        }
     }
 
     @Deprecated

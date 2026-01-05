@@ -17,4 +17,9 @@ public @interface Sync {
      * 選擇性：指定在同步管理器中的標籤名稱（目前僅作註解使用）。
      */
     String value() default "";
+
+    /**
+     * 是否為唯讀同步欄位（客戶端不允許回寫）。
+     */
+    boolean readOnly() default false;
 }
