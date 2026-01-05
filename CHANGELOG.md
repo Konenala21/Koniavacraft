@@ -23,6 +23,7 @@ All notable changes to this project will be documented in this file.
 - Prevented duplicate payload registration by skipping server-side networking registration on client.
 - Registered SyncRPGDataPacket on the server to avoid missing payload types.
 - Hid the mana crafting table mana bar background to avoid overlapping the GUI frame.
+- Hid the mana infuser mana bar background to avoid overlapping the GUI frame.
 
 ## [0.0.1.5 Preview] - 2026-01-04
 ### Changed

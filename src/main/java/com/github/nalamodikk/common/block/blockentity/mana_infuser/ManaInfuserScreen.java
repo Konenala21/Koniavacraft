@@ -29,7 +29,8 @@ public class ManaInfuserScreen extends AutoSizedModularScreen<ManaInfuserMenu> {
     protected void buildGui(Panel root) {
         // 1. 魔力條 (9, 17) - 10x48
         root.add(new ManaBarWidget(9, 17, menu::getCurrentMana, menu::getMaxMana)
-                .setSize(10, 48)); // 根據原版代碼調整大小
+                .setSize(10, 48)
+                .setDrawBackground(false)); // 根據原版代碼調整大小
 
         // 2. 進度條 (72, 40) - 34x11 (往下延伸兩格像素)
         // 使用匿名 Widget 直接繪製大圖上的進度條
