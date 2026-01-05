@@ -3,6 +3,8 @@ package com.github.nalamodikk.common.sync;
 import com.github.nalamodikk.common.capability.ManaStorage;
 import com.github.nalamodikk.common.compat.energy.ModNeoNalaEnergyStorage;
 import com.github.nalamodikk.common.sync.annotation.Sync;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.world.inventory.ContainerData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -135,18 +137,24 @@ public class MachineSyncManager implements ContainerData {
 
     private void registerMethod(Object provider, Method m) {
         Class<?> returnType = m.getReturnType();
+        Sync sync = m.getAnnotation(Sync.class);
+        boolean readOnly = sync != null && sync.readOnly();
         // 嘗試尋找對應的 Setter
         String name = m.getName();
         if (name.startsWith("get") || name.startsWith("is")) {
             String baseName = name.startsWith("get") ? name.substring(3) : name.substring(2);
             String setterName = "set" + baseName;
             try {
-                Method setter = provider.getClass().getMethod(setterName, returnType);
-                setter.setAccessible(true);
-                bindMethod(provider, m, setter, returnType);
-                return;
+                if (!readOnly) {
+                    Method setter = provider.getClass().getMethod(setterName, returnType);
+                    setter.setAccessible(true);
+                    bindMethod(provider, m, setter, returnType);
+                    return;
+                }
             } catch (NoSuchMethodException ignored) {
-                LOGGER.warn("找不到同步 Setter：{}.{}({})", provider.getClass().getSimpleName(), setterName, returnType.getSimpleName());
+                if (!readOnly) {
+                    LOGGER.warn("找不到同步 Setter：{}.{}({})", provider.getClass().getSimpleName(), setterName, returnType.getSimpleName());
+                }
             }
         }
 
@@ -207,12 +215,31 @@ public class MachineSyncManager implements ContainerData {
             }, v -> {
                 if (setter != null) try { setter.invoke(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, setter, e); }
             }, maxLength);
+        } else if (type == CompoundTag.class) {
+            int maxLength = 256;
+            Sync sync = getter.getAnnotation(Sync.class);
+            if (sync != null) {
+                maxLength = Math.max(0, sync.maxLength());
+            }
+            trackString(() -> {
+                try {
+                    CompoundTag tag = (CompoundTag) getter.invoke(provider);
+                    return tag != null ? tag.toString() : "";
+                } catch (Exception e) { logInvokeFailureOnce(warned, getter, e); return ""; }
+            }, v -> {
+                if (setter == null) return;
+                try {
+                    CompoundTag parsed = v.isEmpty() ? new CompoundTag() : TagParser.parseTag(v);
+                    setter.invoke(provider, parsed);
+                } catch (Exception e) { logInvokeFailureOnce(warned, setter, e); }
+            }, maxLength);
         }
     }
 
     private void registerField(Object provider, Field f) {
         Class<?> type = f.getType();
         Sync sync = f.getAnnotation(Sync.class);
+        boolean readOnly = sync != null && sync.readOnly();
         AtomicBoolean warned = new AtomicBoolean(false);
         
         try {
@@ -223,25 +250,25 @@ public class MachineSyncManager implements ContainerData {
                 trackInt(() -> {
                     try { return f.getInt(provider); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); return 0; }
                 }, v -> {
-                    try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
+                    if (!readOnly) try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
                 });
             } else if (type == boolean.class || type == Boolean.class) {
                 trackBoolean(() -> {
                     try { return f.getBoolean(provider); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); return false; }
                 }, v -> {
-                    try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
+                    if (!readOnly) try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
                 });
             } else if (type == float.class || type == Float.class) {
                 trackFloat(() -> {
                     try { return f.getFloat(provider); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); return 0f; }
                 }, v -> {
-                    try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
+                    if (!readOnly) try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
                 });
             } else if (type == long.class || type == Long.class) {
                 trackLong(() -> {
                     try { return f.getLong(provider); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); return 0L; }
                 }, v -> {
-                    try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
+                    if (!readOnly) try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
                 });
             } else if (type.isEnum()) {
                 Object[] constants = type.getEnumConstants();
@@ -251,19 +278,21 @@ public class MachineSyncManager implements ContainerData {
                         return val instanceof Enum<?> e ? e.ordinal() : 0;
                     } catch (Exception e) { logInvokeFailureOnce(warned, f, e); return 0; }
                 }, v -> {
-                    try {
-                        if (v >= 0 && v < constants.length) {
-                            f.set(provider, constants[v]);
-                        }
-                    } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
+                    if (!readOnly) {
+                        try {
+                            if (v >= 0 && v < constants.length) {
+                                f.set(provider, constants[v]);
+                            }
+                        } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
+                    }
                 });
             } else if (type == ManaStorage.class) {
                 ManaStorage storage = (ManaStorage) value;
-                trackInt(storage::getManaStored, storage::setMana);
-                trackInt(storage::getMaxManaStored, storage::setCapacity);
+                trackInt(storage::getManaStored, readOnly ? null : storage::setMana);
+                trackInt(storage::getMaxManaStored, readOnly ? null : storage::setCapacity);
             } else if (type == ModNeoNalaEnergyStorage.class) {
                 ModNeoNalaEnergyStorage storage = (ModNeoNalaEnergyStorage) value;
-                trackInt(storage::getEnergyStored, v -> storage.setEnergyStored(BigInteger.valueOf(v)));
+                trackInt(storage::getEnergyStored, readOnly ? null : v -> storage.setEnergyStored(BigInteger.valueOf(v)));
                 trackInt(storage::getMaxEnergyStored, null);
             } else if (type == String.class) {
                 int maxLength = sync != null ? Math.max(0, sync.maxLength()) : 64;
@@ -273,7 +302,21 @@ public class MachineSyncManager implements ContainerData {
                         return val != null ? val.toString() : "";
                     } catch (Exception e) { logInvokeFailureOnce(warned, f, e); return ""; }
                 }, v -> {
-                    try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
+                    if (!readOnly) try { f.set(provider, v); } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
+                }, maxLength);
+            } else if (type == CompoundTag.class) {
+                int maxLength = sync != null ? Math.max(0, sync.maxLength()) : 256;
+                trackString(() -> {
+                    try {
+                        CompoundTag tag = (CompoundTag) f.get(provider);
+                        return tag != null ? tag.toString() : "";
+                    } catch (Exception e) { logInvokeFailureOnce(warned, f, e); return ""; }
+                }, v -> {
+                    if (readOnly) return;
+                    try {
+                        CompoundTag parsed = v.isEmpty() ? new CompoundTag() : TagParser.parseTag(v);
+                        f.set(provider, parsed);
+                    } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
                 }, maxLength);
             }
         } catch (IllegalAccessException e) {
