@@ -72,6 +72,11 @@ public record SyncRPGDataPacket(
         }));
     }
 
+    // ✅ 伺服器端註冊用（避免載入 client-only 類別）
+    public static void registerToServer(PayloadRegistrar registrar) {
+        registrar.playToClient(TYPE, STREAM_CODEC, (packet, context) -> {});
+    }
+
     public static void sendToPlayer(ServerPlayer player) {
         if (player == null || !player.hasData(ModDataAttachments.PLAYER_RPG_DATA.get())) return;
         PlayerRPGData data = player.getData(ModDataAttachments.PLAYER_RPG_DATA.get());

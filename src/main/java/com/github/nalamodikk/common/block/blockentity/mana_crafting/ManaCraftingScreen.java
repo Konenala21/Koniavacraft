@@ -26,7 +26,7 @@ public class ManaCraftingScreen extends AutoSizedModularScreen<ManaCraftingMenu>
         root.add(new ManaBarWidget(11, 19,
             menu::getManaStored,
             () -> ManaCraftingTableBlockEntity.MAX_MANA
-        ).setSize(7, 47));
+        ).setSize(7, 47).setDrawBackground(false));
     }
 
     // ✨ v2: renderBg 完全刪除，AutoSizedModularScreen 會自動處理
