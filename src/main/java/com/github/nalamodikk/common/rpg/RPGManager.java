@@ -3,8 +3,10 @@ package com.github.nalamodikk.common.rpg;
 import com.github.nalamodikk.common.rpg.data.PlayerRPGData;
 import com.github.nalamodikk.common.rpg.skill.PlayerSkillData;
 import com.github.nalamodikk.common.rpg.skill.SkillRegistry;
+import com.github.nalamodikk.common.network.packet.server.rpg.SyncRPGDataPacket;
 import com.github.nalamodikk.register.ModDataAttachments;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.server.level.ServerPlayer;
 
 /**
  * 🎮 RPG 系統管理器
@@ -54,7 +56,9 @@ public class RPGManager {
             onPlayerLevelUp(player, data);
         }
 
-        // TODO: 同步到客戶端
+        if (player instanceof ServerPlayer serverPlayer) {
+            SyncRPGDataPacket.sendToPlayer(serverPlayer);
+        }
         return leveledUp;
     }
 
@@ -83,7 +87,9 @@ public class RPGManager {
         boolean success = data.allocateAttributePoint(attributeName, amount);
 
         if (success) {
-            // TODO: 同步到客戶端
+            if (player instanceof ServerPlayer serverPlayer) {
+                SyncRPGDataPacket.sendToPlayer(serverPlayer);
+            }
             // TODO: 更新玩家屬性 (生命值、魔力等)
         }
 
