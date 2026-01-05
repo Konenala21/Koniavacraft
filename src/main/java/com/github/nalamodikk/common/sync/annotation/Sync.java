@@ -27,4 +27,9 @@ public @interface Sync {
      * String 同步用的最大長度（僅 String 類型使用）。
      */
     int maxLength() default 64;
+
+    /**
+     * CompoundTag 同步用的白名單 key（空陣列代表不限制）。
+     */
+    String[] allowedKeys() default {};
 }

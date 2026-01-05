@@ -133,13 +133,13 @@ public class TestCommand {
             result.total++;
             result.passed++;
 
-            // 2. 測試 SyncHelper
-            if (generator.getSyncHelper() != null) {
-                player.sendSystemMessage(Component.literal("  §a✅ SyncHelper 初始化成功"));
+            // 2. 測試同步管理器
+            if (generator.getSyncManager() != null) {
+                player.sendSystemMessage(Component.literal("  §a✅ 同步管理器初始化成功"));
                 result.total++;
                 result.passed++;
             } else {
-                player.sendSystemMessage(Component.literal("  §c❌ SyncHelper 為 null"));
+                player.sendSystemMessage(Component.literal("  §c❌ 同步管理器為 null"));
                 result.total++;
             }
 
@@ -158,8 +158,8 @@ public class TestCommand {
             }
 
             // 4. 測試數據同步
-            generator.getSyncHelper().syncFrom(generator);
-            int syncedMode = generator.getSyncHelper().getContainerData().get(2); // mode 在索引 2
+            generator.getSyncManager().refreshDirty();
+            int syncedMode = generator.getCurrentMode();
 
             if (syncedMode == newMode) {
                 player.sendSystemMessage(Component.literal("  §a✅ 數據同步正確"));

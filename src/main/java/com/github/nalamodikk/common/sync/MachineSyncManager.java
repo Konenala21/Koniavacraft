@@ -4,6 +4,7 @@ import com.github.nalamodikk.common.capability.ManaStorage;
 import com.github.nalamodikk.common.compat.energy.ModNeoNalaEnergyStorage;
 import com.github.nalamodikk.common.sync.annotation.Sync;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.world.inventory.ContainerData;
 import org.slf4j.Logger;
@@ -217,22 +218,28 @@ public class MachineSyncManager implements ContainerData {
             }, maxLength);
         } else if (type == CompoundTag.class) {
             int maxLength = 256;
+            String[] allowedKeys = new String[0];
             Sync sync = getter.getAnnotation(Sync.class);
             if (sync != null) {
                 maxLength = Math.max(0, sync.maxLength());
+                allowedKeys = sync.allowedKeys();
             }
+            final int finalMaxLength = maxLength;
+            final String[] finalAllowedKeys = allowedKeys;
             trackString(() -> {
                 try {
                     CompoundTag tag = (CompoundTag) getter.invoke(provider);
-                    return tag != null ? tag.toString() : "";
+                    CompoundTag filtered = filterCompoundTag(tag, finalAllowedKeys);
+                    return filtered != null ? filtered.toString() : "";
                 } catch (Exception e) { logInvokeFailureOnce(warned, getter, e); return ""; }
             }, v -> {
                 if (setter == null) return;
                 try {
                     CompoundTag parsed = v.isEmpty() ? new CompoundTag() : TagParser.parseTag(v);
-                    setter.invoke(provider, parsed);
+                    CompoundTag filtered = filterCompoundTag(parsed, finalAllowedKeys);
+                    setter.invoke(provider, filtered);
                 } catch (Exception e) { logInvokeFailureOnce(warned, setter, e); }
-            }, maxLength);
+            }, finalMaxLength);
         }
     }
 
@@ -306,18 +313,23 @@ public class MachineSyncManager implements ContainerData {
                 }, maxLength);
             } else if (type == CompoundTag.class) {
                 int maxLength = sync != null ? Math.max(0, sync.maxLength()) : 256;
+                String[] allowedKeys = sync != null ? sync.allowedKeys() : new String[0];
+                final int finalMaxLength = maxLength;
+                final String[] finalAllowedKeys = allowedKeys;
                 trackString(() -> {
                     try {
                         CompoundTag tag = (CompoundTag) f.get(provider);
-                        return tag != null ? tag.toString() : "";
+                        CompoundTag filtered = filterCompoundTag(tag, finalAllowedKeys);
+                        return filtered != null ? filtered.toString() : "";
                     } catch (Exception e) { logInvokeFailureOnce(warned, f, e); return ""; }
                 }, v -> {
                     if (readOnly) return;
                     try {
                         CompoundTag parsed = v.isEmpty() ? new CompoundTag() : TagParser.parseTag(v);
-                        f.set(provider, parsed);
+                        CompoundTag filtered = filterCompoundTag(parsed, finalAllowedKeys);
+                        f.set(provider, filtered);
                     } catch (Exception e) { logInvokeFailureOnce(warned, f, e); }
-                }, maxLength);
+                }, finalMaxLength);
             }
         } catch (IllegalAccessException e) {
             LOGGER.error("同步欄位註冊失敗：{}.{}", provider.getClass().getSimpleName(), f.getName(), e);
@@ -602,6 +614,25 @@ public class MachineSyncManager implements ContainerData {
             String name = member instanceof Method m ? m.getName() : member instanceof Field f ? f.getName() : member.toString();
             LOGGER.error("同步反射失敗：{}", name, e);
         }
+    }
+
+    private static CompoundTag filterCompoundTag(CompoundTag tag, String[] allowedKeys) {
+        if (tag == null) {
+            return new CompoundTag();
+        }
+        if (allowedKeys == null || allowedKeys.length == 0) {
+            return tag;
+        }
+        CompoundTag filtered = new CompoundTag();
+        for (String key : allowedKeys) {
+            if (tag.contains(key)) {
+                Tag value = tag.get(key);
+                if (value != null) {
+                    filtered.put(key, value.copy());
+                }
+            }
+        }
+        return filtered;
     }
 
     @Deprecated
