@@ -123,6 +123,16 @@ public class RPGManager {
     }
 
     /**
+     * 🏭 計算機器產能加成倍率
+     */
+    public static float getMachineGenerationMultiplier(Player player) {
+        PlayerRPGData data = getPlayerData(player);
+        if (data == null) return 1.0f;
+
+        return data.getAttributes().getMachineGenerationMultiplier();
+    }
+
+    /**
      * 🕐 計算技能實際冷卻時間
      *
      * @param player 玩家

@@ -9,6 +9,7 @@ import com.github.nalamodikk.narasystem.nara.util.NaraHelper;
 import com.github.nalamodikk.register.ModDataAttachments;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.NonNullList;
+import net.minecraft.gametest.framework.GameTestServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -38,6 +39,11 @@ public class PlayerLoginEvent {
 
         // 同步 RPG 資料到客戶端
         SyncRPGDataPacket.sendToPlayer(player);
+
+        if (player.getServer() instanceof GameTestServer) {
+            LOGGER.debug("GameTest 伺服器登入，略過娜拉系統封包: {}", player.getGameProfile().getName());
+            return;
+        }
 
         // ===== 動畫相關邏輯（這部分可以被設定關閉） =====
         // ✅ 若關閉登入動畫，不執行動畫相關封包

@@ -51,8 +51,8 @@ import com.github.nalamodikk.common.utils.upgrade.api.IUpgradeableMachine;
     import org.slf4j.Logger;
     import org.slf4j.LoggerFactory;
 
-    import java.util.EnumMap;
-    import java.util.Optional;
+import java.util.EnumMap;
+import java.util.Optional;
 
     public class ManaGeneratorBlockEntity extends AbstractManaMachineEntityBlock implements Container, WorldlyContainer, IUpgradeableMachine {
 
@@ -127,7 +127,7 @@ import com.github.nalamodikk.common.utils.upgrade.api.IUpgradeableMachine;
         public ManaGeneratorStateManager getStateManager() {return stateManager;}
         public FuelManaGenHelper getManaGenHandler() {
             if (manaGenHandler == null) {
-                manaGenHandler = new FuelManaGenHelper(this.manaStorage, this::getCurrentFuelRate, (amount) -> {});
+                manaGenHandler = new FuelManaGenHelper(this.manaStorage, this::getCurrentFuelRate, this::getOwnerGenerationMultiplier, (amount) -> {});
             }
             return manaGenHandler;
         }
@@ -136,7 +136,8 @@ import com.github.nalamodikk.common.utils.upgrade.api.IUpgradeableMachine;
             if (energyGenHandler == null) {
                 energyGenHandler = new EnergyGenerationHandler(this.energyStorage, () -> {
                     Optional<ManaGenFuelRateLoader.FuelRate> rate = getCurrentFuelRate();
-                    return rate.map(ManaGenFuelRateLoader.FuelRate::getEnergyRate).orElse(DEFAULT_ENERGY_PER_TICK);
+                    int baseRate = rate.map(ManaGenFuelRateLoader.FuelRate::getEnergyRate).orElse(DEFAULT_ENERGY_PER_TICK);
+                    return scaleByOwner(baseRate);
                 });
             }
             return energyGenHandler;

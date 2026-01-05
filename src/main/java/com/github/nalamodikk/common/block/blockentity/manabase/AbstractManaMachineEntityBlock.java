@@ -4,11 +4,13 @@ import com.github.nalamodikk.common.sync.annotation.Sync;
 import com.github.nalamodikk.common.capability.ManaStorage;
 import com.github.nalamodikk.common.compat.energy.ModNeoNalaEnergyStorage;
 import com.github.nalamodikk.common.coreapi.block.IConfigurableBlock;
+import com.github.nalamodikk.common.rpg.RPGManager;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -25,6 +27,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.math.BigInteger;
+import java.util.UUID;
 
 /**
  * 機器方塊實體的抽象基底類別。
@@ -80,6 +83,8 @@ public abstract class AbstractManaMachineEntityBlock extends BlockEntity impleme
 
     /** 最大存儲能量*/
     protected final int maxEnergy;
+    @Nullable
+    protected UUID ownerId;
 
     /**
      * 建構子
@@ -114,6 +119,34 @@ public abstract class AbstractManaMachineEntityBlock extends BlockEntity impleme
     public @Nullable ItemStackHandler getItemHandler() { return itemHandler; }
     public @Nullable FluidTank getFluidTank() { return fluidTank; }
     public int getMaxEnergyCapacity() {return maxEnergy;}
+    public void setOwnerId(@Nullable UUID ownerId) { this.ownerId = ownerId; }
+    public @Nullable UUID getOwnerId() { return ownerId; }
+    public float getOwnerGenerationMultiplier() {
+        if (!(level instanceof ServerLevel serverLevel) || ownerId == null) {
+            return 1.0f;
+        }
+
+        Player owner = serverLevel.getPlayerByUUID(ownerId);
+        if (owner == null) {
+            return 1.0f;
+        }
+
+        return RPGManager.getMachineGenerationMultiplier(owner);
+    }
+
+    protected int scaleByOwner(int base) {
+        if (base <= 0) {
+            return 0;
+        }
+        return Math.max(0, Math.round(base * getOwnerGenerationMultiplier()));
+    }
+
+    protected int scaleProgressByOwner(int base) {
+        if (base <= 0) {
+            return 0;
+        }
+        return Math.max(1, Math.round(base * getOwnerGenerationMultiplier()));
+    }
 
     /**
      * 建立物品槽，可由子類覆寫。
@@ -250,6 +283,9 @@ public abstract class AbstractManaMachineEntityBlock extends BlockEntity impleme
         tag.putInt("ManaPerCycle", manaPerCycle);
         tag.putInt("EnergyPerTick", energyPerTick);
         tag.putInt("IntervalTick", intervalTick);
+        if (ownerId != null) {
+            tag.putUUID("Owner", ownerId);
+        }
 
         // 🔍 調試日誌
 
@@ -290,6 +326,9 @@ public abstract class AbstractManaMachineEntityBlock extends BlockEntity impleme
         manaPerCycle = tag.getInt("ManaPerCycle");
         energyPerTick = tag.getInt("EnergyPerTick");
         intervalTick = tag.getInt("IntervalTick");
+        if (tag.hasUUID("Owner")) {
+            ownerId = tag.getUUID("Owner");
+        }
 
         // 確保值的有效性
         if (maxProgress <= 0) maxProgress = 100;

@@ -27,6 +27,7 @@ public class PlayerAttributes {
     // 智力效果
     private static final float INTELLIGENCE_MAGIC_DAMAGE_PER_POINT = 0.02f; // 2% per point
     private static final int INTELLIGENCE_MANA_PER_POINT = 10; // 10 mana per point
+    private static final float INTELLIGENCE_MACHINE_GEN_PER_POINT = 0.01f; // 1% per point
 
     // 敏捷效果
     private static final float AGILITY_ATTACK_SPEED_PER_POINT = 0.01f; // 1% per point
@@ -83,6 +84,14 @@ public class PlayerAttributes {
      */
     public int getMaxMana(int baseMana) {
         return baseMana + (intelligence * INTELLIGENCE_MANA_PER_POINT);
+    }
+
+    /**
+     * 🏭 計算機器產能加成
+     * @return 產能倍率 (1.0 = 100%)
+     */
+    public float getMachineGenerationMultiplier() {
+        return 1.0f + (intelligence * INTELLIGENCE_MACHINE_GEN_PER_POINT);
     }
 
     /**

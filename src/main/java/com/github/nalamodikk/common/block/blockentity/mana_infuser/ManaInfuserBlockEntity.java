@@ -146,7 +146,7 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock {
         }
         if (!wasWorking) updateBlockWorkingState(true);
 
-        progress++;
+        progress += scaleProgressByOwner(1);
         if (progress >= maxProgress) {
             completeInfusion();
             progress = 0;

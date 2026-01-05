@@ -210,7 +210,7 @@
 
         // 🎯 執行實際的魔力生成
         private void performManaGeneration() {
-            int amount = upgradeManager.getUpgradedOutput();
+            int amount = scaleByOwner(upgradeManager.getUpgradedOutput());
             int inserted = manaStorage.insertMana(amount, ManaAction.EXECUTE);
 
             if (inserted > 0 && level instanceof ServerLevel server) {

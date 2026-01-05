@@ -18,6 +18,8 @@ All notable changes to this project will be documented in this file.
 - Added a key mapping for solar collector debug details and used the key's translation in the tooltip hint.
 - Standardized debug detail key mapping and registered it on the client mod event bus.
 - Cached combined ecosystem surface rules to reduce regeneration overhead during worldgen.
+- Mana machines now record the placing player as owner in the base block.
+- Mana generator, solar collector, ore grinder, and mana infuser now scale output or speed with the owner's RPG intelligence.
 
 ## [0.0.1.5 Preview] - 2026-01-04
 ### Changed

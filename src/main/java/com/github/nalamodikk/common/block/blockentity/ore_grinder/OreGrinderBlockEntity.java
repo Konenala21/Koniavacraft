@@ -141,10 +141,12 @@ public class OreGrinderBlockEntity extends AbstractManaMachineEntityBlock {
         // 3. 嘗試進行研磨
         if (currentRecipe != null && progress < maxProgress) {
             int manaCost = currentRecipe.getManaCost();
+            int progressStep = scaleProgressByOwner(1);
+            int scaledManaCost = manaCost * progressStep;
 
-            if (manaStorage != null && manaStorage.getManaStored() >= manaCost) {
-                progress++;
-                manaStorage.extractMana(manaCost, ManaAction.EXECUTE);
+            if (manaStorage != null && manaStorage.getManaStored() >= scaledManaCost) {
+                progress += progressStep;
+                manaStorage.extractMana(scaledManaCost, ManaAction.EXECUTE);
                 setChanged();
             }
         }
