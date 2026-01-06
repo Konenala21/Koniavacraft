@@ -115,6 +115,22 @@ public class ModCapabilities {
                     return blockEntity.getManaStorage(); // 默認完整功能
                 });
 
+        // 🆕 粉碎機魔力能力註冊（供魔力除錯工具與導管存取）
+        event.registerBlockEntity(ModCapabilities.MANA, ModBlockEntities.ORE_GRINDER.get(),
+                (blockEntity, side) -> {
+                    if (side != null && blockEntity instanceof IConfigurableBlock configurable) {
+                        IOHandlerUtils.IOType ioType = configurable.getIOConfig(side);
+
+                        return switch (ioType) {
+                            case DISABLED -> null;
+                            case INPUT -> new RestrictedManaHandler(blockEntity.getManaStorage(), true, false);
+                            case OUTPUT -> new RestrictedManaHandler(blockEntity.getManaStorage(), false, true);
+                            case BOTH -> blockEntity.getManaStorage();
+                        };
+                    }
+                    return blockEntity.getManaStorage();
+                });
+
         // 🆕 物品處理能力 - 根據 IO 配置決定功能
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.MANA_INFUSER.get(),
                 (blockEntity, side) -> {

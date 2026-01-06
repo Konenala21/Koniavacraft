@@ -25,6 +25,24 @@ All notable changes to this project will be documented in this file.
 - Hid the mana crafting table mana bar background to avoid overlapping the GUI frame.
 - Hid the mana infuser mana bar background to avoid overlapping the GUI frame.
 - Restricted server-side payload registration to dedicated servers to avoid duplicate registration on integrated client.
+- Updated ore grinder GUI size and slot layout to align with the mana infuser layout.
+- Added a recipe hint hotspot for the ore grinder and linked it to JEI.
+- Updated ore grinder progress drawing to match the mana infuser style and removed the progress background.
+- Hid the ore grinder mana bar background to avoid overlapping the GUI frame.
+- Fixed JEI grinder recipe rendering by using the client font and translation keys.
+- Aligned grinder JEI title with the block translation key and set the JEI background crop to 171x77.
+- Updated grinder JEI slot positions to match the new GUI layout and avoided tooltip overlap when JEI is loaded.
+- Shifted grinder JEI slot positions by one pixel to match the in-game layout.
+- Added a dedicated ore grinder recipe datagen provider and moved grinder recipes there.
+- Renamed the ore grinder block to mana grinder in translations.
+- Shifted ore grinder GUI and JEI recipe slots two pixels to the right.
+- Rendered the grinder JEI mana cost as a bar instead of text.
+- Replaced deprecated JEI background override with recipe extras background drawable.
+- Ore grinder now uses each recipe's processing time and consumes the recipe mana cost once per craft.
+- Rebalanced grinder recipe mana costs based on current mana generation rates and added processing time to the multi-input recipe.
+- Rendered grinder JEI time text via recipe extras to avoid hidden text.
+- Centered the grinder JEI time label and moved chance text into the output slots with tooltips.
+- Ensured grinder JEI mana bar always renders for non-zero costs and moved time into recipe extras.
 
 ## [0.0.1.5 Preview] - 2026-01-04
 ### Changed

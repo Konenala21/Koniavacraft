@@ -42,7 +42,7 @@
   "block.koniava.mana_grass_block": "魔力草方塊",
   "block.koniava.mana_bloom": "魔力花",
   "block.koniava.mana_infuser": "魔力注入機",
-  "block.koniava.ore_grinder": "粉碎機",
+  "block.koniava.ore_grinder": "魔力粉碎機",
 
   "//4": "=== RPG 系統 ===",
   "rpg.class.none": "無職業",
@@ -287,6 +287,11 @@
   "gui.koniava.mana_infuser.status.working": "注入中",
   "gui.koniava.mana_infuser.status.no_mana": "魔力不足",
   "gui.koniava.mana_infuser.status.no_recipe": "無配方",
+  "tooltip.koniava.ore_grinder.recipes": "查看可用配方",
+  "jei.koniava.grinder.mana": "魔力: %s",
+  "jei.koniava.grinder.time": "時間: %s ticks",
+  "jei.koniava.grinder.chance": "%s%%",
+  "jei.koniava.grinder.chance_detail": "副產物機率: %s%%",
 
   "gui.koniava.rate": "產率: %s",
   "gui.koniava.total_yield": "總產出: %s",

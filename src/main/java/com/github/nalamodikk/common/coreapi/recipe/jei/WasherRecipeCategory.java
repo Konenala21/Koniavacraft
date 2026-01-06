@@ -11,6 +11,7 @@ import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
@@ -105,19 +106,25 @@ public class WasherRecipeCategory implements IRecipeCategory<ProcessingRecipe> {
      */
     @Override
     public void draw(@NotNull ProcessingRecipe recipe, @NotNull IRecipeSlotsView recipeSlotsView, @NotNull GuiGraphics guiGraphics, double mouseX, double mouseY) {
+        var font = Minecraft.getInstance().font;
+        if (font == null) {
+            return;
+        }
+
         // 繪製魔力消耗文字
-        String manaText = "§b魔力: §e" + recipe.getManaCost();
-        guiGraphics.drawString(null, manaText, 10, 10, 0xFFFFFF, false);
+        Component manaText = Component.translatable("jei.koniava.mana_cost", recipe.getManaCost());
+        guiGraphics.drawString(font, manaText, 10, 10, 0xFFFFFF, false);
 
         // 繪製處理時間文字
-        String timeText = "§b時間: §e" + recipe.getProcessingTime() + " ticks";
-        guiGraphics.drawString(null, timeText, 10, 65, 0xFFFFFF, false);
+        Component timeText = Component.translatable("jei.koniava.grinder.time", recipe.getProcessingTime());
+        guiGraphics.drawString(font, timeText, 10, 65, 0xFFFFFF, false);
 
         // 繪製副產物機率
         for (int i = 0; i < recipe.getChanceOutputs().size() && i < 2; i++) {
             ProcessingRecipe.ChanceOutput output = recipe.getChanceOutputs().get(i);
-            String chanceText = String.format("%.0f%%", output.getChance() * 100);
-            guiGraphics.drawString(null, chanceText, 90 + i * 20, 60, 0xFFFFFF, false);
+            int chancePercent = Math.round(output.getChance() * 100);
+            Component chanceText = Component.translatable("jei.koniava.grinder.chance_detail", chancePercent);
+            guiGraphics.drawString(font, chanceText, 90 + i * 20, 60, 0xFFFFFF, false);
         }
     }
 }

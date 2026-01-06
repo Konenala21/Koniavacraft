@@ -59,6 +59,7 @@ public class OreGrinderBlockEntity extends AbstractManaMachineEntityBlock {
     private final EnumMap<Direction, IOHandlerUtils.IOType> directionConfig = new EnumMap<>(Direction.class);
     private ProcessingRecipe currentRecipe = null;
     public boolean hasInputChanged = false;
+    private int manaSpent = 0;
 
     public OreGrinderBlockEntity(BlockPos pos, BlockState blockState) {
         super(
@@ -118,7 +119,7 @@ public class OreGrinderBlockEntity extends AbstractManaMachineEntityBlock {
                     // 輸入槽檢查是否有有效配方
                     return canGrind(stack);
                 } else if (slot >= OUTPUT_SLOT_1 && slot <= OUTPUT_SLOT_4) {
-                    return false; // 輸出槽不允許手動放入
+                    return true; // 允許機器內部輸出插入
                 }
                 return super.isItemValid(slot, stack);
             }
@@ -140,13 +141,20 @@ public class OreGrinderBlockEntity extends AbstractManaMachineEntityBlock {
 
         // 3. 嘗試進行研磨
         if (currentRecipe != null && progress < maxProgress) {
-            int manaCost = currentRecipe.getManaCost();
             int progressStep = scaleProgressByOwner(1);
-            int scaledManaCost = manaCost * progressStep;
+            int totalManaCost = currentRecipe.getManaCost();
+            int newProgress = Math.min(progress + progressStep, maxProgress);
+            int targetSpent = maxProgress > 0
+                    ? (int) Math.floor((newProgress / (double) maxProgress) * totalManaCost)
+                    : totalManaCost;
+            int costThisTick = Math.max(0, targetSpent - manaSpent);
 
-            if (manaStorage != null && manaStorage.getManaStored() >= scaledManaCost) {
-                progress += progressStep;
-                manaStorage.extractMana(scaledManaCost, ManaAction.EXECUTE);
+            if (manaStorage != null && manaStorage.getManaStored() >= costThisTick) {
+                if (costThisTick > 0) {
+                    manaStorage.extractMana(costThisTick, ManaAction.EXECUTE);
+                    manaSpent += costThisTick;
+                }
+                progress = newProgress;
                 setChanged();
             }
         }
@@ -163,6 +171,7 @@ public class OreGrinderBlockEntity extends AbstractManaMachineEntityBlock {
     private void updateCurrentRecipe() {
         currentRecipe = null;
         progress = 0;
+        manaSpent = 0;
 
         if (itemHandler == null) return;
 
@@ -193,6 +202,8 @@ public class OreGrinderBlockEntity extends AbstractManaMachineEntityBlock {
 
         if (recipe.isPresent()) {
             currentRecipe = recipe.get().value();
+            maxProgress = Math.max(1, currentRecipe.getProcessingTime());
+            manaSpent = 0;
             if (KoniavacraftMod.IS_DEV) {
                 LOGGER.info("Found recipe for ore grinder");
             }
@@ -226,16 +237,31 @@ public class OreGrinderBlockEntity extends AbstractManaMachineEntityBlock {
             }
         }
 
-        // 消耗輸入物品
-        if (itemHandler.getStackInSlot(INPUT_SLOT_1).isEmpty()) {
-            // 輸入槽 1 已用完，嘗試從槽位 2 補充
-            // 實際應該在這裡實作堆疊分離邏輯
+        // 消耗輸入物品（依實際放置的輸入）
+        int inputCount = currentRecipe.getInputs().size();
+        ItemStack input1 = itemHandler.getStackInSlot(INPUT_SLOT_1);
+        ItemStack input2 = itemHandler.getStackInSlot(INPUT_SLOT_2);
+
+        if (inputCount >= 2) {
+            if (!input1.isEmpty()) {
+                itemHandler.extractItem(INPUT_SLOT_1, 1, false);
+            }
+            if (!input2.isEmpty()) {
+                itemHandler.extractItem(INPUT_SLOT_2, 1, false);
+            }
+        } else if (inputCount == 1) {
+            if (!input1.isEmpty()) {
+                itemHandler.extractItem(INPUT_SLOT_1, 1, false);
+            } else if (!input2.isEmpty()) {
+                itemHandler.extractItem(INPUT_SLOT_2, 1, false);
+            }
         }
 
         // 重置狀態
         progress = 0;
         currentRecipe = null;
         hasInputChanged = true;
+        manaSpent = 0;
 
         if (KoniavacraftMod.IS_DEV) {
             LOGGER.info("Grinding finished, output produced");
@@ -316,6 +342,7 @@ public class OreGrinderBlockEntity extends AbstractManaMachineEntityBlock {
         }
 
         tag.put("DirectionConfig", serializeIOMap());
+        tag.putInt("ManaSpent", manaSpent);
     }
 
     @Override
@@ -330,6 +357,8 @@ public class OreGrinderBlockEntity extends AbstractManaMachineEntityBlock {
         if (tag.contains("DirectionConfig")) {
             deserializeIOMap(tag.getCompound("DirectionConfig"));
         }
+
+        manaSpent = tag.getInt("ManaSpent");
 
         hasInputChanged = true;
     }

@@ -32,21 +32,22 @@ public class ManaInfuserScreen extends AutoSizedModularScreen<ManaInfuserMenu> {
                 .setSize(10, 48)
                 .setDrawBackground(false)); // 根據原版代碼調整大小
 
-        // 2. 進度條 (72, 40) - 34x11 (往下延伸兩格像素)
+        // 2. 進度條 (72, 38) - 34x8 (與粉碎機一致)
         // 使用匿名 Widget 直接繪製大圖上的進度條
-        root.add(new AbstractWidget(72, 40, 34, 11) {
+        root.add(new AbstractWidget(72, 38, 34, 8) {
             @Override
             protected void renderWidget(GuiGraphics graphics, int localX, int localY, int screenX, int screenY) {
                 if (menu.isWorking()) {
                     int progress = menu.getProgressPercentage();
                     // 計算像素寬度
-                    int fillWidth = (int) ((float) progress / 100 * width);
-                    
+                    int fillWidth = Math.max(0, (width * progress) / 100);
+
                     if (fillWidth > 0) {
                         graphics.blit(TEXTURE, 
                             0, 0,           // 螢幕相對座標
                             176, 54,        // UV 起點 (從大圖右側截取)
-                            fillWidth, height // 繪製大小
+                            fillWidth, height, // 繪製大小
+                            256, 256
                         );
                     }
                 }

@@ -2,6 +2,7 @@ package com.github.nalamodikk.common.coreapi.recipe.jei;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.coreapi.recipe.ProcessingRecipe;
+import com.github.nalamodikk.common.block.blockentity.ore_grinder.OreGrinderScreen;
 import com.github.nalamodikk.register.ModBlocks;
 import com.github.nalamodikk.register.ModRecipes;
 import mezz.jei.api.IModPlugin;
@@ -112,13 +113,13 @@ public class ProcessingRecipeJEIPlugin implements IModPlugin {
      */
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
-        // TODO: 後續添加 GUI 點擊區域
-        // registration.addRecipeClickArea(
-        //     OreGrinderScreen.class,
-        //     79, 35,  // 進度條 X, Y
-        //     26, 16,  // 進度條寬度, 高度
-        //     GrinderRecipeCategory.RECIPE_TYPE
-        // );
+        // 粉碎機右上角配方提示區域
+        registration.addRecipeClickArea(
+                OreGrinderScreen.class,
+                149, 4,
+                21, 15,
+                GrinderRecipeCategory.RECIPE_TYPE
+        );
     }
 
     /**

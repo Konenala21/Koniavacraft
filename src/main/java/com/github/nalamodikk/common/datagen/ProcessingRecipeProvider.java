@@ -29,27 +29,6 @@ public class ProcessingRecipeProvider {
      */
     public static void generate(RecipeOutput output) {
         // ============================================
-        // 🔨 粉碎機配方（Grinder Recipes）
-        // ============================================
-
-        // 🪨 石頭 → 沙粒
-        createProcessingRecipe(output, "grinder/stone_grind", "grinder")
-                .input(Blocks.STONE)
-                .output(Items.SAND, 1)
-                .manaCost(50)
-                .processingTime(100)
-                .save();
-
-        // 💎 鑽石 → 玻璃 + 礫石 (20%)
-        createProcessingRecipe(output, "grinder/diamond_grind", "grinder")
-                .input(Items.DIAMOND)
-                .output(Items.GLASS, 1)
-                .chanceOutput(Items.GRAVEL, 1, 0.2f)
-                .manaCost(200)
-                .processingTime(150)
-                .save();
-
-        // ============================================
         // 🌊 清洗機配方（Washer Recipes）
         // ============================================
 
@@ -73,34 +52,20 @@ public class ProcessingRecipeProvider {
                 .processingTime(120)
                 .save();
 
-        // ============================================
-        // 🔨 多輸入示例
-        // ============================================
-
-        // 石頭 + 圓石 → 磚塊 x2 + 黏土 (15%)
-        createProcessingRecipe(output, "grinder/multi_input_example", "grinder")
-                .input(Blocks.STONE)
-                .input(Blocks.COBBLESTONE)
-                .output(Items.BRICKS, 2)
-                .chanceOutput(Items.CLAY_BALL, 1, 0.15f)
-                .manaCost(150)
-                .processingTime(200)
-                .save();
-
-        KoniavacraftMod.LOGGER.info("✅ 生成了 5 個加工配方");
+        KoniavacraftMod.LOGGER.info("✅ 生成了 2 個加工配方");
     }
 
     /**
      * 🔧 配方構建器輔助方法
      */
-    private static ProcessingRecipeHelper createProcessingRecipe(RecipeOutput output, String name, String machineType) {
+    public static ProcessingRecipeHelper createProcessingRecipe(RecipeOutput output, String name, String machineType) {
         return new ProcessingRecipeHelper(output, name, machineType);
     }
 
     /**
      * 🔨 ProcessingRecipe 的輔助構建器
      */
-    private static class ProcessingRecipeHelper {
+    public static class ProcessingRecipeHelper {
         private final RecipeOutput output;
         private final String name;
         private final String machineType;

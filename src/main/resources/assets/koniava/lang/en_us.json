@@ -42,7 +42,7 @@
   "block.koniava.mana_grass_block": "Mana Grass Block",
   "block.koniava.mana_bloom": "Mana Bloom",
   "block.koniava.mana_infuser": "Mana Infuser",
-  "block.koniava.ore_grinder": "Ore Grinder",
+  "block.koniava.ore_grinder": "Mana Grinder",
 
   "//4": "=== RPG SYSTEM ===",
   "rpg.class.none": "None",
@@ -288,6 +288,11 @@
   "gui.koniava.mana_infuser.status.working": "Infusing",
   "gui.koniava.mana_infuser.status.no_mana": "Insufficient Mana",
   "gui.koniava.mana_infuser.status.no_recipe": "No Recipe",
+  "tooltip.koniava.ore_grinder.recipes": "View available recipes",
+  "jei.koniava.grinder.mana": "Mana: %s",
+  "jei.koniava.grinder.time": "Time: %s ticks",
+  "jei.koniava.grinder.chance": "%s%%",
+  "jei.koniava.grinder.chance_detail": "Byproduct chance: %s%%",
 
   "gui.koniava.rate": "Rate: %s",
   "gui.koniava.total_yield": "Total Yield: %s",

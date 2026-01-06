@@ -34,7 +34,6 @@ public abstract class ModularScreen<T extends AbstractContainerMenu> extends Abs
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(graphics, mouseX, mouseY, partialTick);
         super.render(graphics, mouseX, mouseY, partialTick);
         
         // 繪製 Tooltip (在最上層)
