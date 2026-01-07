@@ -92,6 +92,24 @@ public class ModDataComponents {
                     .networkSynchronized(DIRECTION_BOOL_MAP_STREAM_CODEC)
                     .build();
 
+    public static final DataComponentType<Boolean> NARA_IMPRINT =
+            DataComponentType.<Boolean>builder()
+                    .persistent(Codec.BOOL)
+                    .networkSynchronized(ByteBufCodecs.BOOL)
+                    .build();
+
+    public static final DataComponentType<Integer> MANA_STORED =
+            DataComponentType.<Integer>builder()
+                    .persistent(Codec.INT)
+                    .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .build();
+
+    public static final DataComponentType<Integer> MAX_MANA =
+            DataComponentType.<Integer>builder()
+                    .persistent(Codec.INT)
+                    .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .build();
+
 
     @SubscribeEvent
     public static void register(RegisterEvent event) {
@@ -101,17 +119,9 @@ public class ModDataComponents {
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "saved_directions"), SAVED_DIRECTIONS);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "configured_directions"), CONFIGURED_DIRECTIONS);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "configured_directions_io"), CONFIGURED_DIRECTIONS_IO);
-
+            helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "nara_imprint"), NARA_IMPRINT);
+            helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "mana_stored"), MANA_STORED);
+            helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "max_mana"), MAX_MANA);
         });
     }
-
-// todo
-//  public static final DataComponentType<Boolean> NARA_IMPRINT =
-//         DataComponentType.<Boolean>builder()
-//                 .persistent(Codec.BOOL)
-//                 .networkSynchronized(ByteBufCodecs.BOOL)
-//                 .build();
-//  然後在 register() 裡註冊：
-//  helper.register(ResourceLocation.fromNamespaceAndPath(MOD_ID, "nara_imprint"), NARA_IMPRINT);
-
 }
