@@ -6,7 +6,7 @@
 - [x] **Task 1: 實作 Nara 引導排程器 (Intro Scheduler)** [33b4008]
     - [ ] 撰寫測試驗證 `NaraIntroSchedulerEvent` 的觸發條件
     - [ ] 實作引導訊息的隊列管理與定時顯示邏輯
-- [ ] **Task 2: 優化 Nara 介面渲染與交互**
+- [x] **Task 2: 優化 Nara 介面渲染與交互** [c989c9e]
     - [ ] 撰寫測試驗證 `NaraIntroScreen` 的開啟與組件載入
     - [ ] 實作基於 `ModularScreen` 的對話文字逐字顯示特效
 - [ ] **Task 3: 實作銘印 (Imprint) 基礎邏輯**
