@@ -43,6 +43,14 @@ All notable changes to this project will be documented in this file.
 - Rendered grinder JEI time text via recipe extras to avoid hidden text.
 - Centered the grinder JEI time label and moved chance text into the output slots with tooltips.
 - Ensured grinder JEI mana bar always renders for non-zero costs and moved time into recipe extras.
+- Increased mana infuser capacity to exceed its crafting mana cost.
+- Assigned a fixed Unbreaking I enchantment to the mana infuser book recipe and reduced its mana cost.
+- Solar mana collector now uses correct max mana with slower base output/interval and stackable Mek-style upgrades.
+- Added low-end mana generation for coal fuel.
+- Increased arcane conduit transfer rates and aligned legacy transfer rate to the basic tier.
+- Registered the ore grinder as a JEI recipe catalyst so the usage view shows the machine.
+- Upgrade inventory now marks changes when setting items to keep upgrade effects in sync.
+- Simplified Solar Mana Collector GameTests to avoid shared weather/time state and expanded flag-logic checks (including night).
 
 ## [0.0.1.5 Preview] - 2026-01-04
 ### Changed

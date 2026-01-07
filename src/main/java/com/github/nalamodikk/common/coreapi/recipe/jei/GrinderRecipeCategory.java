@@ -10,14 +10,15 @@ import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
 import mezz.jei.api.gui.builder.ITooltipBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
+import mezz.jei.api.gui.drawable.IDrawableAnimated;
 import mezz.jei.api.gui.drawable.IDrawableStatic;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
+import mezz.jei.api.gui.widgets.IRecipeExtrasBuilder;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
-import mezz.jei.api.gui.widgets.IRecipeExtrasBuilder;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
@@ -53,17 +54,20 @@ public class GrinderRecipeCategory implements IRecipeCategory<ProcessingRecipe> 
     private static final int OUTPUT_Y = 26;
     private static final int CHANCE_ROW_Y = 44;
     private static final int SLOT_SIZE = 16;
-    private static final int ARROW_X = 72;
-    private static final int ARROW_Y = 37;
-    private static final int ARROW_WIDTH = 34;
-    private static final int ARROW_HEIGHT = 8;
+    private static final int ARROW_X = 67;
+    private static final int ARROW_Y = 36;
+    private static final int ARROW_WIDTH = 44;
+    private static final int ARROW_HEIGHT = 12;
 
+    private final IGuiHelper guiHelper;
     private final IDrawableStatic background;
     private final IDrawable icon;
+    private final IDrawableStatic arrowStatic;
     private final Component localizedName;
     private int maxManaCostCache = -1;
 
     public GrinderRecipeCategory(IGuiHelper guiHelper) {
+        this.guiHelper = guiHelper;
         this.background = guiHelper.drawableBuilder(TEXTURE, 0, 0, WIDTH, HEIGHT)
                 .setTextureSize(256, 256)
                 .build();
@@ -75,6 +79,10 @@ public class GrinderRecipeCategory implements IRecipeCategory<ProcessingRecipe> 
         );
 
         this.localizedName = Component.translatable("block.koniava.ore_grinder");
+
+        this.arrowStatic = guiHelper.drawableBuilder(TEXTURE, 176, 52, ARROW_WIDTH, ARROW_HEIGHT)
+                .setTextureSize(256, 256)
+                .build();
     }
 
     @Override
@@ -103,12 +111,12 @@ public class GrinderRecipeCategory implements IRecipeCategory<ProcessingRecipe> 
     }
 
     @Override
-    public @NotNull IDrawable getBackground() {
-        return background;
-    }
-
-    @Override
     public void createRecipeExtras(IRecipeExtrasBuilder builder, ProcessingRecipe recipe, IFocusGroup focuses) {
+        builder.addDrawable(background, 0, 0);
+        int duration = Math.max(1, recipe.getProcessingTime());
+        IDrawableAnimated arrowAnimated = guiHelper.createAnimatedDrawable(
+                arrowStatic, duration, IDrawableAnimated.StartDirection.LEFT, false);
+        builder.addDrawable(arrowAnimated, ARROW_X, ARROW_Y);
     }
 
     /**
@@ -179,19 +187,7 @@ public class GrinderRecipeCategory implements IRecipeCategory<ProcessingRecipe> 
             );
         }
 
-        // 進度箭頭（以配方時間循環動畫）
-        int totalTicks = Math.max(1, recipe.getProcessingTime());
-        long nowTicks = System.currentTimeMillis() / 50L;
-        int progress = (int) (nowTicks % totalTicks);
-        int fillWidth = Math.max(0, (ARROW_WIDTH * progress) / totalTicks);
-        if (fillWidth > 0) {
-            guiGraphics.blit(TEXTURE,
-                    ARROW_X, ARROW_Y,
-                    176, 54,
-                    fillWidth, ARROW_HEIGHT,
-                    256, 256
-            );
-        }
+        // 進度箭頭由 JEI extras 動畫繪製
     }
 
     @Override

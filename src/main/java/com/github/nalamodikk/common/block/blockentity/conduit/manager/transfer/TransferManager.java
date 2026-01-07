@@ -31,7 +31,7 @@ public class TransferManager {
     // === 常量 ===
     // ⚠️ 已棄用：使用 ConduitTier 系統取代固定速率
     @Deprecated
-    private static final int LEGACY_TRANSFER_RATE = 200;
+    private static final int LEGACY_TRANSFER_RATE = ConduitTier.BASIC.getTransferRate();
     private static final int MAX_TRANSFERS_PER_TICK = 2;
 
     // === 組件引用 ===

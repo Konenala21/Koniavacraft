@@ -73,37 +73,15 @@ public class ProcessingRecipeJEIPlugin implements IModPlugin {
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
         LOGGER.info("[JEI] 註冊加工機器為配方催化劑...");
 
-        // TODO: 當 ModBlocks 中的 ORE_GRINDER、ORE_WASHER、ORE_ENRICHER 註冊後取消註解
-        /*
         // 粉碎機
-        if (ModBlocks.ORE_GRINDER.isPresent()) {
-            registration.addRecipeCatalyst(
-                    new ItemStack(ModBlocks.ORE_GRINDER.get()),
-                    GrinderRecipeCategory.RECIPE_TYPE
-            );
-            LOGGER.debug("[JEI] ✅ 粉碎機已註冊為催化劑");
-        }
+        registration.addRecipeCatalyst(
+                new ItemStack(ModBlocks.ORE_GRINDER.get()),
+                GrinderRecipeCategory.RECIPE_TYPE
+        );
+        LOGGER.debug("[JEI] ✅ 粉碎機已註冊為催化劑");
 
         // 清洗機
-        if (ModBlocks.ORE_WASHER.isPresent()) {
-            registration.addRecipeCatalyst(
-                    new ItemStack(ModBlocks.ORE_WASHER.get()),
-                    WasherRecipeCategory.RECIPE_TYPE
-            );
-            LOGGER.debug("[JEI] ✅ 清洗機已註冊為催化劑");
-        }
-
-        // 富集機
-        if (ModBlocks.ORE_ENRICHER.isPresent()) {
-            registration.addRecipeCatalyst(
-                    new ItemStack(ModBlocks.ORE_ENRICHER.get()),
-                    EnricherRecipeCategory.RECIPE_TYPE
-            );
-            LOGGER.debug("[JEI] ✅ 富集機已註冊為催化劑");
-        }
-        */
-
-        LOGGER.info("[JEI] ⚠️ 機器方塊催化劑將在 Block 註冊後啟用");
+        LOGGER.info("[JEI] ⚠️ 清洗機/富集機催化劑待對應方塊完成後啟用");
     }
 
     /**

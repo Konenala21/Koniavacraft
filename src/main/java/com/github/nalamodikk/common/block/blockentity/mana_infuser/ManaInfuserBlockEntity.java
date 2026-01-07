@@ -35,7 +35,7 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock {
     private static final int OUTPUT_SLOT = 1;
     private static final int SLOT_COUNT = 2;
 
-    private static final int MAX_MANA_CAPACITY = 10000;
+    private static final int MAX_MANA_CAPACITY = 50000;
     private static final int MANA_TRANSFER_RATE = 200;
     private static final int INFUSION_TIME = 60;
     private static final int MANA_PER_CYCLE = 0;

@@ -32,6 +32,7 @@ public class UpgradeInventory implements Container , INBTSerializable<CompoundTa
     public void setItem(int index, ItemStack stack) {
         if (index >= 0 && index < maxSlots) {
             slots.set(index, stack);
+            setChanged();
         }
     }
 

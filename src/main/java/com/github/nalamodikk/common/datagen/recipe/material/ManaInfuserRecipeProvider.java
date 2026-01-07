@@ -3,11 +3,17 @@ package com.github.nalamodikk.common.datagen.recipe.material;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserRecipe;
 import com.github.nalamodikk.register.ModItems;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.EnchantedBookItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.enchantment.EnchantmentInstance;
+import net.minecraft.world.item.enchantment.Enchantments;
 
 /**
  * 🔮 魔力注入機配方數據生成器
@@ -150,15 +156,18 @@ public class ManaInfuserRecipeProvider {
      * 📚 附魔相關配方
      */
     private static void generateEnchantmentRecipes(RecipeOutput output) {
-        // 書 → 附魔書 (隨機附魔)
-        ItemStack enchantedBook = new ItemStack(Items.ENCHANTED_BOOK);
-        // 這裡可以添加特定的附魔效果
+        // 書 → 附魔書 (固定 Unbreaking I)
+        RegistryAccess registryAccess = RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
+        var enchantmentRegistry = registryAccess.registryOrThrow(Registries.ENCHANTMENT);
+        ItemStack enchantedBook = EnchantedBookItem.createForEnchantment(
+                new EnchantmentInstance(enchantmentRegistry.getHolderOrThrow(Enchantments.UNBREAKING), 1)
+        );
 
         createManaInfuserRecipe(output,
                 "book_to_enchanted_book",
                 Ingredient.of(Items.BOOK),
                 enchantedBook,
-                120000, // 魔力消耗
+                40000, // 魔力消耗
                 80,  // 注入時間
                 1
         );

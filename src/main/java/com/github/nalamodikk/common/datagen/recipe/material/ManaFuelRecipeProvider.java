@@ -9,7 +9,7 @@ public class ManaFuelRecipeProvider {
 
     public static void generate(RecipeOutput output) {
         // 🪵 Minecraft 基礎燃料
-        ManaGenFuelRecipeBuilder.create(Items.COAL, 0, 16, 200).save(output);
+        ManaGenFuelRecipeBuilder.create(Items.COAL, 5, 16, 200).save(output);
         ManaGenFuelRecipeBuilder.create(Items.BLAZE_ROD, 0, 32, 1600).save(output);
         ManaGenFuelRecipeBuilder.create(ModItems.REFINED_MANA_DUST.get(), 75, 30,    600).save(output);
 

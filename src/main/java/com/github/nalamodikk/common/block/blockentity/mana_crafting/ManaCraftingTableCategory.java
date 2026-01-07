@@ -3,6 +3,7 @@ package com.github.nalamodikk.common.block.blockentity.mana_crafting;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.client.screenAPI.tooltip.DynamicTooltip;
 import com.github.nalamodikk.register.ModBlocks;
+import com.github.nalamodikk.register.ModRecipes;
 import com.github.nalamodikk.common.utils.gui.GuiRenderUtils;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
@@ -21,6 +22,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -39,6 +41,7 @@ public class ManaCraftingTableCategory implements IRecipeCategory<ManaCraftingTa
 
     private final IDrawable icon;
     private final IDrawableStatic manaCostDrawable;
+    private int maxManaCostCache = -1;
 
     public ManaCraftingTableCategory(IGuiHelper helper) {
         this.icon = helper.createDrawableIngredient(VanillaTypes.ITEM_STACK, new ItemStack(ModBlocks.MANA_CRAFTING_TABLE_BLOCK.get()));
@@ -113,7 +116,11 @@ public class ManaCraftingTableCategory implements IRecipeCategory<ManaCraftingTa
         int barWidth = 8;
         int barHeight = 47;
 
-        int filledHeight = (int)((manaCost / (float) ManaCraftingTableBlockEntity.MAX_MANA) * barHeight);
+        int maxMana = Math.max(getMaxManaCost(), manaCost);
+        int filledHeight = maxMana > 0 ? (int)((manaCost / (float) maxMana) * barHeight) : 0;
+        if (manaCost > 0 && filledHeight == 0) {
+            filledHeight = 3;
+        }
         int filledY = barY + barHeight - filledHeight;
         // 前提：你已經有 PoseStack，可從 guiGraphics.pose() 取得
         GuiRenderUtils renderUtils = new GuiRenderUtils(graphics.pose());
@@ -149,6 +156,27 @@ public class ManaCraftingTableCategory implements IRecipeCategory<ManaCraftingTa
                     (int) mouseY
             );
         }
+    }
+
+    private int getMaxManaCost() {
+        if (maxManaCostCache > 0) {
+            return maxManaCostCache;
+        }
+
+        var level = Minecraft.getInstance().level;
+        if (level == null) {
+            return 0;
+        }
+
+        maxManaCostCache = level.getRecipeManager()
+                .getAllRecipesFor(ModRecipes.MANA_CRAFTING_TYPE.get())
+                .stream()
+                .map(RecipeHolder::value)
+                .mapToInt(ManaCraftingTableRecipe::getManaCost)
+                .max()
+                .orElse(0);
+
+        return maxManaCostCache;
     }
 
 

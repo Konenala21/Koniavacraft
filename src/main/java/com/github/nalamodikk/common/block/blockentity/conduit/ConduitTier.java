@@ -8,9 +8,9 @@ import org.jetbrains.annotations.NotNull;
  * 定義不同等級導管的傳輸速率和容量
  */
 public enum ConduitTier implements StringRepresentable {
-    BASIC("basic", 100, 100, 0x4A90E2),           // 基礎：100/tick，100容量，藍色
-    ADVANCED("advanced", 500, 500, 0x9B59B6),     // 進階：500/tick，500容量，紫色
-    ELITE("elite", 2000, 2000, 0xF39C12);         // 精英：2000/tick，2000容量，金色
+    BASIC("basic", 256, 256, 0x4A90E2),           // 基礎：256/tick，256容量，藍色
+    ADVANCED("advanced", 1024, 1024, 0x9B59B6),   // 進階：1024/tick，1024容量，紫色
+    ELITE("elite", 4096, 4096, 0xF39C12);         // 精英：4096/tick，4096容量，金色
 
     private final String name;
     private final int transferRate;      // 每tick最大傳輸量

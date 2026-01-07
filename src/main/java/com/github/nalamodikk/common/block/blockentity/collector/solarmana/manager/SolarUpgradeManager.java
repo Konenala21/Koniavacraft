@@ -31,9 +31,11 @@ public class SolarUpgradeManager {
 
     // === 🎯 配置常數 ===
     public static final int UPGRADE_SLOT_COUNT = 8;  // MEK風格：更多槽位
-    private static final int BASE_OUTPUT = 5;
-    private static final int BASE_INTERVAL = 200;
-    private static final int MIN_INTERVAL = 60;      // 最小間隔保護
+    public static final int BASE_OUTPUT = 5;
+    public static final int BASE_INTERVAL = 200;
+    public static final int MIN_INTERVAL = 40;      // 最小間隔保護
+    private static final double SPEED_INTERVAL_MULTIPLIER = 0.9; // 每個速度升級降低 10%
+    private static final double EFFICIENCY_OUTPUT_MULTIPLIER = 1.1; // 每個效率升級增加 10%
 
     // === 🔧 組件 ===
     private final SolarManaCollectorBlockEntity collector;
@@ -190,10 +192,8 @@ public class SolarUpgradeManager {
 
         double output = BASE_OUTPUT;
 
-        // 遞減增長：第1個+40%, 第2個+30%, 第3個+20%...
         for (int i = 0; i < upgradeCount; i++) {
-            double bonus = Math.max(0.05, 0.45 - i * 0.05); // 45%, 40%, 35%...最低5%
-            output *= (1.0 + bonus);
+            output *= EFFICIENCY_OUTPUT_MULTIPLIER;
         }
 
         return (int) output;
@@ -205,15 +205,12 @@ public class SolarUpgradeManager {
     private int calculateSpeedInterval(int upgradeCount) {
         if (upgradeCount <= 0) return BASE_INTERVAL;
 
-        int interval = BASE_INTERVAL;
-
-        // 遞減減少：第1個-30tick, 第2個-25tick, 第3個-20tick...
+        double interval = BASE_INTERVAL;
         for (int i = 0; i < upgradeCount; i++) {
-            int reduction = Math.max(5, 35 - i * 5); // 35, 30, 25...最低5
-            interval -= reduction;
+            interval *= SPEED_INTERVAL_MULTIPLIER;
         }
 
-        return Math.max(MIN_INTERVAL, interval);
+        return Math.max(MIN_INTERVAL, (int) Math.round(interval));
     }
 
     /**

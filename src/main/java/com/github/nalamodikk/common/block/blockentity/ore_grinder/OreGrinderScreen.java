@@ -29,7 +29,7 @@ public class OreGrinderScreen extends AutoSizedModularScreen<OreGrinderMenu> {
     @Override
     protected void buildGui(Panel root) {
         // 1. 進度條 (與魔力注入機相同的繪製方式)
-        root.add(new AbstractWidget(72, 37, 34, 8) {
+        root.add(new AbstractWidget(67, 36, 44, 12) {
             @Override
             protected void renderWidget(GuiGraphics graphics, int localX, int localY, int screenX, int screenY) {
                 if (menu.isWorking()) {
@@ -39,7 +39,7 @@ public class OreGrinderScreen extends AutoSizedModularScreen<OreGrinderMenu> {
                     if (fillWidth > 0) {
                         graphics.blit(TEXTURE,
                             0, 0,
-                            176, 54,
+                            176, 52,
                             fillWidth, height,
                             256, 256
                         );

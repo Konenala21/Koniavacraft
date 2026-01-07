@@ -59,7 +59,7 @@ public class ManaInfuserCategory implements IRecipeCategory<ManaInfuserRecipe> {
         this.icon = guiHelper.createDrawableIngredient(VanillaTypes.ITEM_STACK,
                 new ItemStack(ModBlocks.MANA_INFUSER.get()));
         // 🎯 使用正確的箭頭座標和尺寸
-        IDrawableStatic staticArrow = guiHelper.drawableBuilder(TEXTURE, 176, 54, 36, 14)
+        IDrawableStatic staticArrow = guiHelper.drawableBuilder(TEXTURE, 176, 52, 44, 12)
                 .setTextureSize(256, 128)  // 整個材質的尺寸
                 .build();
         this.arrow = guiHelper.createAnimatedDrawable(staticArrow, 60,
@@ -164,8 +164,8 @@ public class ManaInfuserCategory implements IRecipeCategory<ManaInfuserRecipe> {
      * ➡️ 繪製動畫箭頭
      */
     private void drawAnimatedArrow(GuiGraphics graphics) {
-        int arrowX = 72;  // 你GUI中箭頭的位置
-        int arrowY = 38;
+        int arrowX = 67;  // 你GUI中箭頭的位置
+        int arrowY = 36;
 
         // 🔥 繪製動畫箭頭！
         arrow.draw(graphics, arrowX, arrowY);
@@ -190,7 +190,7 @@ public class ManaInfuserCategory implements IRecipeCategory<ManaInfuserRecipe> {
         }
 
         // ➡️ 進度箭頭 tooltip (使用你GUI中的實際位置)
-        if (mouseX >= 78 && mouseX <= 112 && mouseY >= 35 && mouseY <= 46) {
+        if (mouseX >= 67 && mouseX <= 111 && mouseY >= 36 && mouseY <= 48) {
             graphics.renderTooltip(font,
                     List.of(
                             Component.translatable("jei.koniava.infusion_time", infusionTime / 20.0f)

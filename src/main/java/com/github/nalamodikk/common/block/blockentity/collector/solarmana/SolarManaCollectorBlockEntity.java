@@ -85,7 +85,8 @@
         private final EnumMap<Direction, BlockCapabilityCache<IEnergyStorage, Direction>> energyCaches = new EnumMap<>(Direction.class);
 
         public SolarManaCollectorBlockEntity(BlockPos pos, BlockState state) {
-            super(ModBlockEntities.SOLAR_MANA_COLLECTOR_BE.get(), pos, state, 800, 0, 0);
+            super(ModBlockEntities.SOLAR_MANA_COLLECTOR_BE.get(), pos, state, MAX_MANA,
+                    SolarUpgradeManager.BASE_INTERVAL, SolarUpgradeManager.BASE_OUTPUT);
             this.upgradeManager = new SolarUpgradeManager(this);
             ioMap.put(Direction.DOWN, IOHandlerUtils.IOType.OUTPUT);
             // 其他方向預設為 DISABLED
@@ -263,12 +264,26 @@
         protected boolean canGenerate() {
             if (!(level instanceof ServerLevel server)) return false;
 
-            final BlockPos skyPos = worldPosition;
-            return server.isDay()
-                && hasSkyLight(server)
-                && isOpenToSky(server) // 🚀 使用高度圖，極速穩定
-                && !isRainingAt(server)
-                && !isThundering(server);
+            return shouldGenerate(server.isDay(),
+                isOverworld(server),
+                hasSkyLight(server),
+                isOpenToSky(server),
+                isRainingAt(server),
+                isThundering(server));
+        }
+
+        static boolean shouldGenerate(boolean isDaytime,
+                                      boolean isOverworld,
+                                      boolean hasSkyLight,
+                                      boolean openToSky,
+                                      boolean isRaining,
+                                      boolean isThundering) {
+            return isDaytime
+                && isOverworld
+                && hasSkyLight
+                && openToSky
+                && !isRaining
+                && !isThundering;
         }
 
         public boolean hasSkyLight() {
