@@ -3,7 +3,7 @@
 ## Phase 1: Nara System 核心機制與介面實作
 *目標：建立完整的引導流程與介面交互*
 
-- [ ] **Task 1: 實作 Nara 引導排程器 (Intro Scheduler)**
+- [x] **Task 1: 實作 Nara 引導排程器 (Intro Scheduler)** [33b4008]
     - [ ] 撰寫測試驗證 `NaraIntroSchedulerEvent` 的觸發條件
     - [ ] 實作引導訊息的隊列管理與定時顯示邏輯
 - [ ] **Task 2: 優化 Nara 介面渲染與交互**
