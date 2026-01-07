@@ -17,7 +17,7 @@
 ## Phase 2: DataComponent 系統遷移與完善
 *目標：將核心數據結構遷移至 1.21.1 DataComponent 標準*
 
-- [ ] **Task 1: 定義自定義 DataComponents**
+- [x] **Task 1: 定義自定義 DataComponents** [8d7d9f9]
     - [ ] 在 `ModDataComponents` 中註冊機器狀態、RPG 基礎數據等組件
     - [ ] 撰寫測試驗證組件的序列化與反序列化 (Codec)
 - [ ] **Task 2: 遷移機器 NBT 至 DataComponents**
