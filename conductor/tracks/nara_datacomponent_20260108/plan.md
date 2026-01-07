@@ -23,7 +23,7 @@
 - [x] **Task 2: 遷移機器 NBT 至 DataComponents** [ae61d7e]
     - [ ] 修改 `AbstractManaMachineEntityBlock` 以優先讀取組件數據
     - [ ] 實作 NBT 數據到 DataComponent 的自動遷移邏輯（如有必要）
-- [ ] **Task 3: 整合 DataComponent 與 Auto-Sync**
+- [x] **Task 3: 整合 DataComponent 與 Auto-Sync** [ea07241]
     - [ ] 擴充 `MachineSyncManager` 支援 `@Sync` 標記組件欄位
     - [ ] 撰寫測試驗證組件變動時的客戶端即時同步
 - [ ] Task: Conductor - User Manual Verification 'DataComponent 系統遷移與完善' (Protocol in workflow.md)
