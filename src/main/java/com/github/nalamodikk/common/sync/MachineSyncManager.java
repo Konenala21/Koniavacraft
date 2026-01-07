@@ -644,10 +644,10 @@ public class MachineSyncManager implements ContainerData {
      * 追蹤一個 DataComponent。
      */
     public <T> void trackComponent(net.minecraft.world.level.block.entity.BlockEntity be, net.minecraft.core.component.DataComponentType<T> type, Class<T> clazz) {
-        if (type == com.github.nalamodikk.register.ModDataComponents.MANA_STORED.get() || clazz == Integer.class || clazz == int.class) {
+        if (type == com.github.nalamodikk.register.ModDataComponents.MANA_STORED || clazz == Integer.class || clazz == int.class) {
             trackInt(
                 () -> {
-                    T val = be.getComponents().get(type);
+                    T val = be.components().get(type);
                     return val instanceof Integer i ? i : 0;
                 },
                 v -> {

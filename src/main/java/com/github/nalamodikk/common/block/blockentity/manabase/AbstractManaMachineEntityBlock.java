@@ -247,17 +247,17 @@ public abstract class AbstractManaMachineEntityBlock extends BlockEntity impleme
     }
 
     @Override
-    protected void collectComponents(net.minecraft.core.component.DataComponentMap.Builder builder) {
-        super.collectComponents(builder);
+    protected void collectImplicitComponents(net.minecraft.core.component.DataComponentMap.Builder builder) {
+        super.collectImplicitComponents(builder);
         if (manaStorage != null) {
             builder.set(com.github.nalamodikk.register.ModDataComponents.MANA_STORED, manaStorage.getManaStored());
-            builder.set(com.github.nalamodikk.register.ModDataComponents.MAX_MANA, manaStorage.getMaxMana());
+            builder.set(com.github.nalamodikk.register.ModDataComponents.MAX_MANA, manaStorage.getMaxManaStored());
         }
     }
 
     @Override
-    protected void applyComponents(BlockEntity.DataComponentInput input) {
-        super.applyComponents(input);
+    protected void applyImplicitComponents(BlockEntity.DataComponentInput input) {
+        super.applyImplicitComponents(input);
         if (manaStorage != null) {
             Integer stored = input.get(com.github.nalamodikk.register.ModDataComponents.MANA_STORED);
             if (stored != null) {
@@ -265,7 +265,6 @@ public abstract class AbstractManaMachineEntityBlock extends BlockEntity impleme
             }
         }
     }
-
 // 在 AbstractManaMachineEntityBlock 類中添加這些方法
 
     @Override
