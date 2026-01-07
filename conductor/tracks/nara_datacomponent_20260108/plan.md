@@ -33,6 +33,6 @@
 
 - [x] **Task 1: 進行引導流程全路徑測試** [manual-verified]
     - [ ] 模擬新玩家登入，完成完整 Nara 引導
-- [ ] **Task 2: 視覺與音效拋光**
+- [x] **Task 2: 視覺與音效拋光** [e044c59]
     - [ ] 加入魔法粒子特效與對話音效
 - [ ] Task: Conductor - User Manual Verification '整合測試與拋光' (Protocol in workflow.md)
