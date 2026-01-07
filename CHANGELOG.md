@@ -51,6 +51,7 @@ All notable changes to this project will be documented in this file.
 - Registered the ore grinder as a JEI recipe catalyst so the usage view shows the machine.
 - Upgrade inventory now marks changes when setting items to keep upgrade effects in sync.
 - Simplified Solar Mana Collector GameTests to avoid shared weather/time state and expanded flag-logic checks (including night).
+- Added a Taiwan-style mana-industrial progression draft and three-tier recipe plan to docs.
 
 ## [0.0.1.5 Preview] - 2026-01-04
 ### Changed
