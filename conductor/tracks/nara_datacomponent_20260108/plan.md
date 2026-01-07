@@ -1,6 +1,6 @@
 # Track Plan: Nara System 核心引導與 DataComponent 完善
 
-## Phase 1: Nara System 核心機制與介面實作
+## Phase 1: Nara System 核心機制與介面實作 [checkpoint: 9db8ea0]
 *目標：建立完整的引導流程與介面交互*
 
 - [x] **Task 1: 實作 Nara 引導排程器 (Intro Scheduler)** [33b4008]
