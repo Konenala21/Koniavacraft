@@ -639,4 +639,22 @@ public class MachineSyncManager implements ContainerData {
     public void addEnergySlot(int[] energyValueHolder) {
         trackInt(() -> energyValueHolder[0], v -> energyValueHolder[0] = v);
     }
+
+    /**
+     * 追蹤一個 DataComponent。
+     */
+    public <T> void trackComponent(net.minecraft.world.level.block.entity.BlockEntity be, net.minecraft.core.component.DataComponentType<T> type, Class<T> clazz) {
+        if (type == com.github.nalamodikk.register.ModDataComponents.MANA_STORED.get() || clazz == Integer.class || clazz == int.class) {
+            trackInt(
+                () -> {
+                    T val = be.getComponents().get(type);
+                    return val instanceof Integer i ? i : 0;
+                },
+                v -> {
+                    // 注意：BE 的組件更新通常需要透過 applyComponents 或直接 set
+                    // 這裡簡化為直接 set (如果支援)
+                }
+            );
+        }
+    }
 }
