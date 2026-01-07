@@ -6,6 +6,9 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+
 /**
  * 逐字顯示的文字元件 (打字機效果)。
  */
@@ -68,6 +71,14 @@ public class TypewriterTextWidget extends AbstractWidget {
             if (tickCounter >= charDelay) {
                 tickCounter = 0;
                 charIndex++;
+                
+                // 播放音效 (每 2 個字播放一次，避免太吵)
+                if (charIndex % 2 == 0) {
+                    Minecraft.getInstance().getSoundManager().play(
+                        SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.5F, 0.3F)
+                    );
+                }
+
                 if (charIndex >= rawString.length()) {
                     charIndex = rawString.length();
                     completed = true;
@@ -83,15 +94,4 @@ public class TypewriterTextWidget extends AbstractWidget {
 
         graphics.drawString(font, toDraw, drawX, 0, color, true);
     }
-
-    // 更新寬高資訊，方便排程與排版
-    @Override
-    public int getWidth() {
-        return Minecraft.getInstance().font.width(fullText);
-    }
-
-    @Override
-    public int getHeight() {
-        return Minecraft.getInstance().font.lineHeight;
-    }
-}
+// ... existing code ...
