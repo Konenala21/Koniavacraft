@@ -269,6 +269,7 @@
   "screen.koniava.nara.confirm": "是否與娜拉系統綁定？",
   "screen.koniava.nara.warning": "此操作無法復原，請審慎選擇。",
   "screen.koniava.nara.screen_title": "娜拉系統初始化",
+  "screen.koniava.nara.intro_welcome": "歡迎來到 Koniavacraft",
 
   "//16": "=== GUI 組件 ===",
   "gui.koniava.conduit_config": "導管配置",

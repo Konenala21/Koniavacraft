@@ -271,6 +271,7 @@
   "screen.koniava.nara.confirm": "Would you like to bind with the Nara System?",
   "screen.koniava.nara.warning": "This operation is irreversible. Please proceed with caution.",
   "screen.koniava.nara.screen_title": "Nara System Initialization",
+  "screen.koniava.nara.intro_welcome": "Welcome to Koniavacraft",
 
   "//16": "=== GUI COMPONENTS ===",
   "gui.koniava.conduit_config": "Conduit Configuration",
