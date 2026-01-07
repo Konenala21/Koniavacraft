@@ -14,7 +14,7 @@
     - [ ] 實作玩家與 Nara 系統的初次綁定流程
 - [ ] Task: Conductor - User Manual Verification 'Nara System 核心機制與介面實作' (Protocol in workflow.md)
 
-## Phase 2: DataComponent 系統遷移與完善
+## Phase 2: DataComponent 系統遷移與完善 [checkpoint: dec4a94]
 *目標：將核心數據結構遷移至 1.21.1 DataComponent 標準*
 
 - [x] **Task 1: 定義自定義 DataComponents** [8d7d9f9]
