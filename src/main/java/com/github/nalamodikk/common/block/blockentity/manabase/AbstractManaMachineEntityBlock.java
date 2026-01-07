@@ -245,6 +245,27 @@ public abstract class AbstractManaMachineEntityBlock extends BlockEntity impleme
         this.drops(level, pos);
         level.invalidateCapabilities(pos);
     }
+
+    @Override
+    protected void collectComponents(net.minecraft.core.component.DataComponentMap.Builder builder) {
+        super.collectComponents(builder);
+        if (manaStorage != null) {
+            builder.set(com.github.nalamodikk.register.ModDataComponents.MANA_STORED, manaStorage.getManaStored());
+            builder.set(com.github.nalamodikk.register.ModDataComponents.MAX_MANA, manaStorage.getMaxMana());
+        }
+    }
+
+    @Override
+    protected void applyComponents(BlockEntity.DataComponentInput input) {
+        super.applyComponents(input);
+        if (manaStorage != null) {
+            Integer stored = input.get(com.github.nalamodikk.register.ModDataComponents.MANA_STORED);
+            if (stored != null) {
+                manaStorage.setMana(stored);
+            }
+        }
+    }
+
 // 在 AbstractManaMachineEntityBlock 類中添加這些方法
 
     @Override
