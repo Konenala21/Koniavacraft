@@ -1,6 +1,5 @@
 package com.github.nalamodikk.narasystem.nara.screen;
 
-
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.client.screenAPI.component.button.TooltipButton;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraBindRequestPacket;
@@ -10,6 +9,8 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.fml.ModList;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 
 import java.util.Collections;
 import java.util.List;
@@ -62,7 +63,6 @@ public class NaraInitScreen extends Screen {
         super(Component.empty());
     }
 
-
     /**
      * 每個遊戲刻更新動畫進度並在適當時機載入互動按鈕。
      */
@@ -74,6 +74,10 @@ public class NaraInitScreen extends Screen {
         if (currentStage == Stage.SHOWING_LINES) {
             if (visibleLines < LINES.length && ticksElapsed % LINE_REVEAL_INTERVAL == 0) {
                 visibleLines++;
+                // 播放音效
+                minecraft.getSoundManager().play(
+                    SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), 1.5F, 0.3F)
+                );
             }
             if (visibleLines == LINES.length && ticksElapsed >= BUTTON_APPEAR_TICK) {
                 currentStage = Stage.AWAITING_CONFIRM;
