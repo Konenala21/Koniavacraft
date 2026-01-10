@@ -17,3 +17,4 @@
 ## Infrastructure
 *   **Data Generation:** 利用 NeoForge DataGen 系統自動生成資源與數據。
 *   **Performance Tuning:** 針對開發環境進行 JVM 參數優化，確保順暢開發體驗。
+*   **Testing:** 採用 JUnit 5 進行單元測試，配合 NeoForge GameTest 框架進行整合測試。

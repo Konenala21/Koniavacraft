@@ -39,3 +39,7 @@
 ## 6. Error Handling
 *   Fail gracefully. Avoid crashing the game for non-critical errors.
 *   Log errors with context (e.g., "Failed to load recipe for Mana Infuser at [x,y,z]").
+
+## 7. AI & Tooling Safety
+*   **No Code Abbreviation:** When writing or replacing files, NEVER use placeholders like `// ... existing code ...`. Always provide the full, valid code to prevent accidental deletion of file contents.
+*   **Verify Replacements:** Double-check `replace` tool calls to ensure `old_string` matches exactly and `new_string` is complete.

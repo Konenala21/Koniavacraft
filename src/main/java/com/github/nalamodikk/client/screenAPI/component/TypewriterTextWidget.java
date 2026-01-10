@@ -75,7 +75,7 @@ public class TypewriterTextWidget extends AbstractWidget {
                 // 播放音效 (每 2 個字播放一次，避免太吵)
                 if (charIndex % 2 == 0) {
                     Minecraft.getInstance().getSoundManager().play(
-                        SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.5F, 0.3F)
+                        SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), 1.5F, 0.3F)
                     );
                 }
 
@@ -94,4 +94,15 @@ public class TypewriterTextWidget extends AbstractWidget {
 
         graphics.drawString(font, toDraw, drawX, 0, color, true);
     }
-// ... existing code ...
+
+    // 更新寬高資訊，方便排程與排版
+    @Override
+    public int getWidth() {
+        return Minecraft.getInstance().font.width(fullText);
+    }
+
+    @Override
+    public int getHeight() {
+        return Minecraft.getInstance().font.lineHeight;
+    }
+}
