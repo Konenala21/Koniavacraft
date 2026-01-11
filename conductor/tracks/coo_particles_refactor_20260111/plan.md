@@ -16,13 +16,13 @@
 ## Phase 2: Geometry & Math System (Core Refactor)
 本階段目標：確保數學與幾何生成核心功能完整。
 
-- [ ] Task: Math Utilities Completion
-    - [ ] Sub-task: Implement/Update `RotationMatrix`, `Math3DUtil`, `GraphMathHelper` (Interpolation logic).
-- [ ] Task: PointsBuilder Implementation
-    - [ ] Sub-task: Port `PointsBuilder` core logic (add, rotate, scale).
-    - [ ] Sub-task: Implement shape generators: Circle, Polygon, Spiral.
-    - [ ] Sub-task: Test `PointsBuilder` with a simple unit test or debug output.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
+- [x] Task: Math Utilities Completion
+    - [x] Sub-task: Implement/Update `RotationMatrix`, `Math3DUtil`, `GraphMathHelper` (Interpolation logic).
+- [x] Task: PointsBuilder Implementation
+    - [x] Sub-task: Port `PointsBuilder` core logic (add, rotate, scale).
+    - [x] Sub-task: Implement shape generators: Circle, Polygon, Spiral.
+    - [x] Sub-task: Test `PointsBuilder` with a simple unit test or debug output.
+- [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
 
 ## Phase 3: Style & Control System (Logic Layer)
 本階段目標：建構樣式系統與粒子控制器，連結幾何數據與視覺表現。
