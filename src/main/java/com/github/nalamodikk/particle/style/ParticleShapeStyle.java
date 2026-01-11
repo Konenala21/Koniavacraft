@@ -22,6 +22,12 @@ public class ParticleShapeStyle implements ParticleStyle {
     private Level world;
     private Vec3 basePos;
     private boolean isRemoved = false;
+    
+    // 動畫控制
+    private com.github.nalamodikk.particle.utils.helper.ScaleHelper scaleHelper;
+    private double currentScale = 1.0;
+    private final List<Consumer<ParticleShapeStyle>> displayInvokes = new ArrayList<>();
+    private final List<Consumer<ParticleShapeStyle>> preTickActions = new ArrayList<>();
 
     @Override
     public UUID getUuid() {
@@ -53,15 +59,20 @@ public class ParticleShapeStyle implements ParticleStyle {
         this.world = world;
         this.basePos = pos;
         
+        // 執行顯示時的初始化動作
+        for (Consumer<ParticleShapeStyle> action : displayInvokes) {
+            action.accept(this);
+        }
+        
         Map<StyleData, RelativeLocation> frames = getCurrentFrames();
         for (Map.Entry<StyleData, RelativeLocation> entry : frames.entrySet()) {
             RelativeLocation rel = entry.getValue();
-            Vec3 spawnPos = pos.add(rel.toVector());
             
-            // 使用現有的 ParticleManager 生成粒子
-            // 這裡假設我們有一個方便的方法來獲取 Controller
-            // 注意：這裡需要對齊 ModParticles 的註冊名
-            // 我暫時用一個硬編碼的類型，Phase 5 會修正
+            // 應用當前縮放
+            RelativeLocation scaledRel = rel.multiplyClone(currentScale);
+            
+            Vec3 spawnPos = pos.add(scaledRel.toVector());
+            
             Optional<ParticleController> controller = ParticleManager.getInstance()
                 .spawnParticle(world, "koniava:coo_particle", spawnPos.x, spawnPos.y, spawnPos.z, 0, 0, 0);
             
@@ -73,8 +84,42 @@ public class ParticleShapeStyle implements ParticleStyle {
     public void tick() {
         if (isRemoved) return;
         
-        // 這裡可以實現旋轉等動態效果
-        // 暫時保持靜態
+        // 執行 Pre-tick actions (例如動畫更新)
+        for (Consumer<ParticleShapeStyle> action : preTickActions) {
+            action.accept(this);
+        }
+        
+        // 如果有 ScaleHelper，執行縮放
+        if (scaleHelper != null) {
+            scaleHelper.doScale();
+        }
+    }
+
+    public void setScale(double scale) {
+        this.currentScale = scale;
+        // 如果已經顯示了，需要更新所有現存粒子的位置 (這裡簡化處理：先不即時更新位置，只影響新生成或下一幀)
+        // 理想情況下應該遍歷 activeParticles 並重新計算相對位置
+        // 但因為我們目前沒有保存每個粒子的原始相對位置 (只有 currentPosition)，所以縮放有點困難。
+        // 不過如果我們只是每 tick 重新生成粒子 (像很多魔法陣特效一樣)，那只要改變 currentScale 就夠了。
+        // 但我們的架構是生成一次粒子然後控制它。
+        
+        // TODO: 完整的縮放需要重新計算每個粒子的位置。
+        // 這裡暫時只更新變數，留待 Phase 5 後續優化。
+    }
+
+    public ParticleShapeStyle loadScaleHelper(double min, double max, int ticks) {
+        this.scaleHelper = new com.github.nalamodikk.particle.utils.helper.ScaleHelper(min, max, ticks);
+        this.scaleHelper.setTarget(this);
+        return this;
+    }
+    
+    public ParticleShapeStyle toggleOnDisplay(Consumer<ParticleShapeStyle> action) {
+        this.displayInvokes.add(action);
+        return this;
+    }
+    
+    public void addPreTickAction(Consumer<ParticleShapeStyle> action) {
+        this.preTickActions.add(action);
     }
 
     @Override

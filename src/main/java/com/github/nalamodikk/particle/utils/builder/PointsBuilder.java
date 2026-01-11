@@ -90,6 +90,11 @@ public class PointsBuilder {
         return this;
     }
     
+    public PointsBuilder rotateTo(RelativeLocation target) {
+        Math3DUtil.rotatePointsToPoint(points, target, axis);
+        return this;
+    }
+    
     public PointsBuilder pointsOnEach(Consumer<RelativeLocation> handler) {
         points.forEach(handler);
         return this;
@@ -106,6 +111,19 @@ public class PointsBuilder {
         PointsBuilder builder = new PointsBuilder();
         handler.accept(builder);
         addPoints(builder.create());
+        return this;
+    }
+
+    public PointsBuilder withPreset(Function<Double, List<RelativeLocation>> preset, double scale) {
+        addPoints(preset.apply(scale));
+        return this;
+    }
+    
+    /**
+     * 專門用於 MathPresets 的適配器
+     */
+    public PointsBuilder withRomaNumber(int number, double scale) {
+        addPoints(com.github.nalamodikk.particle.utils.MathPresets.withRomaNumber(number, scale));
         return this;
     }
 

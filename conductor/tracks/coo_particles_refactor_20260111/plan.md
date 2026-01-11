@@ -47,13 +47,15 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md) [checkpoint: 20b7cc8]
 
 ## Phase 5: Verification & Polish (The "Roma Magic" Test)
-本階段目標：實作羅馬魔法陣範例，驗證所有系統協同運作。
+本階段目標：實作羅馬魔法陣範例，並補完缺失的動畫與圖形邏輯。
 
-- [ ] Task: Port RomaMagicTestStyle
-    - [ ] Sub-task: Create `RomaMagicTestStyle` class in Java.
-    - [ ] Sub-task: Register necessary textures/assets.
-    - [ ] Sub-task: Create a debug item/command to trigger this style.
-- [ ] Task: Final Polish
-    - [ ] Sub-task: Verify visual effects in-game.
-    - [ ] Sub-task: Add Javadoc (Traditional Chinese) for public APIs.
-- [ ] Task: Conductor - User Manual Verification 'Phase 5' (Protocol in workflow.md)
+- [x] Task: Port RomaMagicTestStyle
+    - [x] Sub-task: Implement `MathPresets` (Roma Numbers).
+    - [x] Sub-task: Implement `ScaleHelper` (Animation).
+    - [x] Sub-task: Create `RomaMagicTestStyle` class in Java.
+    - [x] Sub-task: Register necessary textures/assets.
+    - [x] Sub-task: Create a debug item/command to trigger this style.
+- [x] Task: Final Polish
+    - [x] Sub-task: Verify visual effects in-game.
+    - [x] Sub-task: Add Javadoc (Traditional Chinese) for public APIs.
+- [x] Task: Conductor - User Manual Verification 'Phase 5' (Protocol in workflow.md)

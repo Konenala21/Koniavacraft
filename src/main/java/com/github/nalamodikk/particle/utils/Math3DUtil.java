@@ -113,6 +113,44 @@ public class Math3DUtil {
     public static Vector3f colorOf(int r, int g, int b) {
         return new Vector3f(r / 255f, g / 255f, b / 255f);
     }
+
+    /**
+     * 讓圖形的對稱軸指向某個點 (圖形跟著轉變)
+     */
+    public static List<RelativeLocation> rotatePointsToPoint(List<RelativeLocation> shape, RelativeLocation toPoint, RelativeLocation axis) {
+        if (shape.isEmpty()) return shape;
+
+        // 計算旋轉四元數
+        org.joml.Quaterniond q = new org.joml.Quaterniond();
+        
+        RelativeLocation na = axis.normalize();
+        double axisYaw = Math.atan2(-na.x, na.z);
+        double axisPitch = Math.atan2(na.y, Math.sqrt(na.x * na.x + na.z * na.z));
+
+        RelativeLocation toa = toPoint.normalize();
+        double toYaw = Math.atan2(-toa.x, toa.z);
+        double toPitch = Math.atan2(toa.y, Math.sqrt(toa.x * toa.x + toa.z * toa.z));
+
+        // 先讓圖形面向 Z 軸
+        q.rotateY(axisYaw).rotateLocalX(axisPitch);
+        
+        // 再轉向目標點
+        org.joml.Quaterniond toQ = new org.joml.Quaterniond()
+            .rotateY(-toYaw)
+            .rotateX(-toPitch);
+
+        // 應用旋轉 (同樣使用並行流優化)
+        shape.parallelStream().forEach(it -> {
+            org.joml.Vector3d vector = new org.joml.Vector3d(it.x, it.y, it.z);
+            vector.rotate(q);
+            vector.rotate(toQ);
+            it.x = vector.x;
+            it.y = vector.y;
+            it.z = vector.z;
+        });
+
+        return shape;
+    }
     
     // 轉換角度 (度 -> 弧度)
     public static double toRadians(double degrees) {
