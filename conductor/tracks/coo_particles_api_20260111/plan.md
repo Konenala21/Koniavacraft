@@ -24,15 +24,15 @@
 - [x] 任務：Conductor - 使用者手動驗證 '控制通訊協議' (遵循 workflow.md 協議)
 
 ## 第三階段：渲染管線注入 (Rendering Pipeline Injection)
-- [ ] 任務：定義自定義渲染類型 (Render Types)
-    - [ ] 建立 `CooParticleRenderTypes` 類別。
-    - [ ] 實作 `ADDITION_BLEND` (加法混合) 渲染類型。
-    - [ ] 實作 `TRANSLUCENT_NO_DEPTH` (無視深度的半透明) 渲染類型（視需求）。
-- [ ] 任務：Mixin 底層注入
-    - [ ] 建立 `ParticleEngineMixin`。
-    - [ ] 透過 Mixin 將自定義渲染類型注入到原版的 `RENDER_ORDER` 對照表中。
-    - [ ] **驗證：** 確保遊戲啟動不崩潰且渲染類型已正確註冊。
-- [ ] 任務：Conductor - 使用者手動驗證 '渲染管線注入' (遵循 workflow.md 協議)
+- [x] 任務：定義自定義渲染類型 (Render Types)
+    - [x] 建立 `CooParticleRenderTypes` 類別。
+    - [x] 實作 `ADDITION_BLEND` (加法混合) 渲染類型。
+    - [x] 實作 `TRANSLUCENT_NO_DEPTH` (無視深度的半透明) 渲染類型（視需求）。 [6ba9afe]
+- [x] 任務：Mixin 底層注入
+    - [x] 建立 `ParticleEngineMixin`。
+    - [x] 透過 Mixin 將自定義渲染類型注入到原版的 `RENDER_ORDER` 對照表中。
+    - [x] **驗證：** 確保遊戲啟動不崩潰且渲染類型已正確註冊。 [6ba9afe]
+- [~] 任務：Conductor - 使用者手動驗證 '渲染管線注入' (遵循 workflow.md 協議)
 
 ## 第四階段：粒子行為與 3D 渲染實作 (Entity Behavior & 3D Rendering)
 - [ ] 任務：實作基礎可控粒子 (ControlableParticle)
