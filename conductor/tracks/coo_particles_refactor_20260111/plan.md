@@ -11,7 +11,7 @@
     - [x] Sub-task: Create `com.github.nalamodikk.particle.render.shader` package structure.
     - [x] Sub-task: Port `GlShader`, `GlShaderType`, `FileShader` (Java implementation).
     - [x] Sub-task: Port `SimpleShaderProgram` and `ShaderProgramBuilder`.
-- [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md) [checkpoint: df0b7f4]
 
 ## Phase 2: Geometry & Math System (Core Refactor)
 本階段目標：確保數學與幾何生成核心功能完整。
