@@ -110,6 +110,28 @@ public class ParticleManager {
     }
 
     /**
+     * 生成並獲取粒子控制器
+     */
+    public Optional<ParticleController> spawnParticle(net.minecraft.world.level.Level level, String type, double x, double y, double z, double vx, double vy, double vz) {
+        // 在伺服器端不生成實體粒子，僅作為邏輯佔位 (未來可整合網路同步)
+        if (!level.isClientSide()) {
+            return Optional.empty();
+        }
+
+        // 這裡需要根據 type 找到對應的 ParticleOptions
+        // 為了展示 Phase 3 邏輯，我先實作對 coo_particle 的支持
+        if (type.contains("coo_particle")) {
+            UUID particleId = UUID.randomUUID();
+            CooParticleOptions options = new CooParticleOptions(1.0f, 0xFFFFFF, 1.0f, particleId);
+            level.addParticle(options, x, y, z, vx, vy, vz);
+            
+            // 現在我們可以精確地返回與粒子對應的控制器
+            return Optional.of(new ParticleController(particleId));
+        }
+        return Optional.empty();
+    }
+
+    /**
      * 清理過期的粒子引用
      */
     public void cleanup() {

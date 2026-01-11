@@ -21,7 +21,7 @@ public class CooParticleProvider implements ParticleProvider<CooParticleOptions>
     public Particle createParticle(CooParticleOptions options, ClientLevel level,
                                    double x, double y, double z,
                                    double xSpeed, double ySpeed, double zSpeed) {
-        ControlableParticle particle = new ControlableParticle(level, x, y, z);
+        ControlableParticle particle = new ControlableParticle(level, x, y, z, options.getUuid());
 
         // 應用選項
         particle.pickSprite(sprites);

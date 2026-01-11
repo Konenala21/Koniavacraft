@@ -27,14 +27,14 @@
 ## Phase 3: Style & Control System (Logic Layer)
 本階段目標：建構樣式系統與粒子控制器，連結幾何數據與視覺表現。
 
-- [ ] Task: Particle Style System
-    - [ ] Sub-task: Define `ParticleStyle` interface.
-    - [ ] Sub-task: Implement `ParticleShapeStyle` (integrates PointsBuilder).
-    - [ ] Sub-task: Implement `ParticleGroupStyle`.
-- [ ] Task: Particle Controller Enhancement
-    - [ ] Sub-task: Refactor `ParticleController` to support `preTickAction` and `postTickAction` (as seen in reference).
-    - [ ] Sub-task: Ensure `ControlableParticle` respects Style settings.
-- [ ] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
+- [x] Task: Particle Style System
+    - [x] Sub-task: Define `ParticleStyle` interface.
+    - [x] Sub-task: Implement `ParticleShapeStyle` (integrates PointsBuilder).
+    - [x] Sub-task: Implement `ParticleGroupStyle`.
+- [x] Task: Particle Controller Enhancement
+    - [x] Sub-task: Refactor `ParticleController` to support `preTickAction` and `postTickAction` (as seen in reference).
+    - [x] Sub-task: Ensure `ControlableParticle` respects Style settings.
+- [x] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
 
 ## Phase 4: Shader Integration & Rendering
 本階段目標：將 Shader 系統整合進 Minecraft 渲染管線。

@@ -135,6 +135,30 @@ public class ParticleController {
         return this;
     }
 
+    /**
+     * 添加 Tick 前執行行動
+     */
+    public ParticleController addPreTickAction(java.util.function.Consumer<ControlableParticle> action) {
+        queueCommand(particle -> {
+            if (particle instanceof ControlableParticle cp) {
+                cp.addPreTickAction(action);
+            }
+        });
+        return this;
+    }
+
+    /**
+     * 添加 Tick 後執行行動
+     */
+    public ParticleController addPostTickAction(java.util.function.Consumer<ControlableParticle> action) {
+        queueCommand(particle -> {
+            if (particle instanceof ControlableParticle cp) {
+                cp.addPostTickAction(action);
+            }
+        });
+        return this;
+    }
+
     // ========== 內部方法 ==========
 
     private void queueCommand(IParticleCommand command) {

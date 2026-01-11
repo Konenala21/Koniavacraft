@@ -40,10 +40,18 @@ public class ControlableParticle extends TextureSheetParticle implements ICooPar
     private float green = 1.0f;
     private float blue = 1.0f;
 
+    // Tick Action 支援
+    private final java.util.List<java.util.function.Consumer<ControlableParticle>> preTickActions = new java.util.ArrayList<>();
+    private final java.util.List<java.util.function.Consumer<ControlableParticle>> postTickActions = new java.util.ArrayList<>();
+
     public ControlableParticle(ClientLevel level, double x, double y, double z) {
+        this(level, x, y, z, UUID.randomUUID());
+    }
+
+    public ControlableParticle(ClientLevel level, double x, double y, double z, UUID uuid) {
         super(level, x, y, z);
 
-        this.particleId = UUID.randomUUID();
+        this.particleId = uuid;
         this.prevPosition = new Vec3(x, y, z);
         this.currentPosition = new Vec3(x, y, z);
 
@@ -58,6 +66,11 @@ public class ControlableParticle extends TextureSheetParticle implements ICooPar
 
     @Override
     public void tick() {
+        // 執行 pre-tick actions
+        for (java.util.function.Consumer<ControlableParticle> action : preTickActions) {
+            action.accept(this);
+        }
+
         // 儲存上一幀狀態
         this.prevPosition = this.currentPosition;
         this.prevRotation.set(this.currentRotation);
@@ -70,6 +83,11 @@ public class ControlableParticle extends TextureSheetParticle implements ICooPar
 
         // 調用原版更新邏輯
         super.tick();
+
+        // 執行 post-tick actions
+        for (java.util.function.Consumer<ControlableParticle> action : postTickActions) {
+            action.accept(this);
+        }
     }
 
     @Override
@@ -259,6 +277,14 @@ public class ControlableParticle extends TextureSheetParticle implements ICooPar
 
     public void setFaceToCamera(boolean faceToCamera) {
         this.faceToCamera = faceToCamera;
+    }
+
+    public void addPreTickAction(java.util.function.Consumer<ControlableParticle> action) {
+        this.preTickActions.add(action);
+    }
+
+    public void addPostTickAction(java.util.function.Consumer<ControlableParticle> action) {
+        this.postTickActions.add(action);
     }
 
     public UUID getParticleId() {
