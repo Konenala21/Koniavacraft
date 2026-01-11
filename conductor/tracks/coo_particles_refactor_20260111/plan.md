@@ -34,7 +34,7 @@
 - [x] Task: Particle Controller Enhancement
     - [x] Sub-task: Refactor `ParticleController` to support `preTickAction` and `postTickAction` (as seen in reference).
     - [x] Sub-task: Ensure `ControlableParticle` respects Style settings.
-- [x] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md) [checkpoint: f7a05aa]
 
 ## Phase 4: Shader Integration & Rendering
 本階段目標：將 Shader 系統整合進 Minecraft 渲染管線。
