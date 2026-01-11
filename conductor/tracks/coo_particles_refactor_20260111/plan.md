@@ -58,4 +58,19 @@
 - [x] Task: Final Polish
     - [x] Sub-task: Verify visual effects in-game.
     - [x] Sub-task: Add Javadoc (Traditional Chinese) for public APIs.
-- [x] Task: Conductor - User Manual Verification 'Phase 5' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 5' (Protocol in workflow.md) [checkpoint: 48ee2d4]
+
+## Phase 6: Framework Completion (Full Port)
+本階段目標：回應「必須重現該框架」的要求，補完網路同步、渲染管線與進階數學功能。
+
+- [x] Task: Network Synchronization System
+    - [x] Sub-task: Port `PacketParticleStyleS2C` and networking logic.
+    - [x] Sub-task: Implement `ServerControler` interface and logic.
+    - [x] Sub-task: Ensure server-side triggered styles sync to all clients.
+- [x] Task: Shader Pipe System (Advanced Rendering)
+    - [x] Sub-task: Port `ShaderPipe` and `ShaderPipeManager`.
+    - [x] Sub-task: Implement `GraphPipeLinker` for complex shader chaining.
+- [x] Task: Advanced Math & Presets
+    - [x] Sub-task: Port `BezierCurve` and `FourierSeries` logic.
+    - [x] Sub-task: Implement `ImagePointBuilder` (if applicable).
+- [x] Task: Conductor - User Manual Verification 'Phase 6' (Protocol in workflow.md)

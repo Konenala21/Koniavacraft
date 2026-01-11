@@ -152,6 +152,54 @@ public class Math3DUtil {
         return shape;
     }
     
+    /**
+     * 生成三次貝茲曲線
+     */
+    public static List<RelativeLocation> generateBezierCurve(
+        RelativeLocation target,
+        RelativeLocation startHandle,
+        RelativeLocation endHandle,
+        int count
+    ) {
+        if (count < 1) throw new IllegalArgumentException("Count must be at least 1");
+        
+        List<RelativeLocation> result = new ArrayList<>(count);
+        RelativeLocation end = target.plus(endHandle);
+        
+        // P0 = (0,0,0) (因為是 RelativeLocation)
+        // P1 = startHandle
+        // P2 = target + endHandle
+        // P3 = target
+        
+        for (int i = 0; i < count; i++) {
+            double t = (double) i / (count - 1);
+            double u = 1 - t;
+            double u2 = u * u;
+            double t2 = t * t;
+            double u3 = u2 * u;
+            double t3 = t2 * t;
+            
+            // B(t) = (1-t)^3 P0 + 3(1-t)^2 t P1 + 3(1-t)t^2 P2 + t^3 P3
+            // P0 is origin (0,0,0) so first term is 0
+            
+            double x = (3 * u2 * t * startHandle.x) +
+                       (3 * u * t2 * end.x) +
+                       (t3 * target.x);
+                       
+            double y = (3 * u2 * t * startHandle.y) +
+                       (3 * u * t2 * end.y) +
+                       (t3 * target.y);
+                       
+            double z = (3 * u2 * t * startHandle.z) +
+                       (3 * u * t2 * end.z) +
+                       (t3 * target.z);
+                       
+            result.add(new RelativeLocation(x, y, z));
+        }
+        
+        return result;
+    }
+    
     // 轉換角度 (度 -> 弧度)
     public static double toRadians(double degrees) {
         return Math.toRadians(degrees);
