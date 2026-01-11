@@ -1,5 +1,9 @@
 package com.github.nalamodikk.particle;
 
+import com.github.nalamodikk.particle.commands.IParticleCommand;
+import com.github.nalamodikk.particle.commands.SetVelocityCommand;
+import com.github.nalamodikk.particle.commands.RotateToCommand;
+import com.github.nalamodikk.particle.commands.ColorTransitionCommand;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaternionf;
 
@@ -37,7 +41,7 @@ public class ParticleController {
      * 設置粒子速度
      */
     public ParticleController setVelocity(double vx, double vy, double vz) {
-        queueCommand(particle -> particle.setVelocity(vx, vy, vz));
+        queueCommand(new SetVelocityCommand(vx, vy, vz));
         return this;
     }
 
@@ -52,7 +56,7 @@ public class ParticleController {
      * 設置粒子顏色（RGB，0-1）
      */
     public ParticleController setColor(float r, float g, float b) {
-        queueCommand(particle -> particle.setColor(r, g, b));
+        queueCommand(new ColorTransitionCommand(r, g, b));
         return this;
     }
 
@@ -86,7 +90,7 @@ public class ParticleController {
      * 設置粒子旋轉
      */
     public ParticleController setRotation(Quaternionf rotation) {
-        queueCommand(particle -> particle.setRotation(rotation));
+        queueCommand(new RotateToCommand(rotation));
         return this;
     }
 
@@ -113,7 +117,7 @@ public class ParticleController {
      * 移除粒子
      */
     public void remove() {
-        queueCommand(ControlableParticle::remove);
+        queueCommand(ICooParticle::remove);
     }
 
     /**
@@ -126,14 +130,14 @@ public class ParticleController {
     /**
      * 執行自定義邏輯
      */
-    public ParticleController execute(java.util.function.Consumer<ControlableParticle> action) {
+    public ParticleController execute(IParticleCommand action) {
         queueCommand(action);
         return this;
     }
 
     // ========== 內部方法 ==========
 
-    private void queueCommand(java.util.function.Consumer<ControlableParticle> command) {
+    private void queueCommand(IParticleCommand command) {
         ParticleManager.getInstance().queueCommand(particleId, command);
     }
 

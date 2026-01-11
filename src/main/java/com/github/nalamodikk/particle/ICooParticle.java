@@ -16,5 +16,6 @@ public interface ICooParticle {
     void setScale(float scale);
     void setRotation(Quaternionf rotation);
     void setFaceToCamera(boolean faceToCamera);
+    void remove();
     UUID getParticleId();
 }

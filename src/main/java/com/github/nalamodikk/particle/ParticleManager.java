@@ -1,8 +1,9 @@
 package com.github.nalamodikk.particle;
 
+import com.github.nalamodikk.particle.commands.IParticleCommand;
+
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 
 /**
  * 粒子全局管理器
@@ -14,10 +15,10 @@ public class ParticleManager {
     private static final ParticleManager INSTANCE = new ParticleManager();
 
     // UUID -> 指令隊列
-    private final Map<UUID, List<Consumer<ControlableParticle>>> commandQueues = new ConcurrentHashMap<>();
+    private final Map<UUID, List<IParticleCommand>> commandQueues = new ConcurrentHashMap<>();
 
     // UUID -> 粒子實例（弱引用）
-    private final Map<UUID, ControlableParticle> particles = new ConcurrentHashMap<>();
+    private final Map<UUID, ICooParticle> particles = new ConcurrentHashMap<>();
 
     private ParticleManager() {}
 
@@ -28,7 +29,7 @@ public class ParticleManager {
     /**
      * 註冊粒子
      */
-    public void registerParticle(UUID particleId, ControlableParticle particle) {
+    public void registerParticle(UUID particleId, ICooParticle particle) {
         particles.put(particleId, particle);
         commandQueues.putIfAbsent(particleId, Collections.synchronizedList(new ArrayList<>()));
     }
@@ -44,8 +45,8 @@ public class ParticleManager {
     /**
      * 添加指令到隊列
      */
-    public void queueCommand(UUID particleId, Consumer<ControlableParticle> command) {
-        List<Consumer<ControlableParticle>> queue = commandQueues.computeIfAbsent(
+    public void queueCommand(UUID particleId, IParticleCommand command) {
+        List<IParticleCommand> queue = commandQueues.computeIfAbsent(
             particleId,
             id -> Collections.synchronizedList(new ArrayList<>())
         );
@@ -55,13 +56,13 @@ public class ParticleManager {
     /**
      * 執行粒子的所有待處理指令
      */
-    public void executeCommands(UUID particleId, ControlableParticle particle) {
-        List<Consumer<ControlableParticle>> queue = commandQueues.get(particleId);
+    public void executeCommands(UUID particleId, ICooParticle particle) {
+        List<IParticleCommand> queue = commandQueues.get(particleId);
         if (queue != null && !queue.isEmpty()) {
             synchronized (queue) {
-                for (Consumer<ControlableParticle> command : queue) {
+                for (IParticleCommand command : queue) {
                     try {
-                        command.accept(particle);
+                        command.execute(particle);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -74,7 +75,7 @@ public class ParticleManager {
     /**
      * 獲取粒子實例（如果存在）
      */
-    public Optional<ControlableParticle> getParticle(UUID particleId) {
+    public Optional<ICooParticle> getParticle(UUID particleId) {
         return Optional.ofNullable(particles.get(particleId));
     }
 
