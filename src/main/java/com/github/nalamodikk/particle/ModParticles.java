@@ -18,6 +18,12 @@ public class ModParticles {
     public static final DeferredHolder<ParticleType<?>, CooParticleType> COO_PARTICLE =
         PARTICLE_TYPES.register("coo_particle", CooParticleType::new);
 
+    public static final DeferredHolder<ParticleType<?>, CooParticleType> MAGIC_CIRCLE =
+        PARTICLE_TYPES.register("magic_circle", CooParticleType::new);
+
+    public static final DeferredHolder<ParticleType<?>, CooParticleType> GUIDED_FLOW =
+        PARTICLE_TYPES.register("guided_flow", CooParticleType::new);
+
     public static void register(IEventBus eventBus) {
         PARTICLE_TYPES.register(eventBus);
     }

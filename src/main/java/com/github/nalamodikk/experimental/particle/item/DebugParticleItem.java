@@ -11,7 +11,6 @@ import net.minecraft.world.level.Level;
 
 /**
  * 粒子效果測試工具
- * 右鍵使用生成旋轉魔法陣粒子效果
  */
 public class DebugParticleItem extends Item {
 
@@ -22,19 +21,19 @@ public class DebugParticleItem extends Item {
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
-        BlockPos pos = context.getClickedPos().above(); // 在點擊方塊上方生成
+        BlockPos pos = context.getClickedPos().above();
         Player player = context.getPlayer();
 
-        if (!level.isClientSide) {
-            // 在伺服器端生成粒子效果
-            if (player != null && player.isCrouching()) {
-                // 蹲下右鍵：使用自定義粒子魔法陣
-                ParticleHelper.createManaGeneratorEffect(level, pos);
-                player.displayClientMessage(Component.literal("§d自定義粒子魔法陣"), true);
+        if (!level.isClientSide && player != null) {
+            if (player.isCrouching()) {
+                // 蹲下右鍵：單一 3D 旋轉魔法陣
+                ParticleHelper.createSingleRotatingCircle(level, pos);
+                player.displayClientMessage(Component.literal("§d生成單一 3D 旋轉魔法陣 (MagicCircleParticle)"), true);
             } else {
-                // 普通右鍵：使用原版粒子圓環（對比測試）
-                ParticleHelper.createSimpleCircle(level, pos);
-                player.displayClientMessage(Component.literal("§e原版粒子圓環（測試）"), true);
+                // 普通右鍵：導向魔力流
+                BlockPos target = pos.offset(5, 5, 5); // 假設一個目標
+                ParticleHelper.createGuidedFlow(level, pos, target);
+                player.displayClientMessage(Component.literal("§b生成導向魔力流 (GuidedFlowParticle)"), true);
             }
         }
 
