@@ -200,6 +200,39 @@ public class Math3DUtil {
         return result;
     }
     
+    /**
+     * 生成閃電效果節點 (遞歸分形)
+     */
+    public static List<RelativeLocation> getLightningEffectNodes(
+        RelativeLocation start, RelativeLocation end, int generations, double offsetRange
+    ) {
+        List<RelativeLocation> res = new ArrayList<>();
+        res.add(start);
+        res.addAll(getLightningNodesRecursive(start, end, generations, offsetRange));
+        res.add(end);
+        return res;
+    }
+
+    private static List<RelativeLocation> getLightningNodesRecursive(
+        RelativeLocation start, RelativeLocation end, int generations, double offsetRange
+    ) {
+        List<RelativeLocation> res = new ArrayList<>();
+        if (generations <= 0) return res;
+
+        RelativeLocation mid = start.plus(end).multiply(0.5);
+        // 隨機偏移 (這裡需要一個隨機向量生成器，暫時用簡單的)
+        double dx = (Math.random() - 0.5) * 2 * offsetRange;
+        double dy = (Math.random() - 0.5) * 2 * offsetRange;
+        double dz = (Math.random() - 0.5) * 2 * offsetRange;
+        mid.add(dx, dy, dz);
+
+        res.addAll(getLightningNodesRecursive(start, mid, generations - 1, offsetRange / 2));
+        res.add(mid);
+        res.addAll(getLightningNodesRecursive(mid, end, generations - 1, offsetRange / 2));
+        
+        return res;
+    }
+    
     // 轉換角度 (度 -> 弧度)
     public static double toRadians(double degrees) {
         return Math.toRadians(degrees);

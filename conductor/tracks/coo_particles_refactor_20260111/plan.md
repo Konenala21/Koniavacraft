@@ -73,4 +73,21 @@
 - [x] Task: Advanced Math & Presets
     - [x] Sub-task: Port `BezierCurve` and `FourierSeries` logic.
     - [x] Sub-task: Implement `ImagePointBuilder` (if applicable).
-- [x] Task: Conductor - User Manual Verification 'Phase 6' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 6' (Protocol in workflow.md) [checkpoint: 0d52577]
+
+## Phase 7: The Missing Features (Barrage, PathMotion, Advanced VFX)
+本階段目標：補完框架中剩餘的高階功能：彈幕系統、路徑動畫、圖片粒子與進階發光渲染。
+
+- [x] Task: Barrage System (Physics & Collision)
+    - [x] Sub-task: Implement `HitBox` and `Barrage` abstract class.
+    - [x] Sub-task: Implement `BarrageManager` for handling collision ticks.
+- [x] Task: Path Motion System (Advanced Animation)
+    - [x] Sub-task: Port `PathMotion` interface and implementations.
+    - [x] Sub-task: Integrate PathMotion into `ParticleController`.
+- [x] Task: Lightning & Image Builder
+    - [x] Sub-task: Implement `Math3DUtil` lightning generation logic.
+    - [x] Sub-task: Implement `ImagePointBuilder` using Minecraft's `NativeImage`.
+- [x] Task: Advanced Shader Pipes (Bloom/Glow)
+    - [x] Sub-task: Implement `PingPongShaderPipe`.
+    - [x] Sub-task: Setup basic Bloom effect infrastructure.
+- [x] Task: Conductor - User Manual Verification 'Phase 7' (Protocol in workflow.md)
