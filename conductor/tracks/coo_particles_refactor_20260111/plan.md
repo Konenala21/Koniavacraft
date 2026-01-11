@@ -39,12 +39,12 @@
 ## Phase 4: Shader Integration & Rendering
 本階段目標：將 Shader 系統整合進 Minecraft 渲染管線。
 
-- [ ] Task: Render Type & Pipeline
-    - [ ] Sub-task: Create custom `ParticleRenderType` that uses our ShaderProgram.
-    - [ ] Sub-task: Implement `RenderLevelStageEvent` handler to dispatch shader drawing.
-- [ ] Task: Buffer Management
-    - [ ] Sub-task: Port `VertexBuffer` / `DynamicVertexBuffer` logic for efficient batch rendering.
-- [ ] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md)
+- [x] Task: Render Type & Pipeline
+    - [x] Sub-task: Create custom `ParticleRenderType` that uses our ShaderProgram.
+    - [x] Sub-task: Implement `RenderLevelStageEvent` handler to dispatch shader drawing.
+- [x] Task: Buffer Management
+    - [x] Sub-task: Port `VertexBuffer` / `DynamicVertexBuffer` logic for efficient batch rendering.
+- [x] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md)
 
 ## Phase 5: Verification & Polish (The "Roma Magic" Test)
 本階段目標：實作羅馬魔法陣範例，驗證所有系統協同運作。
