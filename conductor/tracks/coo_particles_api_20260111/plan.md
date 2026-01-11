@@ -10,7 +10,7 @@
     - [x] **測試：** 撰寫單元測試驗證碰撞偵測邏輯。 [3e5a16c]
 - [x] 任務：Conductor - 使用者手動驗證 '基礎數學與工具鏈' (遵循 workflow.md 協議)
 
-## 第二階段：控制通訊協議 (Control Protocol)
+## 第二階段：控制通訊協議 (Control Protocol) [checkpoint: c570a91]
 - [x] 任務：定義指令架構
     - [x] 建立 `IParticleCommand` 函式式介面 (對應 `ControlableParticle` 的消費者)。
     - [x] 實作基礎指令：`SetSpeedCommand` (設定速度)、`RotateToCommand` (旋轉至)、`ColorTransitionCommand` (顏色漸變)。 [babcd4f]
@@ -21,7 +21,7 @@
     - [x] 建立 `ParticleController` 類別，提供 API 供其他系統呼叫。
     - [x] 將控制器連結至管理器（將指令推送到對應粒子的隊列中）。
     - [x] **測試：** 單元測試指令的推送到讀取流程（模擬粒子物件進行驗證）。 [6c446ed]
-- [ ] 任務：Conductor - 使用者手動驗證 '控制通訊協議' (遵循 workflow.md 協議)
+- [x] 任務：Conductor - 使用者手動驗證 '控制通訊協議' (遵循 workflow.md 協議)
 
 ## 第三階段：渲染管線注入 (Rendering Pipeline Injection)
 - [ ] 任務：定義自定義渲染類型 (Render Types)
