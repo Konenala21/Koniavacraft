@@ -53,7 +53,7 @@ public class MagicCircleParticle extends ControlableParticle {
         this.setSpriteFromAge(sprites);
     }
 
-    public static class Provider implements ParticleProvider<com.github.nalamodikk.particle.CooParticleOptions> {
+    public static class Provider implements ParticleProvider<MagicCircleOptions> {
         private final SpriteSet sprites;
 
         public Provider(SpriteSet sprites) {
@@ -62,7 +62,7 @@ public class MagicCircleParticle extends ControlableParticle {
 
         @Nullable
         @Override
-        public net.minecraft.client.particle.Particle createParticle(com.github.nalamodikk.particle.CooParticleOptions type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+        public net.minecraft.client.particle.Particle createParticle(MagicCircleOptions type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
             return new MagicCircleParticle(level, x, y, z, sprites);
         }
     }

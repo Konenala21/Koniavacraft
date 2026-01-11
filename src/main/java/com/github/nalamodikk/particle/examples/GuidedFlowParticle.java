@@ -38,7 +38,7 @@ public class GuidedFlowParticle extends ControlableParticle {
         this.setAlpha(1.0f - lifeRatio);
     }
 
-    public static class Provider implements ParticleProvider<com.github.nalamodikk.particle.CooParticleOptions> {
+    public static class Provider implements ParticleProvider<GuidedFlowOptions> {
         private final SpriteSet sprites;
 
         public Provider(SpriteSet sprites) {
@@ -47,7 +47,7 @@ public class GuidedFlowParticle extends ControlableParticle {
 
         @Nullable
         @Override
-        public net.minecraft.client.particle.Particle createParticle(com.github.nalamodikk.particle.CooParticleOptions type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
+        public net.minecraft.client.particle.Particle createParticle(GuidedFlowOptions type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
             return new GuidedFlowParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, sprites);
         }
     }

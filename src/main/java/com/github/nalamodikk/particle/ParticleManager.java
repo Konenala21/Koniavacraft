@@ -1,6 +1,7 @@
 package com.github.nalamodikk.particle;
 
 import com.github.nalamodikk.particle.commands.IParticleCommand;
+import com.github.nalamodikk.particle.utils.PerformanceMonitor;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,8 +18,11 @@ public class ParticleManager {
     // UUID -> 指令隊列
     private final Map<UUID, List<IParticleCommand>> commandQueues = new ConcurrentHashMap<>();
 
-    // UUID -> 粒子實例（弱引用）
+    // UUID -> 粒子實例
     private final Map<UUID, ICooParticle> particles = new ConcurrentHashMap<>();
+    
+    // 生成順序（用於驅逐）
+    private final Queue<UUID> particleOrder = new LinkedList<>();
 
     private ParticleManager() {}
 
@@ -30,7 +34,16 @@ public class ParticleManager {
      * 註冊粒子
      */
     public void registerParticle(UUID particleId, ICooParticle particle) {
-        particles.put(particleId, particle);
+        synchronized (particleOrder) {
+            // 檢查負載限制
+            int limit = PerformanceMonitor.getInstance().getParticleLimit();
+            while (particles.size() >= limit) {
+                evictOldestParticle();
+            }
+            
+            particles.put(particleId, particle);
+            particleOrder.offer(particleId);
+        }
         commandQueues.putIfAbsent(particleId, Collections.synchronizedList(new ArrayList<>()));
     }
 
@@ -40,6 +53,23 @@ public class ParticleManager {
     public void unregisterParticle(UUID particleId) {
         particles.remove(particleId);
         commandQueues.remove(particleId);
+        // 注意：從 particleOrder 移除比較慢 (O(n))，我們可以在驅逐時檢查是否已存在
+        // 或者使用 LinkedHashMap 來實現 LRU
+    }
+    
+    private void evictOldestParticle() {
+        UUID oldestId = particleOrder.poll();
+        if (oldestId != null) {
+            ICooParticle p = particles.get(oldestId);
+            if (p != null) {
+                p.remove(); // 這會觸發 unregisterParticle
+            } else {
+                // 如果已經移除了，遞歸嘗試下一個
+                if (!particles.isEmpty()) {
+                    evictOldestParticle();
+                }
+            }
+        }
     }
 
     /**

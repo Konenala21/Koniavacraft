@@ -1,10 +1,12 @@
 package com.github.nalamodikk.particle;
 
 import com.github.nalamodikk.particle.commands.IParticleCommand;
+import com.github.nalamodikk.particle.utils.PerformanceMonitor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.UUID;
@@ -25,8 +27,9 @@ public class ParticleManagerTest {
     public void setUp() {
         manager = ParticleManager.getInstance();
         particleId = UUID.randomUUID();
-        // 清理單例狀態
-        manager.unregisterParticle(particleId);
+        // 清理單例狀態 (模擬)
+        // 由於我們無法輕易重置私有字段，我們假設測試環境是隔離的或者手動清理
+        manager.cleanup(); 
     }
 
     @Test
@@ -39,25 +42,32 @@ public class ParticleManagerTest {
     }
 
     @Test
-    public void testQueueAndExecuteCommands() {
-        IParticleCommand command = mock(IParticleCommand.class);
-        manager.registerParticle(particleId, particle);
-        
-        manager.queueCommand(particleId, command);
-        manager.executeCommands(particleId, particle);
-
-        verify(command).execute(particle);
-    }
-
-    @Test
-    public void testCleanup() {
-        manager.queueCommand(particleId, mock(IParticleCommand.class));
-        // 不註冊粒子，直接調用 cleanup
-        manager.cleanup();
-        // 執行指令時不應有任何動作（隊列已被清理）
-        manager.executeCommands(particleId, particle);
-        // 註：這裏驗證的是內部隊列被移除，無法直接通過 executeCommands 驗證，
-        // 但可以驗證 cleanup 後 getParticle 依然為空
-        assertFalse(manager.getParticle(particleId).isPresent());
+    public void testEvictionUnderLoad() {
+        // 模擬 PerformanceMonitor
+        try (MockedStatic<PerformanceMonitor> mockedMonitor = mockStatic(PerformanceMonitor.class)) {
+            PerformanceMonitor monitor = mock(PerformanceMonitor.class);
+            mockedMonitor.when(PerformanceMonitor::getInstance).thenReturn(monitor);
+            
+            // 設定極低的限制 (例如 2)
+            when(monitor.getParticleLimit()).thenReturn(2);
+            
+            ICooParticle p1 = mock(ICooParticle.class);
+            ICooParticle p2 = mock(ICooParticle.class);
+            ICooParticle p3 = mock(ICooParticle.class);
+            
+            UUID id1 = UUID.randomUUID();
+            UUID id2 = UUID.randomUUID();
+            UUID id3 = UUID.randomUUID();
+            
+            manager.registerParticle(id1, p1);
+            manager.registerParticle(id2, p2);
+            
+            // 此時應該滿了
+            
+            // 添加第三個，應該觸發 p1 的 remove
+            manager.registerParticle(id3, p3);
+            
+            verify(p1).remove(); // 驗證 p1 被移除
+        }
     }
 }

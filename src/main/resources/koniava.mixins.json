@@ -8,7 +8,9 @@
     "NoiseGeneratorSettingsMixin",
     "NoiseSettingsAccessor",
     "OverworldBiomeBuilderMixin",
-    "particle.ParticleEngineMixin"
+    "particle.ParticleEngineMixin",
+    "particle.ParticleEngineAccessor",
+    "client.MinecraftAccessor"
   ],
   "client": [],
   "server": [],
