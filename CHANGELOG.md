@@ -52,6 +52,10 @@ All notable changes to this project will be documented in this file.
 - Upgrade inventory now marks changes when setting items to keep upgrade effects in sync.
 - Simplified Solar Mana Collector GameTests to avoid shared weather/time state and expanded flag-logic checks (including night).
 - Added a Taiwan-style mana-industrial progression draft and three-tier recipe plan to docs.
+- Stabilized the controllable particle system with proper client tick registration and command queue pre-creation.
+- Switched controllable particles to additive blending and routed particle logs through the mod logger.
+- Fixed client particle tick event bus registration for NeoForge (Bus.GAME).
+- Ensured custom particle render types bind the particle shader and mark translucency.
 
 ## [0.0.1.5 Preview] - 2026-01-04
 ### Changed
