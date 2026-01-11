@@ -81,6 +81,11 @@ public class ControlableParticle extends TextureSheetParticle implements ICooPar
 
     @Override
     public void render(VertexConsumer vertexConsumer, Camera camera, float partialTick) {
+        // 臨時日誌：每 100 tick 輸出一條，避免刷屏
+        if (this.age % 100 == 0 && this.age > 0) {
+             KoniavacraftMod.LOGGER.debug("✨ 渲染粒子: {} 位置: {}", particleId, currentPosition);
+        }
+
         // 計算插值位置
         Vec3 renderPos = new Vec3(
             Mth.lerp(partialTick, prevPosition.x, currentPosition.x),

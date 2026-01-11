@@ -1,0 +1,8 @@
+{
+  "track_id": "coo_particles_refactor_20260111",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-01-11T12:00:00Z",
+  "updated_at": "2026-01-11T12:00:00Z",
+  "description": "Port and refactor CooParticlesAPI core features (Geometry, Style, Shader) to Java/NeoForge 1.21.1"
+}

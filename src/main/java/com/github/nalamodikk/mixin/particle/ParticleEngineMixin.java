@@ -1,42 +1,84 @@
 package com.github.nalamodikk.mixin.particle;
 
 import com.github.nalamodikk.particle.CooParticleRenderTypes;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader; // Import BufferUploader
+import com.mojang.blaze3d.vertex.MeshData; // Import MeshData
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import net.minecraft.client.Camera;
+import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleEngine;
 import net.minecraft.client.particle.ParticleRenderType;
+import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.culling.Frustum;
+import net.minecraft.client.renderer.texture.TextureManager;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.function.Predicate;
 
 /**
- * 注入自定義粒子渲染類型到原版引擎的渲染循環中
+ * 注入自定義粒子渲染邏輯
  */
 @Mixin(ParticleEngine.class)
 public class ParticleEngineMixin {
 
+    @Shadow
+    @Final
+    private Map<ParticleRenderType, Queue<Particle>> particles;
+
+    @Shadow
+    @Final
+    protected TextureManager textureManager;
+
     /**
-     * 在 render 方法中攔截對 RENDER_ORDER 的迭代
-     * 這裡我們在方法開始時將 RENDER_ORDER 替換為包含我們自定義類型的列表
-     * 註：1.21.1 中 RENDER_ORDER 是靜態常量，
-     * 我們攔截 render 方法中對其引用的局部變量。
+     * 在原版渲染結束後，手動渲染我們的自定義類型
+     * 使用 javap 確認的正確簽名
      */
-    @ModifyVariable(
-        method = "render(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource$BufferSource;Lnet/minecraft/client/renderer/LightTexture;Lnet/minecraft/client/Camera;FLnet/minecraft/client/renderer/culling/Frustum;)V",
-        at = @At("STORE"),
-        ordinal = 0
+    @Inject(
+        method = "render(Lnet/minecraft/client/renderer/LightTexture;Lnet/minecraft/client/Camera;FLnet/minecraft/client/renderer/culling/Frustum;Ljava/util/function/Predicate;)V",
+        at = @At("RETURN")
     )
-    private Iterable<ParticleRenderType> cooParticlesAPI$injectRenderTypes(Iterable<ParticleRenderType> original) {
-        if (original instanceof List<ParticleRenderType> list) {
-            List<ParticleRenderType> newOrder = new ArrayList<>(list);
-            if (!newOrder.contains(CooParticleRenderTypes.ADDITIVE_BLEND)) {
-                newOrder.add(CooParticleRenderTypes.ADDITIVE_BLEND);
-                newOrder.add(CooParticleRenderTypes.TRANSLUCENT);
-                newOrder.add(CooParticleRenderTypes.GLOW);
+    private void cooParticlesAPI$renderCustomTypes(LightTexture lightTexture, Camera camera, float partialTick, Frustum clippingHelper, Predicate<ParticleRenderType> renderTypePredicate, CallbackInfo ci) {
+        RenderSystem.enableDepthTest();
+        
+        // 嘗試最簡單的渲染：
+        renderCustomType(CooParticleRenderTypes.ADDITIVE_BLEND, camera, partialTick, lightTexture);
+        renderCustomType(CooParticleRenderTypes.TRANSLUCENT, camera, partialTick, lightTexture);
+        renderCustomType(CooParticleRenderTypes.GLOW, camera, partialTick, lightTexture);
+    }
+
+    private void renderCustomType(ParticleRenderType type, Camera camera, float partialTick, LightTexture lightTexture) {
+        Queue<Particle> queue = this.particles.get(type);
+        if (queue == null || queue.isEmpty()) return;
+
+        RenderSystem.setShader(GameRenderer::getParticleShader);
+        Tesselator tesselator = Tesselator.getInstance();
+        
+        // 呼叫 begin，這會設置混合模式、深度測試等
+        BufferBuilder buffer = type.begin(tesselator, this.textureManager);
+
+        for (Particle particle : queue) {
+            try {
+                particle.render(buffer, camera, partialTick);
+            } catch (Throwable t) {
+                t.printStackTrace();
             }
-            return newOrder;
         }
-        return original;
+
+        // 結束繪製
+        MeshData meshData = buffer.buildOrThrow();
+        if (meshData != null) {
+            BufferUploader.drawWithShader(meshData);
+        }
     }
 }
