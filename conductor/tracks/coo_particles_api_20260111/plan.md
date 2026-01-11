@@ -14,13 +14,13 @@
 - [x] 任務：定義指令架構
     - [x] 建立 `IParticleCommand` 函式式介面 (對應 `ControlableParticle` 的消費者)。
     - [x] 實作基礎指令：`SetSpeedCommand` (設定速度)、`RotateToCommand` (旋轉至)、`ColorTransitionCommand` (顏色漸變)。 [babcd4f]
-- [~] 任務：實作粒子管理器 (Particle Manager)
-    - [ ] 建立 `ParticleManager` 單例，使用 `ConcurrentHashMap<UUID, List<IParticleCommand>>` 儲存指令。
-    - [ ] 實作 `cleanup()` 方法以定期清理失效的 UUID。
-- [ ] 任務：實作開發者控制器 (Particle Controller)
-    - [ ] 建立 `ParticleController` 類別，提供 API 供其他系統呼叫。
-    - [ ] 將控制器連結至管理器（將指令推送到對應粒子的隊列中）。
-    - [ ] **測試：** 單元測試指令的推送到讀取流程（模擬粒子物件進行驗證）。
+- [x] 任務：實作粒子管理器 (Particle Manager)
+    - [x] 建立 `ParticleManager` 單例，使用 `ConcurrentHashMap<UUID, List<IParticleCommand>>` 儲存指令。
+    - [x] 實作 `cleanup()` 方法以定期清理失效的 UUID。 [6c446ed]
+- [x] 任務：實作開發者控制器 (Particle Controller)
+    - [x] 建立 `ParticleController` 類別，提供 API 供其他系統呼叫。
+    - [x] 將控制器連結至管理器（將指令推送到對應粒子的隊列中）。
+    - [x] **測試：** 單元測試指令的推送到讀取流程（模擬粒子物件進行驗證）。 [6c446ed]
 - [ ] 任務：Conductor - 使用者手動驗證 '控制通訊協議' (遵循 workflow.md 協議)
 
 ## 第三階段：渲染管線注入 (Rendering Pipeline Injection)
