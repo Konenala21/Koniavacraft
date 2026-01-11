@@ -1,6 +1,6 @@
 # 實作計畫 - CooParticlesAPI (高階粒子渲染系統)
 
-## 第一階段：基礎數學與工具鏈 (Foundation & Math Utilities)
+## 第一階段：基礎數學與工具鏈 (Foundation & Math Utilities) [checkpoint: a9149ba]
 - [x] 任務：建立數學工具類別
     - [x] 建立 `QuaternionUtil` 用於旋轉計算（封裝 JOML 的 Quaternionf）。
     - [x] 建立 `ParticleLerpInterpolator` 用於平滑的位置與旋轉插值（支援 partial tick）。
@@ -8,7 +8,7 @@
 - [x] 任務：建立物理工具
     - [x] 建立 `PhysicsUtil` 用於輕量級的 AABB 碰撞檢測。
     - [x] **測試：** 撰寫單元測試驗證碰撞偵測邏輯。 [3e5a16c]
-- [ ] 任務：Conductor - 使用者手動驗證 '基礎數學與工具鏈' (遵循 workflow.md 協議)
+- [x] 任務：Conductor - 使用者手動驗證 '基礎數學與工具鏈' (遵循 workflow.md 協議)
 
 ## 第二階段：控制通訊協議 (Control Protocol)
 - [ ] 任務：定義指令架構
