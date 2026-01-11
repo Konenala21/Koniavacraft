@@ -44,7 +44,7 @@
     - [x] Sub-task: Implement `RenderLevelStageEvent` handler to dispatch shader drawing.
 - [x] Task: Buffer Management
     - [x] Sub-task: Port `VertexBuffer` / `DynamicVertexBuffer` logic for efficient batch rendering.
-- [x] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 4' (Protocol in workflow.md) [checkpoint: 20b7cc8]
 
 ## Phase 5: Verification & Polish (The "Roma Magic" Test)
 本階段目標：實作羅馬魔法陣範例，驗證所有系統協同運作。
