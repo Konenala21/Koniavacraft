@@ -11,10 +11,10 @@
 - [x] 任務：Conductor - 使用者手動驗證 '基礎數學與工具鏈' (遵循 workflow.md 協議)
 
 ## 第二階段：控制通訊協議 (Control Protocol)
-- [ ] 任務：定義指令架構
-    - [ ] 建立 `IParticleCommand` 函式式介面 (對應 `ControlableParticle` 的消費者)。
-    - [ ] 實作基礎指令：`SetSpeedCommand` (設定速度)、`RotateToCommand` (旋轉至)、`ColorTransitionCommand` (顏色漸變)。
-- [ ] 任務：實作粒子管理器 (Particle Manager)
+- [x] 任務：定義指令架構
+    - [x] 建立 `IParticleCommand` 函式式介面 (對應 `ControlableParticle` 的消費者)。
+    - [x] 實作基礎指令：`SetSpeedCommand` (設定速度)、`RotateToCommand` (旋轉至)、`ColorTransitionCommand` (顏色漸變)。 [babcd4f]
+- [~] 任務：實作粒子管理器 (Particle Manager)
     - [ ] 建立 `ParticleManager` 單例，使用 `ConcurrentHashMap<UUID, List<IParticleCommand>>` 儲存指令。
     - [ ] 實作 `cleanup()` 方法以定期清理失效的 UUID。
 - [ ] 任務：實作開發者控制器 (Particle Controller)
