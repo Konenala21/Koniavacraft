@@ -48,11 +48,11 @@
 - [~] 任務：Conductor - 使用者手動驗證 '粒子行為與 3D 渲染實作' (遵循 workflow.md 協議)
 
 ## 第五階段：效能優化與整合驗證 (Optimization & Integration)
-- [ ] 任務：實作動態負載平衡
-    - [ ] 建立 `PerformanceMonitor` 監控遊戲 FPS。
-    - [ ] 在 Mixin 中實作驅逐邏輯 (`cooParticlesAPI$onEvict`)，根據 FPS 動態調整上限。
-    - [ ] **測試：** 模擬低 FPS 環境，驗證系統是否會主動回收舊粒子。
+- [x] 任務：實作動態負載平衡
+    - [x] 建立 `PerformanceMonitor` 監控遊戲 FPS。
+    - [x] 在 Mixin 中實作驅逐邏輯 (`cooParticlesAPI$onEvict`)，根據 FPS 動態調整上限。
+    - [x] **測試：** 模擬低 FPS 環境，驗證系統是否會主動回收舊粒子。 [f015431]
 - [x] 任務：最終整合測試
     - [x] 更新現有的 `DebugParticleItem`，加入生成魔法陣與流動粒子的測試邏輯。
     - [x] 驗證視覺效果是否正確（混合模式、旋轉角度）。 [0d146c5]
-- [ ] 任務：Conductor - 使用者手動驗證 '效能優化與整合驗證' (遵循 workflow.md 協議)
+- [x] 任務：Conductor - 使用者手動驗證 '效能優化與整合驗證' (遵循 workflow.md 協議)
