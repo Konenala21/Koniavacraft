@@ -18,7 +18,7 @@ import java.util.UUID;
  *
  * 實現了代理控制模式，可以在生成後動態改變行為
  */
-public class ControlableParticle extends TextureSheetParticle {
+public class ControlableParticle extends TextureSheetParticle implements ICooParticle {
 
     // 粒子唯一標識
     private final UUID particleId;
