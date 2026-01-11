@@ -22,7 +22,7 @@
     - [x] Sub-task: Port `PointsBuilder` core logic (add, rotate, scale).
     - [x] Sub-task: Implement shape generators: Circle, Polygon, Spiral.
     - [x] Sub-task: Test `PointsBuilder` with a simple unit test or debug output.
-- [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md) [checkpoint: 81fb563]
 
 ## Phase 3: Style & Control System (Logic Layer)
 本階段目標：建構樣式系統與粒子控制器，連結幾何數據與視覺表現。
