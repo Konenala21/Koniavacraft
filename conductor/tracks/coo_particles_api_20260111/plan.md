@@ -35,24 +35,24 @@
 - [~] 任務：Conductor - 使用者手動驗證 '渲染管線注入' (遵循 workflow.md 協議)
 
 ## 第四階段：粒子行為與 3D 渲染實作 (Entity Behavior & 3D Rendering)
-- [ ] 任務：實作基礎可控粒子 (ControlableParticle)
-    - [ ] 建立抽象類別 `ControlableParticle` 繼承自 `TextureSheetParticle`。
-    - [ ] 實作 `tick()` 方法：從管理器讀取指令並執行，更新物理位移。
-- [ ] 任務：實作 3D 幾何渲染邏輯
-    - [ ] 覆寫 `render()` 方法。
-    - [ ] 實作基於四元數旋轉的頂點構建 (支援 `faceToCamera = false` 自由旋轉)。
-    - [ ] 應用 `ParticleLerpInterpolator` 確保視覺上的平滑度。
-- [ ] 任務：建立具體粒子範例
-    - [ ] 實作 `MagicCircleParticle` (魔法陣，驗證 3D 空間旋轉)。
-    - [ ] 實作 `GuidedFlowParticle` (引導流，驗證路徑追蹤)。
-- [ ] 任務：Conductor - 使用者手動驗證 '粒子行為與 3D 渲染實作' (遵循 workflow.md 協議)
+- [x] 任務：實作基礎可控粒子 (ControlableParticle)
+    - [x] 建立抽象類別 `ControlableParticle` 繼承自 `TextureSheetParticle`。
+    - [x] 實作 `tick()` 方法：從管理器讀取指令並執行，更新物理位移。 [0d146c5]
+- [x] 任務：實作 3D 幾何渲染邏輯
+    - [x] 覆寫 `render()` 方法。
+    - [x] 實作基於四元數旋轉的頂點構建 (支援 `faceToCamera = false` 自由旋轉)。
+    - [x] 應用 `ParticleLerpInterpolator` 確保視覺上的平滑度。 [0d146c5]
+- [x] 任務：建立具體粒子範例
+    - [x] 實作 `MagicCircleParticle` (魔法陣，驗證 3D 空間旋轉)。
+    - [x] 實作 `GuidedFlowParticle` (引導流，驗證路徑追蹤)。 [0d146c5]
+- [~] 任務：Conductor - 使用者手動驗證 '粒子行為與 3D 渲染實作' (遵循 workflow.md 協議)
 
 ## 第五階段：效能優化與整合驗證 (Optimization & Integration)
 - [ ] 任務：實作動態負載平衡
     - [ ] 建立 `PerformanceMonitor` 監控遊戲 FPS。
     - [ ] 在 Mixin 中實作驅逐邏輯 (`cooParticlesAPI$onEvict`)，根據 FPS 動態調整上限。
     - [ ] **測試：** 模擬低 FPS 環境，驗證系統是否會主動回收舊粒子。
-- [ ] 任務：最終整合測試
-    - [ ] 更新現有的 `DebugParticleItem`，加入生成魔法陣與流動粒子的測試邏輯。
-    - [ ] 驗證視覺效果是否正確（混合模式、旋轉角度）。
+- [x] 任務：最終整合測試
+    - [x] 更新現有的 `DebugParticleItem`，加入生成魔法陣與流動粒子的測試邏輯。
+    - [x] 驗證視覺效果是否正確（混合模式、旋轉角度）。 [0d146c5]
 - [ ] 任務：Conductor - 使用者手動驗證 '效能優化與整合驗證' (遵循 workflow.md 協議)
