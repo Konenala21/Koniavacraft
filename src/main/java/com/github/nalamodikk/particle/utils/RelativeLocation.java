@@ -1,12 +1,10 @@
-package com.github.nalamodikk.particle.utils.math;
+package com.github.nalamodikk.particle.utils;
 
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3d;
 
 /**
- * 相對位置類
- * 類似於 Vec3，但是可變的 (Mutable)，方便進行高效的幾何運算
- */
+ * ?閰??選??剜? * ?遴童???Vec3????秋??? (Mutable)?謘?頛蜃???朵????遴??? */
 public class RelativeLocation implements Cloneable {
     public double x;
     public double y;
@@ -32,6 +30,10 @@ public class RelativeLocation implements Cloneable {
 
     public static RelativeLocation of(double x, double y, double z) {
         return new RelativeLocation(x, y, z);
+    }
+    
+    public static RelativeLocation of(Vec3 origin, Vec3 target) {
+        return new RelativeLocation(target.x - origin.x, target.y - origin.y, target.z - origin.z);
     }
     
     public static RelativeLocation yAxis() {
@@ -79,6 +81,10 @@ public class RelativeLocation implements Cloneable {
         return this;
     }
 
+    public RelativeLocation addClone(RelativeLocation other) {
+        return this.clone().add(other);
+    }
+
     public RelativeLocation subtract(RelativeLocation other) {
         this.x -= other.x;
         this.y -= other.y;
@@ -119,7 +125,6 @@ public class RelativeLocation implements Cloneable {
         return "RelativeLocation{x=" + x + ", y=" + y + ", z=" + z + "}";
     }
     
-    // 運算符重載模擬 (Java 不支援，但提供 fluent API)
     public RelativeLocation plus(RelativeLocation other) {
         return new RelativeLocation(x + other.x, y + other.y, z + other.z);
     }

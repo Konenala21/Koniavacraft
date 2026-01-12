@@ -13,9 +13,9 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * 圓形魔法陣粒子效果
+ * ??亥行??????殉????
  *
- * 生成多層同心圓，每個圓由粒子組成並旋轉
+ * ?賹??叟城????????伍????璇??殉????????
  */
 public class MagicCircleEffect {
 
@@ -32,11 +32,11 @@ public class MagicCircleEffect {
         this.center = Vec3.atCenterOf(pos).add(0, config.yOffset, 0);
         this.duration = config.duration;
 
-        // 生成多層圓環
+        // ?賹??叟城???抆?
         for (int i = 0; i < config.ringCount; i++) {
             float radius = config.baseRadius + i * config.radiusStep;
-            int particleCount = (int)(config.particlesPerRing * (1 + i * 0.2f)); // 外圈粒子更密集
-            float rotationSpeed = config.baseRotationSpeed * (1 + i * 0.1f); // 每層速度稍微不同
+            int particleCount = (int)(config.particlesPerRing * (1 + i * 0.2f)); // ?叟□?????皜???
+            float rotationSpeed = config.baseRotationSpeed * (1 + i * 0.1f); // ?伍??賹撞??????
 
             CircleRing ring = new CircleRing(
                 radius,
@@ -49,12 +49,12 @@ public class MagicCircleEffect {
             rings.add(ring);
         }
 
-        // 立即生成所有粒子
+        // ?∴???賹????????
         spawnAllParticles();
     }
 
     /**
-     * 生成所有圓環的粒子
+     * ?賹????????????
      */
     private void spawnAllParticles() {
         for (CircleRing ring : rings) {
@@ -63,26 +63,26 @@ public class MagicCircleEffect {
     }
 
     /**
-     * 每 tick 更新粒子位置
+     * ??tick ?皝?????選???
      */
     public void tick() {
         if (!isActive) return;
 
         tickCounter++;
 
-        // 更新所有圓環
+        // ?皝????????
         for (CircleRing ring : rings) {
             ring.update(center, tickCounter);
         }
 
-        // 檢查是否結束
+        // ?潘撓貔??秋??荒??
         if (duration > 0 && tickCounter >= duration) {
             stop();
         }
     }
 
     /**
-     * 停止效果並移除所有粒子
+     * ?謚怨翰????﹝摰????????
      */
     public void stop() {
         isActive = false;
@@ -95,7 +95,7 @@ public class MagicCircleEffect {
         return isActive;
     }
 
-    // ========== 內部類：單個圓環 ==========
+    // ========== ??豢豯??獢?????==========
 
     private static class CircleRing {
         private final float radius;
@@ -110,13 +110,13 @@ public class MagicCircleEffect {
         public CircleRing(float radius, int particleCount, float rotationSpeed, float particleSize, int color) {
             this.radius = radius;
             this.particleCount = particleCount;
-            this.rotationSpeed = rotationSpeed; // 度/tick
+            this.rotationSpeed = rotationSpeed; // ??tick
             this.particleSize = particleSize;
             this.color = color;
         }
 
         /**
-         * 生成圓環上的所有粒子
+         * ?賹???抆???????????
          */
         public void spawnParticles(Level level, Vec3 center) {
             for (int i = 0; i < particleCount; i++) {
@@ -125,26 +125,26 @@ public class MagicCircleEffect {
 
                 CooParticleOptions options = new CooParticleOptions(particleSize, color, 0.8f);
 
-                // 生成粒子
+                // ?賹????
                 level.addParticle(options, pos.x, pos.y, pos.z, 0, 0, 0);
 
-                // 獲取粒子控制器（粒子生成後會自動註冊到管理器）
-                // 我們需要一種方式來獲取剛生成的粒子的 ID
-                // 簡化方案：使用返回值或事件
+                // ????????對????????賹??綽?????桅?????????
+                // ??威???秋撩??謘???????謜?????????ID
+                // ?芬??撖??垢?????豯刈瞏??哨?颲?
             }
         }
 
         /**
-         * 更新粒子位置（旋轉）
+         * ?皝?????選??剖????改?
          */
         public void update(Vec3 center, int ticks) {
-            // 計算當前旋轉角度
+            // ?殷?????????恃?瞍?
             currentRotation += Math.toRadians(rotationSpeed);
             if (currentRotation > Math.PI * 2) {
                 currentRotation -= Math.PI * 2;
             }
 
-            // 更新每個粒子的位置
+            // ?皝??伍????殉???選???
             for (int i = 0; i < particles.size(); i++) {
                 float baseAngle = (float)(2 * Math.PI * i / particleCount);
                 float angle = baseAngle + currentRotation;
@@ -155,7 +155,7 @@ public class MagicCircleEffect {
         }
 
         /**
-         * 計算圓上某個角度的位置
+         * ?殷??????????刻﹝??選???
          */
         private Vec3 calculatePosition(Vec3 center, float angle, float yOffset) {
             double x = center.x + Math.cos(angle) * radius;
@@ -165,7 +165,7 @@ public class MagicCircleEffect {
         }
 
         /**
-         * 移除所有粒子
+         * ??謒???????
          */
         public void removeParticles() {
             for (ParticleController particle : particles) {
@@ -175,23 +175,23 @@ public class MagicCircleEffect {
         }
     }
 
-    // ========== 配置類 ==========
+    // ========== ????==========
 
     public static class MagicCircleConfig {
-        public int ringCount = 3; // 圓環數量
-        public float baseRadius = 0.5f; // 最內圈半徑
-        public float radiusStep = 0.3f; // 每圈半徑增量
-        public int particlesPerRing = 20; // 每圈粒子數
-        public float baseRotationSpeed = 2f; // 基礎旋轉速度（度/tick）
-        public float particleSize = 0.1f; // 粒子大小
-        public float yOffset = 0.1f; // Y 軸偏移
-        public int duration = -1; // 持續時間（-1 = 無限）
+        public int ringCount = 3; // ??抆??鞈?
+        public float baseRadius = 0.5f; // ????????
+        public float radiusStep = 0.3f; // ?伍?????筐?
+        public int particlesPerRing = 20; // ?伍??????
+        public float baseRotationSpeed = 2f; // ?蝞?????賹撞??瞍?tick??
+        public float particleSize = 0.1f; // ????剜?
+        public float yOffset = 0.1f; // Y ?岳???
+        public int duration = -1; // ?蹓??蹇???1 = ?????
 
-        // 每層的顏色（可以不同）
+        // ?伍?????????剛??????
         public int[] ringColors = {
-            0x9D46DF, // 紫色（內圈）
-            0x3B82F7, // 藍色（中圈）
-            0x00FFC8  // 青色（外圈）
+            0x9D46DF, // ?剁??????
+            0x3B82F7, // ????????
+            0x00FFC8  // ????????
         };
 
         public static MagicCircleConfig defaultConfig() {

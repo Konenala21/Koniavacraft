@@ -4,53 +4,42 @@ import com.github.nalamodikk.particle.ControlableParticle;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.ParticleProvider;
 import net.minecraft.client.particle.SpriteSet;
-import net.minecraft.core.particles.SimpleParticleType;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Quaternionf;
 
+import java.util.UUID;
+
 /**
- * 魔法陣粒子
- *
- * 演示：自由旋轉、持續旋轉動畫
- */
+ * 魔法陣粒子 */
 public class MagicCircleParticle extends ControlableParticle {
 
     private final SpriteSet sprites;
-    private float rotationSpeed = 2.0f; // 度/tick
+    private final float rotationSpeed = 2.0f;
 
-    public MagicCircleParticle(ClientLevel level, double x, double y, double z, SpriteSet sprites) {
-        super(level, x, y, z);
+    public MagicCircleParticle(ClientLevel level, double x, double y, double z, SpriteSet sprites, UUID uuid) {
+        super(level, x, y, z, 0, 0, 0, uuid);  // 速度為 0（靜止不動）
         this.sprites = sprites;
-        this.setSpriteFromAge(sprites);
-        
-        // 初始設定
-        this.lifetime = 200;
-        this.quadSize = 1.0f;
-        this.setFaceToCamera(false); // 自由旋轉模式
-        
-        // 初始水平放置 (繞 X 軸旋轉 90 度)
-        this.setRotation(new Quaternionf().rotateX((float) Math.toRadians(90)));
-    }
 
-    @Override
-    public void tick() {
-        super.tick();
-        
-        // 自轉動畫
-        Quaternionf currentRot = new Quaternionf(); // 這裡需要獲取當前旋轉，但 ControlableParticle 沒有 getter
-        // 為了簡單起見，我們在這裡維護一個旋轉狀態，或者修改 ControlableParticle 暴露 getter
-        // 暫時使用一個累積變量
-        float angle = (this.age * rotationSpeed) % 360;
-        
-        // 基礎旋轉（水平） * 自轉（繞 Y 軸）
-        Quaternionf rot = new Quaternionf()
-            .rotateX((float) Math.toRadians(90))
-            .rotateY((float) Math.toRadians(angle));
-            
-        this.setRotation(rot);
-        
-        // 保持貼圖
-        this.setSpriteFromAge(sprites);
+        // 設置 sprite
+        this.pickSprite(sprites);
+
+        this.lifetime = 200;
+        this.quadSize = 2.0f;
+        this.alpha = 1.0f;
+
+        this.setFaceToCamera(false);
+        this.setRotation(new Quaternionf().rotateX((float) Math.toRadians(90)));
+
+        // ✅ 參考框架的做法：使用 addPreTickAction 而不是 override tick()
+        // 注意：在構造函數中 'this' 指向當前粒子對象，可以訪問 protected 字段
+        this.addPreTickAction(particle -> {
+            float angle = (this.age * rotationSpeed) % 360;
+            Quaternionf rot = new Quaternionf()
+                .rotateX((float) Math.toRadians(90))
+                .rotateY((float) Math.toRadians(angle));
+            this.setRotation(rot);
+            this.setSpriteFromAge(sprites);
+        });
     }
 
     public static class Provider implements ParticleProvider<MagicCircleOptions> {
@@ -63,7 +52,7 @@ public class MagicCircleParticle extends ControlableParticle {
         @Nullable
         @Override
         public net.minecraft.client.particle.Particle createParticle(MagicCircleOptions type, ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
-            return new MagicCircleParticle(level, x, y, z, sprites);
+            return new MagicCircleParticle(level, x, y, z, sprites, type.getUuid());
         }
     }
 }

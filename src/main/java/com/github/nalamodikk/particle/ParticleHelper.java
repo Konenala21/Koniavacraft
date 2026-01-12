@@ -9,14 +9,12 @@ import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 /**
- * 粒子效果助手類
- *
- * 提供簡單的 API 來生成各種粒子效果
- */
+ * ??????????? *
+ * ????芬謘??API ??????????殉???? */
 public class ParticleHelper {
 
     /**
-     * 在發電機位置創建魔法陣效果 (多粒子組成)
+     * ??踐赤?擗??選?????啾???????(?叟垓??殉????
      */
     public static void createManaGeneratorEffect(Level level, BlockPos pos) {
         if (level instanceof ServerLevel serverLevel) {
@@ -26,7 +24,7 @@ public class ParticleHelper {
     }
 
     /**
-     * 創建持久性魔法陣 (多粒子組成)
+     * ???蹓?????謒?(?叟垓??殉????
      */
     public static void createPersistentCircle(Level level, BlockPos pos) {
         if (level instanceof ServerLevel serverLevel) {
@@ -36,7 +34,7 @@ public class ParticleHelper {
     }
 
     /**
-     * 創建單一旋轉魔法陣粒子 (3D 旋轉演示)
+     * ???獢?????啾???????(3D ???????
      */
     public static void createSingleRotatingCircle(Level level, BlockPos pos) {
         if (level instanceof ServerLevel serverLevel) {
@@ -53,7 +51,7 @@ public class ParticleHelper {
     }
 
     /**
-     * 創建導向魔力流 (路徑追蹤演示)
+     * ??????啾????(??擗釭擐梁??)
      */
     public static void createGuidedFlow(Level level, BlockPos startPos, BlockPos endPos) {
         if (level instanceof ServerLevel serverLevel) {
@@ -67,7 +65,7 @@ public class ParticleHelper {
                 options,
                 startPos.getX() + 0.5, startPos.getY() + 0.5, startPos.getZ() + 0.5,
                 1,
-                dx * 0.1, dy * 0.1, dz * 0.1, // 使用 delta 傳遞初始速度向量
+                dx * 0.1, dy * 0.1, dz * 0.1, // ?輯撒??delta ????豲??賹撞???
                 1 // speed
             );
         }

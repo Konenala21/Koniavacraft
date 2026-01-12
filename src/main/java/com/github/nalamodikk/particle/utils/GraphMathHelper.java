@@ -23,11 +23,9 @@ public class GraphMathHelper {
     }
 
     /**
-     * SmoothStep 插值
-     * 當 x < min 時返回 0
-     * 當 x > max 時返回 1
-     * 否則返回 0..1 之間的平滑 Hermite 插值
-     */
+     * SmoothStep ???     * ??x < min ?蹇???0
+     * ??x > max ?蹇???1
+     * ?銵?擗?? 0..1 ???????Hermite ???     */
     public static float smoothStep(float min, float max, float x) {
         if (x <= min) return 0.0f;
         if (x >= max) return 1.0f;

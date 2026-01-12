@@ -9,11 +9,11 @@ public class ShaderCompileTest {
 
     @Test
     public void testBuilderStructure() {
-        // 這只測試 Java 類別結構是否正確，不會真的呼叫 OpenGL (因為不在遊戲環境)
+        // ?皜祈岫 Java 憿蝯??臬甇?Ⅱ嚗??????OpenGL (?銝??啣?)
         ShaderProgramBuilder builder = new ShaderProgramBuilder();
         assertNotNull(builder);
         
-        // 驗證方法是否存在
+        // 撽??寞??臬摮
         assertThrows(IllegalStateException.class, builder::build);
     }
 }

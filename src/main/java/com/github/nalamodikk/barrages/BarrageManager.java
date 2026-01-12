@@ -1,8 +1,5 @@
 package com.github.nalamodikk.barrages;
 
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.phys.AABB;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -15,15 +12,14 @@ public class BarrageManager {
         return INSTANCE;
     }
 
-    public void spawn(Barrage barrage) {
+    public void spawn(Barrage barrage, net.minecraft.world.phys.Vec3 pos, net.minecraft.world.phys.Vec3 direction) {
         barrages.add(barrage);
-        barrage.launch();
+        barrage.launch(pos, direction);
     }
 
     public void tick() {
-        // 使用 CopyOnWriteArrayList 避免 ConcurrentModificationException
         for (Barrage barrage : barrages) {
-            if (barrage.isValid()) {
+            if (!barrage.isRemoved()) {
                 barrage.tick();
             } else {
                 barrages.remove(barrage);
@@ -31,12 +27,12 @@ public class BarrageManager {
         }
     }
 
-    public List<Barrage> collectClipBarrages(ServerLevel world, AABB box) {
+    public List<Barrage> collectClipBarrages(net.minecraft.world.level.Level world, net.minecraft.world.phys.AABB box) {
         List<Barrage> result = new ArrayList<>();
         for (Barrage b : barrages) {
-            if (b.isValid() && b.world == world) {
+            if (!b.isRemoved()) {
                 // 簡單的 AABB 碰撞檢測
-                if (box.contains(b.loc) || box.intersects(b.hitBox.ofBox(b.loc))) {
+                if (box.contains(b.getPos()) || box.intersects(b.hitBox.ofBox(b.getPos()))) {
                     result.add(b);
                 }
             }

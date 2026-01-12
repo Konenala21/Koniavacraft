@@ -10,8 +10,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 
 /**
- * 可控粒子的參數
- */
+ * ??????????? */
 public class CooParticleOptions implements ParticleOptions {
 
     public static final MapCodec<CooParticleOptions> CODEC = RecordCodecBuilder.mapCodec(instance ->

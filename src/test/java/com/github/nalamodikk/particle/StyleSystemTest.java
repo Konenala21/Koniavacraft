@@ -3,7 +3,7 @@ package com.github.nalamodikk.particle;
 import com.github.nalamodikk.particle.style.ParticleShapeStyle;
 import com.github.nalamodikk.particle.style.ParticleStyle;
 import com.github.nalamodikk.particle.utils.builder.PointsBuilder;
-import com.github.nalamodikk.particle.utils.math.RelativeLocation;
+import com.github.nalamodikk.particle.utils.RelativeLocation;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -21,10 +21,9 @@ public class StyleSystemTest {
         
         Map<ParticleStyle.StyleData, RelativeLocation> frames = style.getCurrentFrames();
         
-        // 驗證是否生成了 8 個點的數據
-        assertEquals(8, frames.size());
+        // 撽??臬??鈭?8 ?????        assertEquals(8, frames.size());
         
-        // 驗證 UUID 是否唯一
+        // 撽? UUID ?臬?臭?
         long uniqueUuids = frames.keySet().stream().map(d -> d.uuid).distinct().count();
         assertEquals(8, uniqueUuids);
     }

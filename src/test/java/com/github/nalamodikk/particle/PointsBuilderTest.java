@@ -1,7 +1,7 @@
 package com.github.nalamodikk.particle;
 
 import com.github.nalamodikk.particle.utils.builder.PointsBuilder;
-import com.github.nalamodikk.particle.utils.math.RelativeLocation;
+import com.github.nalamodikk.particle.utils.RelativeLocation;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -17,7 +17,7 @@ public class PointsBuilderTest {
         
         assertEquals(4, circle.size());
         
-        // 驗證第一個點 (半徑5, 角度0 -> x=5, z=0)
+        // 撽?蝚砌??? (??5, 閫漲0 -> x=5, z=0)
         RelativeLocation p1 = circle.get(0);
         assertEquals(5.0, p1.x, 0.001);
         assertEquals(0.0, p1.z, 0.001);
@@ -26,10 +26,10 @@ public class PointsBuilderTest {
     @Test
     public void testRotation() {
         PointsBuilder builder = new PointsBuilder();
-        // 建立一個點 (1, 0, 0)
+        // 撱箇?銝?? (1, 0, 0)
         builder.addPoint(new RelativeLocation(1, 0, 0));
         
-        // 繞 Y 軸旋轉 90度 (PI/2)
+        // 蝜?Y 頠豢?頧?90摨?(PI/2)
         builder.rotateAsAxis(Math.PI / 2);
         
         List<RelativeLocation> points = builder.create();
@@ -37,8 +37,7 @@ public class PointsBuilderTest {
         
         System.out.println("Rotated Point: " + p);
 
-        // 旋轉後應接近 (0, 0, 1) 或 (0, 0, -1) 取決於旋轉方向
-        assertEquals(0.0, p.x, 0.001, "X should be 0");
+        // ??敺??亥? (0, 0, 1) ??(0, 0, -1) ?捱?潭?頧??        assertEquals(0.0, p.x, 0.001, "X should be 0");
         assertEquals(1.0, Math.abs(p.z), 0.001, "Z should be 1 or -1");
     }
 }

@@ -43,8 +43,7 @@ public class SimpleShaderProgram implements CooShaderProgram {
         glLinkProgram(program);
         assertProgram();
         
-        // 刪除 Shader 物件，因為已經 Link 到 Program 了
-        vertexShader.deleteShader();
+        // ??畸? Shader ??麾???蝞???Link ??Program ??        vertexShader.deleteShader();
         fragmentShader.deleteShader();
     }
 

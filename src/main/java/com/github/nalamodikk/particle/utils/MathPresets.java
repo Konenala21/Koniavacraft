@@ -1,13 +1,13 @@
 package com.github.nalamodikk.particle.utils;
 
 import com.github.nalamodikk.particle.utils.builder.PointsBuilder;
-import com.github.nalamodikk.particle.utils.math.RelativeLocation;
+import com.github.nalamodikk.particle.utils.RelativeLocation;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 數學預設圖形 (羅馬數字生成器)
+ * ?閰券???澈?謘潸?(?ｇ??閰??賹???
  */
 public class MathPresets {
 
@@ -88,7 +88,7 @@ public class MathPresets {
         }
     }
 
-    // 組合邏輯
+    // ?荔????湔
     public static List<RelativeLocation> romaII(double scale) {
         List<RelativeLocation> res = new ArrayList<>();
         double offset = getRomaOffsetX(scale) / 2;
@@ -218,7 +218,7 @@ public class MathPresets {
         double offset = getRomaOffsetX(scale) / 2;
         
         List<RelativeLocation> xi = romaXI(scale);
-        shiftX(xi, -offset * 2); // 這裡可能是原邏輯的筆誤或特殊位移，先照抄
+        shiftX(xi, -offset * 2); // ?謕???迎??????湔????斗???撖??選?摰??????
         res.addAll(xi);
         
         List<RelativeLocation> i = romaI(scale);

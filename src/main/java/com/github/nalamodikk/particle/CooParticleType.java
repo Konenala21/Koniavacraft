@@ -7,12 +7,12 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 
 /**
- * 可控粒子類型
+ * ???????遴竣?
  */
 public class CooParticleType extends ParticleType<CooParticleOptions> {
 
     public CooParticleType() {
-        super(false);  // 不進行遠距離剔除
+        super(false);  // ??????蹎??嚗???
     }
 
     @Override

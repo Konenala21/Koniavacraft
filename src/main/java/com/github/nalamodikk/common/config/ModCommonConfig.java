@@ -28,6 +28,7 @@ public class ModCommonConfig {
     public final ModConfigSpec.BooleanValue showIntroAnimation;
     public final ModConfigSpec.IntValue manaGeneratorSignificantManaChange;
     public final ModConfigSpec.IntValue manaGeneratorSignificantEnergyChange;
+    public final ModConfigSpec.IntValue calculateThreadCount;
 
 
 
@@ -35,6 +36,12 @@ public class ModCommonConfig {
         // ===============================
         // 🎯 原有配置項目
         // ===============================
+        calculateThreadCount = builder
+                .comment("粒子運算線程池大小（建議：CPU核心數 - 1）")
+                .comment("Thread pool size for particle calculation (Recommended: CPU cores - 1)")
+                .translation("koniava.config.calculateThreadCount")
+                .defineInRange("calculateThreadCount", 4, 1, 32);
+
         manaRecipeRefreshInterval = builder
                 .comment("每幾 tick 更新一次魔力合成配方結果（建議值：2～10）")
                 .comment("How many ticks to refresh the mana crafting recipe result (Recommended value: 2-10)")

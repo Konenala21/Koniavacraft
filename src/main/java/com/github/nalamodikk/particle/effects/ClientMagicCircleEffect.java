@@ -15,9 +15,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 客戶端魔法陣效果
+ * ?堆撓????謒???
  *
- * 直接在客戶端生成並控制粒子，實現旋轉動畫
+ * ?皝???豢??亙?賹????????殉???﹝??????∵
  */
 @OnlyIn(Dist.CLIENT)
 public class ClientMagicCircleEffect {
@@ -35,14 +35,14 @@ public class ClientMagicCircleEffect {
         if (this.level == null) {
             this.isActive = false;
             this.duration = 0;
-            this.center = Vec3.ZERO; // 初始化 center 避免編譯錯誤
+            this.center = Vec3.ZERO; // ?豲???center ?頦??箏???芰?
             return;
         }
 
         this.center = Vec3.atCenterOf(pos).add(0, config.yOffset, 0);
         this.duration = config.duration;
 
-        // 生成多層圓環
+        // ?賹??叟城???抆?
         for (int i = 0; i < config.ringCount; i++) {
             float radius = config.baseRadius + i * config.radiusStep;
             int particleCount = (int)(config.particlesPerRing * (1 + i * 0.3f));
@@ -66,26 +66,26 @@ public class ClientMagicCircleEffect {
     }
 
     /**
-     * 每 tick 更新
+     * ??tick ?皝?
      */
     public void tick() {
         if (!isActive) return;
 
         tickCounter++;
 
-        // 更新所有圓環
+        // ?皝????????
         for (CircleRing ring : rings) {
             ring.update(center);
         }
 
-        // 檢查是否結束
+        // ?潘撓貔??秋??荒??
         if (duration > 0 && tickCounter >= duration) {
             stop();
         }
     }
 
     /**
-     * 停止效果
+     * ?謚怨翰???
      */
     public void stop() {
         isActive = false;
@@ -98,12 +98,12 @@ public class ClientMagicCircleEffect {
         return isActive;
     }
 
-    // ========== 內部類：圓環 ==========
+    // ========== ??豢豯???抆? ==========
 
     private static class CircleRing {
         private final float radius;
         private final int particleCount;
-        private final float rotationSpeed; // 弧度/tick
+        private final float rotationSpeed; // ?瞍?tick
         private final float particleSize;
         private final int color;
         private final float alpha;
@@ -115,36 +115,36 @@ public class ClientMagicCircleEffect {
                          float particleSize, int color, float alpha) {
             this.radius = radius;
             this.particleCount = particleCount;
-            this.rotationSpeed = (float)Math.toRadians(rotationSpeed); // 轉換為弧度
+            this.rotationSpeed = (float)Math.toRadians(rotationSpeed); // ?改??蝞??
             this.particleSize = particleSize;
             this.color = color;
             this.alpha = alpha;
         }
 
         /**
-         * 生成圓環上的粒子
+         * ?賹???抆???????
          */
         public void spawnParticles(ClientLevel level, Vec3 center) {
             for (int i = 0; i < particleCount; i++) {
                 float angle = (float)(2 * Math.PI * i / particleCount);
                 Vec3 pos = calculatePosition(center, angle);
 
-                // 創建粒子選項
+                // ??????鞈?
                 CooParticleOptions options = new CooParticleOptions(
                     particleSize,
                     color,
                     alpha
                 );
 
-                // 使用粒子引擎創建粒子（會自動設置 sprite）
+                // ?輯撒???????????????????桀???sprite??
                 ControlableParticle particle = (ControlableParticle) Minecraft.getInstance().particleEngine
                     .createParticle(options, pos.x, pos.y, pos.z, 0, 0, 0);
 
                 if (particle != null) {
-                    // 設置生命週期
-                    particle.setLifetime(200); // 10 秒
+                    // ?桀???賹????
+                    particle.setLifetime(200); // 10 ??
 
-                    // 創建控制器
+                    // ????對???
                     ParticleController controller = new ParticleController(particle.getParticleId());
                     particleControllers.add(controller);
                 }
@@ -152,16 +152,16 @@ public class ClientMagicCircleEffect {
         }
 
         /**
-         * 更新粒子位置（實現旋轉）
+         * ?皝?????選??剖???????改?
          */
         public void update(Vec3 center) {
-            // 更新旋轉角度
+            // ?皝?????恃?瞍?
             currentRotation += rotationSpeed;
             if (currentRotation > Math.PI * 2) {
                 currentRotation -= Math.PI * 2;
             }
 
-            // 更新每個粒子的位置
+            // ?皝??伍????殉???選???
             for (int i = 0; i < particleControllers.size(); i++) {
                 float baseAngle = (float)(2 * Math.PI * i / particleCount);
                 float angle = baseAngle + currentRotation;
@@ -172,7 +172,7 @@ public class ClientMagicCircleEffect {
         }
 
         /**
-         * 計算圓上的位置
+         * ?殷??????????
          */
         private Vec3 calculatePosition(Vec3 center, float angle) {
             double x = center.x + Math.cos(angle) * radius;
@@ -182,7 +182,7 @@ public class ClientMagicCircleEffect {
         }
 
         /**
-         * 移除所有粒子
+         * ??謒???????
          */
         public void removeParticles() {
             for (ParticleController controller : particleControllers) {
@@ -192,34 +192,34 @@ public class ClientMagicCircleEffect {
         }
     }
 
-    // ========== 配置類 ==========
+    // ========== ????==========
 
     public static class Config {
         public int ringCount = 3;
         public float baseRadius = 0.6f;
         public float radiusStep = 0.25f;
         public int particlesPerRing = 24;
-        public float baseRotationSpeed = 3f; // 度/tick
-        public float particleSize = 0.3f; // 增大粒子尺寸讓其更容易看見
+        public float baseRotationSpeed = 3f; // ??tick
+        public float particleSize = 0.3f; // ?竣銋?????蝡??伐??皜豢??????
         public float particleAlpha = 0.8f;
         public float yOffset = 0.05f;
         public int duration = 60; // ticks
 
         public int[] ringColors = {
-            0x9D46DF, // 紫色
-            0x6B7FF7, // 藍紫色
-            0x3BBAF7  // 青色
+            0x9D46DF, // ?剁
+            0x6B7FF7, // ?????
+            0x3BBAF7  // ??
         };
 
         public static Config manaGenerator() {
             Config config = new Config();
-            config.duration = 40; // 2 秒
+            config.duration = 40; // 2 ??
             return config;
         }
 
         public static Config persistent() {
             Config config = new Config();
-            config.duration = -1; // 永久
+            config.duration = -1; // ?防?
             return config;
         }
     }

@@ -7,8 +7,7 @@ import net.minecraft.client.particle.ParticleProvider;
 import net.minecraft.client.particle.SpriteSet;
 
 /**
- * 可控粒子提供者
- */
+ * ??????????? */
 public class CooParticleProvider implements ParticleProvider<CooParticleOptions> {
 
     private final SpriteSet sprites;
@@ -21,13 +20,13 @@ public class CooParticleProvider implements ParticleProvider<CooParticleOptions>
     public Particle createParticle(CooParticleOptions options, ClientLevel level,
                                    double x, double y, double z,
                                    double xSpeed, double ySpeed, double zSpeed) {
-        ControlableParticle particle = new ControlableParticle(level, x, y, z, options.getUuid());
+        ControlableParticle particle = new ControlableParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, options.getUuid());
 
-        // 應用選項
+        // ??伍??鞈?
         particle.pickSprite(sprites);
         particle.setScale(options.getSize());
 
-        // 設置顏色
+        // ?桀??剜?湛
         int color = options.getColor();
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >> 8) & 0xFF) / 255f;
@@ -35,10 +34,10 @@ public class CooParticleProvider implements ParticleProvider<CooParticleOptions>
         particle.setColor(r, g, b);
         particle.setAlpha(options.getAlpha());
 
-        // 設置初始速度
+        // ?桀???豲??賹撞
         particle.setVelocity(xSpeed, ySpeed, zSpeed);
 
-        KoniavacraftMod.LOGGER.debug("🔧 CooParticleProvider: 大小={}, 顏色=0x{}, 透明度={}",
+        KoniavacraftMod.LOGGER.debug("???CooParticleProvider: ?剜?={}, ?遴??0x{}, ?????{}",
             options.getSize(), Integer.toHexString(color), options.getAlpha());
 
         return particle;

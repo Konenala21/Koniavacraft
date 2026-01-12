@@ -90,4 +90,31 @@
 - [x] Task: Advanced Shader Pipes (Bloom/Glow)
     - [x] Sub-task: Implement `PingPongShaderPipe`.
     - [x] Sub-task: Setup basic Bloom effect infrastructure.
-- [x] Task: Conductor - User Manual Verification 'Phase 7' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 7' (Protocol in workflow.md) [checkpoint: dc52ca6]
+
+## Phase 8: Reference Parity Audit & Refinement
+本階段目標：根據參考庫 `AI-context\別人的渲染框架-僅參考` 進行最終審計，確保功能與參考庫的核心邏輯一致，並補完潛在缺失。
+
+- [x] Task: Audit & Refine Shader Pipeline
+    - [x] Sub-task: Compare `PingPongShaderPipe` and Bloom logic with reference `renderer/shader/pipe`.
+    - [x] Sub-task: Verify `ShaderPipeManager` logic against reference.
+- [x] Task: Audit & Refine Network System
+    - [x] Sub-task: Check `PacketParticleStyleS2C` and `PacketParticleGroupS2C` fields against reference `network/packet`.
+- [x] Task: Audit & Refine Math Utilities
+    - [x] Sub-task: Verify `Math3DUtil` and `RotationMatrix` completeness.
+- [x] Task: Conductor - User Manual Verification 'Phase 8' (Protocol in workflow.md)
+
+## Phase 9: Deep Consistency Check & Refinement (Post-Build Audit)
+響應用戶要求，進行更深度的功能一致性檢查與移植完善，重點在於修復測試錯誤、補全遺漏的輔助方法，以及驗證動畫與發射器系統的完整性。
+
+- [ ] Task: Fix Test Suite & Config Initialization
+    - [ ] Sub-task: Investigate and fix `ModCommonConfig` initialization error in unit tests.
+    - [ ] Sub-task: Ensure all tests in `ParticleManagerTest`, `PointsBuilderTest`, etc., pass.
+- [ ] Task: Structural Parity Audit (Missing Methods Check)
+    - [ ] Sub-task: Scan `Math3DUtil` and `RotationMatrix` again for any other missing helper methods used in Reference.
+    - [ ] Sub-task: Check `Animate` and `AnimateManager` against reference for completeness.
+    - [ ] Sub-task: Check `ParticleEmitters` and `EmitterOption` logic.
+- [ ] Task: Final Polish & Verification
+    - [ ] Sub-task: Verify `ParticleStyle` serialization logic (Packet consistency).
+    - [ ] Sub-task: Ensure strict type mapping between Kotlin `Int` and Java `Integer` in buffers.
+- [ ] Task: Conductor - User Manual Verification 'Phase 9'

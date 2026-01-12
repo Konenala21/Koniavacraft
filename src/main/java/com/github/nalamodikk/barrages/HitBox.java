@@ -1,7 +1,7 @@
 package com.github.nalamodikk.barrages;
 
 import com.github.nalamodikk.particle.utils.Math3DUtil;
-import com.github.nalamodikk.particle.utils.math.RelativeLocation;
+import com.github.nalamodikk.particle.utils.RelativeLocation;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 

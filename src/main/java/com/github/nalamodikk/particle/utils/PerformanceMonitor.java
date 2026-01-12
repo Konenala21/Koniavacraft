@@ -4,15 +4,11 @@ import com.github.nalamodikk.mixin.client.MinecraftAccessor;
 import net.minecraft.client.Minecraft;
 
 /**
- * 效能監控器
- *
- * 用於監控客戶端 FPS 並提供負載狀態
+ * ?扯??葫
  */
 public class PerformanceMonitor {
 
     private static final PerformanceMonitor INSTANCE = new PerformanceMonitor();
-    
-    // 簡單的 FPS 閾值
     private static final int LOW_FPS_THRESHOLD = 30;
     private static final int CRITICAL_FPS_THRESHOLD = 15;
 
@@ -22,9 +18,6 @@ public class PerformanceMonitor {
         return INSTANCE;
     }
 
-    /**
-     * 獲取當前 FPS
-     */
     public int getCurrentFps() {
         Minecraft mc = Minecraft.getInstance();
         if (mc == null) return 60;

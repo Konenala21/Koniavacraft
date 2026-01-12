@@ -3,6 +3,7 @@ package com.github.nalamodikk;
 import com.github.nalamodikk.biome.BiomeTerrainRegistration;
 import com.github.nalamodikk.biome.UniversalBiomeRegistration;
 import com.github.nalamodikk.common.config.ModCommonConfig;
+import com.github.nalamodikk.init.KoniavaAutomation;
 import com.github.nalamodikk.particle.ModParticles;
 import com.github.nalamodikk.register.*;
 import com.mojang.logging.LogUtils;
@@ -27,7 +28,8 @@ public class KoniavacraftMod {
     public static final String MOD_ID = "koniava";
     // Directly reference a slf4j logger
     public static final Logger LOGGER = LogUtils.getLogger();
-    // Create a Deferred Register to hold Blocks which will all be registered under the "examplemod" namespace
+    // Create a Deferred Register to hold Blocks which will all be registered under
+    // the "examplemod" namespace
     public static final boolean IS_PRODUCTION = FMLLoader.isProduction();
     public static final boolean IS_DEV = !IS_PRODUCTION;
 
@@ -35,13 +37,13 @@ public class KoniavacraftMod {
         return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
     }
 
-    // The constructor for the mod class is the first code that is run when your mod is loaded.
-    // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
+    // The constructor for the mod class is the first code that is run when your mod
+    // is loaded.
+    // FML will recognize some parameter types like IEventBus or ModContainer and
+    // pass them in automatically.
     public KoniavacraftMod(IEventBus modEventBus, ModContainer modContainer) {
 
         modContainer.registerConfig(ModConfig.Type.COMMON, ModCommonConfig.SPEC);
-
-
 
         // debug test
         LOGGER.debug("這是一條 DEBUG 測試訊息");
@@ -51,7 +53,6 @@ public class KoniavacraftMod {
         // 🌟 註冊生物群落
         BiomeTerrainRegistration.registerAll();
         // 🌟 初始化生物群落世界生成
-
 
         ModItems.register(modEventBus);
 
@@ -66,39 +67,40 @@ public class KoniavacraftMod {
             modEventBus.addListener(com.github.nalamodikk.register.client.ModKeyMappings::onRegisterKeyMappings);
         }
         // Register ourselves for server and other game events we are interested in.
-        // Note that this is necessary if and only if we want *this* class (ExampleMod) to respond directly to events.
-        // Do not add this line if there are no @SubscribeEvent-annotated functions in this class, like onServerStarting() below.
+        // Note that this is necessary if and only if we want *this* class (ExampleMod)
+        // to respond directly to events.
+        // Do not add this line if there are no @SubscribeEvent-annotated functions in
+        // this class, like onServerStarting() below.
         modEventBus.addListener(this::commonSetup);
 
         NeoForge.EVENT_BUS.register(this);
 
         // Register the item to a creative tab
 
-
-        // Register our mod's ModConfigSpec so that FML can create and load the config file for us
+        // Register our mod's ModConfigSpec so that FML can create and load the config
+        // file for us
     }
 
-    private void commonSetup(final FMLCommonSetupEvent event)
-    {
+    private void commonSetup(final FMLCommonSetupEvent event) {
+        // 啟動自動化掃描與事件系統
+        KoniavaAutomation.init(event);
+
         // Some common setup code
         LOGGER.info("HELLO FROM COMMON SETUP");
-            UniversalBiomeRegistration.init();
-            LOGGER.info("✅ 正常遊戲模式：啟用生物群系 Mixin 初始化");
+        UniversalBiomeRegistration.init();
+        LOGGER.info("✅ 正常遊戲模式：啟用生物群系 Mixin 初始化");
 
         KoniavacraftMod.LOGGER.info("✅ Koniavacraft 世界生成系統初始化完成！");
     }
 
-
-
-
     // You can use SubscribeEvent and let the Event Bus discover methods to call
     @SubscribeEvent
-    public void onServerStarting(ServerStartingEvent event)
-    {
+    public void onServerStarting(ServerStartingEvent event) {
         // Do something when the server starts
         LOGGER.info("HELLO from server starting");
     }
 
-    // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
+    // You can use EventBusSubscriber to automatically register all static methods
+    // in the class annotated with @SubscribeEvent
 
 }

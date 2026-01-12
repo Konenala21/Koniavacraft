@@ -10,7 +10,8 @@
     "OverworldBiomeBuilderMixin",
     "particle.ParticleEngineMixin",
     "particle.ParticleEngineAccessor",
-    "client.MinecraftAccessor"
+    "client.MinecraftAccessor",
+    "render.LevelRendererMixin"
   ],
   "client": [],
   "server": [],

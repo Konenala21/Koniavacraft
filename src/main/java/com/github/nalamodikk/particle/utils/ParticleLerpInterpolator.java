@@ -4,14 +4,11 @@ import org.joml.Quaternionf;
 import org.joml.Vector3d;
 
 /**
- * 粒子插值工具
- * 用於計算 Partial Tick 下的平滑位置與旋轉
- */
+ * ?????瞉扔?? * ??踐??殷?? Partial Tick ??????選??????? */
 public class ParticleLerpInterpolator {
 
     /**
-     * 線性插值計算平滑位置
-     * P_render = P_prev + (P_curr - P_prev) * delta
+     * ?綜垮????瞏?????????     * P_render = P_prev + (P_curr - P_prev) * delta
      */
     public static Vector3d lerpPosition(double prevX, double prevY, double prevZ,
                                         double currX, double currY, double currZ,
@@ -23,8 +20,7 @@ public class ParticleLerpInterpolator {
     }
 
     /**
-     * 四元數插值計算平滑旋轉
-     */
+     * ?謜??鞊??瞏?????????     */
     public static Quaternionf lerpRotation(Quaternionf prevRot, Quaternionf currRot, float partialTick) {
         return QuaternionUtil.slerp(prevRot, currRot, partialTick);
     }

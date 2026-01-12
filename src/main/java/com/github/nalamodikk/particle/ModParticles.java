@@ -13,8 +13,10 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
+import java.util.function.Function;
+
 /**
- * 粒子類型註冊
+ * 蝎?憿?閮餃?
  */
 public class ModParticles {
 
@@ -28,18 +30,16 @@ public class ModParticles {
         PARTICLE_TYPES.register("magic_circle", () -> new ParticleType<>(false) {
             @Override
             public MapCodec<MagicCircleOptions> codec() {
-                // 這裡需要 MagicCircleOptions 的 Codec，我們可以復用 CooParticleOptions 的結構但映射到新類
-                // 為了簡單，我們假設字段一樣
                 return CooParticleOptions.CODEC.xmap(
-                    o -> new MagicCircleOptions(o.getSize(), o.getColor(), o.getAlpha()),
-                    o -> o // MagicCircleOptions is CooParticleOptions
+                    o -> new MagicCircleOptions(o.getSize(), o.getColor(), o.getAlpha(), o.getUuid()),
+                    o -> o
                 );
             }
 
             @Override
             public StreamCodec<? super RegistryFriendlyByteBuf, MagicCircleOptions> streamCodec() {
                 return CooParticleOptions.STREAM_CODEC.map(
-                    o -> new MagicCircleOptions(o.getSize(), o.getColor(), o.getAlpha()),
+                    o -> new MagicCircleOptions(o.getSize(), o.getColor(), o.getAlpha(), o.getUuid()),
                     o -> o
                 );
             }
@@ -50,7 +50,7 @@ public class ModParticles {
             @Override
             public MapCodec<GuidedFlowOptions> codec() {
                 return CooParticleOptions.CODEC.xmap(
-                    o -> new GuidedFlowOptions(o.getSize(), o.getColor(), o.getAlpha()),
+                    o -> new GuidedFlowOptions(o.getSize(), o.getColor(), o.getAlpha(), o.getUuid()),
                     o -> o
                 );
             }
@@ -58,7 +58,7 @@ public class ModParticles {
             @Override
             public StreamCodec<? super RegistryFriendlyByteBuf, GuidedFlowOptions> streamCodec() {
                 return CooParticleOptions.STREAM_CODEC.map(
-                    o -> new GuidedFlowOptions(o.getSize(), o.getColor(), o.getAlpha()),
+                    o -> new GuidedFlowOptions(o.getSize(), o.getColor(), o.getAlpha(), o.getUuid()),
                     o -> o
                 );
             }

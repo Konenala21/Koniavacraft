@@ -1,11 +1,9 @@
 package com.github.nalamodikk.particle.utils;
 
-import com.github.nalamodikk.particle.utils.math.RelativeLocation;
+import com.github.nalamodikk.particle.utils.RelativeLocation;
 
 /**
- * 旋轉矩陣工具類
- * 用於處理 RelativeLocation 的旋轉
- */
+ * ?????????? * ??踐???? RelativeLocation ????? */
 public class RotationMatrix {
     private final double[][] matrix;
 
@@ -14,11 +12,10 @@ public class RotationMatrix {
     }
 
     /**
-     * 建立繞任意軸旋轉的矩陣 (罗德里格旋转公式)
+     * ?梁???童???湧?????????(?蛔????魂僱?????)
      *
-     * @param axis 旋轉軸
-     * @param angle 旋轉角度 (弧度)
-     * @return 旋轉矩陣
+     * @param axis ?????     * @param angle ????恃?瞍?(?瞍?
+     * @return ??????
      */
     public static RotationMatrix fromAxisAngle(RelativeLocation axis, double angle) {
         RelativeLocation u = axis.normalize();

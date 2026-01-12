@@ -14,8 +14,7 @@ import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * 支援自定義 Shader 的粒子渲染類型
- */
+ * ????????Shader ????殉??????? */
 public class CooShaderRenderType implements ParticleRenderType {
     private final ResourceLocation shaderId;
 
@@ -31,7 +30,7 @@ public class CooShaderRenderType implements ParticleRenderType {
             program.use();
             CooShaderProgramManager.getInstance().applyMatrices(program);
         } else {
-            // 回退到原版 Shader
+            // ?豯阬??????Shader
             RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getParticleShader);
         }
 

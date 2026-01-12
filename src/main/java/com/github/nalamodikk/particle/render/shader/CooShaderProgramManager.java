@@ -9,8 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 全局 Shader 程式管理器
- */
+ * ??? Shader ???????? */
 public class CooShaderProgramManager {
     private static final CooShaderProgramManager INSTANCE = new CooShaderProgramManager();
     private final Map<ResourceLocation, CooShaderProgram> programs = new HashMap<>();
@@ -40,7 +39,7 @@ public class CooShaderProgramManager {
     }
 
     /**
-     * 應用矩陣到指定的 Shader
+     * ??伍????????堊垓? Shader
      */
     public void applyMatrices(CooShaderProgram program) {
         program.setMatrix4("ProjMat", projectionMatrix);

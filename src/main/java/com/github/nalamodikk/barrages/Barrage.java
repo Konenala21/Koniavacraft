@@ -1,44 +1,57 @@
 package com.github.nalamodikk.barrages;
 
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.LivingEntity;
+import com.github.nalamodikk.display.DisplayEntity;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.UUID;
 
-public abstract class Barrage {
-    protected Vec3 loc;
-    protected final ServerLevel world;
-    protected HitBox hitBox;
-    protected LivingEntity shooter;
-    protected Vec3 direction;
-    protected boolean launch = false;
-    protected boolean valid = true;
-    protected final UUID uuid = UUID.randomUUID();
+/**
+ * 重構後的彈幕基類
+ * 繼承自 DisplayEntity 以獲取插值渲染與自動同步能力
+ */
+public abstract class Barrage extends DisplayEntity {
+    protected Vec3 direction = Vec3.ZERO;
+    protected HitBox hitBox = HitBox.of(0.5, 0.5, 0.5);
+    protected boolean active = false;
 
-    public Barrage(ServerLevel world, Vec3 loc) {
-        this.world = world;
-        this.loc = loc;
-        this.direction = Vec3.ZERO;
-        this.hitBox = HitBox.of(0.5, 0.5, 0.5);
+    public Barrage(UUID uuid) {
+        super(uuid);
     }
 
-    public abstract void tick();
-    
-    // 省略了 hit/onHit 等細節，專注於核心抽象
-    public boolean isValid() {
-        return valid;
+    @Override
+    public void tick() {
+        super.tick();
+        if (active) {
+            onUpdate();
+        }
     }
-    
-    public void setShooter(LivingEntity shooter) {
-        this.shooter = shooter;
-    }
-    
-    public void setDirection(Vec3 direction) {
+
+    /**
+     * 彈幕具體的物理與邏輯更新
+     */
+    protected abstract void onUpdate();
+
+    public void launch(Vec3 pos, Vec3 direction) {
+        this.pos = pos;
+        this.prevPos = pos;
         this.direction = direction;
+        this.active = true;
     }
-    
-    public void launch() {
-        this.launch = true;
+
+    @Override
+    public void write(FriendlyByteBuf buf) {
+        buf.writeDouble(pos.x);
+        buf.writeDouble(pos.y);
+        buf.writeDouble(pos.z);
+        buf.writeDouble(direction.x);
+        buf.writeDouble(direction.y);
+        buf.writeDouble(direction.z);
+    }
+
+    @Override
+    public void read(FriendlyByteBuf buf) {
+        this.pos = new Vec3(buf.readDouble(), buf.readDouble(), buf.readDouble());
+        this.direction = new Vec3(buf.readDouble(), buf.readDouble(), buf.readDouble());
     }
 }

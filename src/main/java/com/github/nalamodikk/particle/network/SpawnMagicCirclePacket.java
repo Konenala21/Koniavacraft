@@ -12,7 +12,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 /**
- * 生成魔法陣粒子效果的網絡包
+ * ?賹??啾??????殉???謚??祈蝒??
  */
 public record SpawnMagicCirclePacket(BlockPos pos, int effectType) implements CustomPacketPayload {
 
@@ -31,7 +31,7 @@ public record SpawnMagicCirclePacket(BlockPos pos, int effectType) implements Cu
     }
 
     /**
-     * 註冊網絡包
+     * ?桅???祈蝒??
      */
     public static void registerTo(PayloadRegistrar registrar) {
         registrar.playToClient(
@@ -42,18 +42,18 @@ public record SpawnMagicCirclePacket(BlockPos pos, int effectType) implements Cu
     }
 
     /**
-     * 處理包（客戶端）
+     * ???????堆撓???
      */
     public static void handle(SpawnMagicCirclePacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            // 根據效果類型創建配置
+            // ?撖?????遴竣?????
             ClientMagicCircleEffect.Config config = switch (packet.effectType) {
                 case 1 -> ClientMagicCircleEffect.Config.manaGenerator();
                 case 2 -> ClientMagicCircleEffect.Config.persistent();
                 default -> new ClientMagicCircleEffect.Config();
             };
 
-            // 創建效果
+            // ?????
             ClientEffectManager.getInstance().createMagicCircle(packet.pos, config);
         });
     }

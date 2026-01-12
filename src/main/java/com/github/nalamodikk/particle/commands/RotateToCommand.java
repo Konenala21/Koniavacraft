@@ -4,9 +4,15 @@ import com.github.nalamodikk.particle.ICooParticle;
 import org.joml.Quaternionf;
 
 /**
- * 設定粒子旋轉指令
+ * ?桀??剛????????刻?
  */
-public record RotateToCommand(Quaternionf rotation) implements IParticleCommand {
+public class RotateToCommand implements IParticleCommand {
+    private final Quaternionf rotation;
+
+    public RotateToCommand(Quaternionf rotation) {
+        this.rotation = rotation;
+    }
+
     @Override
     public void execute(ICooParticle particle) {
         particle.setRotation(rotation);

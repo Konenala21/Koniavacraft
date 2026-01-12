@@ -9,7 +9,7 @@ public class QuaternionUtilTest {
 
     @Test
     public void testRotateVector() {
-        // 測試將 (1, 0, 0) 繞 Y 軸旋轉 90 度，預期得到 (0, 0, -1)
+        // 皜祈岫撠?(1, 0, 0) 蝜?Y 頠豢?頧?90 摨佗???敺 (0, 0, -1)
         Vector3f original = new Vector3f(1.0f, 0.0f, 0.0f);
         Quaternionf rotation = new Quaternionf().rotateY((float) Math.toRadians(90));
         
@@ -25,8 +25,7 @@ public class QuaternionUtilTest {
         Quaternionf start = new Quaternionf(); // Identity
         Quaternionf end = new Quaternionf().rotateY((float) Math.toRadians(90));
         
-        // 插值 0.5，應該旋轉 45 度
-        Quaternionf result = QuaternionUtil.slerp(start, end, 0.5f);
+        // ??0.5嚗?閰脫?頧?45 摨?        Quaternionf result = QuaternionUtil.slerp(start, end, 0.5f);
         Vector3f vec = new Vector3f(1.0f, 0.0f, 0.0f);
         vec.rotate(result);
         

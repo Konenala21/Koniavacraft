@@ -27,9 +27,8 @@ public class ParticleManagerTest {
     public void setUp() {
         manager = ParticleManager.getInstance();
         particleId = UUID.randomUUID();
-        // 清理單例狀態 (模擬)
-        // 由於我們無法輕易重置私有字段，我們假設測試環境是隔離的或者手動清理
-        manager.cleanup(); 
+        // 皜??桐????(璅⊥)
+        // ?望?瘜???蝵桃???畾蛛???閮剜葫閰衣憓????????? manager.cleanup();
     }
 
     @Test
@@ -43,30 +42,30 @@ public class ParticleManagerTest {
 
     @Test
     public void testEvictionUnderLoad() {
-        // 模擬 PerformanceMonitor
+        // 璅⊥ PerformanceMonitor
         try (MockedStatic<PerformanceMonitor> mockedMonitor = mockStatic(PerformanceMonitor.class)) {
             PerformanceMonitor monitor = mock(PerformanceMonitor.class);
             mockedMonitor.when(PerformanceMonitor::getInstance).thenReturn(monitor);
-            
-            // 設定極低的限制 (例如 2)
+
+            // 閮剖?璆萎?????(靘? 2)
             when(monitor.getParticleLimit()).thenReturn(2);
-            
+
             ICooParticle p1 = mock(ICooParticle.class);
             ICooParticle p2 = mock(ICooParticle.class);
             ICooParticle p3 = mock(ICooParticle.class);
-            
+
             UUID id1 = UUID.randomUUID();
             UUID id2 = UUID.randomUUID();
             UUID id3 = UUID.randomUUID();
-            
+
             manager.registerParticle(id1, p1);
             manager.registerParticle(id2, p2);
-            
-            // 此時應該滿了
-            
-            // 添加第三個，應該觸發 p1 的 remove
+
+            // 甇斗??府皛蹂?
+
+            // 瘛餃?蝚砌????府閫貊 p1 ??remove
             manager.registerParticle(id3, p3);
-            
+
             verify(p1).remove(); // 驗證 p1 被移除
         }
     }

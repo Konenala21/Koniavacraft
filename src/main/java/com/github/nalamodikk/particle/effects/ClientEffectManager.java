@@ -9,9 +9,9 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * 客戶端粒子效果管理器
+ * ?堆撓????殉???謚祆???
  *
- * 管理所有活動的粒子效果
+ * ???????斗??????????
  */
 @OnlyIn(Dist.CLIENT)
 public class ClientEffectManager {
@@ -27,7 +27,7 @@ public class ClientEffectManager {
     }
 
     /**
-     * 創建魔法陣效果
+     * ???啾???????
      */
     public void createMagicCircle(BlockPos pos, ClientMagicCircleEffect.Config config) {
         ClientMagicCircleEffect effect = new ClientMagicCircleEffect(pos, config);
@@ -37,7 +37,7 @@ public class ClientEffectManager {
     }
 
     /**
-     * 每 tick 更新所有效果
+     * ??tick ?皝????????
      */
     public void tick() {
         Iterator<ClientMagicCircleEffect> iterator = activeEffects.iterator();
@@ -45,7 +45,7 @@ public class ClientEffectManager {
             ClientMagicCircleEffect effect = iterator.next();
             effect.tick();
 
-            // 移除已結束的效果
+            // ??謒????賹????
             if (!effect.isActive()) {
                 iterator.remove();
             }
@@ -53,7 +53,7 @@ public class ClientEffectManager {
     }
 
     /**
-     * 清空所有效果
+     * ?敺???????
      */
     public void clear() {
         for (ClientMagicCircleEffect effect : activeEffects) {
@@ -63,7 +63,7 @@ public class ClientEffectManager {
     }
 
     /**
-     * 獲取活動效果數量
+     * ???????????鞈?
      */
     public int getActiveEffectCount() {
         return activeEffects.size();

@@ -12,38 +12,38 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureManager;
 
 /**
- * 自定義粒子渲染類型
+ * ????Ｘ???殉???????
  *
- * 實現加法混合（Additive Blending）以產生發光效果
+ * ?﹝??蹎??????dditive Blending?隤?嚗??瞉????
  */
 public class CooParticleRenderTypes {
 
     /**
-     * 加法混合渲染類型
+     * ?蹎???????遴竣?
      *
-     * 使用 GL_ONE, GL_ONE 混合模式
-     * 粒子顏色會與背景相加，產生發光效果
+     * ?輯撒??GL_ONE, GL_ONE ?????
+     * ????遴??????魂??閰????賹赤?????
      */
     public static final ParticleRenderType ADDITIVE_BLEND = new ParticleRenderType() {
         @Override
         public BufferBuilder begin(Tesselator tesselator, TextureManager textureManager) {
             RenderSystem.setShader(GameRenderer::getParticleShader);
-            // 綁定粒子紋理圖集
+            // ?秋撒????????謖?
             RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_PARTICLES);
 
-            // 啟用混合
+            // ?賹????
             RenderSystem.enableBlend();
 
-            // 設置加法混合模式：GL_ONE + GL_ONE
+            // ?桀???蹎???????庖L_ONE + GL_ONE
             RenderSystem.blendFunc(
                 GlStateManager.SourceFactor.ONE,
                 GlStateManager.DestFactor.ONE
             );
 
-            // 禁用深度寫入（粒子不遮擋背後的物體）
+            // ?啾播???撞?????殉?????????????
             RenderSystem.depthMask(false);
 
-            // 開始構建頂點
+            // ????踝???蹇?
             return tesselator.begin(
                 VertexFormat.Mode.QUADS,
                 DefaultVertexFormat.PARTICLE
@@ -62,9 +62,9 @@ public class CooParticleRenderTypes {
     };
 
     /**
-     * 標準透明混合渲染類型（作為備用）
+     * ????????????遴竣?????蝞????
      *
-     * 使用 GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA 混合模式
+     * ?輯撒??GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA ?????
      */
     public static final ParticleRenderType TRANSLUCENT = new ParticleRenderType() {
         @Override
@@ -73,7 +73,7 @@ public class CooParticleRenderTypes {
             RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_PARTICLES);
             RenderSystem.enableBlend();
 
-            // 標準透明混合
+            // ?????????
             RenderSystem.blendFunc(
                 GlStateManager.SourceFactor.SRC_ALPHA,
                 GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA
@@ -99,10 +99,10 @@ public class CooParticleRenderTypes {
     };
 
     /**
-     * 自發光混合（結合加法與透明度）
+     * ??堊赤??斗紗????荒???蹎???倦???其??
      *
-     * 使用 GL_SRC_ALPHA, GL_ONE 混合模式
-     * 適合需要半透明但又要發光的粒子
+     * ?輯撒??GL_SRC_ALPHA, GL_ONE ?????
+     * ??????秋撒?????選???秋播謒??????
      */
     public static final ParticleRenderType GLOW = new ParticleRenderType() {
         @Override
@@ -111,7 +111,7 @@ public class CooParticleRenderTypes {
             RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_PARTICLES);
             RenderSystem.enableBlend();
 
-            // 自發光混合
+            // ??堊赤??斗紗??
             RenderSystem.blendFunc(
                 GlStateManager.SourceFactor.SRC_ALPHA,
                 GlStateManager.DestFactor.ONE
