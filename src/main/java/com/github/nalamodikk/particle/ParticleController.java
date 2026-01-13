@@ -83,8 +83,8 @@ public class ParticleController {
         addPreTickAction(p -> {
             if (age[0] < duration) {
                 double progress = (double) age[0] / duration;
-                RelativeLocation offset = motion.getMotion(progress);
-                // ?ㄐ?臭誑?寞? offset ?湔蝎?雿蔭
+                Vec3 position = motion.getPositionAt((float) progress);
+                p.teleportTo(position);
             }
             age[0]++;
         });
