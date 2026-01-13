@@ -249,4 +249,12 @@ public class CooScheduler {
         TickRunnable tickTask = runTaskTimerMaxTick(period, maxTicks, task);
         return tickTask.uuid;
     }
+
+    /**
+     * 取消任務（通過 UUID）
+     * @param uuid 任務 UUID
+     */
+    public void cancelTask(UUID uuid) {
+        taskQueue.removeIf(task -> task.uuid.equals(uuid));
+    }
 }
