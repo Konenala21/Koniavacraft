@@ -119,7 +119,31 @@ public class ControlableParticle extends TextureSheetParticle implements ICooPar
     @Override public void setVelocity(double vx, double vy, double vz) { this.xd = vx; this.yd = vy; this.zd = vz; }
     @Override public void setColor(float r, float g, float b) { this.rCol = r; this.gCol = g; this.bCol = b; }
     @Override public void setAlpha(float alpha) { this.alpha = alpha; }
+
+    // Getter 方法（用於 Helper 類）
+    public float getAlpha() { return this.alpha; }
+    public int getRed() { return (int) (this.rCol * 255); }
+    public int getGreen() { return (int) (this.gCol * 255); }
+    public int getBlue() { return (int) (this.bCol * 255); }
+    public Vec3 getPosition() { return new Vec3(this.x, this.y, this.z); }
+    public Vec3 getVelocity() { return new Vec3(this.xd, this.yd, this.zd); }
+
+    // 設置速度（Vec3 版本）
+    public void setVelocity(Vec3 velocity) {
+        this.xd = velocity.x;
+        this.yd = velocity.y;
+        this.zd = velocity.z;
+    }
+
+    // 旋轉控制方法（目前使用 Quaternion，暫時返回 0）
+    public float getRoll() { return 0.0f; } // TODO: 從 Quaternion 提取
+    public float getPitch() { return 0.0f; } // TODO: 從 Quaternion 提取
+    public float getYaw() { return 0.0f; } // TODO: 從 Quaternion 提取
+    public void setRoll(float roll) { /* TODO: 設置到 Quaternion */ }
+    public void setPitch(float pitch) { /* TODO: 設置到 Quaternion */ }
+    public void setYaw(float yaw) { /* TODO: 設置到 Quaternion */ }
     @Override public void setScale(float scale) { this.quadSize = scale; }
+    public float getScale() { return this.quadSize; }
     @Override public void setRotation(Quaternionf rotation) { this.currentRotation.set(rotation); }
     @Override public void setFaceToCamera(boolean faceToCamera) { this.faceToCamera = faceToCamera; }
 

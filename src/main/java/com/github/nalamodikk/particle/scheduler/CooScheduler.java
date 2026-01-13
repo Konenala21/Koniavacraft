@@ -1,5 +1,6 @@
 package com.github.nalamodikk.particle.scheduler;
 
+import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -97,6 +98,7 @@ public class CooScheduler {
      * 可執行的 Tick 任務
      */
     public static class TickRunnable {
+        public final UUID uuid = UUID.randomUUID();
         private final Consumer<TickRunnable> runnable;
 
         /**
@@ -208,5 +210,43 @@ public class CooScheduler {
                 canceled = true;
             }
         }
+    }
+
+    // ========== Helper 兼容方法 ==========
+
+    /**
+     * 延遲執行任務（兼容方法，返回 UUID）
+     * @param task 任務
+     * @param delay 延遲（tick）
+     * @return 任務 UUID
+     */
+    public UUID runTaskLater(Runnable task, int delay) {
+        TickRunnable tickTask = runTask(delay, task);
+        return tickTask.uuid;
+    }
+
+    /**
+     * 定時執行任務（兼容方法，返回 UUID）
+     * @param task 任務
+     * @param delay 初始延遲（目前未使用，為了兼容性保留）
+     * @param period 執行間隔
+     * @return 任務 UUID
+     */
+    public UUID runTaskTimer(Runnable task, int delay, int period) {
+        TickRunnable tickTask = runTaskTimer(period, task);
+        return tickTask.uuid;
+    }
+
+    /**
+     * 定時執行任務，最多執行 maxTicks 次（兼容方法，返回 UUID）
+     * @param task 任務
+     * @param delay 初始延遲（目前未使用，為了兼容性保留）
+     * @param period 執行間隔
+     * @param maxTicks 最大執行次數
+     * @return 任務 UUID
+     */
+    public UUID runTaskTimer(Runnable task, int delay, int period, int maxTicks) {
+        TickRunnable tickTask = runTaskTimerMaxTick(period, maxTicks, task);
+        return tickTask.uuid;
     }
 }
