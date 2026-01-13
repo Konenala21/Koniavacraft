@@ -147,6 +147,10 @@ public class ControlableParticle extends TextureSheetParticle implements ICooPar
     @Override public void setRotation(Quaternionf rotation) { this.currentRotation.set(rotation); }
     @Override public void setFaceToCamera(boolean faceToCamera) { this.faceToCamera = faceToCamera; }
 
+    // 生命週期相關 getter
+    public int getAge() { return this.age; }
+    public int getLifetime() { return this.lifetime; }
+
     public void addPreTickAction(Consumer<ControlableParticle> action) { this.preTickActions.add(action); }
     public void addPostTickAction(Consumer<ControlableParticle> action) { this.postTickActions.add(action); }
 
