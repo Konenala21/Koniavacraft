@@ -1,15 +1,23 @@
 package com.github.nalamodikk.particle.examples;
 
 import com.github.nalamodikk.particle.ControlableParticle;
+import com.github.nalamodikk.particle.helper.AlphaHelper;
+import com.github.nalamodikk.particle.helper.GravityHelper;
+import com.github.nalamodikk.particle.helper.LifetimeHelper;
+import com.github.nalamodikk.particle.helper.TrailHelper;
+import com.github.nalamodikk.particle.helper.VelocityHelper;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.ParticleProvider;
 import net.minecraft.client.particle.SpriteSet;
+import net.minecraft.core.particles.ParticleTypes;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
 /**
- * 導引流動粒子 */
+ * 導引流動粒子
+ * 展示 Helper 功能：重力、速度限制、軌跡、淡出
+ */
 public class GuidedFlowParticle extends ControlableParticle {
 
     private final SpriteSet sprites;
@@ -27,6 +35,20 @@ public class GuidedFlowParticle extends ControlableParticle {
 
         this.setFaceToCamera(true);
 
+        // === 使用 Helper 系統展示功能 ===
+
+        // 1. 應用重力效果（標準重力）
+        GravityHelper.applyGravity(this);
+
+        // 2. 限制最大速度（防止過快）
+        VelocityHelper.limitSpeed(this, 2.0);
+
+        // 3. 創建粒子軌跡（每 2 tick 生成一個小粒子）
+        TrailHelper.createTrail(this, level, ParticleTypes.END_ROD, 2);
+
+        // 4. 淡出效果（最後 20 tick）
+        LifetimeHelper.fadeOutAndRemove(this, 20);
+
         // ✅ 參考框架的做法：使用 addPreTickAction
         // 注意：在構造函數中 'this' 指向當前粒子對象，可以訪問 protected 字段
         this.addPreTickAction(particle -> {
@@ -36,8 +58,6 @@ public class GuidedFlowParticle extends ControlableParticle {
             this.z += this.zd;
 
             this.setSpriteFromAge(sprites);
-            float lifeRatio = (float) this.age / this.lifetime;
-            this.setAlpha(1.0f - lifeRatio);
         });
     }
 

@@ -64,6 +64,19 @@ public class ModParticles {
             }
         });
 
+    public static final DeferredHolder<ParticleType<?>, ParticleType<com.github.nalamodikk.particle.examples.HelperDemoOptions>> HELPER_DEMO =
+        PARTICLE_TYPES.register("helper_demo", () -> new ParticleType<>(false) {
+            @Override
+            public MapCodec<com.github.nalamodikk.particle.examples.HelperDemoOptions> codec() {
+                return com.github.nalamodikk.particle.examples.HelperDemoOptions.CODEC;
+            }
+
+            @Override
+            public StreamCodec<? super RegistryFriendlyByteBuf, com.github.nalamodikk.particle.examples.HelperDemoOptions> streamCodec() {
+                return com.github.nalamodikk.particle.examples.HelperDemoOptions.STREAM_CODEC;
+            }
+        });
+
     public static void register(IEventBus eventBus) {
         PARTICLE_TYPES.register(eventBus);
     }
