@@ -3,6 +3,7 @@ package com.github.nalamodikk.client.event;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.particle.ParticleManager;
 import com.github.nalamodikk.particle.effects.ClientEffectManager;
+import com.github.nalamodikk.particle.scheduler.CooScheduler;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -27,9 +28,12 @@ public class ClientParticleTickEvent {
     @SubscribeEvent
     public static void onClientTick(LevelTickEvent.Post event) {
         if (event.getLevel().isClientSide()) {
+            // ✅ 更新 CooScheduler（所有 Helper 動畫依賴此調用）
+            CooScheduler.getInstance().tick();
+
             // 更新粒子效果
             ClientEffectManager.getInstance().tick();
-            
+
             // 更新樣式
             for (ParticleStyle style : new ArrayList<>(activeStyles)) {
                 try {
