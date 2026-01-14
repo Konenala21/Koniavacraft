@@ -51,8 +51,14 @@ public class HelperDemoParticle extends ControlableParticle {
             case FULL_DEMO -> applyFullDemo(x, y, z, level);
         }
 
-        // 更新 sprite 動畫
-        this.addPreTickAction(particle -> this.setSpriteFromAge(sprites));
+        // 更新 sprite 動畫並應用速度到位置
+        this.addPreTickAction(particle -> {
+            // 手動應用速度（因為 ControlableParticle 註解掉了 super.tick()）
+            this.x += this.xd;
+            this.y += this.yd;
+            this.z += this.zd;
+            this.setSpriteFromAge(sprites);
+        });
     }
 
     /**
