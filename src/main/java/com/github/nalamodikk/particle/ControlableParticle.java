@@ -110,9 +110,8 @@ public class ControlableParticle extends TextureSheetParticle implements ICooPar
 
     @Override
     public ParticleRenderType getRenderType() {
-        // 臨時使用原版 RenderType 進行測試，確認粒子可見後再切換回 ADDITIVE_BLEND
-        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
-        // TODO: 測試通過後改回 CooParticleRenderTypes.ADDITIVE_BLEND
+        // 使用加法混合渲染，產生發光效果（符合原版 Kotlin 框架）
+        return CooParticleRenderTypes.ADDITIVE_BLEND;
     }
 
     @Override public void setPosition(double x, double y, double z) { this.x = x; this.y = y; this.z = z; }
