@@ -25,9 +25,10 @@ public class QuaternionUtilTest {
         Quaternionf start = new Quaternionf(); // Identity
         Quaternionf end = new Quaternionf().rotateY((float) Math.toRadians(90));
         
-        // ??0.5嚗?閰脫?頧?45 摨?        Quaternionf result = QuaternionUtil.slerp(start, end, 0.5f);
+        // 插值 0.5，應該旋轉 45 度
+        Quaternionf result = QuaternionUtil.slerp(start, end, 0.5f);
         Vector3f vec = new Vector3f(1.0f, 0.0f, 0.0f);
-        vec.rotate(result);
+        result.transform(vec);
         
         float expectedX = (float) Math.cos(Math.toRadians(45));
         float expectedZ = (float) -Math.sin(Math.toRadians(45));
