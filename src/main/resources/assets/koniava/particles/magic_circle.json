@@ -1,8 +1,8 @@
 {
   "textures": [
-    "minecraft:spell_0",
-    "minecraft:spell_1",
-    "minecraft:spell_2",
-    "minecraft:spell_3"
+    "minecraft:particle/spell_0",
+    "minecraft:particle/spell_1",
+    "minecraft:particle/spell_2",
+    "minecraft:particle/spell_3"
   ]
 }

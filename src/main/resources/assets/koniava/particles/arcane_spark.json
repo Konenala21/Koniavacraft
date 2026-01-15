@@ -1,8 +1,8 @@
 {
   "textures": [
-    "minecraft:generic_0",
-    "minecraft:generic_1",
-    "minecraft:generic_2",
-    "minecraft:generic_3"
+    "minecraft:particle/generic_0",
+    "minecraft:particle/generic_1",
+    "minecraft:particle/generic_2",
+    "minecraft:particle/generic_3"
   ]
 }
