@@ -61,6 +61,16 @@ public final class BlockbenchModelRenderUtils {
         return groupedElements;
     }
 
+    public static List<ModelElement> parseElements(JsonObject modelData) {
+        JsonArray elements = modelData.getAsJsonArray("elements");
+        List<ModelElement> parsedElements = new ArrayList<>(elements.size());
+        for (int i = 0; i < elements.size(); i++) {
+            JsonObject element = elements.get(i).getAsJsonObject();
+            parsedElements.add(parseElement(element));
+        }
+        return parsedElements;
+    }
+
     public static void renderGroup(PoseStack poseStack, VertexConsumer vertexConsumer,
                                    int packedLight, int packedOverlay,
                                    Map<String, List<ModelElement>> groupedElements,
