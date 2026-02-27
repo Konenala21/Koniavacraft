@@ -68,7 +68,7 @@ public class OreGrinderScreen extends AutoSizedModularScreen<OreGrinderMenu> {
                 if (ModList.get().isLoaded("jei")) {
                     return List.of();
                 }
-                return List.of(Component.translatable("tooltip.koniava.ore_grinder.recipes"));
+                return List.of(Component.translatable("tooltip.koniava.mana_grinder.recipes"));
             }
         });
     }

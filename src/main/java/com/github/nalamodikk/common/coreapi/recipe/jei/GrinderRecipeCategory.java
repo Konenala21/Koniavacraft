@@ -78,7 +78,7 @@ public class GrinderRecipeCategory implements IRecipeCategory<ProcessingRecipe> 
                 new ItemStack(ModBlocks.ORE_GRINDER.get())
         );
 
-        this.localizedName = Component.translatable("block.koniava.ore_grinder");
+        this.localizedName = Component.translatable("block.koniava.mana_grinder");
 
         this.arrowStatic = guiHelper.drawableBuilder(TEXTURE, 176, 52, ARROW_WIDTH, ARROW_HEIGHT)
                 .setTextureSize(256, 256)

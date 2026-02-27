@@ -42,7 +42,7 @@
   "block.koniava.mana_grass_block": "魔力草方塊",
   "block.koniava.mana_bloom": "魔力花",
   "block.koniava.mana_infuser": "魔力注入機",
-  "block.koniava.ore_grinder": "魔力粉碎機",
+  "block.koniava.mana_grinder": "魔力粉碎機",
 
   "//4": "=== RPG 系統 ===",
   "rpg.class.none": "無職業",
@@ -288,7 +288,7 @@
   "gui.koniava.mana_infuser.status.working": "注入中",
   "gui.koniava.mana_infuser.status.no_mana": "魔力不足",
   "gui.koniava.mana_infuser.status.no_recipe": "無配方",
-  "tooltip.koniava.ore_grinder.recipes": "查看可用配方",
+  "tooltip.koniava.mana_grinder.recipes": "查看可用配方",
   "jei.koniava.grinder.mana": "魔力: %s",
   "jei.koniava.grinder.time": "時間: %s ticks",
   "jei.koniava.grinder.chance": "%s%%",
@@ -343,6 +343,9 @@
   "koniava.config.biome.snapshotDepth": "快照深度 (層數)",
   "koniava.config.biome.adaptivePerformance": "啟用自適應性能",
   "koniava.config.biome.autoSkipMinor": "自動跳過次要生態系",
+  "koniava.config.render.fullAnimationDistance": "完整動畫渲染距離",
+  "koniava.config.render.reducedAnimationDistance": "降級動畫渲染距離",
+  "koniava.config.render.reducedAnimationScale": "降級動畫強度倍率",
 
   "//21": "=== 配置狀態訊息 ===",
   "message.koniava.config.biome.performance_low": "§e[生態系] 性能模式：低配置伺服器優化",
@@ -360,6 +363,8 @@
   "koniava.configuration.title": "魔法工業配置",
   "koniava.configuration.section.koniava.common.toml.title": "通用設定",
   "koniava.configuration.section.koniava.common.toml": "魔法工業的通用配置選項",
+  "koniava.configuration.section.koniava.client.toml.title": "客戶端設定",
+  "koniava.configuration.section.koniava.client.toml": "客戶端渲染與視覺效果選項",
 
   "koniava.configuration.biome_processing": "生物群系處理",
   "koniava.configuration.biome_processing.tooltip": "生物群系處理系統設定",
@@ -385,6 +390,9 @@
   "koniava.config.showIntroAnimation.tooltip": "玩家加入時顯示介紹動畫",
   "koniava.config.biome.processingEnabled": "啟用生物群系地表處理",
   "koniava.config.biome.processingEnabled.tooltip": "啟用後，伺服器會替換特定生物群系的地表方塊。",
+  "koniava.config.render.fullAnimationDistance.tooltip": "方塊實體完整動畫的可視距離（單位：格）。",
+  "koniava.config.render.reducedAnimationDistance.tooltip": "超過完整距離後，降級動畫維持到此距離；再遠則停止動畫。",
+  "koniava.config.render.reducedAnimationScale.tooltip": "在降級距離區間內的動畫速度與振幅倍率。",
 
   "//23": "=== 配置工具提示 ===",
   "koniava.config.biome.multithreading.tooltip": "啟用多線程加速生物群系處理。建議4核心以上CPU的伺服器使用。",

@@ -92,7 +92,7 @@ public class ModMenuTypes {
 
     // === ⚙️ 新增：礦石粉碎機菜單 ===
     public static final DeferredHolder<MenuType<?>, MenuType<OreGrinderMenu>> ORE_GRINDER_MENU =
-            registerMenuType("ore_grinder",
+            registerMenuType("mana_grinder",
                     (id, inv, buf) -> {
                         BlockPos pos = buf.readBlockPos();
                         Level level = inv.player.level();

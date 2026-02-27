@@ -42,7 +42,7 @@
   "block.koniava.mana_grass_block": "Mana Grass Block",
   "block.koniava.mana_bloom": "Mana Bloom",
   "block.koniava.mana_infuser": "Mana Infuser",
-  "block.koniava.ore_grinder": "Mana Grinder",
+  "block.koniava.mana_grinder": "Mana Grinder",
 
   "//4": "=== RPG SYSTEM ===",
   "rpg.class.none": "None",
@@ -289,7 +289,7 @@
   "gui.koniava.mana_infuser.status.working": "Infusing",
   "gui.koniava.mana_infuser.status.no_mana": "Insufficient Mana",
   "gui.koniava.mana_infuser.status.no_recipe": "No Recipe",
-  "tooltip.koniava.ore_grinder.recipes": "View available recipes",
+  "tooltip.koniava.mana_grinder.recipes": "View available recipes",
   "jei.koniava.grinder.mana": "Mana: %s",
   "jei.koniava.grinder.time": "Time: %s ticks",
   "jei.koniava.grinder.chance": "%s%%",
@@ -344,6 +344,9 @@
   "koniava.config.biome.snapshotDepth": "Snapshot Depth (layers)",
   "koniava.config.biome.adaptivePerformance": "Enable Adaptive Performance",
   "koniava.config.biome.autoSkipMinor": "Auto Skip Minor Biomes",
+  "koniava.config.render.fullAnimationDistance": "Render Full Animation Distance",
+  "koniava.config.render.reducedAnimationDistance": "Render Reduced Animation Distance",
+  "koniava.config.render.reducedAnimationScale": "Render Reduced Animation Scale",
 
   "//21": "=== CONFIG STATUS MESSAGES ===",
   "message.koniava.config.biome.performance_low": "§e[Biome] Performance mode: Low-end server optimized",
@@ -361,6 +364,8 @@
   "koniava.configuration.title": "Koniavacraft Configuration",
   "koniava.configuration.section.koniava.common.toml.title": "Common Settings",
   "koniava.configuration.section.koniava.common.toml": "Common configuration options for Koniavacraft",
+  "koniava.configuration.section.koniava.client.toml.title": "Client Settings",
+  "koniava.configuration.section.koniava.client.toml": "Client-side rendering and visual options",
 
   "koniava.configuration.biome_processing": "Biome Processing",
   "koniava.configuration.biome_processing.tooltip": "Settings for biome processing system",
@@ -387,6 +392,9 @@
 
     "koniava.config.biome.processingEnabled": "Enable Biome Surface Processing",
   "koniava.config.biome.processingEnabled.tooltip": "When enabled, the server will replace surface blocks for selected biomes.",
+  "koniava.config.render.fullAnimationDistance.tooltip": "Distance (in blocks) for full block-entity animation.",
+  "koniava.config.render.reducedAnimationDistance.tooltip": "Distance (in blocks) for reduced animation quality before stopping animation.",
+  "koniava.config.render.reducedAnimationScale.tooltip": "Animation speed and amplitude multiplier in the reduced-distance range.",
 
   "//23": "=== CONFIG TOOLTIPS ===",
   "koniava.config.biome.multithreading.tooltip": "Enable multithreading for faster biome processing. Recommended for servers with 4+ CPU cores.",

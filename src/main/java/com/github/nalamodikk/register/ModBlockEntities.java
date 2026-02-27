@@ -50,7 +50,7 @@ public class ModBlockEntities {
 
     // === ⚙️ 新增：礦石粉碎機 ===
     public static final Supplier<BlockEntityType<OreGrinderBlockEntity>> ORE_GRINDER =
-            BLOCK_ENTITY_TYPES.register("ore_grinder", () ->
+            BLOCK_ENTITY_TYPES.register("mana_grinder", () ->
                     BlockEntityType.Builder.of(OreGrinderBlockEntity::new,
                             ModBlocks.ORE_GRINDER.get()).build(null));
 

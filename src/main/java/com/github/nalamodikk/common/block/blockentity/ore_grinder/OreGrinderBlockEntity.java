@@ -327,7 +327,7 @@ public class OreGrinderBlockEntity extends AbstractManaMachineEntityBlock {
 
     @Override
     public Component getDisplayName() {
-        return Component.translatable("block.koniava.ore_grinder");
+        return Component.translatable("block.koniava.mana_grinder");
     }
 
     // === 💾 數據保存 ===

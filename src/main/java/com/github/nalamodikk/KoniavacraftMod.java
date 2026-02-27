@@ -2,6 +2,7 @@ package com.github.nalamodikk;
 
 import com.github.nalamodikk.biome.BiomeTerrainRegistration;
 import com.github.nalamodikk.biome.UniversalBiomeRegistration;
+import com.github.nalamodikk.common.config.ModClientConfig;
 import com.github.nalamodikk.common.config.ModCommonConfig;
 import com.github.nalamodikk.register.*;
 import com.mojang.logging.LogUtils;
@@ -42,6 +43,7 @@ public class KoniavacraftMod {
     public KoniavacraftMod(IEventBus modEventBus, ModContainer modContainer) {
 
         modContainer.registerConfig(ModConfig.Type.COMMON, ModCommonConfig.SPEC);
+        modContainer.registerConfig(ModConfig.Type.CLIENT, ModClientConfig.SPEC);
 
         // debug test
         LOGGER.debug("這是一條 DEBUG 測試訊息");

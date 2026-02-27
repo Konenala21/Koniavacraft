@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 ### Changed
 - Bumped NeoForge from 21.1.217 to 21.1.219.
+- Renamed the machine internal id from `ore_grinder` to `mana_grinder` and updated related translation keys.
 - Removed the whole particle-effects stack (particle core, particle render/shader tools, particle packets/events, debug particle items, and particle assets/shaders).
 - Removed unused legacy framework folders: `init`, `display`, `event`, `network`, `commands`, `barrages`, `annotations`, `animation`, and `platform`.
 - Removed unused reflection scan utilities under `com.github.nalamodikk.reflect`.
@@ -12,6 +13,7 @@ All notable changes to this project will be documented in this file.
 - Removed unused render scaffolding under `com.github.nalamodikk.render` and dead mixins (`render.LevelRendererMixin`, `particle.ParticleEngineAccessor`).
 - Removed unused particle JSON configs: `arcane_spark`, `energy_burst`, `explosion_magic`, `healing_magic`, `mana_flow`, `nara_system`, `teleport_magic`.
 - Expanded render bounding boxes for mana generator and solar mana collector renderers to cover 1x2x1 visuals.
+- Made block-entity animation LOD distances/scales configurable via client config (`koniava-client.toml`).
 - Synced solar collector daytime state even when mana is unchanged, so GUI updates after time commands.
 - Added solar collector tooltip diagnostics for skylight, rain, thunder, and sky obstruction.
 - Solar collector now treats Overworld as having skylight and uses `canSeeSkyFromBelowWater` for sky checks.

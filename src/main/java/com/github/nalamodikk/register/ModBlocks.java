@@ -127,7 +127,7 @@ public class ModBlocks {
                             state.getValue(ManaInfuserBlock.WORKING) ? 7 : 0))); // 工作時發光
 
     // === ⚙️ 新增：礦石粉碎機 ===
-    public static final DeferredBlock<OreGrinderBlock> ORE_GRINDER = registerBlock("ore_grinder",
+    public static final DeferredBlock<OreGrinderBlock> ORE_GRINDER = registerBlock("mana_grinder",
             () -> new OreGrinderBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL)
                     .strength(3.5f).sound(SoundType.METAL).lightLevel(state ->
                             state.getValue(OreGrinderBlock.WORKING) ? 6 : 0))); // 工作時發光
