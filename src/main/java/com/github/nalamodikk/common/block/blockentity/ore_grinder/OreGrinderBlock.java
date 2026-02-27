@@ -20,6 +20,7 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -53,6 +54,11 @@ public class OreGrinderBlock extends BaseMachineBlock {
 
     // 🔧 額外的方塊屬性
     public static final BooleanProperty WORKING = BooleanProperty.create("working");
+
+    @Override
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.ENTITYBLOCK_ANIMATED;
+    }
 
     // 📐 方塊形狀
     private static final VoxelShape SHAPE = Block.box(2, 0, 2, 14, 13, 14);

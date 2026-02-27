@@ -1,4 +1,4 @@
-package com.github.nalamodikk.common.block.blockentity.render;
+package com.github.nalamodikk.common.utils.render;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;

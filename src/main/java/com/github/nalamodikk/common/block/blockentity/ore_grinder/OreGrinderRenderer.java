@@ -1,9 +1,9 @@
 package com.github.nalamodikk.common.block.blockentity.ore_grinder;
 
 import com.github.nalamodikk.KoniavacraftMod;
-import com.github.nalamodikk.common.block.blockentity.render.BlockbenchModelRenderUtils;
-import com.github.nalamodikk.common.block.blockentity.render.BlockbenchModelRenderUtils.ModelElement;
-import com.github.nalamodikk.common.block.blockentity.render.RenderAnimationLodUtils;
+import com.github.nalamodikk.common.utils.render.BlockbenchModelRenderUtils;
+import com.github.nalamodikk.common.utils.render.BlockbenchModelRenderUtils.ModelElement;
+import com.github.nalamodikk.common.utils.render.RenderAnimationLodUtils;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
