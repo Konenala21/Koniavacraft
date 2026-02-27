@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 ### Changed
+- Bumped NeoForge from 21.1.217 to 21.1.219.
+- Removed unused render scaffolding under `com.github.nalamodikk.render` and dead mixins (`render.LevelRendererMixin`, `particle.ParticleEngineAccessor`).
+- Removed unused particle JSON configs: `arcane_spark`, `energy_burst`, `explosion_magic`, `healing_magic`, `mana_flow`, `nara_system`, `teleport_magic`.
 - Expanded render bounding boxes for mana generator and solar mana collector renderers to cover 1x2x1 visuals.
 - Synced solar collector daytime state even when mana is unchanged, so GUI updates after time commands.
 - Added solar collector tooltip diagnostics for skylight, rain, thunder, and sky obstruction.
