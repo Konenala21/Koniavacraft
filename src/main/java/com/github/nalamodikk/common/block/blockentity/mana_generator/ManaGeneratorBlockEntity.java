@@ -5,7 +5,6 @@
     import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitBlockEntity;
     import com.github.nalamodikk.common.block.blockentity.mana_generator.logic.*;
     import com.github.nalamodikk.common.block.blockentity.mana_generator.recipe.loader.ManaGenFuelRateLoader;
-    import com.github.nalamodikk.particle.ParticleHelper;
 import com.github.nalamodikk.common.block.blockentity.manabase.AbstractManaMachineEntityBlock;
 import com.github.nalamodikk.common.capability.IUnifiedManaHandler;
 import com.github.nalamodikk.common.capability.ManaStorage;
@@ -301,10 +300,6 @@ import java.util.Optional;
                     }
                 }
 
-                // 🔮 粒子效果：當發電機工作時，每 40 ticks 生成一次旋轉魔法陣
-                if (isWorking() && level.getGameTime() % 40 == 0) {
-                    ParticleHelper.createManaGeneratorEffect(level, worldPosition);
-                }
             }
         }
 

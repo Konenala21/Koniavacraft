@@ -1,6 +1,5 @@
 package com.github.nalamodikk.common.event;
 
-import com.github.nalamodikk.commands.TestDisplayCommand;
 import com.github.nalamodikk.common.command.TestCommand;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -16,6 +15,5 @@ public class CommandRegistrationHandler {
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         // 註冊測試命令
         TestCommand.register(event.getDispatcher());
-        TestDisplayCommand.register(event.getDispatcher());
     }
 }

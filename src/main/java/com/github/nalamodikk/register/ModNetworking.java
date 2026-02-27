@@ -11,7 +11,6 @@ import com.github.nalamodikk.common.network.packet.server.manatool.TechWandModeP
 import com.github.nalamodikk.common.network.packet.server.manatool.ToggleModePacket;
 import com.github.nalamodikk.common.network.packet.server.player.gui.OpenExtraEquipmentPacket;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraBindRequestPacket;
-import com.github.nalamodikk.particle.network.SpawnMagicCirclePacket;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -41,9 +40,6 @@ public class ModNetworking {
         //導管
         PriorityUpdatePacket.registerTo(registrar);
         ResetPrioritiesPacket.registerTo(registrar);
-
-        // 粒子效果
-        SpawnMagicCirclePacket.registerTo(registrar);
     }
 
 }

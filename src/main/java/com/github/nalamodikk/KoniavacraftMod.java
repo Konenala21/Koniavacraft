@@ -3,8 +3,6 @@ package com.github.nalamodikk;
 import com.github.nalamodikk.biome.BiomeTerrainRegistration;
 import com.github.nalamodikk.biome.UniversalBiomeRegistration;
 import com.github.nalamodikk.common.config.ModCommonConfig;
-import com.github.nalamodikk.init.KoniavaAutomation;
-import com.github.nalamodikk.particle.ModParticles;
 import com.github.nalamodikk.register.*;
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;
@@ -62,7 +60,6 @@ public class KoniavacraftMod {
         ModBlockEntities.register(modEventBus);
         ModMenuTypes.register(modEventBus);
         ModCreativeModTabs.register(modEventBus);
-        ModParticles.register(modEventBus);
         if (FMLEnvironment.dist == Dist.CLIENT) {
             modEventBus.addListener(com.github.nalamodikk.register.client.ModKeyMappings::onRegisterKeyMappings);
         }
@@ -82,9 +79,6 @@ public class KoniavacraftMod {
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-        // 啟動自動化掃描與事件系統
-        KoniavaAutomation.init(event);
-
         // Some common setup code
         LOGGER.info("HELLO FROM COMMON SETUP");
         UniversalBiomeRegistration.init();
