@@ -46,8 +46,10 @@ public class OreGrinderRenderer implements BlockEntityRenderer<OreGrinderBlockEn
     private static final String CRYSTAL_MAIN = "bone";
     private static final String CRYSTAL_LEFT = "bone3";
     private static final String CRYSTAL_RIGHT = "bone4";
-    private static final String CRUSHER_LEFT = "crusher_left";
-    private static final String CRUSHER_RIGHT = "crusher_right";
+    private static final String CRUSHER_LEFT_CORE = "crusher_left_core";
+    private static final String CRUSHER_RIGHT_CORE = "crusher_right_core";
+    private static final String CRUSHER_LEFT_BLADES = "crusher_left_blades";
+    private static final String CRUSHER_RIGHT_BLADES = "crusher_right_blades";
 
     private final Map<String, List<ModelElement>> groupElements = new HashMap<>();
     private final Map<String, Vector3f> customOrigins = new HashMap<>();
@@ -110,17 +112,20 @@ public class OreGrinderRenderer implements BlockEntityRenderer<OreGrinderBlockEn
     private void renderCrusherAnimation(PoseStack poseStack, VertexConsumer vertexConsumer,
                                         int packedLight, int packedOverlay,
                                         float time, float animationScale, boolean isWorking) {
+        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRUSHER_LEFT_CORE, 0.0F, 0.0F, 0.0F, 0.0F);
+        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRUSHER_RIGHT_CORE, 0.0F, 0.0F, 0.0F, 0.0F);
+
         float leftRotation = 0.0F;
         float rightRotation = 0.0F;
 
-        if (animationScale > 0.0F) {
-            float angularFactor = isWorking ? 15.0F : 4.0F;
+        if (animationScale > 0.0F && isWorking) {
+            float angularFactor = 15.0F;
             leftRotation = time * angularFactor;
             rightRotation = -time * angularFactor;
         }
 
-        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRUSHER_LEFT, 0.0F, 0.0F, 0.0F, leftRotation);
-        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRUSHER_RIGHT, 0.0F, 0.0F, 0.0F, rightRotation);
+        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRUSHER_LEFT_BLADES, 0.0F, 0.0F, 0.0F, leftRotation);
+        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRUSHER_RIGHT_BLADES, 0.0F, 0.0F, 0.0F, rightRotation);
     }
 
     private void renderGroup(PoseStack poseStack, VertexConsumer vertexConsumer,
@@ -165,33 +170,48 @@ public class OreGrinderRenderer implements BlockEntityRenderer<OreGrinderBlockEn
 
         List<ModelElement> parsedElements = BlockbenchModelRenderUtils.parseElements(modelData);
         JsonArray groups = modelData.getAsJsonArray("groups");
-        registerNestedGroup(groups, parsedElements, "粉碎輪", CRUSHER_LEFT);
-        registerNestedGroup(groups, parsedElements, "粉碎輪2", CRUSHER_RIGHT);
+        registerWheelGroups(groups, parsedElements, "粉碎輪", CRUSHER_LEFT_CORE, CRUSHER_LEFT_BLADES);
+        registerWheelGroups(groups, parsedElements, "粉碎輪2", CRUSHER_RIGHT_CORE, CRUSHER_RIGHT_BLADES);
     }
 
-    private void registerNestedGroup(JsonArray groups, List<ModelElement> parsedElements,
-                                     String targetGroupName, String outputGroupName) {
+    private void registerWheelGroups(JsonArray groups, List<ModelElement> parsedElements,
+                                     String targetGroupName, String coreGroupName, String bladesGroupName) {
         JsonObject targetGroup = findGroupByName(groups, targetGroupName);
         if (targetGroup == null) {
             LOGGER.warn("⚠️ mana_grinder 模型找不到群組: {}", targetGroupName);
             return;
         }
 
-        Set<Integer> elementIndices = new LinkedHashSet<>();
-        collectElementIndices(targetGroup, elementIndices);
-        if (elementIndices.isEmpty()) {
+        Set<Integer> coreIndices = new LinkedHashSet<>();
+        collectDirectElementIndices(targetGroup, coreIndices);
+        if (coreIndices.isEmpty()) {
+            LOGGER.warn("⚠️ 群組 {} 找不到軸心元素（直接 children index）", targetGroupName);
+        } else {
+            registerGroupByIndices(parsedElements, coreIndices, targetGroup, coreGroupName);
+        }
+
+        Set<Integer> bladeIndices = new LinkedHashSet<>();
+        collectNestedElementIndices(targetGroup, bladeIndices);
+        if (bladeIndices.isEmpty()) {
             LOGGER.warn("⚠️ 群組 {} 沒有可渲染元素", targetGroupName);
             return;
         }
+        registerGroupByIndices(parsedElements, bladeIndices, targetGroup, bladesGroupName);
+    }
 
+    private void registerGroupByIndices(List<ModelElement> parsedElements, Set<Integer> indices,
+                                        JsonObject sourceGroup, String outputGroupName) {
         List<ModelElement> elements = new ArrayList<>();
-        for (Integer index : elementIndices) {
+        for (Integer index : indices) {
             if (index >= 0 && index < parsedElements.size()) {
                 elements.add(parsedElements.get(index));
             }
         }
+        if (elements.isEmpty()) {
+            return;
+        }
         groupElements.put(outputGroupName, elements);
-        customOrigins.put(outputGroupName, readOrigin(targetGroup));
+        customOrigins.put(outputGroupName, readOrigin(sourceGroup));
     }
 
     private JsonObject findGroupByName(JsonArray groups, String targetName) {
@@ -215,7 +235,33 @@ public class OreGrinderRenderer implements BlockEntityRenderer<OreGrinderBlockEn
         return null;
     }
 
-    private void collectElementIndices(JsonObject groupObject, Set<Integer> result) {
+    private void collectDirectElementIndices(JsonObject groupObject, Set<Integer> result) {
+        if (!groupObject.has("children")) {
+            return;
+        }
+        JsonArray children = groupObject.getAsJsonArray("children");
+        for (int i = 0; i < children.size(); i++) {
+            JsonElement child = children.get(i);
+            if (child.isJsonPrimitive()) {
+                result.add(child.getAsInt());
+            }
+        }
+    }
+
+    private void collectNestedElementIndices(JsonObject groupObject, Set<Integer> result) {
+        if (!groupObject.has("children")) {
+            return;
+        }
+        JsonArray children = groupObject.getAsJsonArray("children");
+        for (int i = 0; i < children.size(); i++) {
+            JsonElement child = children.get(i);
+            if (child.isJsonObject()) {
+                collectAllElementIndices(child.getAsJsonObject(), result);
+            }
+        }
+    }
+
+    private void collectAllElementIndices(JsonObject groupObject, Set<Integer> result) {
         if (!groupObject.has("children")) {
             return;
         }
@@ -225,7 +271,7 @@ public class OreGrinderRenderer implements BlockEntityRenderer<OreGrinderBlockEn
             if (child.isJsonPrimitive()) {
                 result.add(child.getAsInt());
             } else if (child.isJsonObject()) {
-                collectElementIndices(child.getAsJsonObject(), result);
+                collectAllElementIndices(child.getAsJsonObject(), result);
             }
         }
     }

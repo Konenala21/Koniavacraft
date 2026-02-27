@@ -57,7 +57,7 @@ public class OreGrinderBlock extends BaseMachineBlock {
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.ENTITYBLOCK_ANIMATED;
+        return RenderShape.INVISIBLE;
     }
 
     // 📐 方塊形狀
