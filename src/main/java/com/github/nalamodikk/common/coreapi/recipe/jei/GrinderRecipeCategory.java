@@ -2,7 +2,7 @@ package com.github.nalamodikk.common.coreapi.recipe.jei;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.coreapi.recipe.ProcessingRecipe;
-import com.github.nalamodikk.common.block.blockentity.ore_grinder.OreGrinderBlockEntity;
+import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderBlockEntity;
 import com.github.nalamodikk.register.ModBlocks;
 import com.github.nalamodikk.register.ModRecipes;
 import mezz.jei.api.constants.VanillaTypes;
@@ -38,7 +38,7 @@ public class GrinderRecipeCategory implements IRecipeCategory<ProcessingRecipe> 
             RecipeType.create(KoniavacraftMod.MOD_ID, "grinder", ProcessingRecipe.class);
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/ore_grinder_gui.png");
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/mana_grinder_gui.png");
 
     private static final ResourceLocation MANA_BAR_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/mana_bar_full.png");
@@ -75,7 +75,7 @@ public class GrinderRecipeCategory implements IRecipeCategory<ProcessingRecipe> 
         // 圖標（用於分類選擇面板）
         this.icon = guiHelper.createDrawableIngredient(
                 VanillaTypes.ITEM_STACK,
-                new ItemStack(ModBlocks.ORE_GRINDER.get())
+                new ItemStack(ModBlocks.MANA_GRINDER.get())
         );
 
         this.localizedName = Component.translatable("block.koniava.mana_grinder");

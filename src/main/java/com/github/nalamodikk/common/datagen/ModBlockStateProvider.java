@@ -45,6 +45,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // 🧪 特殊方塊 (自定義模型)
         createManaModel(ModBlocks.MANA_CRAFTING_TABLE_BLOCK);
         createManaModelWithFacing(ModBlocks.MANA_INFUSER);
+        createManaModelWithFacing(ModBlocks.MANA_GRINDER);
     }
 
     // ===========================================

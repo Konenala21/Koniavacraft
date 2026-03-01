@@ -5,7 +5,7 @@ import com.github.nalamodikk.common.datagen.recipe.MaterialProcessingRecipeProvi
 import com.github.nalamodikk.common.datagen.recipe.material.ManaCraftingRecipeProvider;
 import com.github.nalamodikk.common.datagen.recipe.material.ManaFuelRecipeProvider;
 import com.github.nalamodikk.common.datagen.recipe.material.ManaInfuserRecipeProvider;
-import com.github.nalamodikk.common.datagen.recipe.processing.OreGrinderRecipeProvider;
+import com.github.nalamodikk.common.datagen.recipe.processing.ManaGrinderRecipeProvider;
 import com.github.nalamodikk.register.ModBlocks;
 import com.github.nalamodikk.register.ModItems;
 import net.minecraft.core.HolderLookup;
@@ -20,19 +20,24 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class ModRecipeProvider extends RecipeProvider {
+    private final CompletableFuture<HolderLookup.Provider> lookupProvider;
+
     public ModRecipeProvider(PackOutput output, CompletableFuture<HolderLookup.Provider> registries) {
         super(output, registries);
+        this.lookupProvider = registries;
     }
 
 
     @Override
     protected void buildRecipes(RecipeOutput recipeOutput) {
+        HolderLookup.Provider provider = lookupProvider.join();
+
         // === 🔥 委派給專門的提供者 ===
         MaterialProcessingRecipeProvider.generate(recipeOutput);  // 處理所有材料加工
         ManaFuelRecipeProvider.generate(recipeOutput);
         ManaCraftingRecipeProvider.generate(recipeOutput);
-        ManaInfuserRecipeProvider.generate(recipeOutput);
-        OreGrinderRecipeProvider.generate(recipeOutput);
+        ManaInfuserRecipeProvider.generate(recipeOutput, provider);
+        ManaGrinderRecipeProvider.generate(recipeOutput);
         // ⚙️ 加工配方（粉碎機、清洗機、富集機）
         ProcessingRecipeProvider.generate(recipeOutput);
 

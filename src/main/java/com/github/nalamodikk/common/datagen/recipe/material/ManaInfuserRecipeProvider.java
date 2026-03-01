@@ -3,8 +3,12 @@ package com.github.nalamodikk.common.datagen.recipe.material;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserRecipe;
 import com.github.nalamodikk.register.ModItems;
-import net.minecraft.core.RegistryAccess;
-import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.advancements.Advancement;
+import net.minecraft.advancements.AdvancementRequirements;
+import net.minecraft.advancements.AdvancementRewards;
+import net.minecraft.advancements.critereon.InventoryChangeTrigger;
+import net.minecraft.advancements.critereon.RecipeUnlockedTrigger;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.resources.ResourceLocation;
@@ -12,6 +16,7 @@ import net.minecraft.world.item.EnchantedBookItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.item.enchantment.Enchantments;
 
@@ -29,7 +34,7 @@ public class ManaInfuserRecipeProvider {
     /**
      * 🎯 生成所有魔力注入配方
      */
-    public static void generate(RecipeOutput output) {
+    public static void generate(RecipeOutput output, HolderLookup.Provider lookupProvider) {
         // === 🧪 基礎材料注入 ===
         generateBasicMaterialRecipes(output);
 
@@ -42,7 +47,7 @@ public class ManaInfuserRecipeProvider {
         generateSpecialItemRecipes(output);
 
         // === 📚 附魔相關 ===
-        generateEnchantmentRecipes(output);
+        generateEnchantmentRecipes(output, lookupProvider);
     }
 
     /**
@@ -155,12 +160,11 @@ public class ManaInfuserRecipeProvider {
     /**
      * 📚 附魔相關配方
      */
-    private static void generateEnchantmentRecipes(RecipeOutput output) {
+    private static void generateEnchantmentRecipes(RecipeOutput output, HolderLookup.Provider lookupProvider) {
         // 書 → 附魔書 (固定 Unbreaking I)
-        RegistryAccess registryAccess = RegistryAccess.fromRegistryOfRegistries(BuiltInRegistries.REGISTRY);
-        var enchantmentRegistry = registryAccess.registryOrThrow(Registries.ENCHANTMENT);
+        HolderLookup.RegistryLookup<Enchantment> enchantmentRegistry = lookupProvider.lookupOrThrow(Registries.ENCHANTMENT);
         ItemStack enchantedBook = EnchantedBookItem.createForEnchantment(
-                new EnchantmentInstance(enchantmentRegistry.getHolderOrThrow(Enchantments.UNBREAKING), 1)
+                new EnchantmentInstance(enchantmentRegistry.getOrThrow(Enchantments.UNBREAKING), 1)
         );
 
         createManaInfuserRecipe(output,
@@ -233,15 +237,20 @@ public class ManaInfuserRecipeProvider {
                 "mana_infuser/" + name
         );
 
+        ItemStack[] criterionItems = criterionItem.getItems();
+        if (criterionItems.length == 0) {
+            throw new IllegalArgumentException("Criterion ingredient has no concrete items: " + name);
+        }
+
         // 創建advancement
-        var advancement = output.advancement()
+        Advancement.Builder advancement = output.advancement()
                 .addCriterion("has_the_recipe",
-                        net.minecraft.advancements.critereon.RecipeUnlockedTrigger.unlocked(recipeId))
+                        RecipeUnlockedTrigger.unlocked(recipeId))
                 .addCriterion(criterionName,
-                        net.minecraft.advancements.critereon.InventoryChangeTrigger.TriggerInstance
-                                .hasItems(criterionItem.getItems()[0].getItem()))
-                .rewards(net.minecraft.advancements.AdvancementRewards.Builder.recipe(recipeId))
-                .requirements(net.minecraft.advancements.AdvancementRequirements.Strategy.OR);
+                        InventoryChangeTrigger.TriggerInstance
+                                .hasItems(criterionItems[0].getItem()))
+                .rewards(AdvancementRewards.Builder.recipe(recipeId))
+                .requirements(AdvancementRequirements.Strategy.OR);
 
         // 保存配方
         output.accept(recipeId, recipe, advancement.build(recipeId.withPrefix("recipes/")));

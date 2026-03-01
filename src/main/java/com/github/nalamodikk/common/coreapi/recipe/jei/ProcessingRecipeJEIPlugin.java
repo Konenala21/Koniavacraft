@@ -2,7 +2,7 @@ package com.github.nalamodikk.common.coreapi.recipe.jei;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.coreapi.recipe.ProcessingRecipe;
-import com.github.nalamodikk.common.block.blockentity.ore_grinder.OreGrinderScreen;
+import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderScreen;
 import com.github.nalamodikk.register.ModBlocks;
 import com.github.nalamodikk.register.ModRecipes;
 import mezz.jei.api.IModPlugin;
@@ -75,7 +75,7 @@ public class ProcessingRecipeJEIPlugin implements IModPlugin {
 
         // 粉碎機
         registration.addRecipeCatalyst(
-                new ItemStack(ModBlocks.ORE_GRINDER.get()),
+                new ItemStack(ModBlocks.MANA_GRINDER.get()),
                 GrinderRecipeCategory.RECIPE_TYPE
         );
         LOGGER.debug("[JEI] ✅ 粉碎機已註冊為催化劑");
@@ -93,7 +93,7 @@ public class ProcessingRecipeJEIPlugin implements IModPlugin {
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
         // 粉碎機右上角配方提示區域
         registration.addRecipeClickArea(
-                OreGrinderScreen.class,
+                ManaGrinderScreen.class,
                 149, 4,
                 21, 15,
                 GrinderRecipeCategory.RECIPE_TYPE

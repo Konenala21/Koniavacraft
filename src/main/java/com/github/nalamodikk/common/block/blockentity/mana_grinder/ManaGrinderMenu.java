@@ -1,6 +1,6 @@
-package com.github.nalamodikk.common.block.blockentity.ore_grinder;
+package com.github.nalamodikk.common.block.blockentity.mana_grinder;
 
-import com.github.nalamodikk.common.block.blockentity.ore_grinder.sync.OreGrinderSyncHelper;
+import com.github.nalamodikk.common.block.blockentity.mana_grinder.sync.ManaGrinderSyncHelper;
 import com.github.nalamodikk.common.coreapi.recipe.ProcessingRecipe;
 import com.github.nalamodikk.register.ModRecipes;
 import com.github.nalamodikk.register.ModMenuTypes;
@@ -16,16 +16,16 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 import java.util.List;
 
 /**
- * 🎛️ 粉碎機 Menu
+ * 🎛️ 魔力粉碎機 Menu
  */
-public class OreGrinderMenu extends AbstractContainerMenu {
+public class ManaGrinderMenu extends AbstractContainerMenu {
 
-    private final OreGrinderBlockEntity blockEntity;
+    private final ManaGrinderBlockEntity blockEntity;
     private final ItemStackHandler itemHandler;
-    private final OreGrinderSyncHelper syncHelper;
+    private final ManaGrinderSyncHelper syncHelper;
 
-    public OreGrinderMenu(int containerId, Inventory playerInventory, OreGrinderBlockEntity blockEntity) {
-        super(ModMenuTypes.ORE_GRINDER_MENU.get(), containerId);
+    public ManaGrinderMenu(int containerId, Inventory playerInventory, ManaGrinderBlockEntity blockEntity) {
+        super(ModMenuTypes.MANA_GRINDER_MENU.get(), containerId);
         this.blockEntity = blockEntity;
         this.itemHandler = blockEntity.getItemHandler();
         this.syncHelper = blockEntity.getSyncHelper();
@@ -34,7 +34,7 @@ public class OreGrinderMenu extends AbstractContainerMenu {
         this.addDataSlots(syncHelper.getContainerData());
 
         if (this.itemHandler == null) {
-            throw new IllegalArgumentException("OreGrinder 必須有 ItemHandler");
+            throw new IllegalArgumentException("ManaGrinder 必須有 ItemHandler");
         }
 
         // 添加機器槽位
@@ -153,7 +153,7 @@ public class OreGrinderMenu extends AbstractContainerMenu {
     }
 
     public int getMaxMana() {
-        return OreGrinderBlockEntity.getMaxMana(); // 靜態最大值
+        return ManaGrinderBlockEntity.getMaxMana(); // 靜態最大值
     }
 
     public boolean isWorking() {

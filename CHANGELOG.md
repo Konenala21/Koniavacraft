@@ -5,7 +5,10 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 ### Changed
 - Bumped NeoForge from 21.1.217 to 21.1.219.
-- Renamed the machine internal id from `ore_grinder` to `mana_grinder` and updated related translation keys.
+- Fully renamed `OreGrinder` to `ManaGrinder` across the entire codebase (classes, packages, variables, and assets).
+- Corrected `ManaGrinder` diamond recipe to output `Mana Dust` instead of `Glass`.
+- Implemented `NaraImprintHelper` and `INaraImprint` logic using the `NARA_IMPRINT` DataComponent.
+- Updated JEI integration and GameTests to reflect the `ManaGrinder` rename.
 - Removed the whole particle-effects stack (particle core, particle render/shader tools, particle packets/events, debug particle items, and particle assets/shaders).
 - Removed unused legacy framework folders: `init`, `display`, `event`, `network`, `commands`, `barrages`, `annotations`, `animation`, and `platform`.
 - Removed unused reflection scan utilities under `com.github.nalamodikk.reflect`.
@@ -29,26 +32,26 @@ All notable changes to this project will be documented in this file.
 - Standardized debug detail key mapping and registered it on the client mod event bus.
 - Cached combined ecosystem surface rules to reduce regeneration overhead during worldgen.
 - Mana machines now record the placing player as owner in the base block.
-- Mana generator, solar collector, ore grinder, and mana infuser now scale output or speed with the owner's RPG intelligence.
+- Mana generator, solar collector, mana grinder, and mana infuser now scale output or speed with the owner's RPG intelligence.
 - Prevented duplicate payload registration by skipping server-side networking registration on client.
 - Registered SyncRPGDataPacket on the server to avoid missing payload types.
 - Hid the mana crafting table mana bar background to avoid overlapping the GUI frame.
 - Hid the mana infuser mana bar background to avoid overlapping the GUI frame.
 - Restricted server-side payload registration to dedicated servers to avoid duplicate registration on integrated client.
-- Updated ore grinder GUI size and slot layout to align with the mana infuser layout.
-- Added a recipe hint hotspot for the ore grinder and linked it to JEI.
-- Updated ore grinder progress drawing to match the mana infuser style and removed the progress background.
-- Hid the ore grinder mana bar background to avoid overlapping the GUI frame.
+- Updated mana grinder GUI size and slot layout to align with the mana infuser layout.
+- Added a recipe hint hotspot for the mana grinder and linked it to JEI.
+- Updated mana grinder progress drawing to match the mana infuser style and removed the progress background.
+- Hid the mana grinder mana bar background to avoid overlapping the GUI frame.
 - Fixed JEI grinder recipe rendering by using the client font and translation keys.
 - Aligned grinder JEI title with the block translation key and set the JEI background crop to 171x77.
 - Updated grinder JEI slot positions to match the new GUI layout and avoided tooltip overlap when JEI is loaded.
 - Shifted grinder JEI slot positions by one pixel to match the in-game layout.
-- Added a dedicated ore grinder recipe datagen provider and moved grinder recipes there.
+- Added a dedicated mana grinder recipe datagen provider and moved grinder recipes there.
 - Renamed the ore grinder block to mana grinder in translations.
-- Shifted ore grinder GUI and JEI recipe slots two pixels to the right.
+- Shifted mana grinder GUI and JEI recipe slots two pixels to the right.
 - Rendered the grinder JEI mana cost as a bar instead of text.
 - Replaced deprecated JEI background override with recipe extras background drawable.
-- Ore grinder now uses each recipe's processing time and consumes the recipe mana cost once per craft.
+- Mana grinder now uses each recipe's processing time and consumes the recipe mana cost once per craft.
 - Rebalanced grinder recipe mana costs based on current mana generation rates and added processing time to the multi-input recipe.
 - Rendered grinder JEI time text via recipe extras to avoid hidden text.
 - Centered the grinder JEI time label and moved chance text into the output slots with tooltips.

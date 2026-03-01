@@ -1,4 +1,4 @@
-package com.github.nalamodikk.common.block.blockentity.ore_grinder;
+package com.github.nalamodikk.common.block.blockentity.mana_grinder;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.client.screenAPI.component.ManaBarWidget;
@@ -14,14 +14,14 @@ import net.neoforged.fml.ModList;
 import java.util.List;
 
 /**
- * ⚙️ 粉碎機 GUI 界面 (v2 - 自動尺寸)
+ * ⚙️ 魔力粉碎機 GUI 界面 (v2 - 自動尺寸)
  */
-public class OreGrinderScreen extends AutoSizedModularScreen<OreGrinderMenu> {
+public class ManaGrinderScreen extends AutoSizedModularScreen<ManaGrinderMenu> {
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/ore_grinder_gui.png");
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/mana_grinder_gui.png");
 
-    public OreGrinderScreen(OreGrinderMenu menu, Inventory playerInventory, Component title) {
+    public ManaGrinderScreen(ManaGrinderMenu menu, Inventory playerInventory, Component title) {
         // ✨ v2: 自動檢測尺寸並繪製背景
         super(menu, playerInventory, title, TEXTURE, 176, 166);
     }

@@ -4,13 +4,11 @@ import com.github.nalamodikk.common.sync.annotation.Sync;
 import com.github.nalamodikk.common.capability.ManaStorage;
 import com.github.nalamodikk.common.compat.energy.ModNeoNalaEnergyStorage;
 import com.github.nalamodikk.common.coreapi.block.IConfigurableBlock;
-import com.github.nalamodikk.common.rpg.RPGManager;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -122,16 +120,8 @@ public abstract class AbstractManaMachineEntityBlock extends BlockEntity impleme
     public void setOwnerId(@Nullable UUID ownerId) { this.ownerId = ownerId; }
     public @Nullable UUID getOwnerId() { return ownerId; }
     public float getOwnerGenerationMultiplier() {
-        if (!(level instanceof ServerLevel serverLevel) || ownerId == null) {
-            return 1.0f;
-        }
-
-        Player owner = serverLevel.getPlayerByUUID(ownerId);
-        if (owner == null) {
-            return 1.0f;
-        }
-
-        return RPGManager.getMachineGenerationMultiplier(owner);
+        // 平衡調整：機器產能不再受 RPG 配點影響
+        return 1.0f;
     }
 
     protected int scaleByOwner(int base) {

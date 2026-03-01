@@ -5,8 +5,8 @@ import com.github.nalamodikk.common.block.blockentity.collector.solarmana.SolarM
 import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_crafting.ManaCraftingTableBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorBlockEntity;
+import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserBlockEntity;
-import com.github.nalamodikk.common.block.blockentity.ore_grinder.OreGrinderBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.IEventBus;
@@ -48,11 +48,11 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(ManaInfuserBlockEntity::new,
                             ModBlocks.MANA_INFUSER.get()).build(null));
 
-    // === ⚙️ 新增：礦石粉碎機 ===
-    public static final Supplier<BlockEntityType<OreGrinderBlockEntity>> ORE_GRINDER =
+    // === ⚙️ 新增：魔力粉碎機 ===
+    public static final Supplier<BlockEntityType<ManaGrinderBlockEntity>> MANA_GRINDER_BE =
             BLOCK_ENTITY_TYPES.register("mana_grinder", () ->
-                    BlockEntityType.Builder.of(OreGrinderBlockEntity::new,
-                            ModBlocks.ORE_GRINDER.get()).build(null));
+                    BlockEntityType.Builder.of(ManaGrinderBlockEntity::new,
+                            ModBlocks.MANA_GRINDER.get()).build(null));
 
 //    public static final Supplier<BlockEntityType<ModularMachineBlockEntity>> MODULAR_MACHINE_BE =
 //            BLOCK_ENTITY_TYPES.register("modular_machine", () ->

@@ -116,7 +116,7 @@ public class ModCapabilities {
                 });
 
         // 🆕 粉碎機魔力能力註冊（供魔力除錯工具與導管存取）
-        event.registerBlockEntity(ModCapabilities.MANA, ModBlockEntities.ORE_GRINDER.get(),
+        event.registerBlockEntity(ModCapabilities.MANA, ModBlockEntities.MANA_GRINDER_BE.get(),
                 (blockEntity, side) -> {
                     if (side != null && blockEntity instanceof IConfigurableBlock configurable) {
                         IOHandlerUtils.IOType ioType = configurable.getIOConfig(side);

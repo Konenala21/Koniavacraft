@@ -18,6 +18,10 @@ import java.util.Map;
 import java.util.function.Function;
 
 public final class BlockbenchModelRenderUtils {
+    private static final Vector3f DEFAULT_GROUP_ORIGIN = new Vector3f(0.5F, 0.5F, 0.5F);
+    private static final ThreadLocal<Vector3f[]> TEMP_POSITIONS = ThreadLocal.withInitial(() ->
+            new Vector3f[]{new Vector3f(), new Vector3f(), new Vector3f(), new Vector3f()});
+
     private BlockbenchModelRenderUtils() {
     }
 
@@ -85,9 +89,12 @@ public final class BlockbenchModelRenderUtils {
         poseStack.translate(offsetX, offsetY, offsetZ);
 
         if (rotationY != 0.0F) {
-            Vector3f groupOrigin = groupOriginResolver != null ? groupOriginResolver.apply(groupName) : new Vector3f(0.5F, 0.5F, 0.5F);
-            if (groupOrigin == null) {
-                groupOrigin = new Vector3f(0.5F, 0.5F, 0.5F);
+            Vector3f groupOrigin = DEFAULT_GROUP_ORIGIN;
+            if (groupOriginResolver != null) {
+                Vector3f resolved = groupOriginResolver.apply(groupName);
+                if (resolved != null) {
+                    groupOrigin = resolved;
+                }
             }
             poseStack.translate(groupOrigin.x(), groupOrigin.y(), groupOrigin.z());
             poseStack.mulPose(com.mojang.math.Axis.YP.rotation(rotationY));
@@ -163,7 +170,7 @@ public final class BlockbenchModelRenderUtils {
             rotationOrigin[2] = origin.get(2).getAsFloat() / 16.0F;
         }
 
-        Map<String, FaceUV> faceUVs = new HashMap<>();
+        Map<String, FaceUV> faceUVs = new HashMap<>(6);
         if (element.has("faces")) {
             JsonObject faces = element.getAsJsonObject("faces");
             for (String faceName : faces.keySet()) {
@@ -219,72 +226,75 @@ public final class BlockbenchModelRenderUtils {
         float y2 = element.y2;
         float z2 = element.z2;
 
-        FaceUV topUV = element.faceUVs.getOrDefault("up", FaceUV.DEFAULT);
-        addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
-                x1, y2, z1, x1, y2, z2, x2, y2, z2, x2, y2, z1,
-                0.0F, 1.0F, 0.0F, topUV);
+        FaceUV up = element.faceUVs.get("up");
+        if (up != null) {
+            addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
+                    x1, y2, z1, x1, y2, z2, x2, y2, z2, x2, y2, z1,
+                    0.0F, 1.0F, 0.0F, up);
+        }
 
-        FaceUV bottomUV = element.faceUVs.getOrDefault("down", FaceUV.DEFAULT);
-        addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
-                x1, y1, z1, x2, y1, z1, x2, y1, z2, x1, y1, z2,
-                0.0F, -1.0F, 0.0F, bottomUV);
+        FaceUV down = element.faceUVs.get("down");
+        if (down != null) {
+            addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
+                    x1, y1, z1, x2, y1, z1, x2, y1, z2, x1, y1, z2,
+                    0.0F, -1.0F, 0.0F, down);
+        }
 
-        FaceUV northUV = element.faceUVs.getOrDefault("north", FaceUV.DEFAULT);
-        addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
-                x1, y1, z1, x1, y2, z1, x2, y2, z1, x2, y1, z1,
-                0.0F, 0.0F, -1.0F, northUV);
+        FaceUV north = element.faceUVs.get("north");
+        if (north != null) {
+            addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
+                    x1, y1, z1, x1, y2, z1, x2, y2, z1, x2, y1, z1,
+                    0.0F, 0.0F, -1.0F, north);
+        }
 
-        FaceUV southUV = element.faceUVs.getOrDefault("south", FaceUV.DEFAULT);
-        addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
-                x1, y1, z2, x2, y1, z2, x2, y2, z2, x1, y2, z2,
-                0.0F, 0.0F, 1.0F, southUV);
+        FaceUV south = element.faceUVs.get("south");
+        if (south != null) {
+            addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
+                    x1, y1, z2, x2, y1, z2, x2, y2, z2, x1, y2, z2,
+                    0.0F, 0.0F, 1.0F, south);
+        }
 
-        FaceUV westUV = element.faceUVs.getOrDefault("west", FaceUV.DEFAULT);
-        addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
-                x1, y1, z1, x1, y1, z2, x1, y2, z2, x1, y2, z1,
-                -1.0F, 0.0F, 0.0F, westUV);
+        FaceUV west = element.faceUVs.get("west");
+        if (west != null) {
+            addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
+                    x1, y1, z1, x1, y1, z2, x1, y2, z2, x1, y2, z1,
+                    -1.0F, 0.0F, 0.0F, west);
+        }
 
-        FaceUV eastUV = element.faceUVs.getOrDefault("east", FaceUV.DEFAULT);
-        addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
-                x2, y1, z1, x2, y2, z1, x2, y2, z2, x2, y1, z2,
-                1.0F, 0.0F, 0.0F, eastUV);
+        FaceUV east = element.faceUVs.get("east");
+        if (east != null) {
+            addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
+                    x2, y1, z1, x2, y2, z1, x2, y2, z2, x2, y1, z2,
+                    1.0F, 0.0F, 0.0F, east);
+        }
     }
 
     private static void addQuadWithUV(VertexConsumer vertexConsumer, Matrix4f matrix, int packedLight, int packedOverlay,
                                       float x1, float y1, float z1, float x2, float y2, float z2,
                                       float x3, float y3, float z3, float x4, float y4, float z4,
                                       float nx, float ny, float nz, FaceUV faceUV) {
-        Vector3f pos1 = matrix.transformPosition(x1, y1, z1, new Vector3f());
-        Vector3f pos2 = matrix.transformPosition(x2, y2, z2, new Vector3f());
-        Vector3f pos3 = matrix.transformPosition(x3, y3, z3, new Vector3f());
-        Vector3f pos4 = matrix.transformPosition(x4, y4, z4, new Vector3f());
+        Vector3f[] tempPositions = TEMP_POSITIONS.get();
+        Vector3f pos1 = matrix.transformPosition(x1, y1, z1, tempPositions[0]);
+        Vector3f pos2 = matrix.transformPosition(x2, y2, z2, tempPositions[1]);
+        Vector3f pos3 = matrix.transformPosition(x3, y3, z3, tempPositions[2]);
+        Vector3f pos4 = matrix.transformPosition(x4, y4, z4, tempPositions[3]);
 
-        float[][] uvCoords = getRotatedUVCoords(faceUV);
+        int rotationSteps = ((faceUV.rotation / 90) % 4 + 4) % 4;
         int color = -1;
-        vertexConsumer.addVertex(pos1.x(), pos1.y(), pos1.z(), color, uvCoords[0][0], uvCoords[0][1], packedOverlay, packedLight, nx, ny, nz);
-        vertexConsumer.addVertex(pos2.x(), pos2.y(), pos2.z(), color, uvCoords[1][0], uvCoords[1][1], packedOverlay, packedLight, nx, ny, nz);
-        vertexConsumer.addVertex(pos3.x(), pos3.y(), pos3.z(), color, uvCoords[2][0], uvCoords[2][1], packedOverlay, packedLight, nx, ny, nz);
-        vertexConsumer.addVertex(pos4.x(), pos4.y(), pos4.z(), color, uvCoords[3][0], uvCoords[3][1], packedOverlay, packedLight, nx, ny, nz);
+        addVertexWithRotatedUv(vertexConsumer, pos1, color, packedOverlay, packedLight, nx, ny, nz, faceUV, 0, rotationSteps);
+        addVertexWithRotatedUv(vertexConsumer, pos2, color, packedOverlay, packedLight, nx, ny, nz, faceUV, 1, rotationSteps);
+        addVertexWithRotatedUv(vertexConsumer, pos3, color, packedOverlay, packedLight, nx, ny, nz, faceUV, 2, rotationSteps);
+        addVertexWithRotatedUv(vertexConsumer, pos4, color, packedOverlay, packedLight, nx, ny, nz, faceUV, 3, rotationSteps);
     }
 
-    private static float[][] getRotatedUVCoords(FaceUV faceUV) {
-        float[][] baseCoords = new float[][]{
-                {faceUV.u1, faceUV.v2},
-                {faceUV.u1, faceUV.v1},
-                {faceUV.u2, faceUV.v1},
-                {faceUV.u2, faceUV.v2}
-        };
-
-        if (faceUV.rotation == 0) {
-            return baseCoords;
-        }
-
-        float[][] rotatedCoords = new float[4][2];
-        for (int i = 0; i < 4; i++) {
-            int sourceIndex = (i - faceUV.rotation / 90 + 4) % 4;
-            rotatedCoords[i] = baseCoords[sourceIndex];
-        }
-        return rotatedCoords;
+    private static void addVertexWithRotatedUv(VertexConsumer vertexConsumer, Vector3f position,
+                                               int color, int packedOverlay, int packedLight,
+                                               float nx, float ny, float nz, FaceUV faceUV,
+                                               int targetIndex, int rotationSteps) {
+        int sourceIndex = (targetIndex - rotationSteps + 4) & 3;
+        float u = (sourceIndex == 0 || sourceIndex == 1) ? faceUV.u1 : faceUV.u2;
+        float v = (sourceIndex == 0 || sourceIndex == 3) ? faceUV.v2 : faceUV.v1;
+        vertexConsumer.addVertex(position.x(), position.y(), position.z(), color, u, v, packedOverlay, packedLight, nx, ny, nz);
     }
 
     public static class ModelElement {

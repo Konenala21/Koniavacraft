@@ -19,10 +19,10 @@ import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitConfi
 import com.github.nalamodikk.common.block.blockentity.mana_crafting.ManaCraftingMenu;
 import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorMenu;
+import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderBlockEntity;
+import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderMenu;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserMenu;
-import com.github.nalamodikk.common.block.blockentity.ore_grinder.OreGrinderBlockEntity;
-import com.github.nalamodikk.common.block.blockentity.ore_grinder.OreGrinderMenu;
 import com.github.nalamodikk.common.screen.block.shared.FallbackUpgradeMenu;
 import com.github.nalamodikk.common.screen.block.shared.UniversalConfigMenu;
 import com.github.nalamodikk.common.screen.block.shared.UpgradeMenu;
@@ -90,18 +90,18 @@ public class ModMenuTypes {
                         return new ManaInfuserMenu(id, inv, infuser);
                     });
 
-    // === ⚙️ 新增：礦石粉碎機菜單 ===
-    public static final DeferredHolder<MenuType<?>, MenuType<OreGrinderMenu>> ORE_GRINDER_MENU =
+    // === ⚙️ 新增：魔力粉碎機菜單 ===
+    public static final DeferredHolder<MenuType<?>, MenuType<ManaGrinderMenu>> MANA_GRINDER_MENU =
             registerMenuType("mana_grinder",
                     (id, inv, buf) -> {
                         BlockPos pos = buf.readBlockPos();
                         Level level = inv.player.level();
                         BlockEntity be = level.getBlockEntity(pos);
-                        if (!(be instanceof OreGrinderBlockEntity grinder)) {
-                            throw new IllegalStateException("Expected OreGrinderBlockEntity at " + pos + " but found " +
+                        if (!(be instanceof ManaGrinderBlockEntity grinder)) {
+                            throw new IllegalStateException("Expected ManaGrinderBlockEntity at " + pos + " but found " +
                                     (be != null ? be.getClass().getSimpleName() : "null"));
                         }
-                        return new OreGrinderMenu(id, inv, grinder);
+                        return new ManaGrinderMenu(id, inv, grinder);
                     });
 
     /**

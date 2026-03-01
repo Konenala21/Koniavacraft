@@ -1,20 +1,32 @@
 package com.github.nalamodikk.narasystem.nara.util;
 
-import com.github.nalamodikk.register.ModDataAttachments;
+import com.github.nalamodikk.narasystem.nara.api.INaraImprint;
+import com.github.nalamodikk.register.ModDataComponents;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
  * 處理 Nara 系統的「銘印 (Imprint)」邏輯。
  * 銘印是玩家與機器或世界建立深層連結的過程。
  */
-public class NaraImprintHelper {
+public class NaraImprintHelper implements INaraImprint {
 
     /**
      * 檢查玩家是否已經與 Nara 系統綁定。
      */
     public static boolean isPlayerBound(Player player) {
         return NaraHelper.isBound(player);
+    }
+
+    @Override
+    public boolean hasNaraImprint(ItemStack stack) {
+        return stack.has(ModDataComponents.NARA_IMPRINT);
+    }
+
+    @Override
+    public void setNaraImprint(ItemStack stack) {
+        stack.set(ModDataComponents.NARA_IMPRINT, true);
     }
 
     /**

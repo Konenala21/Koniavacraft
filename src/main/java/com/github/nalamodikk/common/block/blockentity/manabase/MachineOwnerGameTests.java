@@ -32,8 +32,8 @@ public class MachineOwnerGameTests {
     }
 
     @GameTest(template = "empty", templateNamespace = KoniavacraftMod.MOD_ID)
-    public static void oreGrinderOwnerAndMultiplier(GameTestHelper helper) {
-        runOwnerPlacementTest(helper, ModBlocks.ORE_GRINDER.get(), new ItemStack(ModBlocks.ORE_GRINDER.get()));
+    public static void manaGrinderOwnerAndMultiplier(GameTestHelper helper) {
+        runOwnerPlacementTest(helper, ModBlocks.MANA_GRINDER.get(), new ItemStack(ModBlocks.MANA_GRINDER.get()));
     }
 
     @GameTest(template = "empty", templateNamespace = KoniavacraftMod.MOD_ID)

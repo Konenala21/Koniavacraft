@@ -1,4 +1,4 @@
-package com.github.nalamodikk.common.block.blockentity.ore_grinder;
+package com.github.nalamodikk.common.block.blockentity.mana_grinder;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.utils.render.BlockbenchModelRenderUtils;
@@ -34,13 +34,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-public class OreGrinderRenderer implements BlockEntityRenderer<OreGrinderBlockEntity>, IBlockEntityRendererExtension<OreGrinderBlockEntity> {
+public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlockEntity>, IBlockEntityRendererExtension<ManaGrinderBlockEntity> {
     private static final Logger LOGGER = LogUtils.getLogger();
 
     private static final ResourceLocation MODEL_LOCATION =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "models/block/mana_grinder.json");
-    private static final ResourceLocation TEXTURE =
+    private static final ResourceLocation TEXTURE_IDLE =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/block/mana_grinder_texture.png");
+    private static final ResourceLocation TEXTURE_ACTIVE =
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/block/mana_grinder_active.png");
 
     private static final String STATIC_MAIN_GROUP = "bb_main";
     private static final String CRYSTAL_MAIN = "bone";
@@ -50,17 +52,18 @@ public class OreGrinderRenderer implements BlockEntityRenderer<OreGrinderBlockEn
     private static final String CRUSHER_RIGHT_CORE = "crusher_right_core";
     private static final String CRUSHER_LEFT_BLADES = "crusher_left_blades";
     private static final String CRUSHER_RIGHT_BLADES = "crusher_right_blades";
+    private static final Vector3f DEFAULT_ORIGIN = new Vector3f(0.5F, 0.5F, 0.5F);
 
     private final Map<String, List<ModelElement>> groupElements = new HashMap<>();
     private final Map<String, Vector3f> customOrigins = new HashMap<>();
     private boolean modelLoaded = false;
 
-    public OreGrinderRenderer(BlockEntityRendererProvider.Context context) {
+    public ManaGrinderRenderer(BlockEntityRendererProvider.Context context) {
         loadAndParseModel();
     }
 
     @Override
-    public void render(OreGrinderBlockEntity blockEntity, float partialTick,
+    public void render(ManaGrinderBlockEntity blockEntity, float partialTick,
                        PoseStack poseStack, MultiBufferSource bufferSource,
                        int packedLight, int packedOverlay) {
         if (!modelLoaded || blockEntity.getLevel() == null) {
@@ -69,13 +72,15 @@ public class OreGrinderRenderer implements BlockEntityRenderer<OreGrinderBlockEn
 
         float animationScale = RenderAnimationLodUtils.getAnimationTimeScale(blockEntity.getBlockPos());
         float time = (blockEntity.getLevel().getGameTime() + partialTick) * 0.05F * animationScale;
-        boolean isWorking = blockEntity.getProgress() > 0;
+        boolean isWorking = blockEntity.getBlockState().hasProperty(ManaGrinderBlock.WORKING)
+                && blockEntity.getBlockState().getValue(ManaGrinderBlock.WORKING);
 
         poseStack.pushPose();
-        Direction facing = blockEntity.getBlockState().getValue(OreGrinderBlock.FACING);
+        Direction facing = blockEntity.getBlockState().getValue(ManaGrinderBlock.FACING);
         BlockbenchModelRenderUtils.applyHorizontalFacingRotation(poseStack, facing, 0.0F, 180.0F, 90.0F, -90.0F);
 
-        VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.entitySolid(TEXTURE));
+        ResourceLocation currentTexture = isWorking ? TEXTURE_ACTIVE : TEXTURE_IDLE;
+        VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(currentTexture));
 
         renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "standalone_0", 0.0F, 0.0F, 0.0F, 0.0F);
         renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "standalone_1", 0.0F, 0.0F, 0.0F, 0.0F);
@@ -138,7 +143,7 @@ public class OreGrinderRenderer implements BlockEntityRenderer<OreGrinderBlockEn
     }
 
     private Vector3f getGroupOrigin(String groupName) {
-        return customOrigins.getOrDefault(groupName, new Vector3f(0.5F, 0.5F, 0.5F));
+        return customOrigins.getOrDefault(groupName, DEFAULT_ORIGIN);
     }
 
     private void loadAndParseModel() {
@@ -192,6 +197,7 @@ public class OreGrinderRenderer implements BlockEntityRenderer<OreGrinderBlockEn
 
         Set<Integer> bladeIndices = new LinkedHashSet<>();
         collectNestedElementIndices(targetGroup, bladeIndices);
+        bladeIndices.removeAll(coreIndices);
         if (bladeIndices.isEmpty()) {
             LOGGER.warn("⚠️ 群組 {} 沒有可渲染元素", targetGroupName);
             return;
@@ -278,7 +284,7 @@ public class OreGrinderRenderer implements BlockEntityRenderer<OreGrinderBlockEn
 
     private Vector3f readOrigin(JsonObject groupObject) {
         if (!groupObject.has("origin")) {
-            return new Vector3f(0.5F, 0.5F, 0.5F);
+            return DEFAULT_ORIGIN;
         }
         JsonArray origin = groupObject.getAsJsonArray("origin");
         return new Vector3f(
@@ -289,12 +295,12 @@ public class OreGrinderRenderer implements BlockEntityRenderer<OreGrinderBlockEn
     }
 
     @Override
-    public boolean shouldRenderOffScreen(OreGrinderBlockEntity blockEntity) {
+    public boolean shouldRenderOffScreen(ManaGrinderBlockEntity blockEntity) {
         return true;
     }
 
     @Override
-    public AABB getRenderBoundingBox(OreGrinderBlockEntity blockEntity) {
+    public AABB getRenderBoundingBox(ManaGrinderBlockEntity blockEntity) {
         return BlockbenchModelRenderUtils.getTwoBlockTallBoundingBox(blockEntity.getBlockPos());
     }
 

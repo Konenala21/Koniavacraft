@@ -61,7 +61,7 @@ import java.util.Optional;
         private final EnumMap<Direction, BlockCapabilityCache<IEnergyStorage, Direction>> energyCaches = new EnumMap<>(Direction.class);
         private boolean isSyncing = false;
 
-        private static final int MAX_MANA = 200000;
+        private static final int MAX_MANA = 40000;
         private static final int MAX_ENERGY = 200000;
         private static final int TICK_INTERVAL = 1;
         private static final int MANA_PER_CYCLE = 10;
