@@ -332,8 +332,11 @@
   "creativetab.koniava_modules": "娜拉工藝-模塊零件",
 
   "//20": "=== 配置選項 ===",
+  "koniava.config.calculateThreadCount": "粒子運算線程池大小（建議：CPU 核心數 - 1）",
   "koniava.config.manaRecipeRefreshInterval": "每幾 tick 更新一次魔力合成配方結果（建議值：2～10）",
   "koniava.config.showIntroAnimation": "啟用登入動畫",
+  "koniava.config.manaGeneratorSignificantManaChange": "魔力發電機同步魔力變化閾值",
+  "koniava.config.manaGeneratorSignificantEnergyChange": "魔力發電機同步能量變化閾值",
   "koniava.config.biome.multithreading": "啟用生態系多線程處理",
   "koniava.config.biome.threadCount": "線程數量",
   "koniava.config.biome.maxProcessingTime": "最大處理時間 (毫秒/tick)",
@@ -381,6 +384,7 @@
   "koniava.configuration.memory": "記憶體管理",
   "koniava.configuration.memory.tooltip": "記憶體使用和優化設定",
   "koniava.configuration.memory.button": "記憶體",
+  "koniava.configuration.render": "渲染設定",
 
   "koniava.configuration.adaptive": "智能功能",
   "koniava.configuration.adaptive.tooltip": "自適應和智能功能",

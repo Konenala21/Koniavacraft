@@ -98,14 +98,20 @@ public abstract class AbstractManaMachineEntityBlock extends BlockEntity impleme
     public AbstractManaMachineEntityBlock(BlockEntityType<?> type, BlockPos pos, BlockState state, boolean hasEnergy,int maxEnergy, int maxMana, int intervalTick, int manaPerCycle) {
         super(type, pos, state);
         this.hasEnergy = hasEnergy;
-        this.manaStorage = maxMana > 0 ? new ManaStorage(maxMana) : null;
-        this.energyStorage = hasEnergy ? new ModNeoNalaEnergyStorage(BigInteger.valueOf(maxEnergy)) : null;
+        this.manaStorage = maxMana > 0 ? new ManaStorage(maxMana, this::markStorageChanged) : null;
+        this.energyStorage = hasEnergy ? new ModNeoNalaEnergyStorage(BigInteger.valueOf(maxEnergy), this::markStorageChanged) : null;
         this.itemHandler = createHandler();
         this.fluidTank = createFluidTank();
         this.intervalTick = intervalTick;
         this.manaPerCycle = manaPerCycle;
         this.maxEnergy = maxEnergy;
 
+    }
+
+    private void markStorageChanged() {
+        if (level != null && !level.isClientSide) {
+            super.setChanged();
+        }
     }
 
     public int getProgress() { return progress; }

@@ -14,20 +14,8 @@ import net.neoforged.neoforge.items.ItemStackHandler;
  */
 public abstract class AbstractManaCollectorBlock extends AbstractManaMachineEntityBlock {
 
-    /** 魔力儲存槽 */
-    protected final ManaStorage manaStorage;
-
     /** 當前是否正在工作中 */
     protected boolean isWorking = false;
-
-    /** 產魔間隔（tick） */
-    protected final int intervalTick;
-
-    /** 每次產生魔力量 */
-    protected final int manaPerCycle;
-
-    /** Ticking 計數器 */
-    protected int tickCounter = 0;
 
     /**
      * @param type BlockEntityType
@@ -41,9 +29,6 @@ public abstract class AbstractManaCollectorBlock extends AbstractManaMachineEnti
                                       int maxMana, int intervalTick, int manaPerCycle) {
         // 呼叫 父類 禁用能源
         super(type, pos, state, false,0, maxMana, intervalTick, manaPerCycle);
-        this.manaStorage = new ManaStorage(maxMana);
-        this.intervalTick = intervalTick;
-        this.manaPerCycle = manaPerCycle;
     }
 
     @Override

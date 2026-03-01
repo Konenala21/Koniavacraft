@@ -333,8 +333,11 @@
   "creativetab.koniava_modules": "Koniavacraft - Modules",
 
   "//20": "=== CONFIG OPTIONS ===",
+  "koniava.config.calculateThreadCount": "Thread Pool Size for Particle Calculation (Recommended: CPU cores - 1)",
   "koniava.config.manaRecipeRefreshInterval": "How many ticks to refresh the mana crafting recipe result (Recommended value: 2-10)",
   "koniava.config.showIntroAnimation": "Enable Login Animation",
+  "koniava.config.manaGeneratorSignificantManaChange": "Mana Generator Sync Mana Change Threshold",
+  "koniava.config.manaGeneratorSignificantEnergyChange": "Mana Generator Sync Energy Change Threshold",
   "koniava.config.biome.multithreading": "Enable Biome Multithreading",
   "koniava.config.biome.threadCount": "Thread Count",
   "koniava.config.biome.maxProcessingTime": "Max Processing Time (ms/tick)",
@@ -382,6 +385,7 @@
   "koniava.configuration.memory": "Memory Management",
   "koniava.configuration.memory.tooltip": "Memory usage and optimization settings",
   "koniava.configuration.memory.button": "Memory",
+  "koniava.configuration.render": "Render",
 
   "koniava.configuration.adaptive": "Smart Features",
   "koniava.configuration.adaptive.tooltip": "Adaptive and intelligent features",

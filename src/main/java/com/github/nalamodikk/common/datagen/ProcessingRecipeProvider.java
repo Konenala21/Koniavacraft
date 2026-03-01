@@ -21,7 +21,6 @@ import java.util.List;
  * 輸出到 src/generated/resources/data/koniava/recipes/
  */
 public class ProcessingRecipeProvider {
-
     /**
      * 🔧 生成所有加工配方
      *
@@ -36,7 +35,7 @@ public class ProcessingRecipeProvider {
         createProcessingRecipe(output, "washer/gravel_wash", "washer")
                 .input(Items.GRAVEL)
                 .output(Items.SAND, 1)
-                .manaCost(75)
+                .manaCost(45)
                 .processingTime(80)
                 .save();
 
@@ -48,7 +47,7 @@ public class ProcessingRecipeProvider {
         createProcessingRecipe(output, "enricher/sand_enrich", "enricher")
                 .input(Items.SAND)
                 .output(Items.DIRT, 1)
-                .manaCost(100)
+                .manaCost(60)
                 .processingTime(120)
                 .save();
 

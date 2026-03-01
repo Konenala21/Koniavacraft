@@ -19,8 +19,10 @@ import java.util.function.Function;
 
 public final class BlockbenchModelRenderUtils {
     private static final Vector3f DEFAULT_GROUP_ORIGIN = new Vector3f(0.5F, 0.5F, 0.5F);
+    private static final UvTransform IDENTITY_UV_TRANSFORM = new UvTransform(1.0F, 1.0F, 0.0F, 0.0F);
     private static final ThreadLocal<Vector3f[]> TEMP_POSITIONS = ThreadLocal.withInitial(() ->
             new Vector3f[]{new Vector3f(), new Vector3f(), new Vector3f(), new Vector3f()});
+    private static final ThreadLocal<UvTransform> UV_TRANSFORM = ThreadLocal.withInitial(() -> IDENTITY_UV_TRANSFORM);
 
     private BlockbenchModelRenderUtils() {
     }
@@ -143,6 +145,16 @@ public final class BlockbenchModelRenderUtils {
         int y = blockPos.getY();
         int z = blockPos.getZ();
         return new AABB(x, y, z, x + 1, y + 2, z + 1);
+    }
+
+    public static UvTransform setUvTransform(float scaleU, float scaleV, float offsetU, float offsetV) {
+        UvTransform previous = UV_TRANSFORM.get();
+        UV_TRANSFORM.set(new UvTransform(scaleU, scaleV, offsetU, offsetV));
+        return previous;
+    }
+
+    public static void restoreUvTransform(UvTransform previousTransform) {
+        UV_TRANSFORM.set(previousTransform == null ? IDENTITY_UV_TRANSFORM : previousTransform);
     }
 
     private static ModelElement parseElement(JsonObject element) {
@@ -294,7 +306,24 @@ public final class BlockbenchModelRenderUtils {
         int sourceIndex = (targetIndex - rotationSteps + 4) & 3;
         float u = (sourceIndex == 0 || sourceIndex == 1) ? faceUV.u1 : faceUV.u2;
         float v = (sourceIndex == 0 || sourceIndex == 3) ? faceUV.v2 : faceUV.v1;
+        UvTransform transform = UV_TRANSFORM.get();
+        u = u * transform.scaleU + transform.offsetU;
+        v = v * transform.scaleV + transform.offsetV;
         vertexConsumer.addVertex(position.x(), position.y(), position.z(), color, u, v, packedOverlay, packedLight, nx, ny, nz);
+    }
+
+    public static final class UvTransform {
+        public final float scaleU;
+        public final float scaleV;
+        public final float offsetU;
+        public final float offsetV;
+
+        public UvTransform(float scaleU, float scaleV, float offsetU, float offsetV) {
+            this.scaleU = scaleU;
+            this.scaleV = scaleV;
+            this.offsetU = offsetU;
+            this.offsetV = offsetV;
+        }
     }
 
     public static class ModelElement {

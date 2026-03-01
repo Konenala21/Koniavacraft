@@ -11,13 +11,12 @@ import net.minecraft.world.level.block.Blocks;
  * ⚙️ 魔力粉碎機配方數據生成器
  */
 public class ManaGrinderRecipeProvider {
-
     public static void generate(RecipeOutput output) {
         // 🪨 石頭 → 沙粒
         ProcessingRecipeProvider.createProcessingRecipe(output, "grinder/stone_grind", "grinder")
                 .input(Blocks.STONE)
                 .output(Items.SAND, 1)
-                .manaCost(5000)
+                .manaCost(2000)
                 .processingTime(100)
                 .save();
 
@@ -26,7 +25,7 @@ public class ManaGrinderRecipeProvider {
                 .input(Items.DIAMOND)
                 .output(ModItems.MANA_DUST.get(), 1)
                 .chanceOutput(Items.GRAVEL, 1, 0.2f)
-                .manaCost(7500)
+                .manaCost(3000)
                 .processingTime(150)
                 .save();
 
@@ -36,7 +35,7 @@ public class ManaGrinderRecipeProvider {
                 .input(Blocks.COBBLESTONE)
                 .output(Items.BRICKS, 2)
                 .chanceOutput(Items.CLAY_BALL, 1, 0.15f)
-                .manaCost(10000)
+                .manaCost(4000)
                 .processingTime(200)
                 .save();
 

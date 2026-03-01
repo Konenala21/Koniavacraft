@@ -13,10 +13,20 @@ public class ManaStorage implements IUnifiedManaHandler , INBTSerializable<Compo
     private int capacity; // 🆕 改為可變，支援動態容量調整
     protected boolean allowInsert = true;
     protected boolean allowExtract = true;
+    private Runnable changeListener;
 
     public ManaStorage(int capacity) {
+        this(capacity, null);
+    }
+
+    public ManaStorage(int capacity, Runnable changeListener) {
         this.capacity = capacity;
         this.mana = 0;
+        this.changeListener = changeListener;
+    }
+
+    public void setChangeListener(Runnable changeListener) {
+        this.changeListener = changeListener;
     }
 
     /**
@@ -24,10 +34,13 @@ public class ManaStorage implements IUnifiedManaHandler , INBTSerializable<Compo
      * 如果當前魔力超過新容量，會被截斷
      */
     public void setCapacity(int newCapacity) {
+        int oldMana = this.mana;
         this.capacity = newCapacity;
         // 如果當前魔力超過新容量，截斷到新容量
         if (this.mana > newCapacity) {
             this.mana = newCapacity;
+        }
+        if (this.mana != oldMana) {
             onChanged();
         }
     }
@@ -57,14 +70,20 @@ public class ManaStorage implements IUnifiedManaHandler , INBTSerializable<Compo
 
     @Override
     public void addMana(int amount) {
+        int oldMana = this.mana;
         this.mana = Math.min(this.mana + amount, capacity);
-        onChanged(); // 添加魔力時通知變化
+        if (this.mana != oldMana) {
+            onChanged(); // 添加魔力時通知變化
+        }
     }
 
     @Override
     public void consumeMana(int amount) {
+        int oldMana = this.mana;
         this.mana = Math.max(this.mana - amount, 0);
-        onChanged(); // 消耗魔力時通知變化
+        if (this.mana != oldMana) {
+            onChanged(); // 消耗魔力時通知變化
+        }
     }
 
     @Override
@@ -74,13 +93,18 @@ public class ManaStorage implements IUnifiedManaHandler , INBTSerializable<Compo
 
     @Override
     public void setMana(int amount) {
+        int oldMana = this.mana;
         this.mana = Math.min(amount, capacity);
-        onChanged(); // 設置魔力時通知變化
+        if (this.mana != oldMana) {
+            onChanged(); // 設置魔力時通知變化
+        }
     }
 
     @Override
     public void onChanged() {
-        // 這裡可以加入狀態同步的邏輯（如果需要的話）
+        if (changeListener != null) {
+            changeListener.run();
+        }
     }
 
     @Override
@@ -166,9 +190,28 @@ public class ManaStorage implements IUnifiedManaHandler , INBTSerializable<Compo
         int toReceive = Math.min(amount, getMaxManaStored() - getManaStored());
         if (action.execute() && toReceive > 0) {
             addMana(toReceive);
-            onChanged(); // 通知數據變更
         }
         return toReceive;
+    }
+
+    @Override
+    public int insertMana(int amount, ManaAction action) {
+        if (amount <= 0) {
+            return 0;
+        }
+        int needed = getMaxManaStored() - getManaStored();
+        if (needed <= 0) {
+            return amount;
+        }
+        int toAdd = Math.min(amount, needed);
+        if (action.execute() && toAdd > 0) {
+            int oldMana = this.mana;
+            this.mana += toAdd;
+            if (this.mana != oldMana) {
+                onChanged();
+            }
+        }
+        return amount - toAdd;
     }
 
 

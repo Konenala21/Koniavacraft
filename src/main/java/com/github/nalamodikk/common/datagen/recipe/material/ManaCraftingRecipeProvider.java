@@ -34,7 +34,7 @@ public class ManaCraftingRecipeProvider {
         // ✅ 無序合成配方
         ManaCraftingRecipeBuilder.create(ModItems.MANA_DUST.get(), 1)
                 .addIngredient(Ingredient.of(Items.DIAMOND))
-                .manaCost(5000)
+                .manaCost(1500)
                 .save(output);
 
 
@@ -49,7 +49,7 @@ public class ManaCraftingRecipeProvider {
                 .define('I', Items.IRON_BLOCK)
                 .define('C', ModItems.REFINED_MANA_DUST.get())
                 .define('D', Items.DIAMOND)
-                .manaCost(30000)
+                .manaCost(9000)
                 .save(output, "mana_infuser_machine");
 
 

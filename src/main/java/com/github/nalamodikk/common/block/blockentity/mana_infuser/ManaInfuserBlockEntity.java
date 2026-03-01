@@ -40,12 +40,15 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock {
     private static final int INFUSION_TIME = 60;
     private static final int MANA_PER_CYCLE = 0;
     private static final int INTERVAL_TICK = 5;
+    private static final int STATE_SYNC_INTERVAL_TICKS = 100; // 5 秒（20 tick/s）
 
     private final ManaInfuserSyncHelper syncHelper = new ManaInfuserSyncHelper();
     private final EnumMap<Direction, IOHandlerUtils.IOType> directionConfig = new EnumMap<>(Direction.class);
     private ManaInfuserRecipe currentRecipe = null;
     private boolean hasInputChanged = false;
     private boolean needsSync = false;
+    private int stateSyncTicker = 0;
+    private boolean lastComputedWorking = false;
 
     public ManaInfuserBlockEntity(BlockPos pos, BlockState blockState) {
         super(ModBlockEntities.MANA_INFUSER.get(), pos, blockState, false, 0, MAX_MANA_CAPACITY, INTERVAL_TICK, 0);
@@ -103,6 +106,7 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock {
         }
 
         processInfusion();
+        syncWorkingBlockState();
         
         if (needsSync) {
             syncToClient();
@@ -138,19 +142,31 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock {
     }
 
     private void processInfusion() {
-        boolean wasWorking = isWorking();
         if (!canGenerate()) {
-            if (progress > 0) progress = 0;
-            if (wasWorking) updateBlockWorkingState(false);
+            if (progress > 0) {
+                progress = 0;
+                setChanged();
+            }
             return;
         }
-        if (!wasWorking) updateBlockWorkingState(true);
 
         progress += scaleProgressByOwner(1);
+        setChanged();
         if (progress >= maxProgress) {
             completeInfusion();
             progress = 0;
-            updateBlockWorkingState(false);
+            setChanged();
+        }
+    }
+
+    private void syncWorkingBlockState() {
+        boolean working = isWorking();
+        stateSyncTicker++;
+        boolean workingChanged = working != lastComputedWorking;
+        lastComputedWorking = working;
+        if (workingChanged || stateSyncTicker >= STATE_SYNC_INTERVAL_TICKS) {
+            updateBlockWorkingState(working);
+            stateSyncTicker = 0;
         }
     }
 

@@ -10,6 +10,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -43,6 +44,8 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/block/mana_grinder_texture.png");
     private static final ResourceLocation TEXTURE_ACTIVE =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/block/mana_grinder_active.png");
+    private static final ResourceLocation TEXTURE_ACTIVE_MC_META =
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/block/mana_grinder_active.png.mcmeta");
 
     private static final String STATIC_MAIN_GROUP = "bb_main";
     private static final String CRYSTAL_MAIN = "bone";
@@ -53,13 +56,19 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
     private static final String CRUSHER_LEFT_BLADES = "crusher_left_blades";
     private static final String CRUSHER_RIGHT_BLADES = "crusher_right_blades";
     private static final Vector3f DEFAULT_ORIGIN = new Vector3f(0.5F, 0.5F, 0.5F);
+    private static final Vector3f CRYSTAL_MAIN_PIVOT = new Vector3f(8.3F / 16.0F, 29.24749F / 16.0F, 8.29246F / 16.0F);
+    private static final Vector3f CRYSTAL_LEFT_PIVOT = new Vector3f(5.1F / 16.0F, 29.24749F / 16.0F, 8.29246F / 16.0F);
+    private static final Vector3f CRYSTAL_RIGHT_PIVOT = new Vector3f(11.3F / 16.0F, 29.24749F / 16.0F, 8.29246F / 16.0F);
 
     private final Map<String, List<ModelElement>> groupElements = new HashMap<>();
     private final Map<String, Vector3f> customOrigins = new HashMap<>();
     private boolean modelLoaded = false;
+    private int activeTextureFrameCount = 1;
+    private int activeTextureFrameTime = 1;
 
     public ManaGrinderRenderer(BlockEntityRendererProvider.Context context) {
         loadAndParseModel();
+        loadActiveTextureAnimationMeta();
     }
 
     @Override
@@ -81,16 +90,29 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
 
         ResourceLocation currentTexture = isWorking ? TEXTURE_ACTIVE : TEXTURE_IDLE;
         VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(currentTexture));
+        BlockbenchModelRenderUtils.UvTransform previousUvTransform = null;
+        if (isWorking && activeTextureFrameCount > 1) {
+            int frameIndex = resolveActiveTextureFrame(blockEntity.getLevel().getGameTime(), partialTick);
+            float frameScaleV = 1.0F / activeTextureFrameCount;
+            float frameOffsetV = frameScaleV * frameIndex;
+            previousUvTransform = BlockbenchModelRenderUtils.setUvTransform(1.0F, frameScaleV, 0.0F, frameOffsetV);
+        }
 
-        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "standalone_0", 0.0F, 0.0F, 0.0F, 0.0F);
-        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "standalone_1", 0.0F, 0.0F, 0.0F, 0.0F);
-        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "standalone_2", 0.0F, 0.0F, 0.0F, 0.0F);
-        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "standalone_3", 0.0F, 0.0F, 0.0F, 0.0F);
-        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "standalone_4", 0.0F, 0.0F, 0.0F, 0.0F);
-        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, STATIC_MAIN_GROUP, 0.0F, 0.0F, 0.0F, 0.0F);
+        try {
+            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "standalone_0", 0.0F, 0.0F, 0.0F, 0.0F);
+            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "standalone_1", 0.0F, 0.0F, 0.0F, 0.0F);
+            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "standalone_2", 0.0F, 0.0F, 0.0F, 0.0F);
+            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "standalone_3", 0.0F, 0.0F, 0.0F, 0.0F);
+            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "standalone_4", 0.0F, 0.0F, 0.0F, 0.0F);
+            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, STATIC_MAIN_GROUP, 0.0F, 0.0F, 0.0F, 0.0F);
 
-        renderCrystalAnimation(poseStack, vertexConsumer, packedLight, packedOverlay, time, animationScale, isWorking);
-        renderCrusherAnimation(poseStack, vertexConsumer, packedLight, packedOverlay, time, animationScale, isWorking);
+            renderCrystalAnimation(poseStack, vertexConsumer, packedLight, packedOverlay, time, animationScale, isWorking);
+            renderCrusherAnimation(poseStack, vertexConsumer, packedLight, packedOverlay, time, animationScale, isWorking);
+        } finally {
+            if (previousUvTransform != null) {
+                BlockbenchModelRenderUtils.restoreUvTransform(previousUvTransform);
+            }
+        }
 
         poseStack.popPose();
     }
@@ -98,20 +120,25 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
     private void renderCrystalAnimation(PoseStack poseStack, VertexConsumer vertexConsumer,
                                         int packedLight, int packedOverlay,
                                         float time, float animationScale, boolean isWorking) {
-        float mainOffsetY = 0.0F;
-        float leftOffsetY = 0.0F;
-        float rightOffsetY = 0.0F;
-
-        if (animationScale > 0.0F && !isWorking) {
-            float amplitude = 0.09F * animationScale;
-            mainOffsetY = (float) Math.sin(time) * amplitude;
-            leftOffsetY = (float) Math.sin(time + Math.PI * 2.0F / 3.0F) * amplitude;
-            rightOffsetY = (float) Math.sin(time + Math.PI * 4.0F / 3.0F) * amplitude;
+        if (animationScale <= 0.0F) {
+            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRYSTAL_MAIN, 0.0F, 0.0F, 0.0F, 0.0F);
+            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRYSTAL_LEFT, 0.0F, 0.0F, 0.0F, 0.0F);
+            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRYSTAL_RIGHT, 0.0F, 0.0F, 0.0F, 0.0F);
+        } else if (isWorking) {
+            float mainRotation = time * 10.0F;
+            float leftRotation = -time * 10.8F;
+            float rightRotation = time * 10.2F;
+            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRYSTAL_MAIN, 0.0F, 0.0F, 0.0F, mainRotation);
+            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRYSTAL_LEFT, 0.0F, 0.0F, 0.0F, leftRotation);
+            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRYSTAL_RIGHT, 0.0F, 0.0F, 0.0F, rightRotation);
+        } else {
+            float mainOffsetY = (float) Math.sin(time) * 0.125F;
+            float leftOffsetY = (float) Math.sin(time + Math.PI * 2.0F / 3.0F) * 0.125F;
+            float rightOffsetY = (float) Math.sin(time + Math.PI * 4.0F / 3.0F) * 0.125F;
+            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRYSTAL_MAIN, 0.0F, mainOffsetY, 0.0F, 0.0F);
+            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRYSTAL_LEFT, 0.0F, leftOffsetY, 0.0F, 0.0F);
+            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRYSTAL_RIGHT, 0.0F, rightOffsetY, 0.0F, 0.0F);
         }
-
-        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRYSTAL_MAIN, 0.0F, mainOffsetY, 0.0F, 0.0F);
-        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRYSTAL_LEFT, 0.0F, leftOffsetY, 0.0F, 0.0F);
-        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRYSTAL_RIGHT, 0.0F, rightOffsetY, 0.0F, 0.0F);
     }
 
     private void renderCrusherAnimation(PoseStack poseStack, VertexConsumer vertexConsumer,
@@ -129,8 +156,8 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
             rightRotation = -time * angularFactor;
         }
 
-        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRUSHER_LEFT_BLADES, 0.0F, 0.0F, 0.0F, leftRotation);
-        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRUSHER_RIGHT_BLADES, 0.0F, 0.0F, 0.0F, rightRotation);
+        renderGroupWithZRotation(poseStack, vertexConsumer, packedLight, packedOverlay, CRUSHER_LEFT_BLADES, leftRotation);
+        renderGroupWithZRotation(poseStack, vertexConsumer, packedLight, packedOverlay, CRUSHER_RIGHT_BLADES, rightRotation);
     }
 
     private void renderGroup(PoseStack poseStack, VertexConsumer vertexConsumer,
@@ -140,6 +167,22 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
                 poseStack, vertexConsumer, packedLight, packedOverlay,
                 groupElements, groupName, offsetX, offsetY, offsetZ, rotationY, this::getGroupOrigin
         );
+    }
+
+    private void renderGroupWithZRotation(PoseStack poseStack, VertexConsumer vertexConsumer,
+                                          int packedLight, int packedOverlay,
+                                          String groupName, float rotationZ) {
+        if (Math.abs(rotationZ) < 1.0E-6F) {
+            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, groupName, 0.0F, 0.0F, 0.0F, 0.0F);
+            return;
+        }
+        Vector3f origin = getGroupOrigin(groupName);
+        poseStack.pushPose();
+        poseStack.translate(origin.x(), origin.y(), origin.z());
+        poseStack.mulPose(com.mojang.math.Axis.ZP.rotation(rotationZ));
+        poseStack.translate(-origin.x(), -origin.y(), -origin.z());
+        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, groupName, 0.0F, 0.0F, 0.0F, 0.0F);
+        poseStack.popPose();
     }
 
     private Vector3f getGroupOrigin(String groupName) {
@@ -169,9 +212,10 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
         customOrigins.clear();
 
         groupElements.putAll(BlockbenchModelRenderUtils.parseGroupedElements(modelData, true));
-        customOrigins.put(CRYSTAL_MAIN, new Vector3f(8.0F / 16.0F, 29.24749F / 16.0F, 8.29246F / 16.0F));
-        customOrigins.put(CRYSTAL_LEFT, new Vector3f(3.0F / 16.0F, 29.24749F / 16.0F, 8.29246F / 16.0F));
-        customOrigins.put(CRYSTAL_RIGHT, new Vector3f(13.0F / 16.0F, 29.24749F / 16.0F, 8.29246F / 16.0F));
+        // 與模型本體中心對齊，避免旋轉時產生公轉位移感
+        customOrigins.put(CRYSTAL_MAIN, CRYSTAL_MAIN_PIVOT);
+        customOrigins.put(CRYSTAL_LEFT, CRYSTAL_LEFT_PIVOT);
+        customOrigins.put(CRYSTAL_RIGHT, CRYSTAL_RIGHT_PIVOT);
 
         List<ModelElement> parsedElements = BlockbenchModelRenderUtils.parseElements(modelData);
         JsonArray groups = modelData.getAsJsonArray("groups");
@@ -187,12 +231,18 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
             return;
         }
 
+        Vector3f wheelOrigin = readOrigin(targetGroup);
         Set<Integer> coreIndices = new LinkedHashSet<>();
         collectDirectElementIndices(targetGroup, coreIndices);
         if (coreIndices.isEmpty()) {
             LOGGER.warn("⚠️ 群組 {} 找不到軸心元素（直接 children index）", targetGroupName);
         } else {
-            registerGroupByIndices(parsedElements, coreIndices, targetGroup, coreGroupName);
+            List<ModelElement> coreElements = collectElementsByIndices(parsedElements, coreIndices);
+            if (!coreElements.isEmpty()) {
+                groupElements.put(coreGroupName, coreElements);
+                wheelOrigin = calculateElementsCenter(coreElements, wheelOrigin);
+                customOrigins.put(coreGroupName, wheelOrigin);
+            }
         }
 
         Set<Integer> bladeIndices = new LinkedHashSet<>();
@@ -202,22 +252,38 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
             LOGGER.warn("⚠️ 群組 {} 沒有可渲染元素", targetGroupName);
             return;
         }
-        registerGroupByIndices(parsedElements, bladeIndices, targetGroup, bladesGroupName);
+        List<ModelElement> bladeElements = collectElementsByIndices(parsedElements, bladeIndices);
+        if (bladeElements.isEmpty()) {
+            return;
+        }
+        groupElements.put(bladesGroupName, bladeElements);
+        customOrigins.put(bladesGroupName, wheelOrigin);
     }
 
-    private void registerGroupByIndices(List<ModelElement> parsedElements, Set<Integer> indices,
-                                        JsonObject sourceGroup, String outputGroupName) {
+    private List<ModelElement> collectElementsByIndices(List<ModelElement> parsedElements, Set<Integer> indices) {
         List<ModelElement> elements = new ArrayList<>();
         for (Integer index : indices) {
             if (index >= 0 && index < parsedElements.size()) {
                 elements.add(parsedElements.get(index));
             }
         }
+        return elements;
+    }
+
+    private Vector3f calculateElementsCenter(List<ModelElement> elements, Vector3f fallback) {
         if (elements.isEmpty()) {
-            return;
+            return fallback;
         }
-        groupElements.put(outputGroupName, elements);
-        customOrigins.put(outputGroupName, readOrigin(sourceGroup));
+        float sumX = 0.0F;
+        float sumY = 0.0F;
+        float sumZ = 0.0F;
+        for (ModelElement element : elements) {
+            sumX += (element.x1 + element.x2) * 0.5F;
+            sumY += (element.y1 + element.y2) * 0.5F;
+            sumZ += (element.z1 + element.z2) * 0.5F;
+        }
+        float count = elements.size();
+        return new Vector3f(sumX / count, sumY / count, sumZ / count);
     }
 
     private JsonObject findGroupByName(JsonArray groups, String targetName) {
@@ -292,6 +358,55 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
                 origin.get(1).getAsFloat() / 16.0F,
                 origin.get(2).getAsFloat() / 16.0F
         );
+    }
+
+    private void loadActiveTextureAnimationMeta() {
+        activeTextureFrameCount = 1;
+        activeTextureFrameTime = 1;
+        try {
+            Optional<Resource> texture = Minecraft.getInstance().getResourceManager().getResource(TEXTURE_ACTIVE);
+            if (texture.isPresent()) {
+                try (NativeImage image = NativeImage.read(texture.get().open())) {
+                    int width = image.getWidth();
+                    int height = image.getHeight();
+                    if (width > 0 && height >= width && height % width == 0) {
+                        activeTextureFrameCount = Math.max(1, height / width);
+                    }
+                }
+            }
+
+            Optional<Resource> meta = Minecraft.getInstance().getResourceManager().getResource(TEXTURE_ACTIVE_MC_META);
+            if (meta.isPresent()) {
+                try (InputStreamReader reader = new InputStreamReader(meta.get().open(), StandardCharsets.UTF_8)) {
+                    JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+                    if (root.has("animation") && root.get("animation").isJsonObject()) {
+                        JsonObject animation = root.getAsJsonObject("animation");
+                        if (animation.has("frametime")) {
+                            activeTextureFrameTime = Math.max(1, animation.get("frametime").getAsInt());
+                        }
+                        if (animation.has("frames") && animation.get("frames").isJsonArray()) {
+                            int listedFrames = animation.getAsJsonArray("frames").size();
+                            if (listedFrames > 0) {
+                                activeTextureFrameCount = listedFrames;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception exception) {
+            LOGGER.warn("⚠️ 讀取 mana_grinder_active 貼圖動畫資訊失敗，退回靜態貼圖", exception);
+            activeTextureFrameCount = 1;
+            activeTextureFrameTime = 1;
+        }
+    }
+
+    private int resolveActiveTextureFrame(long gameTime, float partialTick) {
+        if (activeTextureFrameCount <= 1) {
+            return 0;
+        }
+        float ticksPerFrame = Math.max(1, activeTextureFrameTime);
+        int frame = (int) Math.floor((gameTime + partialTick) / ticksPerFrame);
+        return Math.floorMod(frame, activeTextureFrameCount);
     }
 
     @Override

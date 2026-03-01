@@ -13,17 +13,30 @@ public class ModNeoNalaEnergyStorage implements IEnergyStorage, INBTSerializable
     private static final int DECIMAL_DIGITS = 4;
     private BigDecimal energy;
     private final BigDecimal capacity;
+    private Runnable changeListener;
 
     public ModNeoNalaEnergyStorage(BigInteger capacity) {
+        this(capacity, null);
+    }
+
+    public ModNeoNalaEnergyStorage(BigInteger capacity, Runnable changeListener) {
         this.energy = BigDecimal.ZERO.setScale(DECIMAL_DIGITS, RoundingMode.DOWN);
         this.capacity = new BigDecimal(capacity).setScale(DECIMAL_DIGITS, RoundingMode.DOWN);
+        this.changeListener = changeListener;
+    }
+
+    public void setChangeListener(Runnable changeListener) {
+        this.changeListener = changeListener;
     }
 
     @Override
     public int receiveEnergy(int maxReceive, boolean simulate) {
         BigDecimal amount = BigDecimal.valueOf(maxReceive);
         BigDecimal accepted = amount.min(capacity.subtract(energy));
-        if (!simulate) energy = energy.add(accepted);
+        if (!simulate && accepted.signum() > 0) {
+            energy = energy.add(accepted);
+            onChanged();
+        }
         return accepted.intValue();
     }
 
@@ -31,7 +44,10 @@ public class ModNeoNalaEnergyStorage implements IEnergyStorage, INBTSerializable
     public int extractEnergy(int maxExtract, boolean simulate) {
         BigDecimal amount = BigDecimal.valueOf(maxExtract);
         BigDecimal extracted = energy.min(amount);
-        if (!simulate) energy = energy.subtract(extracted);
+        if (!simulate && extracted.signum() > 0) {
+            energy = energy.subtract(extracted);
+            onChanged();
+        }
         return extracted.intValue();
     }
 
@@ -57,10 +73,14 @@ public class ModNeoNalaEnergyStorage implements IEnergyStorage, INBTSerializable
 
     // 🆕 添加能量設定方法（用於 NBT 載入）
     public void setEnergyStored(BigInteger energyAmount) {
+        BigDecimal oldEnergy = this.energy;
         this.energy = new BigDecimal(energyAmount).setScale(DECIMAL_DIGITS, RoundingMode.DOWN);
         // 確保不超過容量
         if (this.energy.compareTo(capacity) > 0) {
             this.energy = capacity;
+        }
+        if (this.energy.compareTo(oldEnergy) != 0) {
+            onChanged();
         }
     }
 
@@ -83,5 +103,10 @@ public class ModNeoNalaEnergyStorage implements IEnergyStorage, INBTSerializable
             deserializeNBT(compoundTag);
     }
 
+    protected void onChanged() {
+        if (changeListener != null) {
+            changeListener.run();
+        }
+    }
 
 }

@@ -80,7 +80,7 @@ public class ManaCraftingTableBlockEntity extends BlockEntity implements MenuPro
 
 
     private final ItemStackHandler itemHandler = new ItemStackHandler(TOTAL_SLOTS);
-    private final IUnifiedManaHandler manaStorage = new ManaStorage(MAX_MANA);
+    private final ManaStorage manaStorage = new ManaStorage(MAX_MANA, this::markStorageChanged);
 
     public ManaCraftingTableBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MANA_CRAFTING_TABLE_BLOCK_BE.get(), pos, state);
@@ -128,6 +128,12 @@ public class ManaCraftingTableBlockEntity extends BlockEntity implements MenuPro
     private void extractManaFromNeighbors() {
         IOHandlerUtils.extractManaFromNeighbors(level, worldPosition, manaStorage, directionConfig, 50 // 每面最多提取的 mana 數量
         );
+    }
+
+    private void markStorageChanged() {
+        if (level != null && !level.isClientSide()) {
+            super.setChanged();
+        }
     }
 
     public void updateCraftingResult() {
@@ -259,8 +265,9 @@ public class ManaCraftingTableBlockEntity extends BlockEntity implements MenuPro
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         itemHandler.deserializeNBT(registries, tag.getCompound("Items"));
-        if (manaStorage instanceof ManaStorage storage) {
-            storage.setMana(tag.getInt("Mana"));
+        manaStorage.setMana(tag.getInt("Mana"));
+        if (tag.contains("IOConfig")) {
+            deserializeIOMap(tag.getCompound("IOConfig"));
         }
     }
 
@@ -268,9 +275,8 @@ public class ManaCraftingTableBlockEntity extends BlockEntity implements MenuPro
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.put("Items", itemHandler.serializeNBT(registries));
-        if (manaStorage instanceof ManaStorage storage) {
-            tag.putInt("Mana", storage.getManaStored());
-        }
+        tag.putInt("Mana", manaStorage.getManaStored());
+        tag.put("IOConfig", serializeIOMap());
     }
 
 
@@ -347,33 +353,52 @@ public class ManaCraftingTableBlockEntity extends BlockEntity implements MenuPro
 
 
 
-    private final EnumMap<Direction, IOHandlerUtils.IOType> ioMap = new EnumMap<>(Direction.class);
-
     @Override
     public void setIOConfig(Direction direction, IOHandlerUtils.IOType type) {
-        ioMap.put(direction, type);
+        directionConfig.put(direction, type);
+        setChanged();
     }
 
     @Override
     public IOHandlerUtils.IOType getIOConfig(Direction direction) {
-        return ioMap.getOrDefault(direction, IOHandlerUtils.IOType.DISABLED);
+        return directionConfig.getOrDefault(direction, IOHandlerUtils.IOType.DISABLED);
     }
 
     @Override
     public EnumMap<Direction, IOHandlerUtils.IOType> getIOMap() {
-        return ioMap;
+        return new EnumMap<>(directionConfig);
     }
 
     @Override
     public void setIOMap(EnumMap<Direction, IOHandlerUtils.IOType> map) {
-        ioMap.clear();
-        ioMap.putAll(map);
+        directionConfig.clear();
+        directionConfig.putAll(map);
+        setChanged();
     }
 
 
     @Override
     public boolean isOutput(Direction direction) {
         return directionConfig.getOrDefault(direction, IOHandlerUtils.IOType.DISABLED) == IOHandlerUtils.IOType.OUTPUT;
+    }
+
+    private CompoundTag serializeIOMap() {
+        CompoundTag tag = new CompoundTag();
+        for (Direction direction : Direction.values()) {
+            tag.putString(direction.getName(), directionConfig.getOrDefault(direction, IOHandlerUtils.IOType.DISABLED).name());
+        }
+        return tag;
+    }
+
+    private void deserializeIOMap(CompoundTag tag) {
+        for (Direction direction : Direction.values()) {
+            String typeName = tag.getString(direction.getName());
+            try {
+                directionConfig.put(direction, IOHandlerUtils.IOType.valueOf(typeName));
+            } catch (IllegalArgumentException exception) {
+                directionConfig.put(direction, IOHandlerUtils.IOType.DISABLED);
+            }
+        }
     }
 
 

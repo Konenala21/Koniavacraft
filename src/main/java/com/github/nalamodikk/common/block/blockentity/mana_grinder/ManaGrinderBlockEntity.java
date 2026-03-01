@@ -49,6 +49,7 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock {
     private static final int MAX_MANA_CAPACITY = 100000;
     private static final int GRINDING_TIME = 200;  // 10 秒
     private static final int INTERVAL_TICK = 1;
+    private static final int STATE_SYNC_INTERVAL_TICKS = 100; // 5 秒（20 tick/s）
 
     // === 📊 同步助手 ===
     private final ManaGrinderSyncHelper syncHelper = new ManaGrinderSyncHelper();
@@ -58,6 +59,8 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock {
     private ProcessingRecipe currentRecipe = null;
     private boolean hasInputChanged = false;
     private int manaSpent = 0;
+    private int stateSyncTicker = 0;
+    private boolean lastComputedWorking = false;
 
     public ManaGrinderBlockEntity(BlockPos pos, BlockState blockState) {
         super(
@@ -127,8 +130,7 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock {
     @Override
     public void tickMachine() {
         if (level == null || level.isClientSide()) return;
-
-        boolean wasWorking = isWorkingState();
+        boolean previousComputedWorking = lastComputedWorking;
 
         // 1. 同步數據到 Helper (由 Menu 讀取)
         syncHelper.syncFrom(this);
@@ -165,8 +167,13 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock {
         }
 
         boolean isWorking = isWorkingState();
-        if (wasWorking != isWorking) {
+        stateSyncTicker++;
+        boolean workingChanged = previousComputedWorking != isWorking;
+        lastComputedWorking = isWorking;
+
+        if (workingChanged || stateSyncTicker >= STATE_SYNC_INTERVAL_TICKS) {
             updateBlockWorkingState(isWorking);
+            stateSyncTicker = 0;
         }
     }
 
