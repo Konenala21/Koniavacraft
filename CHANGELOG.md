@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 ### Changed
+- Reordered the custom blocks creative tab so machine blocks are grouped together first.
 - Removed outdated owner multiplier GameTests after machine output decoupled from RPG attributes.
 - Moved GameTest classes to `src/test/java` and configured `runGameTestServer` to include `test` source set classes.
 - Added persistence GameTests for mana grinder and mana crafting table to verify mana/IO save-load behavior without opening the client.
