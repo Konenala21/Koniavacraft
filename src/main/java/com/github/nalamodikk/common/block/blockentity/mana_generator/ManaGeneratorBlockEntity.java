@@ -61,8 +61,8 @@ import java.util.Optional;
         private final EnumMap<Direction, BlockCapabilityCache<IEnergyStorage, Direction>> energyCaches = new EnumMap<>(Direction.class);
         private boolean isSyncing = false;
 
-        private static final int MAX_MANA = 40000;
-        private static final int MAX_ENERGY = 200000;
+        private static final int MANA_CAPACITY = 40000;
+        private static final int ENERGY_CAPACITY = 200000;
         private static final int TICK_INTERVAL = 1;
         private static final int MANA_PER_CYCLE = 10;
         private static final int FUEL_SLOT_COUNT = 1;
@@ -90,7 +90,8 @@ import java.util.Optional;
         public OutputHandler.OutputThrottleController getOutputThrottle() {return outputThrottle;}
 
         public ManaGeneratorBlockEntity(BlockPos pos, BlockState state) {
-            super(ModBlockEntities.MANA_GENERATOR_BE.get(), pos, state, true, MAX_MANA, MAX_ENERGY, TICK_INTERVAL, MANA_PER_CYCLE);
+            // AbstractManaMachineEntityBlock 參數順序為: hasEnergy, maxEnergy, maxMana
+            super(ModBlockEntities.MANA_GENERATOR_BE.get(), pos, state, true, ENERGY_CAPACITY, MANA_CAPACITY, TICK_INTERVAL, MANA_PER_CYCLE);
             if (this.level != null) {
                 this.access = ContainerLevelAccess.create(this.level, this.worldPosition);
             }
@@ -122,8 +123,8 @@ import java.util.Optional;
         }
 
 
-        public static int getMaxMana() {return MAX_MANA;}
-        public static int getMaxEnergy() {return MAX_ENERGY;}
+        public static int getMaxMana() {return MANA_CAPACITY;}
+        public static int getMaxEnergy() {return ENERGY_CAPACITY;}
         public ManaGeneratorStateManager getStateManager() {return stateManager;}
         public FuelManaGenHelper getManaGenHandler() {
             if (manaGenHandler == null) {

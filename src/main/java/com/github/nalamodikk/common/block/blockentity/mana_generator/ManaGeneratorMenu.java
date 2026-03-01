@@ -80,11 +80,15 @@ public class ManaGeneratorMenu extends AbstractContainerMenu {
     }
 
     public int getMaxMana() {
-        return ManaGeneratorBlockEntity.getMaxMana();
+        return blockEntity.getManaStorage() != null
+                ? blockEntity.getManaStorage().getMaxManaStored()
+                : ManaGeneratorBlockEntity.getMaxMana();
     }
 
     public int getMaxEnergy() {
-        return ManaGeneratorBlockEntity.getMaxEnergy();
+        return blockEntity.getEnergyStorage() != null
+                ? blockEntity.getEnergyStorage().getMaxEnergyStored()
+                : ManaGeneratorBlockEntity.getMaxEnergy();
     }
 
 
