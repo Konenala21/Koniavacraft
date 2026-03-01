@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 ### Changed
+- Moved GameTest classes to `src/test/java` and configured `runGameTestServer` to include `test` source set classes.
 - Added persistence GameTests for mana grinder and mana crafting table to verify mana/IO save-load behavior without opening the client.
 - Bumped NeoForge from 21.1.217 to 21.1.219.
 - Fully renamed `OreGrinder` to `ManaGrinder` across the entire codebase (classes, packages, variables, and assets).
