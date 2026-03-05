@@ -3,6 +3,130 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+
+## [0.0.1.5-beta] - 2026-03-06
+
+### 生物群系 & 世界生成 (Biome & World Generation)
+
+**Zoom-Layer 地域索引系統（取代 UniquenessNoise）**
+- 新增 `biome/region/noise` 子包：`PixelTransformer`、`AreaContext`（LCG 亂數）、`Area`（StampedLock thread-safe cache）、`AreaFactory`、`AreaTransformer0/1`、`ZoomLayer`（FUZZY/NORMAL）、`InitialRegionLayer`（加權隨機）、`RegionNoiseUtil`（組合 zoom 鏈）
+- 刪除 `UniquenessNoise.java`（float threshold 方案），改為整數 regionIndex 路由
+- `MultiNoiseBiomeSourceMixin` 改為以 regionIndex 選取各 region 獨立的 `Climate.ParameterList`，自訂 biome 不再與原版 biome 在 6D climate 空間競爭
+- `BiomeRegionManager` 新增：`uniquenessIndex` 自動分配、`initForWorld(seed)` 注入世界 seed、`getRegionIndex(x,z)`、`setVanillaWeight`、`setZoomCount`
+- `SimpleBiomeRegion` 新增 `uniquenessIndex` 欄位；`BiomeTerrainRegistration` 新增 `LevelEvent.Load` listener 以注入世界 seed
+- patch 大小由 `zoomCount` 控制（預設 4 ≈ 1024 格）；FUZZY zoom 確保邊界為有機曲線
+
+**生物群系地形系統重構（前版）**
+- 新增 `VanillaClimateBands` enum（對齊原版 temperature / humidity / continentalness / erosion / depth / weirdness 數值邊界）
+- 新增 `ParameterPointListBuilder`（笛卡爾積 climate point 建構器）
+- 新增 `BiomeRegionManager` + `SimpleBiomeRegion` region 架構，取代直接 inject 邏輯
+- 新增 `BiomeClimateConfigLoader`：datapack JSON 動態覆蓋 / 新增生物群系 climate 設定（`data/*/worldgen/biome_climates/*.json`）
+- 新增 `BiomeParameterOverlayBuilder`：priority / weight / namespace 衝突解決，確保 parameter point 不重疊
+- 新增 staged surface rule registry（namespace + stage + priority）
+- 新增 `VanillaBiomeParameterReader.addBiomeSimilar()`：鏡像原版生物群系的 climate slots
+- 快取合併後的 ecosystem surface rules，降低 worldgen overhead
+- 新增 mana_grass_block / mana_soil / deep_mana_soil 地表材質
+
+---
+
+### 魔力機器系統 (Mana Machine System)
+
+**魔力研磨機 (ManaGrinder)**
+- 全面重命名：`OreGrinder` → `ManaGrinder`（類別、包、資源、翻譯）
+- 修正 diamond recipe 產出（改為 Mana Dust，非 Glass）
+- 修正 IO config 反序列化，兼容舊版/無效 NBT，防止導管傳輸中斷
+- IO 變更立即觸發 capability 失效與鄰近導管網路重掃
+- 工作狀態改為追蹤實際進度（無魔力 = idle，BlockState `working` 與 GUI 自動對正）
+- 每個配方使用獨立加工時間與魔力消耗（craft 完成時一次性扣除）
+- 新增 persistence GameTest（驗證 mana/IO save-load 正確性）
+
+**GUI / JEI**
+- 更新研磨機 GUI：slot 位置、進度條樣式對齊灌注機
+- 新增 JEI 整合：mana cost bar、加工時間顯示、chance tooltip、catalyst 顯示
+- 隱藏 mana bar 背景避免遮擋 GUI 框線
+
+**魔力發電機 (ManaGenerator)**
+- 修正預設 IO map（從全關改為全側面輸出）
+- 讀取舊版存檔缺少 `IOMap` 時自動補上預設值
+- 統一 generator capacity config
+
+**魔力灌注機 (ManaInfuser)**
+- 增加容量上限以超過最高配方耗魔量
+- 降低灌注機 book recipe 魔力消耗，固定賦予 Unbreaking I 附魔
+
+**魔力合成台 (ManaCraftingTable)**
+- 降低 `mana_infuser_machine` 配方耗魔量：9000 → 3500
+- 新增 persistence GameTest
+
+**太陽能魔力收集器 (SolarManaCollector)**
+- 使用正確的 max mana 上限與更慢的基礎輸出/間隔，支援 Mek-style 可疊加升級
+- 修正白天狀態同步（即使 mana 未改變也同步，確保時間指令後 GUI 更新）
+- 新增 tooltip 診斷：天光、雨、雷、遮蔽、日夜、超界面等 debug flag（按 Shift 顯示）
+- Overworld 偵測改用 dimension id + `canSeeSkyFromBelowWater`
+- 新增 debug 按鍵綁定
+
+**通用機器邏輯**
+- 新增 side-aware item handler wrapping（漏斗/管道遵守 IO 方向與 per-slot 策略）
+- 機器記錄放置玩家為 owner；output 依 owner RPG intelligence 縮放
+- 升級物品欄變更時標記 dirty 確保升級效果即時同步
+
+---
+
+### 魔力導管 (Mana Conduit)
+
+- 修正 idle throttling 改用全網路可見魔力量（非僅本地 buffer），解決虛擬網路傳輸飢餓
+- 重做環形路徑保護：僅對短窗口內導管迴圈生效、自動重置過期路徑記錄、抑制迴圈阻斷 debug log
+- 提升導管傳輸速率上限，對齊 basic tier legacy 速率
+- 新增導管等級階層
+
+---
+
+### UI & 渲染 (UI & Rendering)
+
+**研磨機動畫**
+- 新增 `ManaGrinder` block entity renderer：idle 水晶浮動動畫 + 內縮反向旋轉破碎輪
+- 調整風扇葉片動畫為扇形樣式
+- LOD 距離/縮放可透過 client config（`koniava-client.toml`）調整
+- 渲染工具移至 `common.utils.render` 包
+
+**創意模式標籤**
+- 機器方塊依類型自動分組排列（不需手動維護列表）
+
+**雜項**
+- 擴展發電機與太陽能收集器渲染包圍盒以涵蓋 1×2×1 視覺高度
+- 魔力研磨機 GUI 尺寸與 slot 位置更新
+
+---
+
+### 娜拉系統 (Nara System)
+
+- 新增 `TypewriterTextWidget`：dialog 風格逐字顯示（含打字音效）
+- 新增 `NaraImprintHelper` + `INaraImprint` 邏輯，使用 `NARA_IMPRINT` DataComponent
+- 實作娜拉引導排程器（訊息佇列 + 時序）
+- 整合 DataComponent sync（`MachineSyncManager` + 登入同步）
+- 定義並註冊機器與娜拉系統的 custom DataComponents
+
+---
+
+### 測試基礎設施 (Testing)
+
+- 新增 JUnit 5 測試基礎建設
+- GameTest 類別移至 `src/test/java`，`runGameTestServer` 納入 test source set
+- 新增 persistence GameTest：ManaGrinder、ManaCraftingTable、SolarManaCollector
+- 移除因 RPG 屬性解耦後過時的 owner multiplier GameTest
+- NeoForge 從 21.1.217 升級至 21.1.219
+
+---
+
+### 清理 & 重構 (Cleanup & Refactor)
+
+- 移除整個粒子特效堆疊（particle core、render/shader 工具、封包/事件、debug items、assets/shaders）
+- 移除未使用的舊版框架資料夾：`init`、`display`、`event`、`network`、`commands`、`barrages`、`annotations`、`animation`、`platform`
+- 移除反射掃描工具（`com.github.nalamodikk.reflect`）
+- 移除實驗性魔法效果渲染堆疊（`experimental/effects`、`experimental/render/effects`、`MagicEffectHelper`）
+- 移除未使用的渲染鷹架（`com.github.nalamodikk.render`）及死亡 mixin（`LevelRendererMixin`、`ParticleEngineAccessor`）
+- 移除未使用的粒子 JSON：arcane_spark、energy_burst、explosion_magic 等 7 個
+- 移除 RPG 指令類別，UI / test 指令加上 `koniava` 前綴
 ### Changed
 - Added a region-style biome injection architecture (`BiomeRegionManager`) and made the Overworld biome mixin consume the manager instead of direct injector logic.
 - Added datapack-driven biome climate overrides/additions under `data/*/worldgen/biome_climates/*.json` via a reload listener.
