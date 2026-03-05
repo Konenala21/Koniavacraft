@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_21",
   "refmap": "koniava.refmap.json",
   "mixins": [
+    "MultiNoiseBiomeSourceMixin",
     "NoiseGeneratorSettingsMixin",
     "NoiseSettingsAccessor",
     "OverworldBiomeBuilderMixin",

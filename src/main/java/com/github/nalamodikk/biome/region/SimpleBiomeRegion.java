@@ -12,11 +12,22 @@ import java.util.function.Consumer;
 public class SimpleBiomeRegion implements BiomeRegion {
     private final ResourceLocation id;
     private final int weight;
+    private final int uniquenessIndex;
     private final List<BiomeInjectionEntry> entries = new CopyOnWriteArrayList<>();
 
-    public SimpleBiomeRegion(ResourceLocation id, int weight) {
+    /**
+     * @param uniquenessIndex region slot index assigned by {@link BiomeRegionManager}; starts at 1
+     *                        (0 is reserved for vanilla)
+     */
+    public SimpleBiomeRegion(ResourceLocation id, int weight, int uniquenessIndex) {
         this.id = id;
         this.weight = weight;
+        this.uniquenessIndex = uniquenessIndex;
+    }
+
+    /** Returns the zoom-layer slot index for this region (1..N). */
+    public int uniquenessIndex() {
+        return uniquenessIndex;
     }
 
     @Override

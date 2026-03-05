@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 ### Changed
+- Added a region-style biome injection architecture (`BiomeRegionManager`) and made the Overworld biome mixin consume the manager instead of direct injector logic.
+- Added datapack-driven biome climate overrides/additions under `data/*/worldgen/biome_climates/*.json` via a reload listener.
+- Added conflict-safe biome parameter overlay resolution to prevent unstable parameter point collisions.
+- Added staged surface rule registration (`namespace + stage + priority`) and switched worldgen rule composition to the new registry.
+- Added side-aware machine item handler wrapping so hoppers/pipes obey IO direction and per-slot insert/extract policies.
+- Enabled mana grinder item capability exposure and routed mana infuser item capability through the new side-aware wrapper.
+- Hardened mana grinder IO config deserialization to recover from legacy/invalid NBT states that could block conduit mana transfer.
+- Made mana grinder IO changes invalidate capabilities immediately and switched grinder "working" state to tick-actual progress (no mana now shows idle).
+- Added grinder working-state reconciliation so BlockState `working` and GUI sync state self-correct when they diverge.
+- Mana grinder IO updates now notify adjacent conduits to force immediate network rescan after IO face changes.
+- Changed mana generator default IO map from fully disabled to all-side outputs, and preserved defaults when legacy saves lack `IOMap`.
+- Reduced mana crafting table machine recipe cost for `mana_infuser_machine` from 9000 to 3500.
+- Fixed conduit idle throttling to use total network-visible mana (not local buffer only), preventing virtual-network transfer starvation to machines like mana grinder.
+- Reworked conduit circular-path guard to apply only to short-window conduit loops, auto-reset stale path history, and throttle loop-block debug logs.
 - Updated the custom blocks creative tab to auto-group machine blocks first by block type (no manual list maintenance).
 - Removed outdated owner multiplier GameTests after machine output decoupled from RPG attributes.
 - Moved GameTest classes to `src/test/java` and configured `runGameTestServer` to include `test` source set classes.

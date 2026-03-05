@@ -11,6 +11,10 @@ import com.github.nalamodikk.biome.region.SimpleBiomeRegion;
 import com.github.nalamodikk.biome.region.VanillaClimateBands;
 import com.github.nalamodikk.register.ModBlocks;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
 
 import java.util.List;
 
@@ -175,6 +179,17 @@ public class BiomeTerrainRegistration {
             .priority(12)
             .register();
         */
+    }
+
+    /**
+     * Initialise the Zoom-Layer region area when the Overworld is loaded.
+     * Registered with {@code NeoForge.EVENT_BUS} from {@link KoniavacraftMod}.
+     */
+    @SubscribeEvent
+    public static void onLevelLoad(LevelEvent.Load event) {
+        if (!(event.getLevel() instanceof ServerLevel level)) return;
+        if (level.dimension() != Level.OVERWORLD) return;
+        BiomeRegionManager.initForWorld(level.getSeed());
     }
 
     /**

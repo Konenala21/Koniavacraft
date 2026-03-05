@@ -73,6 +73,7 @@ public class KoniavacraftMod {
         modEventBus.addListener(this::commonSetup);
 
         NeoForge.EVENT_BUS.register(this);
+        NeoForge.EVENT_BUS.register(BiomeTerrainRegistration.class);
 
         // Register the item to a creative tab
 
