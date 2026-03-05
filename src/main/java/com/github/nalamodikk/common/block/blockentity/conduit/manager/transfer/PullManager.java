@@ -132,8 +132,12 @@ public class PullManager {
         // 🔄 執行拉取操作
         int extracted = neighborManaHandler.extractMana(actualAmount, ManaAction.EXECUTE);
         if (extracted > 0) {
-            // 🆕 使用導管的接收方法（會自動處理虛擬網路）
-            int received = conduit.receiveMana(extracted, ManaAction.EXECUTE);
+            // 🆕 使用帶方向資訊的接收方法，讓防回灌冷卻可生效
+            int received = conduit.receiveManaFromDirection(
+                    extracted,
+                    ManaAction.EXECUTE,
+                    directionFromConduit.getOpposite()
+            );
 
             if (received > 0) {
                 // 🔊 拉取成功的效果

@@ -49,7 +49,7 @@ public class ManaCraftingRecipeProvider {
                 .define('I', Items.IRON_BLOCK)
                 .define('C', ModItems.REFINED_MANA_DUST.get())
                 .define('D', Items.DIAMOND)
-                .manaCost(9000)
+                .manaCost(3500)
                 .save(output, "mana_infuser_machine");
 
 

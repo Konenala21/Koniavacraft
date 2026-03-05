@@ -1,6 +1,7 @@
 package com.github.nalamodikk.common.block.blockentity.mana_grinder;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.manabase.AbstractManaMachineEntityBlock;
 import com.github.nalamodikk.common.capability.mana.ManaAction;
 import com.github.nalamodikk.common.coreapi.recipe.ProcessingRecipe;
@@ -11,21 +12,23 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.items.ItemStackHandler;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
-import java.util.Optional;
 
 import com.github.nalamodikk.common.block.blockentity.mana_grinder.sync.ManaGrinderSyncHelper;
 
@@ -92,12 +95,12 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock {
      * 🔧 初始化 IO 配置
      */
     private void initializeIOConfig() {
-        directionConfig.put(Direction.UP, IOHandlerUtils.IOType.INPUT);
-        directionConfig.put(Direction.DOWN, IOHandlerUtils.IOType.OUTPUT);
-        directionConfig.put(Direction.NORTH, IOHandlerUtils.IOType.BOTH);
-        directionConfig.put(Direction.SOUTH, IOHandlerUtils.IOType.BOTH);
-        directionConfig.put(Direction.EAST, IOHandlerUtils.IOType.BOTH);
-        directionConfig.put(Direction.WEST, IOHandlerUtils.IOType.BOTH);
+        directionConfig.put(Direction.UP, getDefaultIOType(Direction.UP));
+        directionConfig.put(Direction.DOWN, getDefaultIOType(Direction.DOWN));
+        directionConfig.put(Direction.NORTH, getDefaultIOType(Direction.NORTH));
+        directionConfig.put(Direction.SOUTH, getDefaultIOType(Direction.SOUTH));
+        directionConfig.put(Direction.EAST, getDefaultIOType(Direction.EAST));
+        directionConfig.put(Direction.WEST, getDefaultIOType(Direction.WEST));
     }
 
     /**
@@ -128,12 +131,19 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock {
     }
 
     @Override
+    protected boolean canExternalInsertToSlot(int slot, ItemStack stack, @Nullable Direction side) {
+        return slot == INPUT_SLOT_1 || slot == INPUT_SLOT_2;
+    }
+
+    @Override
+    protected boolean canExternalExtractFromSlot(int slot, @Nullable Direction side) {
+        return slot >= OUTPUT_SLOT_1 && slot <= OUTPUT_SLOT_4;
+    }
+
+    @Override
     public void tickMachine() {
         if (level == null || level.isClientSide()) return;
         boolean previousComputedWorking = lastComputedWorking;
-
-        // 1. 同步數據到 Helper (由 Menu 讀取)
-        syncHelper.syncFrom(this);
 
         // 2. 處理輸入變化
         if (hasInputChanged) {
@@ -142,6 +152,7 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock {
         }
 
         // 3. 嘗試進行研磨
+        boolean progressedThisTick = false;
         if (currentRecipe != null && progress < maxProgress) {
             int progressStep = scaleProgressByOwner(1);
             int totalManaCost = currentRecipe.getManaCost();
@@ -151,12 +162,13 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock {
                     : totalManaCost;
             int costThisTick = Math.max(0, targetSpent - manaSpent);
 
-            if (manaStorage != null && manaStorage.getManaStored() >= costThisTick) {
+            if (manaStorage != null && canConsumeForThisTick(totalManaCost, costThisTick)) {
                 if (costThisTick > 0) {
                     manaStorage.extractMana(costThisTick, ManaAction.EXECUTE);
                     manaSpent += costThisTick;
                 }
                 progress = newProgress;
+                progressedThisTick = true;
                 setChanged();
             }
         }
@@ -166,15 +178,19 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock {
             finishGrinding();
         }
 
-        boolean isWorking = isWorkingState();
+        boolean isWorking = progressedThisTick;
         stateSyncTicker++;
         boolean workingChanged = previousComputedWorking != isWorking;
+        boolean blockStateMismatch = isBlockStateWorking() != isWorking;
         lastComputedWorking = isWorking;
 
-        if (workingChanged || stateSyncTicker >= STATE_SYNC_INTERVAL_TICKS) {
+        if (workingChanged || blockStateMismatch || stateSyncTicker >= STATE_SYNC_INTERVAL_TICKS) {
             updateBlockWorkingState(isWorking);
             stateSyncTicker = 0;
         }
+
+        // 5. 同步數據到 Helper (由 Menu 讀取)；放在最後確保本 tick 即時反映
+        syncHelper.syncFrom(this);
     }
 
     /**
@@ -315,7 +331,7 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock {
     @Override
     public void setIOConfig(Direction direction, IOHandlerUtils.IOType type) {
         directionConfig.put(direction, type);
-        setChanged();
+        onIOConfigChanged();
     }
 
     public void markInputChanged() {
@@ -324,7 +340,7 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock {
 
     @Override
     public IOHandlerUtils.IOType getIOConfig(Direction direction) {
-        return directionConfig.getOrDefault(direction, IOHandlerUtils.IOType.DISABLED);
+        return directionConfig.getOrDefault(direction, getDefaultIOType(direction));
     }
 
     @Override
@@ -335,8 +351,10 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock {
     @Override
     public void setIOMap(EnumMap<Direction, IOHandlerUtils.IOType> map) {
         directionConfig.clear();
-        directionConfig.putAll(map);
-        setChanged();
+        for (Direction dir : Direction.values()) {
+            directionConfig.put(dir, map.getOrDefault(dir, getDefaultIOType(dir)));
+        }
+        onIOConfigChanged();
     }
 
     // === 📦 Menu 支援 ===
@@ -394,18 +412,55 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock {
 
     private void deserializeIOMap(CompoundTag tag) {
         directionConfig.clear();
+        initializeIOConfig();
+
         for (Direction direction : Direction.values()) {
-            String typeName = tag.getString(direction.getName());
-            try {
-                directionConfig.put(direction, IOHandlerUtils.IOType.valueOf(typeName));
-            } catch (IllegalArgumentException e) {
-                directionConfig.put(direction, IOHandlerUtils.IOType.DISABLED);
+            String key = direction.getName();
+            if (!tag.contains(key)) {
+                continue;
             }
+
+            if (tag.contains(key, Tag.TAG_STRING)) {
+                String typeName = tag.getString(key);
+                try {
+                    directionConfig.put(direction, IOHandlerUtils.IOType.valueOf(typeName));
+                } catch (IllegalArgumentException e) {
+                    directionConfig.put(direction, getDefaultIOType(direction));
+                }
+                continue;
+            }
+
+            // 舊版相容：Boolean 配置（true=OUTPUT，false=維持預設）
+            if (tag.contains(key, Tag.TAG_BYTE)) {
+                boolean oldOutput = tag.getBoolean(key);
+                directionConfig.put(direction, oldOutput
+                        ? IOHandlerUtils.IOType.OUTPUT
+                        : getDefaultIOType(direction));
+            }
+        }
+
+        // 保底修復：避免歷史版本把整張配置降成全 DISABLED，導致導管完全無法互動
+        if (isAllSidesDisabled()) {
+            directionConfig.clear();
+            initializeIOConfig();
         }
     }
 
-    private boolean isWorkingState() {
-        return currentRecipe != null && progress > 0;
+    private IOHandlerUtils.IOType getDefaultIOType(Direction direction) {
+        return switch (direction) {
+            case UP -> IOHandlerUtils.IOType.INPUT;
+            case DOWN -> IOHandlerUtils.IOType.OUTPUT;
+            case NORTH, SOUTH, EAST, WEST -> IOHandlerUtils.IOType.BOTH;
+        };
+    }
+
+    private boolean isAllSidesDisabled() {
+        for (Direction direction : Direction.values()) {
+            if (directionConfig.getOrDefault(direction, IOHandlerUtils.IOType.DISABLED) != IOHandlerUtils.IOType.DISABLED) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void updateBlockWorkingState(boolean working) {
@@ -420,5 +475,49 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock {
             return;
         }
         level.setBlock(worldPosition, currentState.setValue(ManaGrinderBlock.WORKING, working), 3);
+    }
+
+    private boolean isBlockStateWorking() {
+        BlockState state = getBlockState();
+        return state.hasProperty(ManaGrinderBlock.WORKING) && state.getValue(ManaGrinderBlock.WORKING);
+    }
+
+    private boolean canConsumeForThisTick(int totalManaCost, int costThisTick) {
+        if (manaStorage == null) {
+            return false;
+        }
+        if (totalManaCost <= 0) {
+            return true;
+        }
+        if (costThisTick > 0) {
+            return manaStorage.getManaStored() >= costThisTick;
+        }
+        // 比例扣魔在某些 tick 可能為 0，這裡仍要求至少有 1 點魔力才可推進進度
+        return manaStorage.getManaStored() > 0;
+    }
+
+    private void onIOConfigChanged() {
+        setChanged();
+        if (level != null && !level.isClientSide()) {
+            level.invalidateCapabilities(worldPosition);
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            notifyNeighborsOfIOChange();
+        }
+    }
+
+    private void notifyNeighborsOfIOChange() {
+        if (level == null || level.isClientSide()) {
+            return;
+        }
+        BlockState currentState = level.getBlockState(worldPosition);
+        for (Direction direction : Direction.values()) {
+            BlockPos neighborPos = worldPosition.relative(direction);
+            level.neighborChanged(neighborPos, currentState.getBlock(), worldPosition);
+
+            BlockEntity neighborBE = level.getBlockEntity(neighborPos);
+            if (neighborBE instanceof ArcaneConduitBlockEntity conduit) {
+                conduit.onNeighborChanged();
+            }
+        }
     }
 }

@@ -4,6 +4,7 @@ import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGenerat
 import com.github.nalamodikk.common.utils.nbt.NbtUtils;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 
 public class ManaGeneratorNbtManager {
@@ -59,8 +60,10 @@ public class ManaGeneratorNbtManager {
         if (tag.contains("UpgradeInventory")) {
             entity.getUpgradeInventory().deserializeNBT(provider, tag.getCompound("UpgradeInventory"));
         }
-        // 載入
-        entity.setIOMap(NbtUtils.readEnumIOTypeMap(tag, "IOMap"));
+        // 載入（舊存檔沒有 IOMap 時，保留機器預設值，不覆蓋為全禁用）
+        if (tag.contains("IOMap", Tag.TAG_COMPOUND)) {
+            entity.setIOMap(NbtUtils.readEnumIOTypeMap(tag, "IOMap"));
+        }
         entity.forceRefreshAnimationFromNbt();
     }
 }

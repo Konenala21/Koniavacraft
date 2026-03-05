@@ -4,8 +4,10 @@ import com.github.nalamodikk.common.sync.annotation.Sync;
 import com.github.nalamodikk.common.capability.ManaStorage;
 import com.github.nalamodikk.common.compat.energy.ModNeoNalaEnergyStorage;
 import com.github.nalamodikk.common.coreapi.block.IConfigurableBlock;
+import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -20,6 +22,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.fluids.capability.templates.FluidTank;
+import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -121,6 +124,15 @@ public abstract class AbstractManaMachineEntityBlock extends BlockEntity impleme
     public @Nullable ManaStorage getManaStorage() { return manaStorage; }
     public @Nullable ModNeoNalaEnergyStorage getEnergyStorage() { return energyStorage; }
     public @Nullable ItemStackHandler getItemHandler() { return itemHandler; }
+    public @Nullable IItemHandler getItemHandlerForSide(@Nullable Direction side) {
+        if (itemHandler == null) {
+            return null;
+        }
+        if (side != null && getIOConfig(side) == IOHandlerUtils.IOType.DISABLED) {
+            return null;
+        }
+        return new MachineSidedItemHandler(this, side);
+    }
     public @Nullable FluidTank getFluidTank() { return fluidTank; }
     public int getMaxEnergyCapacity() {return maxEnergy;}
     public void setOwnerId(@Nullable UUID ownerId) { this.ownerId = ownerId; }
@@ -142,6 +154,30 @@ public abstract class AbstractManaMachineEntityBlock extends BlockEntity impleme
             return 0;
         }
         return Math.max(1, Math.round(base * getOwnerGenerationMultiplier()));
+    }
+
+    boolean canReceiveItemsFromSide(@Nullable Direction side) {
+        if (side == null) {
+            return true;
+        }
+        IOHandlerUtils.IOType type = getIOConfig(side);
+        return type == IOHandlerUtils.IOType.INPUT || type == IOHandlerUtils.IOType.BOTH;
+    }
+
+    boolean canOutputItemsToSide(@Nullable Direction side) {
+        if (side == null) {
+            return true;
+        }
+        IOHandlerUtils.IOType type = getIOConfig(side);
+        return type == IOHandlerUtils.IOType.OUTPUT || type == IOHandlerUtils.IOType.BOTH;
+    }
+
+    protected boolean canExternalInsertToSlot(int slot, ItemStack stack, @Nullable Direction side) {
+        return true;
+    }
+
+    protected boolean canExternalExtractFromSlot(int slot, @Nullable Direction side) {
+        return true;
     }
 
     /**

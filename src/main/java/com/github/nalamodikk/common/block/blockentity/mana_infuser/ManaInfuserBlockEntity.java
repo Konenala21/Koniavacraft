@@ -91,6 +91,16 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock {
     }
 
     @Override
+    protected boolean canExternalInsertToSlot(int slot, ItemStack stack, @Nullable Direction side) {
+        return slot == INPUT_SLOT;
+    }
+
+    @Override
+    protected boolean canExternalExtractFromSlot(int slot, @Nullable Direction side) {
+        return slot == OUTPUT_SLOT;
+    }
+
+    @Override
     public void tickMachine() {
         if (level == null || level.isClientSide()) return;
 

@@ -95,9 +95,7 @@ import java.util.Optional;
             if (this.level != null) {
                 this.access = ContainerLevelAccess.create(this.level, this.worldPosition);
             }
-            for (Direction dir : Direction.values()) {
-                ioMap.put(dir, IOHandlerUtils.IOType.DISABLED); // 或從 NBT、DataComponent 還原
-            }
+            initializeDefaultIOMap();
 
             // 🔧 設置升級處理器到燃料邏輯
             fuelLogic.setUpgradeHandler(upgradeHandler);
@@ -444,7 +442,7 @@ import java.util.Optional;
 
         @Override
         public IOHandlerUtils.IOType getIOConfig(Direction direction) {
-            return ioMap.getOrDefault(direction, IOHandlerUtils.IOType.DISABLED);
+            return ioMap.getOrDefault(direction, getDefaultIOType(direction));
         }
 
         @Override
@@ -456,7 +454,7 @@ import java.util.Optional;
         public void setIOMap(EnumMap<Direction, IOHandlerUtils.IOType> map) {
             boolean changed = false;
             for (Direction dir : Direction.values()) {
-                IOHandlerUtils.IOType newType = map.getOrDefault(dir, IOHandlerUtils.IOType.DISABLED);
+                IOHandlerUtils.IOType newType = map.getOrDefault(dir, getDefaultIOType(dir));
                 if (!ioMap.get(dir).equals(newType)) {
                     ioMap.put(dir, newType);
                     changed = true;
@@ -474,6 +472,16 @@ import java.util.Optional;
                     notifyNeighborsOfIOChange();
                 }
             }
+        }
+
+        private void initializeDefaultIOMap() {
+            for (Direction dir : Direction.values()) {
+                ioMap.put(dir, getDefaultIOType(dir));
+            }
+        }
+
+        private IOHandlerUtils.IOType getDefaultIOType(Direction direction) {
+            return IOHandlerUtils.IOType.OUTPUT;
         }
 
         // ✅ 【新增方法】：通知所有鄰居IO配置已改變

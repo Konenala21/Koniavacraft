@@ -33,6 +33,11 @@ public class TransferManager {
     @Deprecated
     private static final int LEGACY_TRANSFER_RATE = ConduitTier.BASIC.getTransferRate();
     private static final int MAX_TRANSFERS_PER_TICK = 2;
+    private static final int BACKFLOW_COOLDOWN_TICKS = 100;
+    private static final int CIRCULAR_GUARD_TICK_WINDOW = 3;
+    private static final int CIRCULAR_PATH_RESET_TICKS = 20;
+    private static final int CIRCULAR_LOG_INTERVAL_TICKS = 100;
+    private static final int MAX_REENTRANT_DEPTH = 1;
 
     // === 組件引用 ===
     private final ArcaneConduitBlockEntity conduit;
@@ -46,11 +51,16 @@ public class TransferManager {
     private long lastTransferTick = 0;
     private final Set<Direction> busyDirections = EnumSet.noneOf(Direction.class);
     private int transfersThisTick = 0;
+    private final EnumMap<Direction, Long> recentReceiveTicks = new EnumMap<>(Direction.class);
 
     // === 🆕 智能路由狀態 ===
     // 記錄最近的傳輸路徑，防止循環
     private final java.util.Deque<Direction> recentTransferPath = new java.util.ArrayDeque<>(5);
     private static final int MAX_PATH_HISTORY = 5; // 記錄最近5次傳輸
+    private long lastCircularLogTick = Long.MIN_VALUE;
+    private int suppressedCircularBlocks = 0;
+    private int transferDepth = 0;
+    private int receiveDepth = 0;
 
     // === 建構子 ===
     public TransferManager(ArcaneConduitBlockEntity conduit,
@@ -69,43 +79,56 @@ public class TransferManager {
      * 處理魔力流動
      */
     public void processManaFlow() {
-        if (conduit.getManaStored() <= 0) return;
-        if (conduit.getLevel() == null) return;
-        if (transfersThisTick >= MAX_TRANSFERS_PER_TICK) return;
+        if (pushTransferGuard()) return;
+        try {
+            if (conduit.getManaStored() <= 0) return;
+            if (conduit.getLevel() == null) return;
+            if (transfersThisTick >= MAX_TRANSFERS_PER_TICK) return;
 
-        long currentTick = conduit.getLevel().getGameTime();
+            long currentTick = conduit.getLevel().getGameTime();
 
-        // 防循環：每tick清除忙碌標記
-        if (lastTransferTick != currentTick) {
-            busyDirections.clear();
-            transfersThisTick = 0;
+            // 防循環：每tick清除忙碌標記
+            if (lastTransferTick != currentTick) {
+                busyDirections.clear();
+                transfersThisTick = 0;
+            }
+
+            // 使用負載平衡算法找到最佳目標
+            Direction bestTarget = findBestTarget(currentTick);
+            if (bestTarget == null) return;
+
+            // 防循環檢查
+            if (shouldBlockTransfer(bestTarget, currentTick)) {
+                return;
+            }
+
+            // 執行傳輸
+            executeTransfer(bestTarget, currentTick);
+        } finally {
+            popTransferGuard();
         }
-
-        // 使用負載平衡算法找到最佳目標
-        Direction bestTarget = findBestTarget(currentTick);
-        if (bestTarget == null) return;
-
-        // 防循環檢查
-        if (shouldBlockTransfer(bestTarget, currentTick)) {
-            return;
-        }
-
-        // 執行傳輸
-        executeTransfer(bestTarget, currentTick);
     }
 
     /**
      * 從指定方向接收魔力
      */
     public int receiveManaFromDirection(int maxReceive, ManaAction action, Direction fromDirection) {
-        int received = conduit.receiveMana(maxReceive, action);
+        if (pushReceiveGuard()) return 0;
+        try {
+            int received = conduit.receiveMana(maxReceive, action);
 
-        if (action.execute() && received > 0) {
-            lastReceiveDirection = fromDirection.getOpposite();
-            statsManager.recordActivity();
+            if (action.execute() && received > 0) {
+                long currentTick = getCurrentGameTick();
+                Direction sourceDirection = fromDirection.getOpposite();
+                lastReceiveDirection = sourceDirection;
+                recentReceiveTicks.put(sourceDirection, currentTick);
+                statsManager.recordActivity();
+            }
+
+            return received;
+        } finally {
+            popReceiveGuard();
         }
-
-        return received;
     }
 
     // === 目標選擇算法 ===
@@ -133,14 +156,18 @@ public class TransferManager {
      * 🆕 檢查是否應該阻止傳輸（強化版）
      */
     private boolean shouldBlockTransfer(Direction targetDir, long currentTick) {
+        if (currentTick - lastTransferTick > CIRCULAR_PATH_RESET_TICKS) {
+            recentTransferPath.clear();
+        }
+        pruneReceiveCooldowns(currentTick);
+
         // 1. 本tick已經傳輸過這個方向
         if (busyDirections.contains(targetDir)) return true;
 
-        // 2. 🆕 強化的防回流：不要立即傳回給剛給我魔力的方向
-        // 增加冷卻時間到3 tick，避免短期內來回傳輸
-        if (lastReceiveDirection != null &&
-                targetDir == lastReceiveDirection &&
-                currentTick - lastTransferTick <= 3) {
+        // 2. Pipez 風格防回灌：收到某方向魔力後，5秒內不往該方向回送
+        Long lastReceiveTick = recentReceiveTicks.get(targetDir);
+        if (lastReceiveTick != null &&
+                currentTick - lastReceiveTick <= BACKFLOW_COOLDOWN_TICKS) {
             return true;
         }
 
@@ -149,9 +176,19 @@ public class TransferManager {
             return true;
         }
 
-        // 4. 🆕 防止循環路徑：檢查是否在最近的傳輸路徑中頻繁出現
-        if (isCircularPath(targetDir)) {
-            LOGGER.debug("Blocked circular path to {}", targetDir);
+        // 4. 🆕 防止循環路徑：只對導管目標啟用，並且限制在短時間連續傳輸窗口內
+        CacheManager.TargetInfo target = networkManager.getTargetInfo(targetDir);
+        if (target != null
+                && target.isConduit
+                && currentTick - lastTransferTick <= CIRCULAR_GUARD_TICK_WINDOW
+                && isCircularPath(targetDir)) {
+            suppressedCircularBlocks++;
+            if (currentTick - lastCircularLogTick >= CIRCULAR_LOG_INTERVAL_TICKS) {
+                LOGGER.debug("Blocked short-loop conduit path to {} (blocked {} times in last {} ticks)",
+                        targetDir, suppressedCircularBlocks, CIRCULAR_LOG_INTERVAL_TICKS);
+                lastCircularLogTick = currentTick;
+                suppressedCircularBlocks = 0;
+            }
             return true;
         }
 
@@ -206,13 +243,32 @@ public class TransferManager {
         // 執行傳輸
         BlockPos neighborPos = conduit.getBlockPos().relative(targetDir);
         IUnifiedManaHandler handler = CapabilityUtils.getNeighborMana(conduit.getLevel(), neighborPos, targetDir);
+        ArcaneConduitBlockEntity neighborConduit = null;
+        if (target.isConduit) {
+            BlockEntity neighborBE = conduit.getLevel().getBlockEntity(neighborPos);
+            if (neighborBE instanceof ArcaneConduitBlockEntity conduitBlockEntity) {
+                neighborConduit = conduitBlockEntity;
+            }
+        }
 
         if (handler != null) {
             // 模擬傳輸
-            int simulated = handler.receiveMana(transferAmount, ManaAction.SIMULATE);
+            int simulated;
+            if (neighborConduit != null) {
+                simulated = neighborConduit.receiveManaFromDirection(
+                        transferAmount, ManaAction.SIMULATE, targetDir.getOpposite());
+            } else {
+                simulated = handler.receiveMana(transferAmount, ManaAction.SIMULATE);
+            }
             if (simulated > 0) {
                 // 執行實際傳輸
-                int actualReceived = handler.receiveMana(simulated, ManaAction.EXECUTE);
+                int actualReceived;
+                if (neighborConduit != null) {
+                    actualReceived = neighborConduit.receiveManaFromDirection(
+                            simulated, ManaAction.EXECUTE, targetDir.getOpposite());
+                } else {
+                    actualReceived = handler.receiveMana(simulated, ManaAction.EXECUTE);
+                }
                 conduit.extractMana(actualReceived, ManaAction.EXECUTE);
 
 //                LOGGER.debug("Transfer executed: {} mana from {} to {} (direction: {})",
@@ -371,6 +427,10 @@ public class TransferManager {
         busyDirections.clear();
         transfersThisTick = 0;
         recentTransferPath.clear(); // 🆕 清除路徑歷史
+        recentReceiveTicks.clear();
+        transferDepth = 0;
+        receiveDepth = 0;
+        suppressedCircularBlocks = 0;
     }
 
     // === Getter 方法 ===
@@ -451,6 +511,42 @@ public class TransferManager {
         }
 
         return false;
+    }
+
+    private void pruneReceiveCooldowns(long currentTick) {
+        recentReceiveTicks.entrySet().removeIf(entry -> currentTick - entry.getValue() > BACKFLOW_COOLDOWN_TICKS);
+    }
+
+    private long getCurrentGameTick() {
+        return conduit.getLevel() != null ? conduit.getLevel().getGameTime() : 0L;
+    }
+
+    private boolean pushTransferGuard() {
+        if (transferDepth >= MAX_REENTRANT_DEPTH) {
+            return true;
+        }
+        transferDepth++;
+        return false;
+    }
+
+    private void popTransferGuard() {
+        if (transferDepth > 0) {
+            transferDepth--;
+        }
+    }
+
+    private boolean pushReceiveGuard() {
+        if (receiveDepth >= MAX_REENTRANT_DEPTH) {
+            return true;
+        }
+        receiveDepth++;
+        return false;
+    }
+
+    private void popReceiveGuard() {
+        if (receiveDepth > 0) {
+            receiveDepth--;
+        }
     }
 }
 

@@ -131,19 +131,14 @@ public class ModCapabilities {
                     return blockEntity.getManaStorage();
                 });
 
-        // 🆕 物品處理能力 - 根據 IO 配置決定功能
+        // 🆕 物品處理能力 - 使用機器基底側向包裝（漏斗/管線）
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.MANA_INFUSER.get(),
-                (blockEntity, side) -> {
-                    if (side != null && blockEntity instanceof IConfigurableBlock configurable) {
-                        IOHandlerUtils.IOType ioType = configurable.getIOConfig(side);
-                        if (ioType == IOHandlerUtils.IOType.DISABLED) {
-                            return null; // 該面禁用，不提供能力
-                        }
-                    }
-                    return blockEntity.getItemHandler();
-                });
+                (blockEntity, side) -> blockEntity.getItemHandlerForSide(side));
+
+        // 🆕 粉碎機物品能力（支援漏斗依 IO 面向與槽位抽/插）
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.MANA_GRINDER_BE.get(),
+                (blockEntity, side) -> blockEntity.getItemHandlerForSide(side));
 
     }
 
 }
-
