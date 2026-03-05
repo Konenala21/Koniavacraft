@@ -3,7 +3,16 @@ package com.github.nalamodikk.biome;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.biome.lib.BiomeTerrainLibAPI;
+import com.github.nalamodikk.biome.lib.SurfaceRuleRegistry;
+import com.github.nalamodikk.biome.region.BiomeInjectionEntry;
+import com.github.nalamodikk.biome.region.BiomeRegionManager;
+import com.github.nalamodikk.biome.region.ParameterPointListBuilder;
+import com.github.nalamodikk.biome.region.SimpleBiomeRegion;
+import com.github.nalamodikk.biome.region.VanillaClimateBands;
 import com.github.nalamodikk.register.ModBlocks;
+import net.minecraft.resources.ResourceLocation;
+
+import java.util.List;
 
 /**
  * 🌍 Koniavacraft 生物群系地形註冊
@@ -24,6 +33,13 @@ public class BiomeTerrainRegistration {
 
             // 🚀 初始化庫系統
             BiomeTerrainLibAPI.initialize();
+            SurfaceRuleRegistry.register(
+                    SurfaceRuleRegistry.RuleCategory.OVERWORLD,
+                    SurfaceRuleRegistry.RuleStage.BEFORE_VANILLA,
+                    KoniavacraftMod.MOD_ID,
+                    100,
+                    BiomeTerrainLibAPI::getAllRules
+            );
 
             KoniavacraftMod.LOGGER.info("✅ Koniavacraft 生物群系地形註冊完成！");
 
@@ -49,6 +65,7 @@ public class BiomeTerrainRegistration {
      * 🌱 註冊魔力草原地形
      */
     private static void registerManaPlains() {
+        // 地表規則：mana_grass_block / mana_soil / deep_mana_soil
         BiomeTerrainLibAPI.addBiome(ModBiomes.MANA_PLAINS)
                 .surface(() -> ModBlocks.MANA_GRASS_BLOCK.get())
                 .soil(() -> ModBlocks.MANA_SOIL.get())
@@ -57,8 +74,31 @@ public class BiomeTerrainRegistration {
                 .priority(10)
                 .register();
 
+        // 氣候注入：用 ParameterPointListBuilder 精確定義 climate 空間
+        // （JSON datapack 的 mana_plains.json override 可覆蓋個別 entry 的 weight/priority，
+        //  但程式碼定義的多 entry 架構由此建立）
+        SimpleBiomeRegion defaultRegion = BiomeRegionManager.getOrCreateRegion(
+                ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "default_overworld"), 10);
+
+        List<BiomeInjectionEntry> entries = BiomeInjectionEntry.fromBuilder(
+                ModBiomes.MANA_PLAINS,
+                ParameterPointListBuilder.create()
+                        .temperature(VanillaClimateBands.Temperature.NEUTRAL, VanillaClimateBands.Temperature.WARM)
+                        .humidity(VanillaClimateBands.Humidity.WET)
+                        .continentalness(VanillaClimateBands.Continentalness.NEAR_INLAND)
+                        .continentalness(VanillaClimateBands.Continentalness.MID_INLAND)
+                        .erosion(VanillaClimateBands.Erosion.EROSION_3)
+                        .erosion(VanillaClimateBands.Erosion.EROSION_4)
+                        .depth(VanillaClimateBands.Depth.SURFACE)
+                        .weirdness(VanillaClimateBands.Weirdness.VALLEY)
+                        .weirdness(VanillaClimateBands.Weirdness.MID_SLICE_NORMAL_ASCENDING)
+                        .weirdness(VanillaClimateBands.Weirdness.MID_SLICE_NORMAL_DESCENDING),
+                7, "魔力草原（精確 climate 定義）", 50, KoniavacraftMod.MOD_ID
+        );
+        entries.forEach(defaultRegion::registerEntry);
+
         if (KoniavacraftMod.IS_DEV) {
-            KoniavacraftMod.LOGGER.debug("🌱 已註冊魔力草原地形");
+            KoniavacraftMod.LOGGER.debug("🌱 已註冊魔力草原地形（{} 個 climate points）", entries.size());
         }
     }
 

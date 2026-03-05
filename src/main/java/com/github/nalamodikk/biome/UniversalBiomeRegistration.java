@@ -31,23 +31,8 @@ public class UniversalBiomeRegistration {
         KoniavacraftMod.LOGGER.info("📋 註冊模組生物群落...");
 
 
-        // 🌱 魔力草原 - 使用地面友好的配置
-        UniversalBiomeInjector.registerBiome(
-                ModBiomes.MANA_PLAINS,
-                // 🔧 不要用 TEMPERATE_PLAINS，手動配置地面高度
-                UniversalBiomeInjector.ClimateConfig.builder()
-                        .temperature(0.1F, 0.8F)     // 溫帶
-                        .humidity(0.2F, 0.7F)        // 中等濕度
-                        .continentalness(-0.19F, 0.4F) // 內陸
-                        .erosion(-0.22F, 0.55F)      // 低到中等侵蝕
-                        .depth(0.0F, 0.0F)           // 🌟 關鍵：地面到小丘陵高度
-                        .weirdness(-0.56F, 0.56F)    // 正常怪異度
-                        .build(),
-                7, // 較高權重，容易找到
-                "充滿魔力能量的神秘草原"
-        );
-
-        KoniavacraftMod.LOGGER.info("📝 生物群落註冊完成！");
+        // 🌱 魔力草原的氣候注入已移至 BiomeTerrainRegistration.registerManaPlains()
+        // 使用 ParameterPointListBuilder 精確定義，避免與原版 biome 過度重疊
 
         // 🌲 未來的生物群落示例：
 

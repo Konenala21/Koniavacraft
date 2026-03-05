@@ -140,14 +140,6 @@ public class UniversalTerrainEcosystemLibrary {
         }
 
         try {
-            // 檢查生物群系是否存在
-            if (!doesBiomeExist(biome)) {
-                if (KoniavacraftMod.IS_DEV) {
-                    KoniavacraftMod.LOGGER.debug("⚠️ 生物群系不存在，跳過: {}", biome.location());
-                }
-                return null;
-            }
-
             // 檢查所需方塊是否存在
             if (!config.areBlocksValid()) {
                 if (KoniavacraftMod.IS_DEV) {
@@ -156,7 +148,7 @@ public class UniversalTerrainEcosystemLibrary {
                 return null;
             }
 
-            // 創建規則
+            // 創建規則（SurfaceRules.isBiome 在執行時若 biome 不在 registry 中，條件永遠為 false，不會 crash）
             SurfaceRules.RuleSource rule = createEcosystemRule(biome, config);
             if (rule != null) {
                 RULE_CACHE.put(biome, rule);
@@ -220,33 +212,15 @@ public class UniversalTerrainEcosystemLibrary {
      * 🌿 創建地表方塊規則
      */
     private static SurfaceRules.RuleSource createSurfaceBlockRule(EcosystemConfig config) {
-        List<SurfaceRules.ConditionSource> conditions = new ArrayList<>();
-
-        // 🌊 水規則處理
-        switch (config.waterRules()) {
-            case AVOID_WATER:
-                conditions.add(SurfaceRules.waterBlockCheck(-1, 0)); // 上方沒有水
-                break;
-            case ALLOW_UNDERWATER:
-                // 不添加水檢查條件
-                break;
-            case ONLY_NEAR_WATER:
-                conditions.add(SurfaceRules.not(SurfaceRules.waterBlockCheck(-3, 0))); // 3格內有水
-                break;
-        }
-
         SurfaceRules.RuleSource blockRule = makeStateRule(config.surfaceBlock());
-
-        // 組合所有條件
-        if (conditions.isEmpty()) {
-            return blockRule;
-        } else {
-            SurfaceRules.ConditionSource combinedCondition = conditions.get(0);
-            for (int i = 1; i < conditions.size(); i++) {
-                // 這裡需要實現條件組合邏輯，目前簡化為第一個條件
-            }
-            return SurfaceRules.ifTrue(combinedCondition, blockRule);
-        }
+        return switch (config.waterRules()) {
+            // 上方沒有水才放地表方塊（waterBlockCheck(-1,0) 為 true 表示 Y-1 無水）
+            case AVOID_WATER -> SurfaceRules.ifTrue(SurfaceRules.waterBlockCheck(-1, 0), blockRule);
+            // 只在水源附近放（not(waterBlockCheck(-3,0)) 表示 3 格內有水）
+            case ONLY_NEAR_WATER -> SurfaceRules.ifTrue(SurfaceRules.not(SurfaceRules.waterBlockCheck(-3, 0)), blockRule);
+            // 水中、岩漿替換等情境不加條件
+            default -> blockRule;
+        };
     }
 
     /**
@@ -312,21 +286,6 @@ public class UniversalTerrainEcosystemLibrary {
             return combinedRule;
         }
     }
-    /**
-     * 🔍 檢查生物群系是否存在
-     */
-    private static boolean doesBiomeExist(ResourceKey<Biome> biome) {
-        try {
-            SurfaceRules.RuleSource testRule = SurfaceRules.ifTrue(
-                    SurfaceRules.isBiome(biome),
-                    SurfaceRules.state(net.minecraft.world.level.block.Blocks.STONE.defaultBlockState())
-            );
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
     /**
      * 🛠️ 工具方法：創建方塊狀態規則
      */

@@ -1,8 +1,13 @@
 package com.github.nalamodikk.biome;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.biome.region.BiomeClimateDefinition;
+import com.github.nalamodikk.biome.region.BiomeInjectionEntry;
+import com.github.nalamodikk.biome.region.BiomeRegionManager;
+import com.github.nalamodikk.biome.region.SimpleBiomeRegion;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Climate;
 
@@ -11,12 +16,19 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * 通用生物群落注入器
- * 支持注册多個生物群落和靈活的氣候配置
+ * 通用生物群落注入器（相容層）
+ * 目前委派到 BiomeRegionManager，保留舊 API 以避免破壞既有呼叫。
  */
 public class UniversalBiomeInjector {
 
-    // 存储所有需要注入的生物群落
+    private static final ResourceLocation DEFAULT_REGION_ID =
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "default_overworld");
+    private static final int DEFAULT_REGION_WEIGHT = 10;
+
+    private static final SimpleBiomeRegion DEFAULT_REGION =
+            BiomeRegionManager.getOrCreateRegion(DEFAULT_REGION_ID, DEFAULT_REGION_WEIGHT);
+
+    // 保留舊有統計用途
     private static final List<BiomeEntry> CUSTOM_BIOMES = new ArrayList<>();
 
     /**
@@ -25,14 +37,16 @@ public class UniversalBiomeInjector {
     public static class BiomeEntry {
         public final ResourceKey<Biome> biome;
         public final ClimateConfig climate;
-        public final int weight; // 生成權重 (1-10)
+        public final int weight;
         public final String description;
+        public final int priority;
 
-        public BiomeEntry(ResourceKey<Biome> biome, ClimateConfig climate, int weight, String description) {
+        public BiomeEntry(ResourceKey<Biome> biome, ClimateConfig climate, int weight, String description, int priority) {
             this.biome = biome;
             this.climate = climate;
-            this.weight = Math.max(1, Math.min(10, weight)); // 限制在 1-10 之間
+            this.weight = Math.max(1, Math.min(20, weight));
             this.description = description;
+            this.priority = priority;
         }
     }
 
@@ -62,6 +76,30 @@ public class UniversalBiomeInjector {
 
         public static Builder builder() {
             return new Builder();
+        }
+
+        public BiomeClimateDefinition toDefinition() {
+            return BiomeClimateDefinition.builder()
+                    .temperature(Climate.unquantizeCoord(temperature.min()), Climate.unquantizeCoord(temperature.max()))
+                    .humidity(Climate.unquantizeCoord(humidity.min()), Climate.unquantizeCoord(humidity.max()))
+                    .continentalness(Climate.unquantizeCoord(continentalness.min()), Climate.unquantizeCoord(continentalness.max()))
+                    .erosion(Climate.unquantizeCoord(erosion.min()), Climate.unquantizeCoord(erosion.max()))
+                    .depth(Climate.unquantizeCoord(depth.min()), Climate.unquantizeCoord(depth.max()))
+                    .weirdness(Climate.unquantizeCoord(weirdness.min()), Climate.unquantizeCoord(weirdness.max()))
+                    .offset(offset)
+                    .build();
+        }
+
+        public static ClimateConfig fromDefinition(BiomeClimateDefinition definition) {
+            return ClimateConfig.builder()
+                    .temperature(Climate.unquantizeCoord(definition.temperature().min()), Climate.unquantizeCoord(definition.temperature().max()))
+                    .humidity(Climate.unquantizeCoord(definition.humidity().min()), Climate.unquantizeCoord(definition.humidity().max()))
+                    .continentalness(Climate.unquantizeCoord(definition.continentalness().min()), Climate.unquantizeCoord(definition.continentalness().max()))
+                    .erosion(Climate.unquantizeCoord(definition.erosion().min()), Climate.unquantizeCoord(definition.erosion().max()))
+                    .depth(Climate.unquantizeCoord(definition.depth().min()), Climate.unquantizeCoord(definition.depth().max()))
+                    .weirdness(Climate.unquantizeCoord(definition.weirdness().min()), Climate.unquantizeCoord(definition.weirdness().max()))
+                    .offset((float) definition.offset() / 1000.0F)
+                    .build();
         }
 
         public static class Builder {
@@ -118,17 +156,15 @@ public class UniversalBiomeInjector {
      * 預設氣候配置
      */
     public static class ClimatePresets {
-        // 溫帶草原 (類似原版平原)
         public static final ClimateConfig TEMPERATE_PLAINS = ClimateConfig.builder()
                 .temperature(0.6F, 0.8F)
                 .humidity(0.4F, 0.7F)
                 .continentalness(-0.1F, 0.3F)
                 .erosion(-0.2F, 0.2F)
-                .depth(0.0F, 0.4F)           // 🌟 關鍵：地面到小丘陵高度
+                .depth(0.0F, 0.4F)
                 .weirdness(-0.5F, 0.5F)
                 .build();
 
-        // 神秘森林
         public static final ClimateConfig MYSTICAL_FOREST = ClimateConfig.builder()
                 .temperature(0.4F, 0.7F)
                 .humidity(0.6F, 1.0F)
@@ -138,7 +174,6 @@ public class UniversalBiomeInjector {
                 .weirdness(0.3F, 1.0F)
                 .build();
 
-        // 寒冷高原
         public static final ClimateConfig COLD_HIGHLANDS = ClimateConfig.builder()
                 .temperature(-0.5F, 0.2F)
                 .humidity(0.2F, 0.6F)
@@ -148,7 +183,6 @@ public class UniversalBiomeInjector {
                 .weirdness(-0.3F, 0.3F)
                 .build();
 
-        // 沙漠綠洲
         public static final ClimateConfig DESERT_OASIS = ClimateConfig.builder()
                 .temperature(0.8F, 1.2F)
                 .humidity(0.1F, 0.4F)
@@ -159,83 +193,53 @@ public class UniversalBiomeInjector {
                 .build();
     }
 
-    /**
-     * 注册生物群落
-     */
     public static void registerBiome(ResourceKey<Biome> biome, ClimateConfig climate, int weight, String description) {
-        CUSTOM_BIOMES.add(new BiomeEntry(biome, climate, weight, description));
-        KoniavacraftMod.LOGGER.info("📝 註冊生物群落: {} (權重: {}) - {}",
-                biome.location(), weight, description);
+        registerBiome(biome, climate, weight, description, 0);
     }
 
-    /**
-     * 注册生物群落 (簡化版，使用預設權重)
-     */
     public static void registerBiome(ResourceKey<Biome> biome, ClimateConfig climate, String description) {
-        registerBiome(biome, climate, 5, description);
+        registerBiome(biome, climate, 5, description, 0);
     }
 
-    /**
-     * 注入所有已註冊的生物群落
-     */
+    public static void registerBiome(ResourceKey<Biome> biome, ClimateConfig climate, int weight, String description, int priority) {
+        registerBiomeToRegion(DEFAULT_REGION_ID, DEFAULT_REGION_WEIGHT, biome, climate, weight, description, priority);
+    }
+
+    public static void registerBiomeToRegion(ResourceLocation regionId, int regionWeight, ResourceKey<Biome> biome,
+                                             ClimateConfig climate, int weight, String description, int priority) {
+        BiomeEntry entry = new BiomeEntry(biome, climate, weight, description, priority);
+        CUSTOM_BIOMES.add(entry);
+
+        SimpleBiomeRegion region = BiomeRegionManager.getOrCreateRegion(regionId, regionWeight);
+        BiomeInjectionEntry injectedEntry = new BiomeInjectionEntry(
+                biome,
+                climate.toDefinition(),
+                weight,
+                description,
+                priority,
+                regionId.getNamespace()
+        );
+        region.registerEntry(injectedEntry);
+
+        KoniavacraftMod.LOGGER.info("註冊生物群落: {} (region: {}, 權重: {}, 優先級: {}) - {}",
+                biome.location(), regionId, weight, priority, description);
+    }
+
     public static void injectBiomes(Consumer<Pair<Climate.ParameterPoint, ResourceKey<Biome>>> consumer) {
-        KoniavacraftMod.LOGGER.info("🌍 UniversalBiomeInjector: 開始注入 {} 個自訂生物群落...", CUSTOM_BIOMES.size());
-
-        int successCount = 0;
-        for (BiomeEntry entry : CUSTOM_BIOMES) {
-            try {
-                injectSingleBiome(consumer, entry);
-                successCount++;
-                KoniavacraftMod.LOGGER.debug("✅ 成功注入: {}", entry.biome.location());
-            } catch (Exception e) {
-                KoniavacraftMod.LOGGER.error("❌ 注入失敗: {} - {}", entry.biome.location(), e.getMessage());
-            }
-        }
-
-        KoniavacraftMod.LOGGER.info("🎉 生物群落注入完成！成功: {}/{}", successCount, CUSTOM_BIOMES.size());
+        KoniavacraftMod.LOGGER.info("UniversalBiomeInjector: 開始注入 {} 個自訂生物群落...", CUSTOM_BIOMES.size());
+        int injectedCount = BiomeRegionManager.injectBiomes(consumer);
+        KoniavacraftMod.LOGGER.info("生物群落注入完成，共輸出 {} 個 climate points", injectedCount);
     }
 
-    /**
-     * 注入單個生物群落
-     */
-    private static void injectSingleBiome(Consumer<Pair<Climate.ParameterPoint, ResourceKey<Biome>>> consumer, BiomeEntry entry) {
-        ClimateConfig climate = entry.climate;
-
-        // 根據權重決定注入次數 (權重越高，出現機會越大)
-        int injectionCount = Math.max(1, entry.weight / 3);
-
-        for (int i = 0; i < injectionCount; i++) {
-            // 為每次注入添加小幅隨機偏移，增加自然感
-            long randomOffset = (long)((i * 0.1F) - 0.05F) * 1000L; // 轉換為 long
-
-            // 修正：使用正確的 ParameterPoint 構造方法，最後一個參數是 long
-            Climate.ParameterPoint point = new Climate.ParameterPoint(
-                    climate.temperature,
-                    climate.humidity,
-                    climate.continentalness,
-                    climate.erosion,
-                    climate.depth,
-                    climate.weirdness,
-
-                    (long)(climate.offset * 1000L) + randomOffset // 轉換為 long
-            );
-
-            consumer.accept(Pair.of(point, entry.biome));
-        }
-    }
-
-    /**
-     * 獲取所有註冊的生物群落 (調試用)
-     */
     public static List<BiomeEntry> getRegisteredBiomes() {
         return new ArrayList<>(CUSTOM_BIOMES);
     }
 
-    /**
-     * 清空所有註冊的生物群落 (測試用)
-     */
     public static void clearAll() {
         CUSTOM_BIOMES.clear();
-        KoniavacraftMod.LOGGER.info("🧹 清空所有自訂生物群落註冊");
+        DEFAULT_REGION.clear();
+        BiomeRegionManager.clearAllRegions();
+        BiomeRegionManager.registerRegion(DEFAULT_REGION);
+        KoniavacraftMod.LOGGER.info("清空所有自訂生物群落註冊");
     }
 }
