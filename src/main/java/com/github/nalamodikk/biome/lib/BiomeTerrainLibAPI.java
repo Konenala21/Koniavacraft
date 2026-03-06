@@ -39,10 +39,9 @@ public class BiomeTerrainLibAPI {
     }
 
     /**
-     * 🚀 初始化庫系統
+     * 🚀 初始化庫系統（保留供外部呼叫相容）
      */
     public static void initialize() {
-        BiomeIntegration.initialize();
     }
 
     /**
@@ -56,7 +55,7 @@ public class BiomeTerrainLibAPI {
      * 🧹 清理系統
      */
     public static void cleanup() {
-        BiomeIntegration.cleanup();
+        UniversalTerrainEcosystemLibrary.clearAllRulesCache();
     }
 
     /**

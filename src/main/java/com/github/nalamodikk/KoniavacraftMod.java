@@ -1,7 +1,6 @@
 package com.github.nalamodikk;
 
 import com.github.nalamodikk.biome.BiomeTerrainRegistration;
-import com.github.nalamodikk.biome.UniversalBiomeRegistration;
 import com.github.nalamodikk.common.config.ModClientConfig;
 import com.github.nalamodikk.common.config.ModCommonConfig;
 import com.github.nalamodikk.register.*;
@@ -84,8 +83,6 @@ public class KoniavacraftMod {
     private void commonSetup(final FMLCommonSetupEvent event) {
         // Some common setup code
         LOGGER.info("HELLO FROM COMMON SETUP");
-        UniversalBiomeRegistration.init();
-        LOGGER.info("✅ 正常遊戲模式：啟用生物群系 Mixin 初始化");
 
         KoniavacraftMod.LOGGER.info("✅ Koniavacraft 世界生成系統初始化完成！");
     }

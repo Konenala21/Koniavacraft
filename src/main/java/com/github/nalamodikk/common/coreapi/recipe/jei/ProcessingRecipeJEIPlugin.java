@@ -23,15 +23,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 
 /**
- * 🔄 加工配方 JEI 整合插件
- *
- * 支援多個機器類型的配方顯示：
- * - grinder (粉碎機)
- * - washer (清洗機)
- * - enricher (富集機)
- * - 等等...
- *
- * 每個機器類型有自己的 JEI 分類頁面
+ * 加工配方 JEI 整合插件
  */
 @JeiPlugin
 public class ProcessingRecipeJEIPlugin implements IModPlugin {
@@ -53,12 +45,7 @@ public class ProcessingRecipeJEIPlugin implements IModPlugin {
 
         IGuiHelper guiHelper = registration.getJeiHelpers().getGuiHelper();
 
-        // 為每個機器類型註冊一個分類
-        registration.addRecipeCategories(
-                new GrinderRecipeCategory(guiHelper),
-                new WasherRecipeCategory(guiHelper),
-                new EnricherRecipeCategory(guiHelper)
-        );
+        registration.addRecipeCategories(new GrinderRecipeCategory(guiHelper));
 
         LOGGER.info("[JEI] ✅ 加工配方分類註冊完成");
     }
@@ -80,8 +67,6 @@ public class ProcessingRecipeJEIPlugin implements IModPlugin {
         );
         LOGGER.debug("[JEI] ✅ 粉碎機已註冊為催化劑");
 
-        // 清洗機
-        LOGGER.info("[JEI] ⚠️ 清洗機/富集機催化劑待對應方塊完成後啟用");
     }
 
     /**
@@ -132,28 +117,9 @@ public class ProcessingRecipeJEIPlugin implements IModPlugin {
                 .filter(r -> "grinder".equals(r.getMachineType()))
                 .toList();
 
-        List<ProcessingRecipe> washerRecipes = allRecipes.stream()
-                .filter(r -> "washer".equals(r.getMachineType()))
-                .toList();
-
-        List<ProcessingRecipe> enricherRecipes = allRecipes.stream()
-                .filter(r -> "enricher".equals(r.getMachineType()))
-                .toList();
-
-        // 註冊各分類的配方
         if (!grinderRecipes.isEmpty()) {
             LOGGER.info("[JEI] 📝 註冊 {} 個粉碎機配方", grinderRecipes.size());
             registration.addRecipes(GrinderRecipeCategory.RECIPE_TYPE, grinderRecipes);
-        }
-
-        if (!washerRecipes.isEmpty()) {
-            LOGGER.info("[JEI] 📝 註冊 {} 個清洗機配方", washerRecipes.size());
-            registration.addRecipes(WasherRecipeCategory.RECIPE_TYPE, washerRecipes);
-        }
-
-        if (!enricherRecipes.isEmpty()) {
-            LOGGER.info("[JEI] 📝 註冊 {} 個富集機配方", enricherRecipes.size());
-            registration.addRecipes(EnricherRecipeCategory.RECIPE_TYPE, enricherRecipes);
         }
 
         LOGGER.info("[JEI] ✅ 所有加工配方已註冊到 JEI");
