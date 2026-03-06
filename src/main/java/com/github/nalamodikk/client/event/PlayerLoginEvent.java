@@ -2,7 +2,6 @@ package com.github.nalamodikk.client.event;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.config.ModCommonConfig;
-import com.github.nalamodikk.common.network.packet.server.rpg.SyncRPGDataPacket;
 import com.github.nalamodikk.narasystem.nara.network.client.OpenNaraInitScreenPacket;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraSyncPacket;
 import com.github.nalamodikk.narasystem.nara.util.NaraHelper;
@@ -36,9 +35,6 @@ public class PlayerLoginEvent {
         if (!player.hasData(ModDataAttachments.EXTRA_EQUIPMENT.get())) {
             player.setData(ModDataAttachments.EXTRA_EQUIPMENT.get(), NonNullList.withSize(8, ItemStack.EMPTY));
         }
-
-        // 同步 RPG 資料到客戶端
-        SyncRPGDataPacket.sendToPlayer(player);
 
         if (player.getServer() instanceof GameTestServer) {
             LOGGER.debug("GameTest 伺服器登入，略過娜拉系統封包: {}", player.getGameProfile().getName());

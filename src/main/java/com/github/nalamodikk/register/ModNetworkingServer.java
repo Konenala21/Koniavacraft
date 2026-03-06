@@ -2,7 +2,6 @@ package com.github.nalamodikk.register;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.network.packet.server.manatool.*;
-import com.github.nalamodikk.common.network.packet.server.rpg.SyncRPGDataPacket;
 import com.github.nalamodikk.narasystem.nara.network.client.NaraSystemIntroMessagePacket;
 import com.github.nalamodikk.narasystem.nara.network.client.OpenNaraInitScreenPacket;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraSyncPacket;
@@ -20,7 +19,6 @@ public class ModNetworkingServer {
         var registrar = event.registrar("1");
 
         ManaUpdatePacket.registerToServer(registrar);
-        SyncRPGDataPacket.registerToServer(registrar);
         NaraSystemIntroMessagePacket.registerToServer(registrar);
         NaraSyncPacket.registerToServer(registrar);
         OpenNaraInitScreenPacket.registerToServer(registrar);

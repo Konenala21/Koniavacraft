@@ -2,10 +2,6 @@ package com.github.nalamodikk.register;
 
 
 import com.github.nalamodikk.KoniavacraftMod;
-import com.github.nalamodikk.common.rpg.data.PlayerRPGData;
-import com.github.nalamodikk.common.rpg.data.PlayerRPGDataCodec;
-import com.github.nalamodikk.common.rpg.skill.PlayerSkillData;
-import com.github.nalamodikk.common.rpg.skill.PlayerSkillDataCodec;
 import com.mojang.serialization.Codec;
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.ItemStack;
@@ -83,29 +79,6 @@ public static final Supplier<AttachmentType<NonNullList<ItemStack>>> NINE_GRID =
                             .build()
             );
 
-    // ===== 🎮 RPG 系統數據附件 =====
-
-    /**
-     * 🎮 玩家 RPG 數據 (等級/經驗/屬性/職業)
-     */
-    public static final Supplier<AttachmentType<PlayerRPGData>> PLAYER_RPG_DATA =
-            ATTACHMENT_TYPES.register("player_rpg_data", () ->
-                    AttachmentType.builder(PlayerRPGData::new)
-                            .serialize(PlayerRPGDataCodec.CODEC)
-                            .copyOnDeath() // 死亡時保留數據
-                            .build()
-            );
-
-    /**
-     * 🎯 玩家技能數據 (已學習技能/冷卻)
-     */
-    public static final Supplier<AttachmentType<PlayerSkillData>> PLAYER_SKILL_DATA =
-            ATTACHMENT_TYPES.register("player_skill_data", () ->
-                    AttachmentType.builder(PlayerSkillData::new)
-                            .serialize(PlayerSkillDataCodec.CODEC)
-                            .copyOnDeath() // 死亡時保留數據
-                            .build()
-            );
 
 
     public static void register(IEventBus modBus) {

@@ -2,7 +2,6 @@ package com.github.nalamodikk.register;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.network.packet.server.manatool.ManaUpdatePacket;
-import com.github.nalamodikk.common.network.packet.server.rpg.SyncRPGDataPacket;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraSyncPacket;
 import com.github.nalamodikk.narasystem.nara.network.client.NaraSystemIntroMessagePacket;
 import com.github.nalamodikk.narasystem.nara.network.client.OpenNaraInitScreenPacket;
@@ -19,7 +18,6 @@ public class ModNetworkingClient {
         PayloadRegistrar registrar = event.registrar("1");
 
         ManaUpdatePacket.registerClientOnly(registrar);
-        SyncRPGDataPacket.registerToClient(registrar);
         // 打開玩家第一次登入的GUI
         OpenNaraInitScreenPacket.registerToClient(registrar);
         NaraSystemIntroMessagePacket.registerToClient(registrar);
