@@ -32,6 +32,12 @@ public class BiomeTerrainRegistration {
         KoniavacraftMod.LOGGER.info("🌍 開始註冊 Koniavacraft 生物群系地形...");
 
         try {
+            // 全局參數：vanillaWeight=10 保留空間給未來自訂 biome，
+            // 當所有 region 總 weight 累積到 10 時全局覆蓋率約 50%。
+            // 目前魔力草原單獨 weight=2 → 2/(10+2) ≈ 17%。
+            BiomeRegionManager.setVanillaWeight(10);
+            BiomeRegionManager.setZoomCount(4); // patch 大小 ≈ 1024 格
+
             // 📝 註冊所有生物群系地形
             registerBiomeTerrains();
 
@@ -82,7 +88,7 @@ public class BiomeTerrainRegistration {
         // （JSON datapack 的 mana_plains.json override 可覆蓋個別 entry 的 weight/priority，
         //  但程式碼定義的多 entry 架構由此建立）
         SimpleBiomeRegion defaultRegion = BiomeRegionManager.getOrCreateRegion(
-                ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "default_overworld"), 10);
+                ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "mana_plains_region"), 2);
 
         List<BiomeInjectionEntry> entries = BiomeInjectionEntry.fromBuilder(
                 ModBiomes.MANA_PLAINS,
