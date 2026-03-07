@@ -117,6 +117,12 @@ esac
 
 CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
 
+# WSL/local fallback: use project-standard Temurin 21 when JAVA_HOME is unset.
+if [ -z "$JAVA_HOME" ] && [ -x "/home/konenala21/.local/jdks/temurin-21/bin/java" ] ; then
+    JAVA_HOME="/home/konenala21/.local/jdks/temurin-21"
+    export JAVA_HOME
+fi
+
 
 # Determine the Java command to use to start the JVM.
 if [ -n "$JAVA_HOME" ] ; then

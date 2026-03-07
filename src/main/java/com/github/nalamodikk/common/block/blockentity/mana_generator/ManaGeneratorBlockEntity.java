@@ -159,10 +159,12 @@ import java.util.Optional;
 
 
         public EnumMap<Direction, BlockCapabilityCache<IUnifiedManaHandler,  Direction>> getManaOutputCaches() {
+            for (Direction dir : Direction.values()) getManaCache(dir);
             return manaCaches;
         }
 
         public EnumMap<Direction, BlockCapabilityCache<IEnergyStorage, Direction>> getEnergyOutputCaches() {
+            for (Direction dir : Direction.values()) getEnergyCache(dir);
             return energyCaches;
         }
 

@@ -20,7 +20,10 @@ public class ClientModEvents {
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         ModContainer modContainer = ModLoadingContext.get().getActiveContainer();
-        modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
+        modContainer.registerExtensionPoint(
+                IConfigScreenFactory.class,
+                (container, parent) -> new ConfigurationScreen(container, parent, DeveloperModeConfigSectionScreen::new)
+        );
 
         // 在 mod 主類的 FMLClientSetupEvent 中註冊 runtime handler
 

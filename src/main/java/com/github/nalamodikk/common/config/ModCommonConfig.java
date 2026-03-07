@@ -29,6 +29,8 @@ public class ModCommonConfig {
     public final ModConfigSpec.IntValue manaGeneratorSignificantManaChange;
     public final ModConfigSpec.IntValue manaGeneratorSignificantEnergyChange;
     public final ModConfigSpec.IntValue calculateThreadCount;
+    public final ModConfigSpec.BooleanValue developerModeEnabled;
+    public final ModConfigSpec.BooleanValue autoEnableDeveloperModeInDevEnvironment;
 
 
 
@@ -66,6 +68,18 @@ public class ModCommonConfig {
                 .translation("koniava.config.manaGeneratorSignificantEnergyChange")
                 .defineInRange("manaGeneratorSignificantEnergyChange", 100, 0, 100000);
 
+        developerModeEnabled = builder
+                .comment("開發者模式手動開關（預設關閉）")
+                .comment("Manual developer mode switch (default: false)")
+                .translation("koniava.config.developerModeEnabled")
+                .define("developerModeEnabled", false);
+
+        autoEnableDeveloperModeInDevEnvironment = builder
+                .comment("在開發環境自動啟用開發者模式（正式環境不生效）")
+                .comment("Auto-enable developer mode in development environment only")
+                .translation("koniava.config.autoEnableDeveloperModeInDevEnvironment")
+                .define("autoEnableDeveloperModeInDevEnvironment", true);
+
         // ===============================
         // 🌍 生物群系處理配置區段
         // ===============================
@@ -89,6 +103,10 @@ public class ModCommonConfig {
             KoniavacraftMod.LOGGER.info("載入魔力發電機同步設定: manaChange = {}, energyChange = {}",
                     INSTANCE.manaGeneratorSignificantManaChange.get(),
                     INSTANCE.manaGeneratorSignificantEnergyChange.get());
+            KoniavacraftMod.LOGGER.info("載入開發者模式設定: enabled = {}, autoInDev = {}, active = {}",
+                    INSTANCE.developerModeEnabled.get(),
+                    INSTANCE.autoEnableDeveloperModeInDevEnvironment.get(),
+                    isDeveloperModeActive());
 
 
         }
@@ -105,6 +123,10 @@ public class ModCommonConfig {
             KoniavacraftMod.LOGGER.info("重新載入魔力發電機同步設定: manaChange = {}, energyChange = {}",
                     INSTANCE.manaGeneratorSignificantManaChange.get(),
                     INSTANCE.manaGeneratorSignificantEnergyChange.get());
+            KoniavacraftMod.LOGGER.info("重新載入開發者模式設定: enabled = {}, autoInDev = {}, active = {}",
+                    INSTANCE.developerModeEnabled.get(),
+                    INSTANCE.autoEnableDeveloperModeInDevEnvironment.get(),
+                    isDeveloperModeActive());
 
             // 重新載入生物群系配置
             KoniavacraftMod.LOGGER.info("🔄 重新載入生物群系處理設定");
@@ -139,5 +161,11 @@ public class ModCommonConfig {
             KoniavacraftMod.LOGGER.info("⚖️ 應用平衡設定預設...");
             // 這個功能需要配合配置重載機制，這裡只是示例
         }
+    }
+
+    public static boolean isDeveloperModeActive() {
+        boolean autoInDev = INSTANCE.autoEnableDeveloperModeInDevEnvironment.get() && KoniavacraftMod.IS_DEV;
+        boolean manualEnabled = INSTANCE.developerModeEnabled.get();
+        return autoInDev || manualEnabled;
     }
 }
