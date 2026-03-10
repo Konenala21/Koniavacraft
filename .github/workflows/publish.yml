@@ -69,12 +69,6 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Download jar
-        uses: actions/download-artifact@v4
-        with:
-          name: mod-jar
-          path: build/libs
-
       - name: Publish to Modrinth
         run: ./gradlew modrinth
         env:
@@ -95,12 +89,6 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
-
-      - name: Download jar
-        uses: actions/download-artifact@v4
-        with:
-          name: mod-jar
-          path: build/libs
 
       - name: Publish to CurseForge
         run: ./gradlew publishToCurseForge
