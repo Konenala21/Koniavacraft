@@ -18,8 +18,10 @@ import java.util.List;
 public class ModBiomeModifiers {
     public static final ResourceKey<BiomeModifier> ADD_MAGIC_ORE = registerKey("add_magic_ore");
     public static final ResourceKey<BiomeModifier> ADD_MANA_BLOOM = registerKey("add_mana_bloom");
-    private static final TagKey<Biome> MANA_BLOOM_BIOMES = TagKey.create(Registries.BIOME,
-            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "has_mana_bloom"));
+    private static final TagKey<Biome> HAS_MANA_BLOOM = TagKey.create(
+            Registries.BIOME,
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "has_mana_bloom")
+    );
 
     public static void bootstrap(BootstrapContext<BiomeModifier> context) {
         var placedFeatures = context.lookup(Registries.PLACED_FEATURE);
@@ -30,8 +32,9 @@ public class ModBiomeModifiers {
                 GenerationStep.Decoration.UNDERGROUND_ORES
         ));
 
+        // 魔力花生成目標走 biome tag，避免 datagen 直接綁定未收集的自訂 biome key。
         context.register(ADD_MANA_BLOOM, new BiomeModifiers.AddFeaturesBiomeModifier(
-                biomes.getOrThrow(MANA_BLOOM_BIOMES),
+                biomes.getOrThrow(HAS_MANA_BLOOM),
                 HolderSet.direct(List.of(placedFeatures.getOrThrow(ModPlacedFeatures.MANA_BLOOM_PLACED_KEY))),
                 GenerationStep.Decoration.VEGETAL_DECORATION
         ));

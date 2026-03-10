@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -23,3 +25,10 @@ jobs:
 
       - name: Build
         run: ./gradlew build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: koniava-build-${{ github.head_ref || github.ref_name }}-${{ github.sha }}
+          path: build/libs/*.jar
+          retention-days: 7

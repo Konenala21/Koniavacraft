@@ -22,10 +22,15 @@ import java.util.function.Consumer;
 @Mixin(OverworldBiomeBuilder.class)
 public class OverworldBiomeBuilderMixin {
     private static final Logger LOGGER = LogUtils.getLogger();
+    private static final String DISABLE_BIOME_INJECTION_PROPERTY = "koniava.disableBiomeInjection";
 
     @Inject(method = "addBiomes", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/world/level/biome/OverworldBiomeBuilder;addOffCoastBiomes(Ljava/util/function/Consumer;)V"))
     private void injectCustomBiomes(Consumer<Pair<Climate.ParameterPoint, ResourceKey<Biome>>> consumer, CallbackInfo ci) {
+        if (Boolean.getBoolean(DISABLE_BIOME_INJECTION_PROPERTY)) {
+            return;
+        }
+
         // 若正在建立 VanillaBiomeParameterReader 快取，跳過以防止遞迴
         if (VanillaBiomeParameterReader.IS_READING_VANILLA.get()) {
             return;

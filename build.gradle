@@ -116,6 +116,7 @@ neoForge {
 
             // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
             programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+            systemProperty 'koniava.disableBiomeInjection', 'true'
         }
 
         // applies to all the run configs above
@@ -281,6 +282,25 @@ jar {
     exclude('.cache')
 }
 
+// ========== Changelog 提取（只取當前版本段落）==========
+// 優先取 [Unreleased]，找不到才取 [mod_version] 段落
+def extractChangelog(String version) {
+    def changelogFile = file("CHANGELOG.md")
+    if (!changelogFile.exists()) return ""
+    def lines = changelogFile.readLines('UTF-8')
+    def result = []
+    def capturing = false
+    for (line in lines) {
+        if (!capturing && (line.startsWith("## [Unreleased]") || line.startsWith("## [${version}]"))) {
+            capturing = true
+            continue
+        }
+        if (capturing && line.startsWith("## ")) break
+        if (capturing) result.add(line)
+    }
+    return result.join('\n').trim()
+}
+
 // ========== Modrinth 發布 ==========
 modrinth {
     token = System.getenv("MODRINTH_TOKEN") ?: ""
@@ -290,7 +310,7 @@ modrinth {
     uploadFile = jar
     gameVersions = [minecraft_version]
     loaders = ["neoforge"]
-    changelog = file("CHANGELOG.md").exists() ? file("CHANGELOG.md").text : ""
+    changelog = extractChangelog(mod_version)
     syncBodyFrom = file("README.md").exists() ? file("README.md").text : ""
 }
 
@@ -302,7 +322,7 @@ task publishToCurseForge(type: net.darkhax.curseforgegradle.TaskPublishCurseForg
         releaseType = "beta"
         addGameVersion(minecraft_version)
         addModLoader("NeoForge")
-        changelog = file("CHANGELOG.md").exists() ? file("CHANGELOG.md").text : ""
+        changelog = extractChangelog(mod_version)
         changelogType = "markdown"
     }
 }

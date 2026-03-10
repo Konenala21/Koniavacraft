@@ -32,10 +32,10 @@ public class BiomeTerrainRegistration {
         KoniavacraftMod.LOGGER.info("🌍 開始註冊 Koniavacraft 生物群系地形...");
 
         try {
-            // 全局參數：vanillaWeight=20 → 魔力草原覆蓋率 2/(20+2) ≈ 9%
-            // zoomCount=3 → patch 大小 ≈ 512 格，分布更稀疏
-            BiomeRegionManager.setVanillaWeight(20);
-            BiomeRegionManager.setZoomCount(3);
+            // 全局參數：vanillaWeight=10 → 魔力草原覆蓋率 2/(10+2) ≈ 17%
+            // zoomCount=4 → patch 大小 ≈ 1024 格
+            BiomeRegionManager.setVanillaWeight(10);
+            BiomeRegionManager.setZoomCount(4);
 
             // 📝 註冊所有生物群系地形
             registerBiomeTerrains();
@@ -89,15 +89,19 @@ public class BiomeTerrainRegistration {
         SimpleBiomeRegion defaultRegion = BiomeRegionManager.getOrCreateRegion(
                 ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "mana_plains_region"), 2);
 
+        // Climate 設計目標：出現在草原型地形（乾燥到中性濕度 = Plains/Sunflower Plains），
+        // 不出現在森林型地形（WET humidity = 森林），高侵蝕 = 平坦地形
         List<BiomeInjectionEntry> entries = BiomeInjectionEntry.fromBuilder(
                 ModBiomes.MANA_PLAINS,
                 ParameterPointListBuilder.create()
                         .temperature(VanillaClimateBands.Temperature.NEUTRAL, VanillaClimateBands.Temperature.WARM)
-                        .humidity(VanillaClimateBands.Humidity.WET)
+                        .humidity(VanillaClimateBands.Humidity.DRY)
+                        .humidity(VanillaClimateBands.Humidity.NEUTRAL)
                         .continentalness(VanillaClimateBands.Continentalness.NEAR_INLAND)
                         .continentalness(VanillaClimateBands.Continentalness.MID_INLAND)
-                        .erosion(VanillaClimateBands.Erosion.EROSION_3)
                         .erosion(VanillaClimateBands.Erosion.EROSION_4)
+                        .erosion(VanillaClimateBands.Erosion.EROSION_5)
+                        .erosion(VanillaClimateBands.Erosion.EROSION_6)
                         .depth(VanillaClimateBands.Depth.SURFACE)
                         .weirdness(VanillaClimateBands.Weirdness.VALLEY)
                         .weirdness(VanillaClimateBands.Weirdness.MID_SLICE_NORMAL_ASCENDING)

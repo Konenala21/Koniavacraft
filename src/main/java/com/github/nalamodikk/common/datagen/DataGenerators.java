@@ -4,6 +4,7 @@ package com.github.nalamodikk.common.datagen;
 
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.datagen.worldgen.ModBiomeJsonProvider;
 import com.github.nalamodikk.common.datagen.worldgen.ModDatapackProvider;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.DataGenerator;
@@ -30,6 +31,7 @@ public class DataGenerators {
 
        // 世界生成
         generator.addProvider(event.includeServer(), new ModDatapackProvider(packOutput, lookupProvider));
+        generator.addProvider(event.includeServer(), new ModBiomeJsonProvider(packOutput));
 
         generator.addProvider(event.includeServer(), new ModRecipeProvider(packOutput, lookupProvider));
 

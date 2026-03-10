@@ -4,11 +4,14 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 jobs:
   # ── 1. Build ──────────────────────────────────────────────
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -27,9 +30,9 @@ jobs:
       - name: Upload jar artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mod-jar
+          name: koniava-${{ github.ref_name }}
           path: build/libs/*.jar
-          retention-days: 1
+          retention-days: 7
 
   # ── 2. GitHub Release ─────────────────────────────────────
   release:
@@ -43,14 +46,35 @@ jobs:
       - name: Download jar
         uses: actions/download-artifact@v4
         with:
-          name: mod-jar
+          name: koniava-${{ github.ref_name }}
           path: build/libs
+
+      - name: Generate release notes
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v version="$version" '
+            BEGIN { capture = 0 }
+            $0 ~ "^## \\[" version "\\]" { capture = 1; next }
+            capture && $0 ~ "^## \\[" { exit }
+            capture { print }
+          ' CHANGELOG.md > RELEASE_NOTES.md
+
+          if [ ! -s RELEASE_NOTES.md ]; then
+            awk '
+              BEGIN { capture = 0 }
+              /^## \[Unreleased\]/ { capture = 1; next }
+              capture && /^## \[/ { exit }
+              capture { print }
+            ' CHANGELOG.md > RELEASE_NOTES.md
+          fi
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          name: KoniavaCraft ${{ github.ref_name }}
           files: build/libs/*.jar
-          body_path: CHANGELOG.md
+          body_path: RELEASE_NOTES.md
           prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') }}
 
   # ── 3. Modrinth ───────────────────────────────────────────

@@ -77,8 +77,8 @@ public class ModRecipeProvider extends RecipeProvider {
                 .unlockedBy("has_mana_dust", has(ModItems.MANA_DUST.get()))
                 .save(output, "solar_mana_collector");
 
-        // 🔗 奧術導管 (批量製作)
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.ARCANE_CONDUIT.get(), 8)
+        // 🔗 基礎奧術導管 (舊 arcane_conduit 配方轉移至基礎版)
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.BASIC_ARCANE_CONDUIT.get(), 8)
                 .pattern("MMM")
                 .pattern("IGI")
                 .pattern("MMM")
@@ -86,7 +86,31 @@ public class ModRecipeProvider extends RecipeProvider {
                 .define('I', Items.IRON_INGOT)
                 .define('G', Items.GLASS)
                 .unlockedBy("has_mana_dust", has(ModItems.MANA_DUST.get()))
-                .save(output, "arcane_conduit");
+                .save(output, "basic_arcane_conduit");
+
+        // 🔗 進階奧術導管
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.ADVANCED_ARCANE_CONDUIT.get(), 8)
+                .pattern("RMR")
+                .pattern("CBC")
+                .pattern("RMR")
+                .define('R', ModItems.REFINED_MANA_DUST.get())
+                .define('M', ModItems.MANA_INGOT.get())
+                .define('C', ModBlocks.BASIC_ARCANE_CONDUIT.get())
+                .define('B', Items.GOLD_INGOT)
+                .unlockedBy("has_basic_arcane_conduit", has(ModBlocks.BASIC_ARCANE_CONDUIT.get()))
+                .save(output, "advanced_arcane_conduit");
+
+        // 🔗 精英奧術導管
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.ELITE_ARCANE_CONDUIT.get(), 8)
+                .pattern("RDR")
+                .pattern("CAC")
+                .pattern("RDR")
+                .define('R', ModItems.REFINED_MANA_DUST.get())
+                .define('D', Items.DIAMOND)
+                .define('C', ModBlocks.ADVANCED_ARCANE_CONDUIT.get())
+                .define('A', Items.AMETHYST_SHARD)
+                .unlockedBy("has_advanced_arcane_conduit", has(ModBlocks.ADVANCED_ARCANE_CONDUIT.get()))
+                .save(output, "elite_arcane_conduit");
 
         // 🔥 魔力發電機
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.MANA_GENERATOR.get())
@@ -113,6 +137,20 @@ public class ModRecipeProvider extends RecipeProvider {
                 .define('I', Items.IRON_INGOT)
                 .unlockedBy("has_mana_dust", has(ModItems.MANA_DUST.get()))
                 .save(output, "mana_crafting_table");
+
+        // ⚙️ 魔力粉碎機
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.MANA_GRINDER.get())
+                .pattern("SCS")
+                .pattern("GIG")
+                .pattern("RMR")
+                .define('S', Items.STONE)
+                .define('C', ModBlocks.BASIC_ARCANE_CONDUIT.get())
+                .define('G', Items.IRON_INGOT)
+                .define('I', ModItems.MANA_INGOT.get())
+                .define('R', ModItems.REFINED_MANA_DUST.get())
+                .define('M', Blocks.PISTON)
+                .unlockedBy("has_mana_ingot", has(ModItems.MANA_INGOT.get()))
+                .save(output, "mana_grinder");
     }
 
     // === ⚡ 升級模組配方 ===
