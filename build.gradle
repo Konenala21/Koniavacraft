@@ -3,6 +3,8 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     id 'net.neoforged.moddev' version '2.0.78'
+    id 'com.modrinth.minotaur' version '2.+'
+    id 'net.darkhax.curseforgegradle' version '1.1.+'
 }
 
 tasks.named('wrapper', Wrapper).configure {
@@ -277,5 +279,30 @@ idea {
 jar {
     exclude('log4j2.xml')
     exclude('.cache')
+}
 
+// ========== Modrinth 發布 ==========
+modrinth {
+    token = System.getenv("MODRINTH_TOKEN") ?: ""
+    projectId = "koniavacraft"
+    versionNumber = mod_version
+    versionType = "beta"
+    uploadFile = jar
+    gameVersions = [minecraft_version]
+    loaders = ["neoforge"]
+    changelog = file("CHANGELOG.md").exists() ? file("CHANGELOG.md").text : ""
+    syncBodyFrom = file("README.md").exists() ? file("README.md").text : ""
+}
+
+// ========== CurseForge 發布 ==========
+task publishToCurseForge(type: net.darkhax.curseforgegradle.TaskPublishCurseForge) {
+    apiToken = System.getenv("CURSEFORGE_TOKEN") ?: ""
+    upload(System.getenv("CURSEFORGE_PROJECT_ID") ?: "0", jar) {
+        displayName = "${mod_name} v${mod_version} for MC ${minecraft_version}"
+        releaseType = "beta"
+        addGameVersion(minecraft_version)
+        addModLoader("NeoForge")
+        changelog = file("CHANGELOG.md").exists() ? file("CHANGELOG.md").text : ""
+        changelogType = "markdown"
+    }
 }
