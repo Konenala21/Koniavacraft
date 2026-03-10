@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    outputs:
+      artifact_name: ${{ steps.artifact_meta.outputs.artifact_name }}
     steps:
       - uses: actions/checkout@v4
 
@@ -27,10 +29,18 @@ jobs:
       - name: Build
         run: ./gradlew build
 
+      - name: Prepare artifact metadata
+        id: artifact_meta
+        shell: bash
+        run: |
+          ref_name="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
+          safe_ref_name="${ref_name//\//-}"
+          echo "artifact_name=koniava-${safe_ref_name}" >> "$GITHUB_OUTPUT"
+
       - name: Upload jar artifact
         uses: actions/upload-artifact@v4
         with:
-          name: koniava-${{ github.ref_name }}
+          name: ${{ steps.artifact_meta.outputs.artifact_name }}
           path: build/libs/*.jar
           retention-days: 7
 
@@ -46,7 +56,7 @@ jobs:
       - name: Download jar
         uses: actions/download-artifact@v4
         with:
-          name: koniava-${{ github.ref_name }}
+          name: ${{ needs.build.outputs.artifact_name }}
           path: build/libs
 
       - name: Generate release notes
