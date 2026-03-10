@@ -48,6 +48,7 @@ public class ModBlocks {
             registerBlock("basic_arcane_conduit", () -> new ArcaneConduitBlock(
                     BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS)
                             .strength(1.5f)
+                            .requiresCorrectToolForDrops()
                             .noOcclusion()
                             .lightLevel(state -> 5), // 基礎等級 - 較弱的光
                     ConduitTier.BASIC
@@ -57,6 +58,7 @@ public class ModBlocks {
             registerBlock("advanced_arcane_conduit", () -> new ArcaneConduitBlock(
                     BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS)
                             .strength(2.0f)
+                            .requiresCorrectToolForDrops()
                             .noOcclusion()
                             .lightLevel(state -> 7), // 進階等級 - 中等光
                     ConduitTier.ADVANCED
@@ -66,21 +68,13 @@ public class ModBlocks {
             registerBlock("elite_arcane_conduit", () -> new ArcaneConduitBlock(
                     BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS)
                             .strength(2.5f)
+                            .requiresCorrectToolForDrops()
                             .noOcclusion()
                             .lightLevel(state -> 9), // 精英等級 - 最強的光
                     ConduitTier.ELITE
             ));
 
     // ⚠️ 已棄用：保留舊的 arcane_conduit 以向後兼容
-    @Deprecated
-    public static final DeferredBlock<Block> ARCANE_CONDUIT =
-            registerBlock("arcane_conduit", () -> new ArcaneConduitBlock(
-                    BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS)
-                            .strength(1.5f)
-                            .noOcclusion()
-                            .lightLevel(state -> 7), // 發光等級
-                    ConduitTier.BASIC // 預設為基礎等級
-            ));
 
     public static final DeferredBlock<Block> SOLAR_MANA_COLLECTOR =
             registerBlock("solar_mana_collector", () -> new SolarManaCollectorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).noOcclusion()));
@@ -123,13 +117,13 @@ public class ModBlocks {
     // === 🔮 新增：魔力注入機 ===
     public static final DeferredBlock<ManaInfuserBlock> MANA_INFUSER = registerBlock("mana_infuser",
             () -> new ManaInfuserBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL)
-                    .strength(3.5f).sound(SoundType.METAL).lightLevel(state ->
+                    .strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().lightLevel(state ->
                             state.getValue(ManaInfuserBlock.WORKING) ? 7 : 0))); // 工作時發光
 
     // === ⚙️ 新增：魔力粉碎機 ===
     public static final DeferredBlock<ManaGrinderBlock> MANA_GRINDER = registerBlock("mana_grinder",
             () -> new ManaGrinderBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL)
-                    .strength(3.5f).sound(SoundType.METAL).lightLevel(state ->
+                    .strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().lightLevel(state ->
                             state.getValue(ManaGrinderBlock.WORKING) ? 6 : 0))); // 工作時發光
 
 

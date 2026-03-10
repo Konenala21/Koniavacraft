@@ -88,7 +88,6 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         dropSelf(ModBlocks.MANA_BLOCK.get());           // 魔力錠磚
         dropSelf(ModBlocks.MANA_GENERATOR.get());       // 魔力發電機
         dropSelf(ModBlocks.SOLAR_MANA_COLLECTOR.get()); // 太陽能魔力收集器
-        dropSelf(ModBlocks.ARCANE_CONDUIT.get());       // 奧術導管
         dropSelf(ModBlocks.BASIC_ARCANE_CONDUIT.get()); // 🆕 基礎奧術導管
         dropSelf(ModBlocks.ADVANCED_ARCANE_CONDUIT.get()); // 🆕 進階奧術導管
         dropSelf(ModBlocks.ELITE_ARCANE_CONDUIT.get()); // 🆕 精英奧術導管

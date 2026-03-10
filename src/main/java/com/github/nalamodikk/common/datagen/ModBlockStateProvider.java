@@ -34,10 +34,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         createGrassBlock(ModBlocks.MANA_GRASS_BLOCK, "mana_grass_block", "mana_soil");
         saplingBlock(ModBlocks.MANA_BLOOM);
 
-        // 🔗 導管系統
-        createArcaneConduitModel();
-
-        // 🆕 三種等級的導管變種
+        // 🔗 三種等級的導管變種
         createBasicConduitModel();
         createAdvancedConduitModel();
         createEliteConduitModel();
@@ -170,19 +167,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
     // ===========================================
     // 🔗 導管系統
     // ===========================================
-
-    private void createArcaneConduitModel() {
-        createConduitModel(
-                "arcane_conduit",                    // 導管名稱
-                ModBlocks.ARCANE_CONDUIT.get(),      // 方塊實例
-                "conduit/arcane_conduit_core",       // 核心材質
-                "conduit/arcane_conduit_pipe",       // 管道材質
-                null,                                // 不要水晶材質
-                new int[]{6, 10},                    // 核心大小 6-10
-                null,                                // 不要水晶大小
-                new int[]{6, 10}                     // 管道粗細 6-10
-        );
-    }
 
     // 🆕 基礎導管模型
     private void createBasicConduitModel() {

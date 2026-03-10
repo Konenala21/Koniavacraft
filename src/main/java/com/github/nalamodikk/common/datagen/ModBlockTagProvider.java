@@ -25,11 +25,14 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(ModBlocks.MAGIC_ORE.get())
                 .add(ModBlocks.DEEPSLATE_MAGIC_ORE.get())
                 .add(ModBlocks.MANA_BLOCK.get())
-                .add(ModBlocks.ARCANE_CONDUIT.get())
+                .add(ModBlocks.BASIC_ARCANE_CONDUIT.get())
+                .add(ModBlocks.ADVANCED_ARCANE_CONDUIT.get())
+                .add(ModBlocks.ELITE_ARCANE_CONDUIT.get())
                 .add(ModBlocks.MANA_GENERATOR.get())
                 .add(ModBlocks.SOLAR_MANA_COLLECTOR.get())
                 .add(ModBlocks.MANA_CRAFTING_TABLE_BLOCK.get())
-                .add(ModBlocks.MANA_INFUSER.get());
+                .add(ModBlocks.MANA_INFUSER.get())
+                .add(ModBlocks.MANA_GRINDER.get());
 
 
 

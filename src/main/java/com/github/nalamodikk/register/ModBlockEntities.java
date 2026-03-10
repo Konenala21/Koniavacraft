@@ -38,7 +38,6 @@ public class ModBlockEntities {
     public static final Supplier<BlockEntityType<ArcaneConduitBlockEntity>> ARCANE_CONDUIT_BE =
             BLOCK_ENTITY_TYPES.register("arcane_conduit", () ->
                     BlockEntityType.Builder.of(ArcaneConduitBlockEntity::new,
-                            ModBlocks.ARCANE_CONDUIT.get(),
                             ModBlocks.BASIC_ARCANE_CONDUIT.get(),
                             ModBlocks.ADVANCED_ARCANE_CONDUIT.get(),
                             ModBlocks.ELITE_ARCANE_CONDUIT.get()).build(null));

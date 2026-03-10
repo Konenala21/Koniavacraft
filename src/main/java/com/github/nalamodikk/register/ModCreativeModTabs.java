@@ -46,6 +46,10 @@ public class ModCreativeModTabs {
 
                                 ModItems.ITEMS.getEntries().forEach(item -> {
                                     if (item.get() instanceof BlockItem blockItem) {
+                                        if ("arcane_conduit".equals(blockItem.getBlock().builtInRegistryHolder().key().location().getPath())) {
+                                            return;
+                                        }
+
                                         if (blockItem.getBlock() instanceof BaseMachineBlock) {
                                             machineItems.add(item.get());
                                         } else {
