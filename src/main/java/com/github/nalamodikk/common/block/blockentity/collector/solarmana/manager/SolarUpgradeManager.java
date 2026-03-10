@@ -31,11 +31,11 @@ public class SolarUpgradeManager {
 
     // === 🎯 配置常數 ===
     public static final int UPGRADE_SLOT_COUNT = 8;  // MEK風格：更多槽位
-    public static final int BASE_OUTPUT = 5;
-    public static final int BASE_INTERVAL = 200;
-    public static final int MIN_INTERVAL = 40;      // 最小間隔保護
-    private static final double SPEED_INTERVAL_MULTIPLIER = 0.9; // 每個速度升級降低 10%
-    private static final double EFFICIENCY_OUTPUT_MULTIPLIER = 1.1; // 每個效率升級增加 10%
+    public static final int BASE_OUTPUT = 20;
+    public static final int BASE_INTERVAL = 60;
+    public static final int MIN_INTERVAL = 20;
+    private static final double SPEED_INTERVAL_MULTIPLIER = 0.75; // 每個速度升級降低 25%
+    private static final double EFFICIENCY_OUTPUT_MULTIPLIER = 1.25; // 每個效率升級增加 25%
 
     // === 🔧 組件 ===
     private final SolarManaCollectorBlockEntity collector;

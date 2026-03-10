@@ -32,11 +32,10 @@ public class BiomeTerrainRegistration {
         KoniavacraftMod.LOGGER.info("🌍 開始註冊 Koniavacraft 生物群系地形...");
 
         try {
-            // 全局參數：vanillaWeight=10 保留空間給未來自訂 biome，
-            // 當所有 region 總 weight 累積到 10 時全局覆蓋率約 50%。
-            // 目前魔力草原單獨 weight=2 → 2/(10+2) ≈ 17%。
-            BiomeRegionManager.setVanillaWeight(10);
-            BiomeRegionManager.setZoomCount(4); // patch 大小 ≈ 1024 格
+            // 全局參數：vanillaWeight=20 → 魔力草原覆蓋率 2/(20+2) ≈ 9%
+            // zoomCount=3 → patch 大小 ≈ 512 格，分布更稀疏
+            BiomeRegionManager.setVanillaWeight(20);
+            BiomeRegionManager.setZoomCount(3);
 
             // 📝 註冊所有生物群系地形
             registerBiomeTerrains();
