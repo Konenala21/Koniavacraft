@@ -48,6 +48,10 @@ public class SimpleBiomeRegion implements BiomeRegion {
         entries.clear();
     }
 
+    public boolean hasEntries() {
+        return !entries.isEmpty();
+    }
+
     public List<BiomeInjectionEntry> entriesSnapshot() {
         return List.copyOf(entries);
     }

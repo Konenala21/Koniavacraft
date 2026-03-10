@@ -245,7 +245,8 @@ public class BasicTechWandItem extends Item {
 
         boolean forward = event.getScrollDeltaY() > 0;
         TechWandMode current = wand.getMode(held);
-        TechWandMode next = current.cycle(forward); // ⬅ 你需要這個方法
+        TechWandMode next = current.cycle(forward);
+        wand.setMode(held, next); // 客戶端立即更新，避免快速滾動時讀到舊值
         TechWandModePacket.sendToServer(next);
 
         KoniavacraftMod.LOGGER.debug("Sending TechWandModePacket: " + next);

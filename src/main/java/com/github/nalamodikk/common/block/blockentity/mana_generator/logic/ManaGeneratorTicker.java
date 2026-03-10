@@ -73,20 +73,21 @@ public class ManaGeneratorTicker {
                     changed = true;
                 }
             }
+        }
 
-            if (machine.getLevel() instanceof ServerLevel serverLevel) {
-                if (machine.getOutputThrottle().shouldTryOutput()) {
-                    boolean outputSuccess = OutputHandler.tryOutput(
-                            serverLevel,
-                            machine.getBlockPos(),
-                            machine.getManaStorage(),
-                            machine.getEnergyStorage(),
-                            machine.getIOMap(),
-                            machine.getManaOutputCaches(),
-                            machine.getEnergyOutputCaches()
-                    );
-                    machine.getOutputThrottle().recordOutputResult(outputSuccess);
-                }
+        // 輸出邏輯獨立於燃燒狀態——確保 buffer 中的殘餘能量/魔力在停止燃燒後仍能推送出去
+        if (machine.getLevel() instanceof ServerLevel serverLevel) {
+            if (machine.getOutputThrottle().shouldTryOutput()) {
+                boolean outputSuccess = OutputHandler.tryOutput(
+                        serverLevel,
+                        machine.getBlockPos(),
+                        machine.getManaStorage(),
+                        machine.getEnergyStorage(),
+                        machine.getIOMap(),
+                        machine.getManaOutputCaches(),
+                        machine.getEnergyOutputCaches()
+                );
+                machine.getOutputThrottle().recordOutputResult(outputSuccess);
             }
         }
 

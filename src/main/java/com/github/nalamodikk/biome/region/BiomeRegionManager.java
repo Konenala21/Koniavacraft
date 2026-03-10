@@ -44,6 +44,9 @@ public final class BiomeRegionManager {
     // Built on LevelEvent.Load; null while no world is loaded (main menu, etc.)
     private static volatile Area regionArea = null;
 
+    // Cached once any region has entries — avoids allocations in hot biome-query path
+    private static volatile boolean hasCustomRegionsCached = false;
+
     private BiomeRegionManager() {}
 
     // ===================== configuration =====================
@@ -88,6 +91,7 @@ public final class BiomeRegionManager {
         INDEX_TO_REGION.clear();
         nextRegionIndex = 1;
         regionArea = null;
+        hasCustomRegionsCached = false;
     }
 
     // ===================== world init =====================
@@ -127,7 +131,10 @@ public final class BiomeRegionManager {
 
     /** Returns true if any custom region has registered entries. */
     public static boolean hasCustomRegions() {
-        return REGIONS.values().stream().anyMatch(r -> !r.entriesSnapshot().isEmpty());
+        if (hasCustomRegionsCached) return true;
+        boolean result = REGIONS.values().stream().anyMatch(SimpleBiomeRegion::hasEntries);
+        if (result) hasCustomRegionsCached = true;
+        return result;
     }
 
     /** Iterates every {@link BiomeInjectionEntry} across all regions. */
