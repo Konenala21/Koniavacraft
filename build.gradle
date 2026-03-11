@@ -282,23 +282,58 @@ jar {
     exclude('.cache')
 }
 
-// ========== Changelog 提取（只取當前版本段落）==========
-// 優先取 [Unreleased]，找不到才取 [mod_version] 段落
-def extractChangelog(String version) {
+// ========== Changelog 提取（優先取指定版本的玩家版段落）==========
+def extractChangelogSectionByHeader(String versionHeader, String sectionTitle) {
     def changelogFile = file("CHANGELOG.md")
     if (!changelogFile.exists()) return ""
     def lines = changelogFile.readLines('UTF-8')
     def result = []
+    def inVersion = false
     def capturing = false
+
     for (line in lines) {
-        if (!capturing && (line.startsWith("## [Unreleased]") || line.startsWith("## [${version}]"))) {
-            capturing = true
+        if (line.startsWith("## [")) {
+            def isTargetVersion = line.startsWith("## [${versionHeader}]")
+            if (inVersion && !isTargetVersion) {
+                break
+            }
+            inVersion = isTargetVersion
+            capturing = false
             continue
         }
-        if (capturing && line.startsWith("## ")) break
-        if (capturing) result.add(line)
+
+        if (!inVersion) {
+            continue
+        }
+
+        if (line.startsWith("### ")) {
+            if (line == "### ${sectionTitle}") {
+                capturing = true
+                continue
+            }
+            if (capturing) {
+                break
+            }
+        }
+
+        if (capturing) {
+            result.add(line)
+        }
     }
+
     return result.join('\n').trim()
+}
+
+def extractChangelog(String version) {
+    def playerFacing = extractChangelogSectionByHeader(version, "玩家版變更 / Player-facing Changelog")
+    if (!playerFacing.isBlank()) return playerFacing
+    def developerFacing = extractChangelogSectionByHeader(version, "開發者版變更 / Developer-facing Changelog")
+    if (!developerFacing.isBlank()) return developerFacing
+
+    playerFacing = extractChangelogSectionByHeader("Unreleased", "玩家版變更 / Player-facing Changelog")
+    if (!playerFacing.isBlank()) return playerFacing
+
+    return extractChangelogSectionByHeader("Unreleased", "開發者版變更 / Developer-facing Changelog")
 }
 
 // ========== Modrinth 發布 ==========

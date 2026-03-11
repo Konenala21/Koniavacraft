@@ -1,9 +1,9 @@
-name: Build
+name: Build / 建置
 
 on:
   push:
     branches: ['**']
-    tags-ignore: ['v*']  # tag 交給 publish.yml 處理
+    tags-ignore: ['v*']  # Release tags are handled in publish.yml / 版本 tag 交由 publish.yml 處理
   pull_request:
 
 jobs:
@@ -14,19 +14,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Java 21
+      - name: Set up Java 21 / 設定 Java 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'microsoft'
 
-      - name: Setup Gradle
+      - name: Set up Gradle / 設定 Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Build
+      - name: Build project / 建置專案
         run: ./gradlew build
 
-      - name: Prepare artifact metadata
+      - name: Prepare artifact metadata / 準備構件資訊
         id: artifact_meta
         shell: bash
         run: |
@@ -34,7 +34,7 @@ jobs:
           safe_ref_name="${ref_name//\//-}"
           echo "artifact_name=koniava-build-${safe_ref_name}-${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
 
-      - name: Upload build artifact
+      - name: Upload build artifact / 上傳建置構件
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.artifact_meta.outputs.artifact_name }}

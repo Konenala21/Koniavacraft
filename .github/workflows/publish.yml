@@ -1,4 +1,4 @@
-name: Publish
+name: Publish / 發布
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  # ── 1. Build ──────────────────────────────────────────────
+  # ── 1. Build / 建置 ───────────────────────────────────────
   build:
     runs-on: ubuntu-latest
     permissions:
@@ -17,19 +17,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Java 21
+      - name: Set up Java 21 / 設定 Java 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'microsoft'
 
-      - name: Setup Gradle
+      - name: Set up Gradle / 設定 Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Build
+      - name: Build project / 建置專案
         run: ./gradlew build
 
-      - name: Prepare artifact metadata
+      - name: Prepare artifact metadata / 準備構件資訊
         id: artifact_meta
         shell: bash
         run: |
@@ -37,14 +37,14 @@ jobs:
           safe_ref_name="${ref_name//\//-}"
           echo "artifact_name=koniava-${safe_ref_name}" >> "$GITHUB_OUTPUT"
 
-      - name: Upload jar artifact
+      - name: Upload jar artifact / 上傳 Jar 構件
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.artifact_meta.outputs.artifact_name }}
           path: build/libs/*.jar
           retention-days: 7
 
-  # ── 2. GitHub Release ─────────────────────────────────────
+  # ── 2. GitHub Release / GitHub 發布 ──────────────────────
   release:
     needs: build
     runs-on: ubuntu-latest
@@ -53,33 +53,75 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download jar
+      - name: Download jar artifact / 下載 Jar 構件
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.build.outputs.artifact_name }}
           path: build/libs
 
-      - name: Generate release notes
+      - name: Generate release notes / 產生發版說明
         shell: bash
         run: |
           version="${GITHUB_REF_NAME#v}"
           awk -v version="$version" '
-            BEGIN { capture = 0 }
-            $0 ~ "^## \\[" version "\\]" { capture = 1; next }
-            capture && $0 ~ "^## \\[" { exit }
+            BEGIN { in_version = 0; capture = 0 }
+            $0 ~ "^## \\[" {
+              if (in_version) exit
+              if ($0 ~ "^## \\[" version "\\]") {
+                in_version = 1
+              }
+              next
+            }
+            !in_version { next }
+            $0 == "### 玩家版變更 / Player-facing Changelog" {
+              capture = 1
+              next
+            }
+            /^### / && capture { exit }
             capture { print }
           ' CHANGELOG.md > RELEASE_NOTES.md
 
           if [ ! -s RELEASE_NOTES.md ]; then
             awk '
-              BEGIN { capture = 0 }
-              /^## \[Unreleased\]/ { capture = 1; next }
-              capture && /^## \[/ { exit }
+              BEGIN { in_version = 0; capture = 0 }
+              /^## \[/ {
+                if (in_version) exit
+                if ($0 == "## [Unreleased]") {
+                  in_version = 1
+                }
+                next
+              }
+              !in_version { next }
+              $0 == "### 玩家版變更 / Player-facing Changelog" {
+                capture = 1
+                next
+              }
+              /^### / && capture { exit }
               capture { print }
             ' CHANGELOG.md > RELEASE_NOTES.md
           fi
 
-      - name: Create GitHub Release
+          if [ ! -s RELEASE_NOTES.md ]; then
+            awk -v version="$version" '
+              BEGIN { in_version = 0; capture = 0 }
+              $0 ~ "^## \\[" {
+                if (in_version) exit
+                if ($0 ~ "^## \\[" version "\\]") {
+                  in_version = 1
+                }
+                next
+              }
+              !in_version { next }
+              $0 == "### 開發者版變更 / Developer-facing Changelog" {
+                capture = 1
+                next
+              }
+              /^### / && capture { exit }
+              capture { print }
+            ' CHANGELOG.md > RELEASE_NOTES.md
+          fi
+
+      - name: Create GitHub Release / 建立 GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: KoniavaCraft ${{ github.ref_name }}
@@ -87,44 +129,44 @@ jobs:
           body_path: RELEASE_NOTES.md
           prerelease: ${{ contains(github.ref_name, 'beta') || contains(github.ref_name, 'alpha') }}
 
-  # ── 3. Modrinth ───────────────────────────────────────────
+  # ── 3. Modrinth / 發布到 Modrinth ────────────────────────
   publish-modrinth:
     needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Java 21
+      - name: Set up Java 21 / 設定 Java 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'microsoft'
 
-      - name: Setup Gradle
+      - name: Set up Gradle / 設定 Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Publish to Modrinth
+      - name: Publish to Modrinth / 發布到 Modrinth
         run: ./gradlew modrinth
         env:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
 
-  # ── 4. CurseForge ─────────────────────────────────────────
+  # ── 4. CurseForge / 發布到 CurseForge ────────────────────
   publish-curseforge:
     needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Java 21
+      - name: Set up Java 21 / 設定 Java 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'microsoft'
 
-      - name: Setup Gradle
+      - name: Set up Gradle / 設定 Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Publish to CurseForge
+      - name: Publish to CurseForge / 發布到 CurseForge
         run: ./gradlew publishToCurseForge
         env:
           CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}

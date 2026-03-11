@@ -4,35 +4,82 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-### 數值平衡 (Balance)
+### 玩家版變更 / Player-facing Changelog
+
+#### 中文
+
+- **太陽魔力收集器** 基礎產量提升為 20、運作間隔縮短為 60 ticks，效率與速度升級加成同步提高。
+- **魔力草原** 生成量與區塊尺寸下調，分布更稀疏，避免過度覆蓋原版地形。
+- **魔力發電機** 停止燃燒後仍會持續推送殘餘能量與魔力，外部機器接收更穩定。
+- **基礎科技魔杖** 快速滾動切換模式時，畫面顯示不再延遲跳動。
+- 導管配方改為階梯式升級路線，並隱藏舊版 `arcane_conduit` 以避免混淆。
+- 修正 `mana_plains` datagen 與生物群系標籤輸出，降低 `runData` 失敗風險。
+
+#### English
+
+- **Solar Mana Collector** now produces 20 mana by default, runs every 60 ticks, and gains stronger speed and efficiency upgrade scaling.
+- **Mana Plains** now generate less frequently with smaller patches, reducing biome overtake on vanilla terrain.
+- **Mana Generator** keeps pushing buffered energy and mana after fuel stops burning, improving compatibility with external receivers.
+- **Basic Tech Wand** no longer shows delayed mode flicker when rapidly switching scroll modes.
+- Arcane conduit recipes now follow a tiered upgrade path, and the legacy `arcane_conduit` is hidden to reduce confusion.
+- Fixed `mana_plains` datagen and biome-tag output so `runData` is less likely to fail.
+
+### 開發者版變更 / Developer-facing Changelog
+
+#### 數值平衡
 
 - **太陽魔力收集器** 基礎產量 5→20、間隔 200→60 ticks，效率升級加成 10%→25%，速度升級加成 10%→25%（最小間隔 40→20）
 - **魔力草原** 覆蓋率 ~17%→~9%（vanillaWeight 10→20）、patch 大小 ~1024→~512 格（zoomCount 4→3）
 
-### Bug 修復 (Bug Fixes)
+#### Bug 修復
 
 - **魔力發電機** 輸出邏輯移至燃燒判斷外，確保 buffer 殘餘能量/魔力在停止燃燒後仍持續推送（修復無法輸出至 AE2 等外部接受器的問題）
 - **基礎科技魔杖** 快速滾動模式切換時顯示跳動：`onMouseScroll` 現在立即同步 client 端 item 狀態，不再等 server 回應
 
-### 效能優化 (Performance)
+#### 效能優化
 
 - `BiomeRegionManager.hasCustomRegions()` 改為 volatile boolean 快取，避免每次 biome query 重複建立 List 物件（大幅降低飛行時的 GC 壓力）
 - `SimpleBiomeRegion` 新增 `hasEntries()` 方法（直接檢查 CopyOnWriteArrayList.isEmpty()，不分配新物件）
 
-### 配方 (Recipes)
+#### 配方與世界生成
 
 - 將舊 `arcane_conduit` 合成配方轉移到 `basic_arcane_conduit`，保留舊方塊註冊僅作存檔相容用途
 - 新增 `advanced_arcane_conduit`、`elite_arcane_conduit`、`mana_grinder` 的 datagen 配方，導管改為階梯式升級路線
 - 從創造模式方塊分頁隱藏舊版 `arcane_conduit`，避免與新導管階級並存造成混淆
-
-### 世界生成 (Worldgen)
-
 - 修正 `runData` 的 `koniava:mana_plains` registry 錯誤：改為由 datagen 直接輸出 biome JSON，並讓 `add_mana_bloom` 使用 biome tag 而非直接綁定自訂 biome key
 - `runData` 期間停用 `OverworldBiomeBuilderMixin` 的自訂 biome 注入，避免 datagen registry 建立時出現 `Unreferenced key: koniava:mana_plains`
 
 ## [0.0.1.5-beta] - 2026-03-06
 
-### 生物群系 & 世界生成 (Biome & World Generation)
+### 玩家版變更 / Player-facing Changelog
+
+#### 中文
+
+- 重做自訂生物群系的區域生成邏輯，讓 **魔力草原** 與原版地形混合更自然，邊界更平滑。
+- 新增與調整多種地表材質，讓魔力地貌辨識度更高。
+- **魔力研磨機** 全面取代舊 `OreGrinder`，同步更新 GUI、JEI 顯示與配方體驗。
+- **魔力灌注機**、**魔力發電機**、**魔力合成台** 與 **太陽魔力收集器** 完成一輪平衡與同步修正。
+- **魔力導管** 傳輸穩定性與速率提升，並加入更清楚的階級化進程。
+- 新增 **魔力研磨機** 方塊實體動畫，並調整多個機器 GUI 與 JEI 版面。
+- 擴展部分機器渲染範圍，改善高模型方塊的顯示完整性。
+- 新增 **娜拉系統** 的逐字對話與印記資料結構基礎。
+- 補齊 JUnit 與 GameTest 基礎設施，強化存檔與機器行為驗證。
+
+#### English
+
+- Reworked custom biome region generation so **Mana Plains** blend into vanilla terrain more naturally with smoother borders.
+- Added and adjusted multiple surface materials to make mana-themed terrain easier to recognize in the world.
+- **Mana Grinder** fully replaces the old `OreGrinder`, including updated GUI, JEI integration, and recipe flow.
+- Rebalanced and fixed synchronization across the **Mana Infuser**, **Mana Generator**, **Mana Crafting Table**, and **Solar Mana Collector**.
+- **Mana Conduits** now transfer more reliably, run faster, and provide a clearer tiered progression path.
+- Added a dedicated **Mana Grinder** block-entity animation and refreshed several machine GUI and JEI layouts.
+- Expanded render bounds for tall machines so their visuals no longer clip as easily.
+- Added the foundation for the **Nara System**, including typewriter dialogue and imprint data support.
+- Expanded JUnit and GameTest coverage to better validate machine behavior and persistence.
+
+### 開發者版變更 / Developer-facing Changelog
+
+#### 生物群系 & 世界生成 (Biome & World Generation)
 
 **Zoom-Layer 地域索引系統（取代 UniquenessNoise）**
 - 新增 `biome/region/noise` 子包：`PixelTransformer`、`AreaContext`（LCG 亂數）、`Area`（StampedLock thread-safe cache）、`AreaFactory`、`AreaTransformer0/1`、`ZoomLayer`（FUZZY/NORMAL）、`InitialRegionLayer`（加權隨機）、`RegionNoiseUtil`（組合 zoom 鏈）
@@ -153,90 +200,6 @@ All notable changes to this project will be documented in this file.
 - 移除未使用的渲染鷹架（`com.github.nalamodikk.render`）及死亡 mixin（`LevelRendererMixin`、`ParticleEngineAccessor`）
 - 移除未使用的粒子 JSON：arcane_spark、energy_burst、explosion_magic 等 7 個
 - 移除 RPG 指令類別，UI / test 指令加上 `koniava` 前綴
-### Changed
-- Added a region-style biome injection architecture (`BiomeRegionManager`) and made the Overworld biome mixin consume the manager instead of direct injector logic.
-- Added datapack-driven biome climate overrides/additions under `data/*/worldgen/biome_climates/*.json` via a reload listener.
-- Added conflict-safe biome parameter overlay resolution to prevent unstable parameter point collisions.
-- Added staged surface rule registration (`namespace + stage + priority`) and switched worldgen rule composition to the new registry.
-- Added side-aware machine item handler wrapping so hoppers/pipes obey IO direction and per-slot insert/extract policies.
-- Enabled mana grinder item capability exposure and routed mana infuser item capability through the new side-aware wrapper.
-- Hardened mana grinder IO config deserialization to recover from legacy/invalid NBT states that could block conduit mana transfer.
-- Made mana grinder IO changes invalidate capabilities immediately and switched grinder "working" state to tick-actual progress (no mana now shows idle).
-- Added grinder working-state reconciliation so BlockState `working` and GUI sync state self-correct when they diverge.
-- Mana grinder IO updates now notify adjacent conduits to force immediate network rescan after IO face changes.
-- Changed mana generator default IO map from fully disabled to all-side outputs, and preserved defaults when legacy saves lack `IOMap`.
-- Reduced mana crafting table machine recipe cost for `mana_infuser_machine` from 9000 to 3500.
-- Fixed conduit idle throttling to use total network-visible mana (not local buffer only), preventing virtual-network transfer starvation to machines like mana grinder.
-- Reworked conduit circular-path guard to apply only to short-window conduit loops, auto-reset stale path history, and throttle loop-block debug logs.
-- Updated the custom blocks creative tab to auto-group machine blocks first by block type (no manual list maintenance).
-- Removed outdated owner multiplier GameTests after machine output decoupled from RPG attributes.
-- Moved GameTest classes to `src/test/java` and configured `runGameTestServer` to include `test` source set classes.
-- Added persistence GameTests for mana grinder and mana crafting table to verify mana/IO save-load behavior without opening the client.
-- Bumped NeoForge from 21.1.217 to 21.1.219.
-- Fully renamed `OreGrinder` to `ManaGrinder` across the entire codebase (classes, packages, variables, and assets).
-- Corrected `ManaGrinder` diamond recipe to output `Mana Dust` instead of `Glass`.
-- Implemented `NaraImprintHelper` and `INaraImprint` logic using the `NARA_IMPRINT` DataComponent.
-- Updated JEI integration and GameTests to reflect the `ManaGrinder` rename.
-- Removed the whole particle-effects stack (particle core, particle render/shader tools, particle packets/events, debug particle items, and particle assets/shaders).
-- Removed unused legacy framework folders: `init`, `display`, `event`, `network`, `commands`, `barrages`, `annotations`, `animation`, and `platform`.
-- Removed unused reflection scan utilities under `com.github.nalamodikk.reflect`.
-- Removed the whole experimental magic-effect rendering stack (`experimental/effects`, `experimental/render/effects`, effect examples, and `MagicEffectHelper`) for a clean rewrite baseline.
-- Removed unused render scaffolding under `com.github.nalamodikk.render` and dead mixins (`render.LevelRendererMixin`, `particle.ParticleEngineAccessor`).
-- Removed unused particle JSON configs: `arcane_spark`, `energy_burst`, `explosion_magic`, `healing_magic`, `mana_flow`, `nara_system`, `teleport_magic`.
-- Expanded render bounding boxes for mana generator and solar mana collector renderers to cover 1x2x1 visuals.
-- Made block-entity animation LOD distances/scales configurable via client config (`koniava-client.toml`).
-- Added `mana_grinder` block-entity renderer with idle crystal floating animation and inward counter-rotating crusher wheels.
-- Synced solar collector daytime state even when mana is unchanged, so GUI updates after time commands.
-- Added solar collector tooltip diagnostics for skylight, rain, thunder, and sky obstruction.
-- Solar collector now treats Overworld as having skylight and uses `canSeeSkyFromBelowWater` for sky checks.
-- Added solar collector tooltip debug flags for daytime, skylight, sky visibility, and weather.
-- Added solar collector tooltip debug flag for overworld detection.
-- Adjusted overworld detection and sky checks to use dimension id and skylight level.
-- Avoided client-side syncFrom calls that overwrote solar collector generating state.
-- Solar collector tooltip debug lines now show only while holding Shift.
-- Added a Shift hint line for solar collector tooltip debug details.
-- Solar collector tooltip now detects Shift via GLFW and shows the hint even while generating.
-- Added a key mapping for solar collector debug details and used the key's translation in the tooltip hint.
-- Standardized debug detail key mapping and registered it on the client mod event bus.
-- Cached combined ecosystem surface rules to reduce regeneration overhead during worldgen.
-- Mana machines now record the placing player as owner in the base block.
-- Mana generator, solar collector, mana grinder, and mana infuser now scale output or speed with the owner's RPG intelligence.
-- Prevented duplicate payload registration by skipping server-side networking registration on client.
-- Registered SyncRPGDataPacket on the server to avoid missing payload types.
-- Hid the mana crafting table mana bar background to avoid overlapping the GUI frame.
-- Hid the mana infuser mana bar background to avoid overlapping the GUI frame.
-- Restricted server-side payload registration to dedicated servers to avoid duplicate registration on integrated client.
-- Updated mana grinder GUI size and slot layout to align with the mana infuser layout.
-- Added a recipe hint hotspot for the mana grinder and linked it to JEI.
-- Updated mana grinder progress drawing to match the mana infuser style and removed the progress background.
-- Hid the mana grinder mana bar background to avoid overlapping the GUI frame.
-- Fixed JEI grinder recipe rendering by using the client font and translation keys.
-- Aligned grinder JEI title with the block translation key and set the JEI background crop to 171x77.
-- Updated grinder JEI slot positions to match the new GUI layout and avoided tooltip overlap when JEI is loaded.
-- Shifted grinder JEI slot positions by one pixel to match the in-game layout.
-- Added a dedicated mana grinder recipe datagen provider and moved grinder recipes there.
-- Renamed the ore grinder block to mana grinder in translations.
-- Shifted mana grinder GUI and JEI recipe slots two pixels to the right.
-- Rendered the grinder JEI mana cost as a bar instead of text.
-- Replaced deprecated JEI background override with recipe extras background drawable.
-- Mana grinder now uses each recipe's processing time and consumes the recipe mana cost once per craft.
-- Rebalanced grinder recipe mana costs based on current mana generation rates and added processing time to the multi-input recipe.
-- Rendered grinder JEI time text via recipe extras to avoid hidden text.
-- Centered the grinder JEI time label and moved chance text into the output slots with tooltips.
-- Ensured grinder JEI mana bar always renders for non-zero costs and moved time into recipe extras.
-- Increased mana infuser capacity to exceed its crafting mana cost.
-- Assigned a fixed Unbreaking I enchantment to the mana infuser book recipe and reduced its mana cost.
-- Solar mana collector now uses correct max mana with slower base output/interval and stackable Mek-style upgrades.
-- Added low-end mana generation for coal fuel.
-- Increased arcane conduit transfer rates and aligned legacy transfer rate to the basic tier.
-- Registered the ore grinder as a JEI recipe catalyst so the usage view shows the machine.
-- Upgrade inventory now marks changes when setting items to keep upgrade effects in sync.
-- Simplified Solar Mana Collector GameTests to avoid shared weather/time state and expanded flag-logic checks (including night).
-- Added a Taiwan-style mana-industrial progression draft and three-tier recipe plan to docs.
-- Stabilized the controllable particle system with proper client tick registration and command queue pre-creation.
-- Switched controllable particles to additive blending and routed particle logs through the mod logger.
-- Fixed client particle tick event bus registration for NeoForge (Bus.GAME).
-- Ensured custom particle render types bind the particle shader and mark translucency.
 
 ## [0.0.1.5 Preview] - 2026-01-04
 ### Changed
