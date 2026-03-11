@@ -61,6 +61,9 @@ public abstract class MultiNoiseBiomeSourceMixin {
         Climate.TargetPoint target = climateSampler.sample(x, y, z);
         // Only intercept surface queries; let vanilla handle cave/underground biomes
         if (Climate.unquantizeCoord(target.depth()) > 0.1f) return;
+        // Let vanilla handle ocean/coast positions — custom biomes should not bleed into water
+        // COAST threshold ≈ -0.11 (NEAR_INLAND starts at -0.11 in VanillaClimateBands)
+        if (Climate.unquantizeCoord(target.continentalness()) < -0.11f) return;
 
         Climate.ParameterList<Holder<Biome>> list = getOrBuildListForRegion(regionIndex);
         if (list == null) return;

@@ -8,6 +8,8 @@ All notable changes to this project will be documented in this file.
 
 - EN: Mana Plains now generates as large, continent-scale regions with smooth, natural-looking borders — no longer appears as small scattered patches invading vanilla terrain.
 - ZH: 魔力草原現在以大陸規模的平滑區域生成，邊界自然有機，不再以小塊 patch 的方式侵蝕原版地形。
+- EN: Fixed a bug where ocean biomes adjacent to Mana Plains would incorrectly receive Mana Plains surface terrain (mana grass, mana soil).
+- ZH: 修正魔力草原旁邊的海洋生態域錯誤套用魔力草原地表材質（魔力草方塊、魔力土）的問題。
 
 ### Developer Notes / 開發者備註
 
