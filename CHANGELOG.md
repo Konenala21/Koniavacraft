@@ -8,7 +8,7 @@ All notable changes to this project will be documented in this file.
 
 #### 中文
 
-- 修正 GitHub Actions / 發布平台構件缺少 datagen 資源的問題，重新發佈版本將正確包含 biome、blockstate 與 item model JSON。
+- 修正發布流程缺少 datagen 資源的問題：GitHub Release 已修正，現在補齊 Modrinth / CurseForge 上傳前的 `runData`，避免平台版本仍產出缺少 biome、blockstate 與 item model JSON 的壞包。
 - **太陽魔力收集器** 基礎產量提升為 20、運作間隔縮短為 60 ticks，效率與速度升級加成同步提高。
 - **魔力草原** 生成量與區塊尺寸下調，分布更稀疏，避免過度覆蓋原版地形。
 - **魔力發電機** 停止燃燒後仍會持續推送殘餘能量與魔力，外部機器接收更穩定。
@@ -18,7 +18,7 @@ All notable changes to this project will be documented in this file.
 
 #### English
 
-- Fixed GitHub Actions and publishing artifacts missing datagen-generated resources, so rebuilt releases now include biome, blockstate, and item model JSON files correctly.
+- Fixed the remaining publishing pipeline issue around missing datagen-generated resources: GitHub Release was already corrected, and now Modrinth and CurseForge uploads also run `runData` first so platform builds stop shipping jars missing biome, blockstate, and item model JSON files.
 - **Solar Mana Collector** now produces 20 mana by default, runs every 60 ticks, and gains stronger speed and efficiency upgrade scaling.
 - **Mana Plains** now generate less frequently with smaller patches, reducing biome overtake on vanilla terrain.
 - **Mana Generator** keeps pushing buffered energy and mana after fuel stops burning, improving compatibility with external receivers.
@@ -35,7 +35,7 @@ All notable changes to this project will be documented in this file.
 
 #### Bug 修復
 
-- 修正 CI / 發佈流程未先執行 `runData`，導致 GitHub Release、Modrinth、CurseForge 構件缺少 `src/generated/resources` 產物。
+- 修正 `publish-modrinth`、`publish-curseforge` 仍未先執行 `runData` 的問題；先前只有 GitHub Release 構件正確，平台上傳版本仍可能缺少 `src/generated/resources` 產物。
 - **魔力發電機** 輸出邏輯移至燃燒判斷外，確保 buffer 殘餘能量/魔力在停止燃燒後仍持續推送（修復無法輸出至 AE2 等外部接受器的問題）
 - **基礎科技魔杖** 快速滾動模式切換時顯示跳動：`onMouseScroll` 現在立即同步 client 端 item 狀態，不再等 server 回應
 

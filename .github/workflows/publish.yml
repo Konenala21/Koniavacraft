@@ -148,6 +148,9 @@ jobs:
       - name: Set up Gradle / 設定 Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Run data generation / 執行資料生成
+        run: ./gradlew runData
+
       - name: Publish to Modrinth / 發布到 Modrinth
         run: ./gradlew modrinth
         env:
@@ -168,6 +171,9 @@ jobs:
 
       - name: Set up Gradle / 設定 Gradle
         uses: gradle/actions/setup-gradle@v3
+
+      - name: Run data generation / 執行資料生成
+        run: ./gradlew runData
 
       - name: Publish to CurseForge / 發布到 CurseForge
         run: ./gradlew publishToCurseForge
