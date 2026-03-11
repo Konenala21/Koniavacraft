@@ -67,8 +67,8 @@ public class NoiseGeneratorSettingsMixin {
             cir.setReturnValue(SurfaceRules.sequence(sequence.toArray(new SurfaceRules.RuleSource[0])));
 
         } catch (Exception e) {
-            // 🚨 如果出錯，記錄錯誤但不修改返回值，保持原版規則
-            KoniavacraftMod.LOGGER.error("❌ Koniavacraft 地形規則注入失敗: {}", e.getMessage(), e);
+            // Keep vanilla behavior if terrain rule injection fails.
+            KoniavacraftMod.LOGGER.error("Failed to inject Koniavacraft terrain rules: {}", e.getMessage(), e);
         }
     }
 

@@ -39,6 +39,6 @@ public class ManaGrinderRecipeProvider {
                 .processingTime(200)
                 .save();
 
-        KoniavacraftMod.LOGGER.info("✅ 生成了 3 個粉碎機配方");
+        KoniavacraftMod.LOGGER.debug("Generated 3 mana grinder recipes.");
     }
 }

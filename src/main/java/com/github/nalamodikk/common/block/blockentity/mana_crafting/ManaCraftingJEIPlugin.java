@@ -33,7 +33,7 @@ public class ManaCraftingJEIPlugin implements IModPlugin {
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
         // 注册自定义配方类别 (魔力合成台)
-        LOGGER.info("[JEI] 正在註冊 ManaCraftingTableCategory...");
+        LOGGER.info("[JEI] Registering ManaCraftingTableCategory.");
 
         registration.addRecipeCategories(new ManaCraftingTableCategory(
                 registration.getJeiHelpers().getGuiHelper()));
@@ -50,7 +50,7 @@ public class ManaCraftingJEIPlugin implements IModPlugin {
     public void registerRecipes(IRecipeRegistration registration) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) {
-            LOGGER.warn("[JEI] Minecraft 尚未進入世界，跳過 mana_crafting 配方註冊！");
+            LOGGER.warn("[JEI] Minecraft level is null. Skipping mana crafting recipe registration.");
             return;
         }
 
@@ -63,7 +63,7 @@ public class ManaCraftingJEIPlugin implements IModPlugin {
                         .toList();
 
         registration.addRecipes(ManaCraftingTableCategory.MANA_CRAFTING_TYPE, manaCraftingTableRecipes);
-        LOGGER.info("[JEI] 成功註冊 {} 筆 mana_crafting 配方", manaCraftingTableRecipes.size());
+        LOGGER.info("[JEI] Registered {} mana crafting recipes.", manaCraftingTableRecipes.size());
     }
 
     @Override

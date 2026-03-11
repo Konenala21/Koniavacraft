@@ -83,7 +83,7 @@ public class ManaGeneratorFuelRecipeCategory implements IRecipeCategory<ManaGenF
         ItemStack[] stacks = recipe.getIngredient().getItems();
 
         if (stacks.length == 0) {
-            LOGGER.error("[JEI] ❌ FuelRecipeCategory 中 ingredient 無有效物品！(Ingredient has no matching ItemStacks to display in JEI)");
+            LOGGER.error("[JEI] FuelRecipeCategory ingredient has no matching ItemStacks to display.");
             return;
         }
 

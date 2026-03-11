@@ -96,14 +96,14 @@ public class ModCommonConfig {
     public static void onConfigLoad(ModConfigEvent.Loading event) {
         if (event.getConfig().getSpec() == SPEC) {
             // 原有配置日誌
-            KoniavacraftMod.LOGGER.info("載入魔力設定: manaRecipeRefreshInterval = {}",
+            KoniavacraftMod.LOGGER.info("Loaded mana settings: manaRecipeRefreshInterval={}",
                     INSTANCE.manaRecipeRefreshInterval.get());
-            KoniavacraftMod.LOGGER.info("載入動畫設定: showIntroAnimation = {}",
+            KoniavacraftMod.LOGGER.info("Loaded animation settings: showIntroAnimation={}",
                     INSTANCE.showIntroAnimation.get());
-            KoniavacraftMod.LOGGER.info("載入魔力發電機同步設定: manaChange = {}, energyChange = {}",
+            KoniavacraftMod.LOGGER.info("Loaded mana generator sync settings: manaChange={}, energyChange={}",
                     INSTANCE.manaGeneratorSignificantManaChange.get(),
                     INSTANCE.manaGeneratorSignificantEnergyChange.get());
-            KoniavacraftMod.LOGGER.info("載入開發者模式設定: enabled = {}, autoInDev = {}, active = {}",
+            KoniavacraftMod.LOGGER.info("Loaded developer mode settings: enabled={}, autoInDev={}, active={}",
                     INSTANCE.developerModeEnabled.get(),
                     INSTANCE.autoEnableDeveloperModeInDevEnvironment.get(),
                     isDeveloperModeActive());
@@ -116,20 +116,19 @@ public class ModCommonConfig {
     public static void onConfigReload(ModConfigEvent.Reloading event) {
         if (event.getConfig().getSpec() == SPEC) {
             // 原有配置日誌
-            KoniavacraftMod.LOGGER.info("重新載入魔力設定: manaRecipeRefreshInterval = {}",
+            KoniavacraftMod.LOGGER.info("Reloaded mana settings: manaRecipeRefreshInterval={}",
                     INSTANCE.manaRecipeRefreshInterval.get());
-            KoniavacraftMod.LOGGER.info("重新載入動畫設定: showIntroAnimation = {}",
+            KoniavacraftMod.LOGGER.info("Reloaded animation settings: showIntroAnimation={}",
                     INSTANCE.showIntroAnimation.get());
-            KoniavacraftMod.LOGGER.info("重新載入魔力發電機同步設定: manaChange = {}, energyChange = {}",
+            KoniavacraftMod.LOGGER.info("Reloaded mana generator sync settings: manaChange={}, energyChange={}",
                     INSTANCE.manaGeneratorSignificantManaChange.get(),
                     INSTANCE.manaGeneratorSignificantEnergyChange.get());
-            KoniavacraftMod.LOGGER.info("重新載入開發者模式設定: enabled = {}, autoInDev = {}, active = {}",
+            KoniavacraftMod.LOGGER.info("Reloaded developer mode settings: enabled={}, autoInDev={}, active={}",
                     INSTANCE.developerModeEnabled.get(),
                     INSTANCE.autoEnableDeveloperModeInDevEnvironment.get(),
                     isDeveloperModeActive());
 
-            // 重新載入生物群系配置
-            KoniavacraftMod.LOGGER.info("🔄 重新載入生物群系處理設定");
+            KoniavacraftMod.LOGGER.info("Reloaded biome processing settings.");
         }
     }
 
@@ -148,17 +147,17 @@ public class ModCommonConfig {
     public static class PerformancePresets {
 
         public static void applyLowEndServer() {
-            KoniavacraftMod.LOGGER.info("🔧 應用低配置服務器預設...");
+            KoniavacraftMod.LOGGER.info("Applying low-end server preset.");
             // 這個功能需要配合配置重載機制，這裡只是示例
         }
 
         public static void applyHighEndServer() {
-            KoniavacraftMod.LOGGER.info("🚀 應用高配置服務器預設...");
+            KoniavacraftMod.LOGGER.info("Applying high-end server preset.");
             // 這個功能需要配合配置重載機制，這裡只是示例
         }
 
         public static void applyBalanced() {
-            KoniavacraftMod.LOGGER.info("⚖️ 應用平衡設定預設...");
+            KoniavacraftMod.LOGGER.info("Applying balanced preset.");
             // 這個功能需要配合配置重載機制，這裡只是示例
         }
     }

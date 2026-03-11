@@ -44,9 +44,7 @@ public class KoniavacraftMod {
         modContainer.registerConfig(ModConfig.Type.COMMON, ModCommonConfig.SPEC);
         modContainer.registerConfig(ModConfig.Type.CLIENT, ModClientConfig.SPEC);
 
-        // debug test
-        LOGGER.debug("這是一條 DEBUG 測試訊息");
-        LOGGER.info("這是一條 INFO 測試訊息");
+        LOGGER.debug("Koniavacraft mod constructor initialized.");
         // Register the commonSetup method for modloading
 
         // 🌟 註冊生物群落
@@ -82,16 +80,15 @@ public class KoniavacraftMod {
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         // Some common setup code
-        LOGGER.info("HELLO FROM COMMON SETUP");
-
-        KoniavacraftMod.LOGGER.info("✅ Koniavacraft 世界生成系統初始化完成！");
+        LOGGER.debug("Running common setup.");
+        KoniavacraftMod.LOGGER.info("Koniavacraft world generation initialized.");
     }
 
     // You can use SubscribeEvent and let the Event Bus discover methods to call
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
         // Do something when the server starts
-        LOGGER.info("HELLO from server starting");
+        LOGGER.info("Server starting.");
     }
 
     // You can use EventBusSubscriber to automatically register all static methods

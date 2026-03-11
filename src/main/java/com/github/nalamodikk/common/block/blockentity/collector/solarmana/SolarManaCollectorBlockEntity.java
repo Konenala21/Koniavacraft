@@ -153,7 +153,7 @@
                 lastSyncedOverworld = isOverworld();
                 updateSyncedSkyFlags((ServerLevel) level);
 
-                LOGGER.info("🔄 狀態變化: {} -> {}, 條件: 可發電={}, 有空間={}",
+                LOGGER.debug("Solar collector generating state changed: {} -> {}, canGenerate={}, hasSpace={}",
                         oldGenerating, this.generating, canGenerate, hasSpace);
             }
         }
@@ -230,13 +230,13 @@
             // 診斷邏輯
             if (!didOutput && !hasLoggedOutputFailure) {
                 hasLoggedOutputFailure = true;
-                LOGGER.warn("⚠️ 輸出失敗: 位置={}, 魔力={}/{}", worldPosition, manaStorage.getManaStored(), manaStorage.getMaxManaStored());
+                LOGGER.warn("Solar collector output stalled at {}. mana={}/{}", worldPosition, manaStorage.getManaStored(), manaStorage.getMaxManaStored());
             }
 
             if (didOutput) {
                 if (hasLoggedOutputFailure) {
                     hasLoggedOutputFailure = false;
-                    LOGGER.info("✅ 輸出恢復: {}", worldPosition);
+                    LOGGER.debug("Solar collector output recovered at {}.", worldPosition);
                 }
 
                 // 魔力值變化，通知更新
@@ -365,7 +365,7 @@
 //                        worldPosition, manaStorage.getManaStored());
 
             } catch (Exception e) {
-                LOGGER.error("💥 保存太陽能收集器失敗: {}", worldPosition, e);
+                LOGGER.error("Failed to save solar mana collector at {}", worldPosition, e);
             }
         }
 
@@ -401,11 +401,11 @@
                     syncHelper.syncFrom(this);
                 }
 
-                LOGGER.debug("🌞 載入太陽能收集器: 位置 {}, 魔力 {}, 升級管理器已載入",
+                LOGGER.debug("Loaded solar mana collector at {} with mana {} and upgrade data.",
                         worldPosition, manaStorage.getManaStored());
 
             } catch (Exception e) {
-                LOGGER.error("💥 載入太陽能收集器失敗: {}", worldPosition, e);
+                LOGGER.error("Failed to load solar mana collector at {}", worldPosition, e);
                 generating = false;
             }
         }
@@ -480,11 +480,11 @@
                 // 🆕 通知客戶端更新
                 serverLevel.scheduleTick(worldPosition, getBlockState().getBlock(), 1);
 
-                LOGGER.info("🌞 伺服器端載入完成: 位置={}, 初始狀態 generating={}, canGenerate={}",
+                LOGGER.debug("Solar collector server load complete at {}. generating={}, canGenerate={}",
                         worldPosition, generating, canGenerate());
             } else if (level != null && level.isClientSide()) {
                 // 🆕 客戶端載入時的日誌
-                LOGGER.debug("🌞 客戶端載入完成: 位置={}", worldPosition);
+                LOGGER.debug("Solar collector client load complete at {}.", worldPosition);
             }
         }
 
@@ -504,7 +504,7 @@
                 BlockPos targetPos = worldPosition.relative(dir);
                 Direction inputSide = dir.getOpposite();
 
-                LOGGER.debug("🔧 初始化快取: 方向={}, 目標位置={}, 輸入側={}",
+                LOGGER.debug("Initializing capability cache. direction={}, targetPos={}, inputSide={}",
                         dir, targetPos, inputSide);
 
                 manaCaches.put(dir, BlockCapabilityCache.create(
@@ -514,7 +514,7 @@
                         inputSide,
                         () -> !this.isRemoved(),
                         () -> {
-                            LOGGER.debug("🔄 魔力快取失效: 方向={}", dir);
+                            LOGGER.debug("Mana capability cache invalidated for direction={}", dir);
                         }
                 ));
 
@@ -525,12 +525,12 @@
                         inputSide,
                         () -> !this.isRemoved(),
                         () -> {
-                            LOGGER.debug("🔄 能量快取失效: 方向={}", dir);
+                            LOGGER.debug("Energy capability cache invalidated for direction={}", dir);
                         }
                 ));
             }
 
-            LOGGER.info("✅ 太陽能收集器快取初始化完成: 位置={}", worldPosition);
+            LOGGER.debug("Solar collector capability caches initialized at {}.", worldPosition);
         }
         // === 🔧 升級系統接口 ===
 

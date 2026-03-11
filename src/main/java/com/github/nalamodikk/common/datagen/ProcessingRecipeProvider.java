@@ -51,7 +51,7 @@ public class ProcessingRecipeProvider {
                 .processingTime(120)
                 .save();
 
-        KoniavacraftMod.LOGGER.info("✅ 生成了 2 個加工配方");
+        KoniavacraftMod.LOGGER.debug("Generated 2 processing recipes.");
     }
 
     /**

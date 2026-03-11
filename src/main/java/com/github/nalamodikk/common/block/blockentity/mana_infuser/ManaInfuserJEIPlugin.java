@@ -43,7 +43,7 @@ public class ManaInfuserJEIPlugin implements IModPlugin {
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
         // 註冊魔力注入配方類別
-        LOGGER.info("[JEI] 正在註冊 ManaInfuserCategory...");
+        LOGGER.info("[JEI] Registering ManaInfuserCategory.");
 
         registration.addRecipeCategories(new ManaInfuserCategory(
                 registration.getJeiHelpers().getGuiHelper()));
@@ -62,7 +62,7 @@ public class ManaInfuserJEIPlugin implements IModPlugin {
     public void registerRecipes(IRecipeRegistration registration) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) {
-            LOGGER.warn("[JEI] Minecraft 尚未進入世界，跳過 mana_infuser 配方註冊！");
+            LOGGER.warn("[JEI] Minecraft level is null. Skipping mana infuser recipe registration.");
             return;
         }
 
@@ -78,7 +78,7 @@ public class ManaInfuserJEIPlugin implements IModPlugin {
         // 註冊到 JEI
         registration.addRecipes(ManaInfuserCategory.MANA_INFUSER_TYPE, manaInfuserRecipes);
 
-        LOGGER.info("[JEI] 成功註冊 {} 筆 mana_infuser 配方", manaInfuserRecipes.size());
+        LOGGER.info("[JEI] Registered {} mana infuser recipes.", manaInfuserRecipes.size());
     }
 
     @Override

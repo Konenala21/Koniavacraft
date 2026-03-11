@@ -41,13 +41,13 @@ public class ProcessingRecipeJEIPlugin implements IModPlugin {
      */
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
-        LOGGER.info("[JEI] 正在註冊加工配方分類...");
+        LOGGER.info("[JEI] Registering processing recipe categories.");
 
         IGuiHelper guiHelper = registration.getJeiHelpers().getGuiHelper();
 
         registration.addRecipeCategories(new GrinderRecipeCategory(guiHelper));
 
-        LOGGER.info("[JEI] ✅ 加工配方分類註冊完成");
+        LOGGER.info("[JEI] Processing recipe categories registered.");
     }
 
     /**
@@ -58,14 +58,14 @@ public class ProcessingRecipeJEIPlugin implements IModPlugin {
      */
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
-        LOGGER.info("[JEI] 註冊加工機器為配方催化劑...");
+        LOGGER.info("[JEI] Registering processing machine catalysts.");
 
         // 粉碎機
         registration.addRecipeCatalyst(
                 new ItemStack(ModBlocks.MANA_GRINDER.get()),
                 GrinderRecipeCategory.RECIPE_TYPE
         );
-        LOGGER.debug("[JEI] ✅ 粉碎機已註冊為催化劑");
+        LOGGER.debug("[JEI] Mana grinder catalyst registered.");
 
     }
 
@@ -94,7 +94,7 @@ public class ProcessingRecipeJEIPlugin implements IModPlugin {
     public void registerRecipes(@NotNull IRecipeRegistration registration) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) {
-            LOGGER.warn("[JEI] Minecraft Level 為 null，無法載入加工配方");
+            LOGGER.warn("[JEI] Minecraft level is null. Skipping processing recipe registration.");
             return;
         }
 
@@ -106,11 +106,11 @@ public class ProcessingRecipeJEIPlugin implements IModPlugin {
                 .toList();
 
         if (allRecipes.isEmpty()) {
-            LOGGER.error("[JEI] ❌ 沒有找到加工配方！請確保配方已生成並加載");
+            LOGGER.error("[JEI] No processing recipes were found. Verify that recipe data was generated and loaded.");
             return;
         }
 
-        LOGGER.info("[JEI] ✅ 找到了 {} 個加工配方，開始按類型分類...", allRecipes.size());
+        LOGGER.info("[JEI] Found {} processing recipes. Grouping by machine type.", allRecipes.size());
 
         // 按機器類型分類
         List<ProcessingRecipe> grinderRecipes = allRecipes.stream()
@@ -118,10 +118,10 @@ public class ProcessingRecipeJEIPlugin implements IModPlugin {
                 .toList();
 
         if (!grinderRecipes.isEmpty()) {
-            LOGGER.info("[JEI] 📝 註冊 {} 個粉碎機配方", grinderRecipes.size());
+            LOGGER.info("[JEI] Registering {} grinder recipes.", grinderRecipes.size());
             registration.addRecipes(GrinderRecipeCategory.RECIPE_TYPE, grinderRecipes);
         }
 
-        LOGGER.info("[JEI] ✅ 所有加工配方已註冊到 JEI");
+        LOGGER.info("[JEI] All processing recipes registered.");
     }
 }

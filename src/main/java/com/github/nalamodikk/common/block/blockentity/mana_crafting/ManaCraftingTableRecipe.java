@@ -247,7 +247,7 @@ public class ManaCraftingTableRecipe implements Recipe<ManaCraftingTableRecipe.M
 
     public ResourceLocation getId() {
         if (id == null) {
-            LOGGER.error("❌ getId() 被叫，但 ID 是 null！配方內容 result: {}, ingredients: {}", result, ingredients, new RuntimeException("trace")); // 顯示 call stack
+            LOGGER.error("getId() was called before the recipe ID was assigned. result={}, ingredients={}", result, ingredients, new RuntimeException("trace"));
             throw new IllegalStateException("Recipe ID is not set");
         }
         return id;

@@ -36,15 +36,15 @@ public class OverworldBiomeBuilderMixin {
             return;
         }
 
-        LOGGER.info("🔧 OverworldBiomeBuilderMixin: 開始注入自訂生物群落...");
+        LOGGER.debug("Injecting custom overworld biomes.");
 
         try {
             BiomeRegionManager.injectBiomes(consumer);
 
-            LOGGER.info("🎉 自訂生物群落注入完成！");
+            LOGGER.debug("Custom overworld biome injection completed.");
 
         } catch (Exception e) {
-            LOGGER.error("❌ 自訂生物群落注入失敗！", e);
+            LOGGER.error("Custom overworld biome injection failed.", e);
         }
     }
 }

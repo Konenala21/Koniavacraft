@@ -272,7 +272,7 @@ public class SolarUpgradeManager {
 //                    UPGRADE_SLOT_COUNT,
 //                    upgrades.getAll().stream().mapToInt(stack -> stack.isEmpty() ? 0 : 1).sum());
         } catch (Exception e) {
-            LOGGER.error("💥 保存升級管理器失敗", e);
+            LOGGER.error("Failed to save solar upgrade manager.", e);
         }
     }
 
@@ -293,7 +293,7 @@ public class SolarUpgradeManager {
                         upgrades.getAll().stream().mapToInt(stack -> stack.isEmpty() ? 0 : 1).sum());
             }
         } catch (Exception e) {
-            LOGGER.error("💥 載入升級管理器失敗", e);
+            LOGGER.error("Failed to load solar upgrade manager.", e);
         }
     }
 

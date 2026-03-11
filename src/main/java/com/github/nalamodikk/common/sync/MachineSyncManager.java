@@ -154,7 +154,7 @@ public class MachineSyncManager implements ContainerData {
                 }
             } catch (NoSuchMethodException ignored) {
                 if (!readOnly) {
-                    LOGGER.warn("找不到同步 Setter：{}.{}({})", provider.getClass().getSimpleName(), setterName, returnType.getSimpleName());
+                    LOGGER.warn("Missing sync setter: {}.{}({})", provider.getClass().getSimpleName(), setterName, returnType.getSimpleName());
                 }
             }
         }
@@ -332,7 +332,7 @@ public class MachineSyncManager implements ContainerData {
                 }, finalMaxLength);
             }
         } catch (IllegalAccessException e) {
-            LOGGER.error("同步欄位註冊失敗：{}.{}", provider.getClass().getSimpleName(), f.getName(), e);
+            LOGGER.error("Failed to register sync field: {}.{}", provider.getClass().getSimpleName(), f.getName(), e);
         }
     }
 
@@ -612,7 +612,7 @@ public class MachineSyncManager implements ContainerData {
     private static void logInvokeFailureOnce(AtomicBoolean warned, Object member, Exception e) {
         if (warned.compareAndSet(false, true)) {
             String name = member instanceof Method m ? m.getName() : member instanceof Field f ? f.getName() : member.toString();
-            LOGGER.error("同步反射失敗：{}", name, e);
+            LOGGER.error("Sync reflection failed: {}", name, e);
         }
     }
 

@@ -41,7 +41,7 @@ public class ManaGeneratorStateManager {
 
     public boolean toggleMode(int burnTime) {
         if (isWorking || burnTime > 0) {
-            KoniavacraftMod.LOGGER.info("⚠ 無法切換模式，發電機正在運行中！");
+            KoniavacraftMod.LOGGER.debug("Cannot toggle mana generator mode while it is running.");
             return false;
         }
         currentMode = (currentMode == Mode.MANA) ? Mode.ENERGY : Mode.MANA;

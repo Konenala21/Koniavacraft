@@ -121,7 +121,7 @@ public class BasicTechWandItem extends Item {
 
             } catch (Exception e) {
                 // 🛡️ 錯誤處理：避免崩潰
-                LOGGER.error("保存方塊配置時發生錯誤：{}", e.getMessage());
+                LOGGER.error("Failed to save block configuration: {}", e.getMessage());
                 player.displayClientMessage(
                         Component.translatable("message.koniava.config_save_failed"),
                         true

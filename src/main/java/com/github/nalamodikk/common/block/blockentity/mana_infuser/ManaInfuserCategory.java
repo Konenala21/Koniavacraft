@@ -94,7 +94,7 @@ public class ManaInfuserCategory implements IRecipeCategory<ManaInfuserRecipe> {
     public void setRecipe(IRecipeLayoutBuilder builder, ManaInfuserRecipe recipe, IFocusGroup focuses) {
         // 🔧 檢查配方有效性
         if (recipe.getInput().isEmpty()) {
-            LOGGER.error("[JEI] ❌ ManaInfuserCategory 中配方無有效輸入物品！");
+            LOGGER.error("[JEI] ManaInfuserCategory recipe has no valid input items.");
             return;
         }
 

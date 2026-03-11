@@ -52,7 +52,7 @@ public class ManaGeneratorRenderer implements BlockEntityRenderer<ManaGeneratorB
         try {
             Optional<Resource> resource = Minecraft.getInstance().getResourceManager().getResource(MODEL_LOCATION);
             if (resource.isEmpty()) {
-                LOGGER.error("❌ 找不到模型檔案: {}", MODEL_LOCATION);
+                LOGGER.error("Missing mana generator model resource: {}", MODEL_LOCATION);
                 return;
             }
 
@@ -62,7 +62,7 @@ public class ManaGeneratorRenderer implements BlockEntityRenderer<ManaGeneratorB
                 modelLoaded = true;
             }
         } catch (Exception e) {
-            LOGGER.error("❌ 載入魔力發電機模型失敗", e);
+            LOGGER.error("Failed to load mana generator model.", e);
         }
     }
 

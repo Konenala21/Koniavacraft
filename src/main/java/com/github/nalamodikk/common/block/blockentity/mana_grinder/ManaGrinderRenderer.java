@@ -193,7 +193,7 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
         try {
             Optional<Resource> resource = Minecraft.getInstance().getResourceManager().getResource(MODEL_LOCATION);
             if (resource.isEmpty()) {
-                LOGGER.error("❌ 找不到模型檔案: {}", MODEL_LOCATION);
+                LOGGER.error("Missing mana grinder model resource: {}", MODEL_LOCATION);
                 return;
             }
 
@@ -203,7 +203,7 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
                 modelLoaded = true;
             }
         } catch (Exception e) {
-            LOGGER.error("❌ 載入粉碎機模型失敗", e);
+            LOGGER.error("Failed to load mana grinder model.", e);
         }
     }
 
@@ -227,7 +227,7 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
                                      String targetGroupName, String coreGroupName, String bladesGroupName) {
         JsonObject targetGroup = findGroupByName(groups, targetGroupName);
         if (targetGroup == null) {
-            LOGGER.warn("⚠️ mana_grinder 模型找不到群組: {}", targetGroupName);
+            LOGGER.warn("Mana grinder model group not found: {}", targetGroupName);
             return;
         }
 
@@ -235,7 +235,7 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
         Set<Integer> coreIndices = new LinkedHashSet<>();
         collectDirectElementIndices(targetGroup, coreIndices);
         if (coreIndices.isEmpty()) {
-            LOGGER.warn("⚠️ 群組 {} 找不到軸心元素（直接 children index）", targetGroupName);
+            LOGGER.warn("Model group {} has no direct pivot elements.", targetGroupName);
         } else {
             List<ModelElement> coreElements = collectElementsByIndices(parsedElements, coreIndices);
             if (!coreElements.isEmpty()) {
@@ -249,7 +249,7 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
         collectNestedElementIndices(targetGroup, bladeIndices);
         bladeIndices.removeAll(coreIndices);
         if (bladeIndices.isEmpty()) {
-            LOGGER.warn("⚠️ 群組 {} 沒有可渲染元素", targetGroupName);
+            LOGGER.warn("Model group {} has no renderable elements.", targetGroupName);
             return;
         }
         List<ModelElement> bladeElements = collectElementsByIndices(parsedElements, bladeIndices);
@@ -394,7 +394,7 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
                 }
             }
         } catch (Exception exception) {
-            LOGGER.warn("⚠️ 讀取 mana_grinder_active 貼圖動畫資訊失敗，退回靜態貼圖", exception);
+            LOGGER.warn("Failed to read mana_grinder_active animation metadata. Falling back to the static texture.", exception);
             activeTextureFrameCount = 1;
             activeTextureFrameTime = 1;
         }

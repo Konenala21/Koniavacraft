@@ -89,11 +89,11 @@ public class SolarCollectorRenderer implements BlockEntityRenderer<SolarManaColl
     }
 
     private void loadAndParseModel() {
-        LOGGER.info("🔍 開始載入太陽能收集器模型");
+        LOGGER.debug("Loading solar collector model.");
         try {
             Optional<Resource> resource = Minecraft.getInstance().getResourceManager().getResource(MODEL_LOCATION);
             if (resource.isEmpty()) {
-                LOGGER.error("❌ 找不到模型檔案: {}", MODEL_LOCATION);
+                LOGGER.error("Missing solar collector model resource: {}", MODEL_LOCATION);
                 return;
             }
 
@@ -101,18 +101,18 @@ public class SolarCollectorRenderer implements BlockEntityRenderer<SolarManaColl
                 JsonObject modelData = JsonParser.parseReader(reader).getAsJsonObject();
                 parseModelData(modelData);
                 modelLoaded = true;
-                LOGGER.info("✅ 模型載入成功，共 {} 個群組", groupElements.size());
+                LOGGER.debug("Solar collector model loaded. groups={}", groupElements.size());
             }
         } catch (Exception e) {
-            LOGGER.error("❌ 載入模型失敗", e);
+            LOGGER.error("Failed to load solar collector model.", e);
         }
     }
 
     private void parseModelData(JsonObject modelData) {
         groupElements.clear();
         groupElements.putAll(BlockbenchModelRenderUtils.parseGroupedElements(modelData, true));
-        LOGGER.info("📊 模型解析完成:");
-        groupElements.forEach((name, elements) -> LOGGER.info("  - {}: {} 個元素", name, elements.size()));
+        LOGGER.debug("Solar collector model groups parsed.");
+        groupElements.forEach((name, elements) -> LOGGER.debug("group={} elements={}", name, elements.size()));
     }
 
     private void renderGroup(PoseStack poseStack, VertexConsumer vertexConsumer,

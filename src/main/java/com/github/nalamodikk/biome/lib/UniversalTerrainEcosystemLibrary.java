@@ -75,7 +75,7 @@ public class UniversalTerrainEcosystemLibrary {
         ALL_RULES_CACHED = false;
 
         if (KoniavacraftMod.IS_DEV) {
-            KoniavacraftMod.LOGGER.info("🌱 已註冊地形生態系統: {} (優先級: {})",
+            KoniavacraftMod.LOGGER.info("Registered terrain ecosystem: {} (priority={})",
                     biome.location(), config.priority());
         }
     }
@@ -102,7 +102,7 @@ public class UniversalTerrainEcosystemLibrary {
 
         if (validRules.isEmpty()) {
             if (KoniavacraftMod.IS_DEV && !LOGGED_INITIALIZATION) {
-                KoniavacraftMod.LOGGER.warn("⚠️ 沒有找到有效的地形生態系統規則");
+                KoniavacraftMod.LOGGER.warn("No valid terrain ecosystem rules were found.");
                 LOGGED_INITIALIZATION = true;
             }
             ALL_RULES_CACHE = null;
@@ -111,7 +111,7 @@ public class UniversalTerrainEcosystemLibrary {
         }
 
         if (KoniavacraftMod.IS_DEV && !LOGGED_INITIALIZATION) {
-            KoniavacraftMod.LOGGER.info("✅ 成功創建 {} 個地形生態系統規則", validRules.size());
+            KoniavacraftMod.LOGGER.info("Created {} terrain ecosystem rules.", validRules.size());
             LOGGED_INITIALIZATION = true;
         }
 
@@ -143,7 +143,7 @@ public class UniversalTerrainEcosystemLibrary {
             // 檢查所需方塊是否存在
             if (!config.areBlocksValid()) {
                 if (KoniavacraftMod.IS_DEV) {
-                    KoniavacraftMod.LOGGER.warn("⚠️ 生態系統所需方塊不存在，跳過: {}", biome.location());
+                    KoniavacraftMod.LOGGER.warn("Skipping ecosystem because required blocks are missing: {}", biome.location());
                 }
                 return null;
             }
@@ -153,13 +153,13 @@ public class UniversalTerrainEcosystemLibrary {
             if (rule != null) {
                 RULE_CACHE.put(biome, rule);
                 if (KoniavacraftMod.IS_DEV) {
-                    KoniavacraftMod.LOGGER.debug("✨ 成功創建生態系統規則: {}", biome.location());
+                    KoniavacraftMod.LOGGER.debug("Created ecosystem rule: {}", biome.location());
                 }
                 return rule;
             }
 
         } catch (Exception e) {
-            KoniavacraftMod.LOGGER.error("❌ 創建生態系統規則失敗: {} - {}", biome.location(), e.getMessage());
+            KoniavacraftMod.LOGGER.error("Failed to create ecosystem rule: {} - {}", biome.location(), e.getMessage());
         }
 
         return null;

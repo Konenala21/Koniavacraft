@@ -431,7 +431,7 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
 
             needsNetworkRestore = true;
 
-            LOGGER.info("📂 準備恢復虛擬網路魔力: {}", tag.getInt("VirtualNetworkMana"));
+            LOGGER.debug("Queued virtual network mana restore: {}", tag.getInt("VirtualNetworkMana"));
         }
         // 🆕 載入拉取計數器
         pullTickCounter = tag.getInt("pullTickCounter");
@@ -463,7 +463,7 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
         // 2. 連接數變化（網路拓撲改變）
         if (conduitCount != lastLoggedConduitCount) {
             if (KoniavacraftMod.IS_DEV) {
-                LOGGER.info("💾 虛擬網路連接變化: {} → {} 導管, 當前魔力: {}", lastLoggedConduitCount, conduitCount, currentMana);
+                LOGGER.debug("Virtual network conduit count changed: {} -> {}, mana={}", lastLoggedConduitCount, conduitCount, currentMana);
             }
             lastLoggedConduitCount = conduitCount;
             lastLoggedMana = currentMana;
@@ -474,7 +474,7 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
         if (Math.abs(currentMana - lastLoggedMana) > 2000) {
             if (KoniavacraftMod.IS_DEV) {
 
-                LOGGER.info("💾 虛擬網路魔力重大變化: {} → {}, 連接數: {}",
+                LOGGER.debug("Virtual network mana changed significantly: {} -> {}, conduits={}",
                     lastLoggedMana, currentMana, conduitCount);
         }
             lastLoggedMana = currentMana;
@@ -522,16 +522,16 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
             // 避免重複恢復
             if (isNetworkMaster()) {
                 virtualNetwork.setTotalManaStored(savedMana);
-                LOGGER.info("🔄 恢復虛擬網路魔力: {} (網路主導管)", savedMana);
+                LOGGER.debug("Restored virtual network mana on network master: {}", savedMana);
             } else {
-                LOGGER.info("🔄 跳過魔力恢復，不是網路主導管");
+                LOGGER.debug("Skipped virtual network mana restore because this conduit is not the network master.");
             }
 
             needsNetworkRestore = false;
             tempNetworkData = null;
 
         } catch (Exception e) {
-            LOGGER.error("❌ 恢復虛擬網路數據失敗: {}", e.getMessage());
+            LOGGER.error("Failed to restore virtual network data: {}", e.getMessage());
             needsNetworkRestore = false;
             tempNetworkData = null;
         }

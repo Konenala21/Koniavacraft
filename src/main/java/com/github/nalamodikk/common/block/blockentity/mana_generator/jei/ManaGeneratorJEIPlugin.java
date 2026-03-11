@@ -33,7 +33,7 @@ public class ManaGeneratorJEIPlugin implements IModPlugin {
     }
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
-        LOGGER.info("[JEI] 正在註冊 FuelRecipeCategory...");
+        LOGGER.info("[JEI] Registering FuelRecipeCategory.");
 
         IGuiHelper guiHelper = registration.getJeiHelpers().getGuiHelper();
 
@@ -43,7 +43,7 @@ public class ManaGeneratorJEIPlugin implements IModPlugin {
 
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
-        LOGGER.info("[JEI] 註冊 Mana Generator 為 FuelRecipeCategory 的催化劑！");
+        LOGGER.info("[JEI] Registering Mana Generator as a FuelRecipeCategory catalyst.");
         registration.addRecipeCatalyst(
                 new ItemStack(ModBlocks.MANA_GENERATOR.get()), ManaGeneratorFuelRecipeCategory.manaGenFuelRecipeType
         );
@@ -61,7 +61,7 @@ public class ManaGeneratorJEIPlugin implements IModPlugin {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) {
 
-            LOGGER.warn("[JEI] Minecraft Level 為 null，無法載入 FuelRecipe。");
+            LOGGER.warn("[JEI] Minecraft level is null. Unable to load fuel recipes.");
             return;
         }
 
@@ -72,11 +72,11 @@ public class ManaGeneratorJEIPlugin implements IModPlugin {
                 .toList();
 
         if (manaGenFuelRecipes.isEmpty()) {
-            LOGGER.error("[JEI] ❌ FuelRecipe 配方數量為 0，請檢查 JSON 是否正確存入 `mana_recipes/fuel/`！");
+            LOGGER.error("[JEI] Fuel recipe count is 0. Verify that JSON files were generated under `mana_recipes/fuel/`.");
             return;
         }
 
-        LOGGER.info("[JEI] ✅ 找到了 {} 個燃料配方，開始註冊...", manaGenFuelRecipes.size());
+        LOGGER.info("[JEI] Found {} fuel recipes. Registering them now.", manaGenFuelRecipes.size());
 
         // ✅ 正確：使用已取得的清單，不要再重抓一次！
         registration.addRecipes(
@@ -84,7 +84,7 @@ public class ManaGeneratorJEIPlugin implements IModPlugin {
                 manaGenFuelRecipes
         );
 
-        LOGGER.info("[JEI] ✅ 成功註冊 FuelRecipeCategory 配方！");
+        LOGGER.info("[JEI] FuelRecipeCategory recipes registered.");
     }
 
 }

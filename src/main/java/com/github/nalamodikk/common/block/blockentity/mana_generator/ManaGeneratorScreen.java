@@ -109,7 +109,7 @@ public class ManaGeneratorScreen extends AutoSizedModularScreen<ManaGeneratorMen
         // 6. 模式切換按鈕 (130, 25)
         root.add(new ButtonWidget(130, 25, 20, 20, BUTTON_TEXTURE, 20, 20, btn -> {
             if (this.menu.getBurnTime() > 0) {
-                KoniavacraftMod.LOGGER.info("⚠ 發電機正在運行，無法切換模式！");
+                KoniavacraftMod.LOGGER.debug("Cannot toggle mana generator mode while it is running.");
                 showWarning = true;
                 warningStartTime = System.currentTimeMillis();
                 return;
