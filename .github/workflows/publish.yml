@@ -26,6 +26,9 @@ jobs:
       - name: Set up Gradle / 設定 Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Run data generation / 執行資料生成
+        run: ./gradlew runData
+
       - name: Build project / 建置專案
         run: ./gradlew build
 
