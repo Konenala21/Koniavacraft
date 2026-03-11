@@ -7,6 +7,7 @@ import com.github.nalamodikk.biome.lib.SurfaceRuleRegistry;
 import com.github.nalamodikk.biome.region.BiomeInjectionEntry;
 import com.github.nalamodikk.biome.region.BiomeRegionManager;
 import com.github.nalamodikk.biome.region.ParameterPointListBuilder;
+import com.github.nalamodikk.biome.region.PlacementMode;
 import com.github.nalamodikk.biome.region.SimpleBiomeRegion;
 import com.github.nalamodikk.biome.region.VanillaClimateBands;
 import com.github.nalamodikk.register.ModBlocks;
@@ -29,7 +30,7 @@ public class BiomeTerrainRegistration {
      * 🚀 註冊所有生物群系地形
      */
     public static void registerAll() {
-        KoniavacraftMod.LOGGER.info("🌍 開始註冊 Koniavacraft 生物群系地形...");
+        KoniavacraftMod.LOGGER.info("Registering Koniavacraft biome terrain definitions.");
 
         try {
             // 全局參數：vanillaWeight=10 → 魔力草原覆蓋率 2/(10+2) ≈ 17%
@@ -50,10 +51,10 @@ public class BiomeTerrainRegistration {
                     BiomeTerrainLibAPI::getAllRules
             );
 
-            KoniavacraftMod.LOGGER.info("✅ Koniavacraft 生物群系地形註冊完成！");
+            KoniavacraftMod.LOGGER.info("Biome terrain registration completed.");
 
         } catch (Exception e) {
-            KoniavacraftMod.LOGGER.error("❌ 生物群系地形註冊失敗！", e);
+            KoniavacraftMod.LOGGER.error("Biome terrain registration failed.", e);
         }
     }
 
@@ -87,7 +88,9 @@ public class BiomeTerrainRegistration {
         // （JSON datapack 的 mana_plains.json override 可覆蓋個別 entry 的 weight/priority，
         //  但程式碼定義的多 entry 架構由此建立）
         SimpleBiomeRegion defaultRegion = BiomeRegionManager.getOrCreateRegion(
-                ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "mana_plains_region"), 2);
+                ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "mana_plains_region"),
+                2,
+                PlacementMode.SMOOTH_NOISE);
 
         // Climate 設計目標：出現在草原型地形（乾燥到中性濕度 = Plains/Sunflower Plains），
         // 不出現在森林型地形（WET humidity = 森林），高侵蝕 = 平坦地形
@@ -111,7 +114,7 @@ public class BiomeTerrainRegistration {
         entries.forEach(defaultRegion::registerEntry);
 
         if (KoniavacraftMod.IS_DEV) {
-            KoniavacraftMod.LOGGER.debug("🌱 已註冊魔力草原地形（{} 個 climate points）", entries.size());
+            KoniavacraftMod.LOGGER.debug("Registered mana plains terrain with {} climate points.", entries.size());
         }
     }
 

@@ -3,6 +3,7 @@ package com.github.nalamodikk.biome.region;
 import com.github.nalamodikk.biome.data.BiomeClimateConfigLoader;
 import com.github.nalamodikk.biome.region.noise.Area;
 import com.github.nalamodikk.biome.region.noise.RegionNoiseUtil;
+import com.github.nalamodikk.biome.region.noise.RegionNoiseSampler;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceKey;
@@ -42,7 +43,8 @@ public final class BiomeRegionManager {
     private static volatile int zoomCount = 4;
 
     // Built on LevelEvent.Load; null while no world is loaded (main menu, etc.)
-    private static volatile Area regionArea = null;
+    private static volatile RegionNoiseSampler noiseSampler = null; // SMOOTH_NOISE regions
+    private static volatile Area regionArea = null;                  // ZOOM_LAYER regions
 
     // Cached once any region has entries — avoids allocations in hot biome-query path
     private static volatile boolean hasCustomRegionsCached = false;
@@ -67,18 +69,24 @@ public final class BiomeRegionManager {
     // ===================== region registration =====================
 
     /**
-     * Return an existing region by id, or create a new one with {@code weight} and an
-     * auto-assigned uniqueness index.
+     * Return an existing region by id, or create a new one with {@code weight},
+     * {@code placementMode}, and an auto-assigned uniqueness index.
      */
-    public static synchronized SimpleBiomeRegion getOrCreateRegion(ResourceLocation id, int weight) {
+    public static synchronized SimpleBiomeRegion getOrCreateRegion(
+            ResourceLocation id, int weight, PlacementMode placementMode) {
         SimpleBiomeRegion existing = REGIONS.get(id);
         if (existing != null) return existing;
 
         int idx = nextRegionIndex++;
-        SimpleBiomeRegion region = new SimpleBiomeRegion(id, weight, idx);
+        SimpleBiomeRegion region = new SimpleBiomeRegion(id, weight, idx, placementMode);
         REGIONS.put(id, region);
         INDEX_TO_REGION.put(idx, region);
         return region;
+    }
+
+    /** Convenience overload — defaults to {@link PlacementMode#ZOOM_LAYER}. */
+    public static synchronized SimpleBiomeRegion getOrCreateRegion(ResourceLocation id, int weight) {
+        return getOrCreateRegion(id, weight, PlacementMode.ZOOM_LAYER);
     }
 
     public static synchronized void registerRegion(SimpleBiomeRegion region) {
@@ -90,6 +98,7 @@ public final class BiomeRegionManager {
         REGIONS.clear();
         INDEX_TO_REGION.clear();
         nextRegionIndex = 1;
+        noiseSampler = null;
         regionArea = null;
         hasCustomRegionsCached = false;
     }
@@ -97,26 +106,45 @@ public final class BiomeRegionManager {
     // ===================== world init =====================
 
     /**
-     * Build (or rebuild) the zoom-layer Area for the given world seed.
+     * Build (or rebuild) both region systems for the given world seed.
      * Must be called from the server thread on {@code LevelEvent.Load} for the Overworld.
      */
     public static void initForWorld(long seed) {
-        List<SimpleBiomeRegion> regions = new ArrayList<>(REGIONS.values());
-        regions.sort(Comparator.comparingInt(SimpleBiomeRegion::uniquenessIndex));
-        regionArea = RegionNoiseUtil.build(regions, vanillaWeight, seed, zoomCount);
-        LOGGER.info("Koniava: built region area ({} custom regions, vanillaWeight={}, zoomCount={}, seed={})",
-                regions.size(), vanillaWeight, zoomCount, seed);
+        List<SimpleBiomeRegion> allRegions = new ArrayList<>(REGIONS.values());
+        allRegions.sort(Comparator.comparingInt(SimpleBiomeRegion::uniquenessIndex));
+
+        List<SimpleBiomeRegion> noiseRegions = allRegions.stream()
+                .filter(r -> r.placementMode() == PlacementMode.SMOOTH_NOISE)
+                .toList();
+        List<SimpleBiomeRegion> zoomRegions = allRegions.stream()
+                .filter(r -> r.placementMode() == PlacementMode.ZOOM_LAYER)
+                .toList();
+
+        noiseSampler = noiseRegions.isEmpty() ? null
+                : new RegionNoiseSampler(seed, noiseRegions, vanillaWeight);
+
+        regionArea = zoomRegions.isEmpty() ? null
+                : RegionNoiseUtil.build(zoomRegions, vanillaWeight, seed, zoomCount);
+
+        LOGGER.info("Koniava: region systems initialised — smooth-noise: {}, zoom-layer: {}, seed: {}",
+                noiseRegions.size(), zoomRegions.size(), seed);
     }
 
     // ===================== runtime queries =====================
 
     /**
      * Return the region index at block position (blockX, blockZ).
+     * Smooth-noise regions are checked first; zoom-layer regions are the fallback.
      *
      * @return {@code 0} if vanilla (or if {@link #initForWorld} has not been called yet),
      *         {@code 1..N} for a custom region
      */
     public static int getRegionIndex(int blockX, int blockZ) {
+        RegionNoiseSampler sampler = noiseSampler;
+        if (sampler != null) {
+            int idx = sampler.getRegionIndex(blockX, blockZ);
+            if (idx != 0) return idx;
+        }
         Area area = regionArea;
         if (area == null) return 0;
         return area.get(blockX, blockZ);

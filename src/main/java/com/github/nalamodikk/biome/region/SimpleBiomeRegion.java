@@ -13,21 +13,29 @@ public class SimpleBiomeRegion implements BiomeRegion {
     private final ResourceLocation id;
     private final int weight;
     private final int uniquenessIndex;
+    private final PlacementMode placementMode;
     private final List<BiomeInjectionEntry> entries = new CopyOnWriteArrayList<>();
 
     /**
      * @param uniquenessIndex region slot index assigned by {@link BiomeRegionManager}; starts at 1
      *                        (0 is reserved for vanilla)
+     * @param placementMode   how this region is spatially placed in the world
      */
-    public SimpleBiomeRegion(ResourceLocation id, int weight, int uniquenessIndex) {
+    public SimpleBiomeRegion(ResourceLocation id, int weight, int uniquenessIndex, PlacementMode placementMode) {
         this.id = id;
         this.weight = weight;
         this.uniquenessIndex = uniquenessIndex;
+        this.placementMode = placementMode;
     }
 
-    /** Returns the zoom-layer slot index for this region (1..N). */
+    /** Returns the slot index for this region (1..N). */
     public int uniquenessIndex() {
         return uniquenessIndex;
+    }
+
+    /** Returns how this region is spatially placed in the world. */
+    public PlacementMode placementMode() {
+        return placementMode;
     }
 
     @Override

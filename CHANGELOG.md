@@ -4,11 +4,28 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Player Changes / 玩家更新內容
+
+- EN: Mana Plains now generates as large, continent-scale regions with smooth, natural-looking borders — no longer appears as small scattered patches invading vanilla terrain.
+- ZH: 魔力草原現在以大陸規模的平滑區域生成，邊界自然有機，不再以小塊 patch 的方式侵蝕原版地形。
+
+### Developer Notes / 開發者備註
+
+- EN: Added `PlacementMode` enum (`ZOOM_LAYER` / `SMOOTH_NOISE`) to `SimpleBiomeRegion`. Future biomes can choose their spatial placement strategy independently.
+- ZH: 在 `SimpleBiomeRegion` 加入 `PlacementMode` enum（`ZOOM_LAYER` / `SMOOTH_NOISE`），未來每個 biome 可獨立選擇空間生成策略。
+- EN: Added `RegionNoiseSampler` — replaces Zoom-Layer patch logic for `SMOOTH_NOISE` regions. Uses single-octave `NormalNoise` at low frequency (`firstOctave=-7`, `REGION_SCALE=0.04`) to produce ~3200-block smooth regions. No external dependencies.
+- ZH: 新增 `RegionNoiseSampler`，對 `SMOOTH_NOISE` region 取代 Zoom Layer 的格狀邏輯。使用單 octave `NormalNoise` 低頻採樣（`firstOctave=-7`，`REGION_SCALE=0.04`），產生約 3200 格寬的平滑區域，無外部依賴。
+- EN: `BiomeRegionManager` now runs both systems in parallel — smooth-noise checked first, zoom-layer as fallback. `initForWorld` splits regions by `PlacementMode` and builds each system only if needed.
+- ZH: `BiomeRegionManager` 現在雙系統並行運作——先查 smooth-noise，再查 zoom-layer 作後備。`initForWorld` 依 `PlacementMode` 分組，只建構需要的系統。
+- EN: `BiomeTerrainRegistration`: Mana Plains region registered with `PlacementMode.SMOOTH_NOISE`. All existing Zoom-Layer files retained for future use.
+- ZH: `BiomeTerrainRegistration`：魔力草原 region 改用 `PlacementMode.SMOOTH_NOISE` 註冊。所有現有 Zoom Layer 檔案完整保留供未來使用。
+
 ### 玩家版變更 / Player-facing Changelog
 
 #### 中文
 
 - 修正發布流程缺少 datagen 資源的問題：GitHub Release 已修正，現在補齊 Modrinth / CurseForge 上傳前的 `runData`，避免平台版本仍產出缺少 biome、blockstate 與 item model JSON 的壞包。
+- 調整正式版機器與世界生成診斷 log：改為英文並降低部分初始化訊息等級，減少 Windows 啟動器出現中文亂碼。
 - **太陽魔力收集器** 基礎產量提升為 20、運作間隔縮短為 60 ticks，效率與速度升級加成同步提高。
 - **魔力草原** 生成量與區塊尺寸下調，分布更稀疏，避免過度覆蓋原版地形。
 - **魔力發電機** 停止燃燒後仍會持續推送殘餘能量與魔力，外部機器接收更穩定。
@@ -19,6 +36,7 @@ All notable changes to this project will be documented in this file.
 #### English
 
 - Fixed the remaining publishing pipeline issue around missing datagen-generated resources: GitHub Release was already corrected, and now Modrinth and CurseForge uploads also run `runData` first so platform builds stop shipping jars missing biome, blockstate, and item model JSON files.
+- Cleaned up production machine and worldgen diagnostics by switching visible runtime logs to English and lowering noisy initialization messages, reducing mojibake in Windows launchers.
 - **Solar Mana Collector** now produces 20 mana by default, runs every 60 ticks, and gains stronger speed and efficiency upgrade scaling.
 - **Mana Plains** now generate less frequently with smaller patches, reducing biome overtake on vanilla terrain.
 - **Mana Generator** keeps pushing buffered energy and mana after fuel stops burning, improving compatibility with external receivers.
@@ -36,6 +54,7 @@ All notable changes to this project will be documented in this file.
 #### Bug 修復
 
 - 修正 `publish-modrinth`、`publish-curseforge` 仍未先執行 `runData` 的問題；先前只有 GitHub Release 構件正確，平台上傳版本仍可能缺少 `src/generated/resources` 產物。
+- 將正式版 `INFO/WARN/ERROR` 的中文 logger 逐步改為英文，並將 renderer / 快取 / worldgen 初始化診斷盡量降到 `DEBUG`，降低 Windows / 啟動器 console 亂碼機率。
 - **魔力發電機** 輸出邏輯移至燃燒判斷外，確保 buffer 殘餘能量/魔力在停止燃燒後仍持續推送（修復無法輸出至 AE2 等外部接受器的問題）
 - **基礎科技魔杖** 快速滾動模式切換時顯示跳動：`onMouseScroll` 現在立即同步 client 端 item 狀態，不再等 server 回應
 
