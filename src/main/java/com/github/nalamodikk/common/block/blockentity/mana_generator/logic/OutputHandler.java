@@ -77,7 +77,12 @@ public class OutputHandler {
 
             // 能量接收端處理
             if (energyTarget != null && energyStorage != null && energyTarget.canReceive()) {
-                int demand = energyTarget.getMaxEnergyStored() - energyTarget.getEnergyStored();
+                // Use long arithmetic to avoid int overflow with large-capacity receivers
+                // (e.g. AE2 Energy Acceptor reports getMaxEnergyStored() near Integer.MAX_VALUE,
+                // which overflows to a negative int when subtracted, causing demand <= 0 and
+                // the target being silently skipped).
+                long demandLong = (long) energyTarget.getMaxEnergyStored() - (long) energyTarget.getEnergyStored();
+                int demand = (int) Math.min(demandLong, (long) Integer.MAX_VALUE);
                 // TODO: [OutputHandlerV2] 目前的「需求值」是使用「最大容量 - 當前儲量」來估算接收端的可接收空間。
                 // TODO: [OutputHandlerV2] 儲量估算目前為靜態模型
                 // NOTE: 可接下來觀察玩家是否常常讓小容量機器卡不到 mana

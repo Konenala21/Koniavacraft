@@ -6,6 +6,11 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- EN: Fixed Mana Generator light flickering and lag when energy/mana output buffer is full. The light now only changes after the state is stable for 10 ticks.
+- ZH: 修正魔力發電機在能量/魔力輸出緩衝區滿時燈光快速閃爍並造成卡頓的問題。現在燈光只會在狀態穩定 10 tick 後才切換。
+- EN: Fixed Mana Generator not outputting energy to ME Energy Acceptor (Applied Energistics 2) placed directly adjacent. Caused by integer overflow when calculating demand for large-capacity receivers.
+- ZH: 修正魔力發電機無法將能量輸出至緊貼的 ME 能源接受器（AE2）的問題。原因為計算大容量接收端需求值時發生 int 溢位。
+
 - EN: Mana Plains now generates as large, continent-scale regions with smooth, natural-looking borders — no longer appears as small scattered patches invading vanilla terrain.
 - ZH: 魔力草原現在以大陸規模的平滑區域生成，邊界自然有機，不再以小塊 patch 的方式侵蝕原版地形。
 - EN: Fixed a bug where ocean biomes adjacent to Mana Plains would incorrectly receive Mana Plains surface terrain (mana grass, mana soil).
