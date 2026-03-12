@@ -52,7 +52,7 @@ public class ManaGrinderBlock extends BaseMachineBlock {
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.INVISIBLE;
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     // 📐 方塊形狀

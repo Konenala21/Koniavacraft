@@ -64,6 +64,9 @@ public abstract class MultiNoiseBiomeSourceMixin {
         // Let vanilla handle ocean/coast positions — custom biomes should not bleed into water
         // COAST threshold ≈ -0.11 (NEAR_INLAND starts at -0.11 in VanillaClimateBands)
         if (Climate.unquantizeCoord(target.continentalness()) < -0.11f) return;
+        // Let vanilla handle river/valley slots — VALLEY weirdness ≈ [-0.05, 0.05]
+        float weirdness = Climate.unquantizeCoord(target.weirdness());
+        if (weirdness > -0.06f && weirdness < 0.06f) return;
 
         Climate.ParameterList<Holder<Biome>> list = getOrBuildListForRegion(regionIndex);
         if (list == null) return;

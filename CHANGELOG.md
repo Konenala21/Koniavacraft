@@ -10,6 +10,12 @@ All notable changes to this project will be documented in this file.
 - ZH: 魔力草原現在以大陸規模的平滑區域生成，邊界自然有機，不再以小塊 patch 的方式侵蝕原版地形。
 - EN: Fixed a bug where ocean biomes adjacent to Mana Plains would incorrectly receive Mana Plains surface terrain (mana grass, mana soil).
 - ZH: 修正魔力草原旁邊的海洋生態域錯誤套用魔力草原地表材質（魔力草方塊、魔力土）的問題。
+- EN: Fixed rivers within Mana Plains region being overridden by Mana Plains biome. Removed VALLEY weirdness from Mana Plains climate registration and added a weirdness guard in the biome mixin.
+- ZH: 修正魔力草原 region 內的河流被強制覆蓋為魔力草原的問題。從氣候註冊移除 VALLEY weirdness，並在 Mixin 加入 weirdness 門檻保護河流槽位。
+- EN: Reduced Mana Plains region size from ~3200 blocks to ~850 blocks (REGION_SCALE 0.04→0.15) so players can reach biome boundaries within normal exploration range.
+- ZH: 縮小魔力草原區域大小（從約 3200 格縮至約 850 格，REGION_SCALE 0.04→0.15），避免玩家在正常探索範圍內看不到邊界。
+- EN: Fixed Mana Grinder block not showing crack animation when being mined (getRenderShape INVISIBLE→ENTITYBLOCK_ANIMATED).
+- ZH: 修正魔力粉碎機挖掘時無裂紋動畫的問題（getRenderShape 從 INVISIBLE 改為 ENTITYBLOCK_ANIMATED）。
 
 ### Developer Notes / 開發者備註
 
@@ -26,6 +32,7 @@ All notable changes to this project will be documented in this file.
 
 #### 中文
 
+- 新增專案發版 workflow skill，固定 GitHub Release / Modrinth 的版本、tag、`runData` 與構件驗證流程，方便後續交給 Claude 與 Codex 重複使用。
 - 整理部分設定與世界生成原始碼的行尾格式，避免開發環境切換時產生無意義差異。
 - 修正發布流程缺少 datagen 資源的問題：GitHub Release 已修正，現在補齊 Modrinth / CurseForge 上傳前的 `runData`，避免平台版本仍產出缺少 biome、blockstate 與 item model JSON 的壞包。
 - 調整正式版機器與世界生成診斷 log：改為英文並降低部分初始化訊息等級，減少 Windows 啟動器出現中文亂碼。
@@ -39,6 +46,7 @@ All notable changes to this project will be documented in this file.
 
 #### English
 
+- Added a reusable project release-workflow skill for Claude and Codex so version bumps, tags, `runData`, and artifact validation for GitHub Release / Modrinth follow the same proven process.
 - Normalized line endings in a few config and worldgen source files to avoid noisy diffs when switching development environments.
 - Fixed the remaining publishing pipeline issue around missing datagen-generated resources: GitHub Release was already corrected, and now Modrinth and CurseForge uploads also run `runData` first so platform builds stop shipping jars missing biome, blockstate, and item model JSON files.
 - Cleaned up production machine and worldgen diagnostics by switching visible runtime logs to English and lowering noisy initialization messages, reducing mojibake in Windows launchers.
@@ -59,6 +67,7 @@ All notable changes to this project will be documented in this file.
 
 #### Bug 修復
 
+- 新增專案專用發版 skill，收斂 `CHANGELOG.md`、`mod_version`、新 tag、CI `runData` 與公開 jar 驗證的固定步驟。
 - 整理 `gradle.properties`、`PlacementMode`、`RegionNoiseSampler` 的行尾格式，減少跨環境作業時的純格式雜訊。
 - 修正 `publish-modrinth`、`publish-curseforge` 仍未先執行 `runData` 的問題；先前只有 GitHub Release 構件正確，平台上傳版本仍可能缺少 `src/generated/resources` 產物。
 - 將正式版 `INFO/WARN/ERROR` 的中文 logger 逐步改為英文，並將 renderer / 快取 / worldgen 初始化診斷盡量降到 `DEBUG`，降低 Windows / 啟動器 console 亂碼機率。

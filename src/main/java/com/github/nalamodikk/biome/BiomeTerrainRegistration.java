@@ -106,7 +106,7 @@ public class BiomeTerrainRegistration {
                         .erosion(VanillaClimateBands.Erosion.EROSION_5)
                         .erosion(VanillaClimateBands.Erosion.EROSION_6)
                         .depth(VanillaClimateBands.Depth.SURFACE)
-                        .weirdness(VanillaClimateBands.Weirdness.VALLEY)
+                        // VALLEY omitted — weirdness [-0.05, 0.05] is where rivers appear
                         .weirdness(VanillaClimateBands.Weirdness.MID_SLICE_NORMAL_ASCENDING)
                         .weirdness(VanillaClimateBands.Weirdness.MID_SLICE_NORMAL_DESCENDING),
                 7, "魔力草原（精確 climate 定義）", 50, KoniavacraftMod.MOD_ID

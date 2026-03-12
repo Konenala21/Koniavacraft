@@ -33,9 +33,12 @@ public class RegionNoiseSampler {
     /**
      * Spatial scale applied to block coordinates before sampling.
      * Decrease to enlarge regions; increase to shrink them.
-     * Default produces ~3200-block smooth regions.
+     * Feature size ≈ 2^7 / REGION_SCALE blocks.
+     *   0.04 → ~3200 blocks (too large, players see one region indefinitely)
+     *   0.15 → ~850 blocks  (good default: large enough to feel natural, small enough to have neighbours)
+     *   0.25 → ~512 blocks  (smaller, more frequent transitions)
      */
-    public static final double REGION_SCALE = 0.04;
+    public static final double REGION_SCALE = 0.15;
 
     private final NormalNoise noise;
     private final int vanillaWeight;
