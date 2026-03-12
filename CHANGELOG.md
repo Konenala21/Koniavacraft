@@ -4,34 +4,54 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-### Player Changes / 玩家更新內容
+### 玩家版變更 / Player-facing Changelog
 
-- EN: Fixed Mana Generator light flickering and lag when energy/mana output buffer is full. The light now only changes after the state is stable for 10 ticks.
-- ZH: 修正魔力發電機在能量/魔力輸出緩衝區滿時燈光快速閃爍並造成卡頓的問題。現在燈光只會在狀態穩定 10 tick 後才切換。
-- EN: Fixed Mana Generator not outputting energy to ME Energy Acceptor (Applied Energistics 2) placed directly adjacent. Caused by integer overflow when calculating demand for large-capacity receivers.
-- ZH: 修正魔力發電機無法將能量輸出至緊貼的 ME 能源接受器（AE2）的問題。原因為計算大容量接收端需求值時發生 int 溢位。
+#### 中文
 
-- EN: Mana Plains now generates as large, continent-scale regions with smooth, natural-looking borders — no longer appears as small scattered patches invading vanilla terrain.
-- ZH: 魔力草原現在以大陸規模的平滑區域生成，邊界自然有機，不再以小塊 patch 的方式侵蝕原版地形。
-- EN: Fixed a bug where ocean biomes adjacent to Mana Plains would incorrectly receive Mana Plains surface terrain (mana grass, mana soil).
-- ZH: 修正魔力草原旁邊的海洋生態域錯誤套用魔力草原地表材質（魔力草方塊、魔力土）的問題。
-- EN: Fixed rivers within Mana Plains region being overridden by Mana Plains biome. Removed VALLEY weirdness from Mana Plains climate registration and added a weirdness guard in the biome mixin.
-- ZH: 修正魔力草原 region 內的河流被強制覆蓋為魔力草原的問題。從氣候註冊移除 VALLEY weirdness，並在 Mixin 加入 weirdness 門檻保護河流槽位。
-- EN: Reduced Mana Plains region size from ~3200 blocks to ~850 blocks (REGION_SCALE 0.04→0.15) so players can reach biome boundaries within normal exploration range.
-- ZH: 縮小魔力草原區域大小（從約 3200 格縮至約 850 格，REGION_SCALE 0.04→0.15），避免玩家在正常探索範圍內看不到邊界。
-- EN: Fixed Mana Grinder block not showing crack animation when being mined (getRenderShape INVISIBLE→ENTITYBLOCK_ANIMATED).
-- ZH: 修正魔力粉碎機挖掘時無裂紋動畫的問題（getRenderShape 從 INVISIBLE 改為 ENTITYBLOCK_ANIMATED）。
+- 尚無未發佈項目。
 
-### Developer Notes / 開發者備註
+#### English
 
-- EN: Added `PlacementMode` enum (`ZOOM_LAYER` / `SMOOTH_NOISE`) to `SimpleBiomeRegion`. Future biomes can choose their spatial placement strategy independently.
-- ZH: 在 `SimpleBiomeRegion` 加入 `PlacementMode` enum（`ZOOM_LAYER` / `SMOOTH_NOISE`），未來每個 biome 可獨立選擇空間生成策略。
-- EN: Added `RegionNoiseSampler` — replaces Zoom-Layer patch logic for `SMOOTH_NOISE` regions. Uses single-octave `NormalNoise` at low frequency (`firstOctave=-7`, `REGION_SCALE=0.04`) to produce ~3200-block smooth regions. No external dependencies.
-- ZH: 新增 `RegionNoiseSampler`，對 `SMOOTH_NOISE` region 取代 Zoom Layer 的格狀邏輯。使用單 octave `NormalNoise` 低頻採樣（`firstOctave=-7`，`REGION_SCALE=0.04`），產生約 3200 格寬的平滑區域，無外部依賴。
-- EN: `BiomeRegionManager` now runs both systems in parallel — smooth-noise checked first, zoom-layer as fallback. `initForWorld` splits regions by `PlacementMode` and builds each system only if needed.
-- ZH: `BiomeRegionManager` 現在雙系統並行運作——先查 smooth-noise，再查 zoom-layer 作後備。`initForWorld` 依 `PlacementMode` 分組，只建構需要的系統。
-- EN: `BiomeTerrainRegistration`: Mana Plains region registered with `PlacementMode.SMOOTH_NOISE`. All existing Zoom-Layer files retained for future use.
-- ZH: `BiomeTerrainRegistration`：魔力草原 region 改用 `PlacementMode.SMOOTH_NOISE` 註冊。所有現有 Zoom Layer 檔案完整保留供未來使用。
+- No unreleased entries yet.
+
+### 開發者版變更 / Developer-facing Changelog
+
+- 尚無未發佈項目。
+
+## [0.0.1.5-beta-hotfix05] - 2026-03-12
+
+### 玩家版變更 / Player-facing Changelog
+
+#### 中文
+
+- 修正 **魔力發電機** 在輸出緩衝區已滿時燈光快速閃爍並拖慢畫面的問題；現在必須連續穩定 10 tick 才會切換亮燈狀態。
+- 修正 **魔力發電機** 無法將能量直接輸出到緊貼的 **AE2 ME Energy Acceptor**；大容量接收端的需求值計算不再發生整數溢位。
+- 修正 **魔力草原** 會覆蓋河流與海岸附近原版生態域的問題，現在河流槽位與海洋/海岸地表材質會維持原版邏輯。
+- 調整 **魔力草原** 區域尺寸，從過大的大陸級範圍縮回較適合探索的規模，較容易在正常冒險中遇到邊界。
+- 修正 **魔力粉碎機** 被挖掘時不顯示裂紋動畫的問題。
+
+#### English
+
+- Fixed **Mana Generator** light flicker and frame drops when its energy or mana output buffer was full. The lamp now changes only after the state stays stable for 10 ticks.
+- Fixed **Mana Generator** failing to output energy directly into an adjacent **AE2 ME Energy Acceptor**. Demand calculation for high-capacity receivers no longer overflows `int`.
+- Fixed **Mana Plains** overriding nearby river slots and ocean/coast surface terrain. Rivers and vanilla coastal terrain now keep their intended behavior.
+- Rebalanced **Mana Plains** region size down from oversized continent-scale coverage to a more exploration-friendly range so biome borders are easier to encounter in normal play.
+- Fixed **Mana Grinder** not showing block crack animation while being mined.
+
+### 開發者版變更 / Developer-facing Changelog
+
+#### Bug 修復
+
+- `ManaGeneratorBlockEntity` 新增亮燈狀態 debounce，僅在工作狀態連續穩定 10 tick 後更新 `LIT` blockstate，避免輸出受阻時反覆閃爍與額外 block update。
+- 修正發電機對外能量輸出需求值使用 `int` 計算造成溢位，現在可正確對接 AE2 `ME Energy Acceptor` 這類高容量接收端。
+- `OverworldBiomeBuilderMixin` 與 biome climate 設定加入河流/低 weirdness 保護，避免 `mana_plains` 覆蓋原版河流槽位。
+- 補上海洋與海岸相鄰區域的表層材質保護，避免 `mana_grass` / `mana_soil` 滲入 vanilla ocean biome。
+- `ManaGrinderBlock` 的 `getRenderShape` 改為 `ENTITYBLOCK_ANIMATED`，恢復挖掘裂紋渲染。
+
+#### 世界生成調整
+
+- `RegionNoiseSampler.REGION_SCALE` 由 `0.04` 提升到 `0.15`，將平滑噪聲模式下的 `Mana Plains` 區域尺寸從約 3200 格縮到約 850 格。
+- `PlacementMode.SMOOTH_NOISE` 仍保留作為自訂 biome region 的平滑分布方案，但目前參數已調整為較適合生存探索的尺度。
 
 ### 玩家版變更 / Player-facing Changelog
 
