@@ -77,7 +77,7 @@ public class UpgradeMenu extends AbstractContainerMenu {
             int x = startX + col * slotSpacing;
             int y = startY + row * slotSpacing;
 
-            this.addSlot(new UpgradeSlot(upgradeInventory, i, x, y));
+            this.addSlot(new UpgradeSlot(upgradeInventory, i, x, y, machine));
         }
     }
 

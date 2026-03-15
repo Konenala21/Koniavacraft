@@ -24,9 +24,10 @@ public class UpgradeInventory implements Container , INBTSerializable<CompoundTa
     }
 
     public int getUpgradeCount(UpgradeType type) {
-        return (int) slots.stream()
+        return slots.stream()
                 .filter(stack -> stack.getItem() instanceof UpgradeItem upgrade && upgrade.getUpgradeType() == type)
-                .count();
+                .mapToInt(ItemStack::getCount)
+                .sum();
     }
 
     public void setItem(int index, ItemStack stack) {

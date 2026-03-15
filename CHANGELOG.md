@@ -8,15 +8,20 @@ All notable changes to this project will be documented in this file.
 
 #### 中文
 
+- 升級模組改為可堆疊安裝，並補上詳細 tooltip 說明，現在可直接查看效果數值、可安裝機器與堆疊規則。
+- 提高 **魔力發電機** 的預設能量對外輸出上限至 `1000/t`，讓高容量接收端不再被原本偏低的推送速率卡住。
 - 尚無未發佈項目。
 
 #### English
 
+- Upgrade modules are now stack-installable, with expanded tooltips that explain effect values, supported machines, and stack behavior directly in-game.
+- Increased the **Mana Generator** default external energy output cap to `1000/t`, so high-capacity receivers are no longer bottlenecked by the previous low push rate.
 - No unreleased entries yet.
 
 ### 開發者版變更 / Developer-facing Changelog
 
-- 尚無未發佈項目。
+- 升級物品改為可堆疊，`UpgradeInventory#getUpgradeCount` 現在改為計算堆疊總數；`UpgradeSlot` 也會依機器型別限制可安裝的升級種類。
+- `OutputHandler` 將魔力與能量輸出上限拆開處理；魔力維持 `40/t`，能量預設對外輸出上限提升為 `1000/t`。
 
 ## [0.0.1.5-beta-hotfix05] - 2026-03-12
 

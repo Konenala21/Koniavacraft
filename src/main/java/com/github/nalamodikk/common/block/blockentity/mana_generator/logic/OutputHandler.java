@@ -17,7 +17,8 @@ import java.util.List;
 
 public class OutputHandler {
 
-    private static final int MAX_OUTPUT_PER_TICK = 40;
+    private static final int MAX_MANA_OUTPUT_PER_TICK = 40;
+    private static final int MAX_ENERGY_OUTPUT_PER_TICK = 1000;
 
     // 新增這個方法到 OutputHandler 類別中
     public static boolean tryOutput(
@@ -112,7 +113,7 @@ public class OutputHandler {
 
         // 魔力輸出
         if (manaStorage != null && totalManaDemand > 0 && manaStorage.getManaStored() > 0) {
-            int totalToSend = Math.min(manaStorage.getManaStored(), MAX_OUTPUT_PER_TICK);
+            int totalToSend = Math.min(manaStorage.getManaStored(), MAX_MANA_OUTPUT_PER_TICK);
             int sentTotal = 0; // 實際送出的總和
 
             for (int i = 0; i < manaTargets.size(); i++) {
@@ -139,7 +140,7 @@ public class OutputHandler {
         // 能量輸出
         if (energyStorage != null && totalEnergyDemand > 0 && energyStorage.getEnergyStored() > 0) {
             int sentTotal = 0;
-            int totalToSend = Math.min(energyStorage.getEnergyStored(), MAX_OUTPUT_PER_TICK);
+            int totalToSend = Math.min(energyStorage.getEnergyStored(), MAX_ENERGY_OUTPUT_PER_TICK);
 
             for (int i = 0; i < energyTargets.size(); i++) {
                 int portion = (int) Math.round(totalToSend * (energyDemands.get(i) / (double) totalEnergyDemand));

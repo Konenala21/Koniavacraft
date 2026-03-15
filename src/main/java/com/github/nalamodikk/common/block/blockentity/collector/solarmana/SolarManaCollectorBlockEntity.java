@@ -11,8 +11,8 @@
     import com.github.nalamodikk.common.utils.SkyUtils;
     import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
     import com.github.nalamodikk.common.utils.nbt.NbtUtils;
-    import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
-    import com.github.nalamodikk.common.utils.upgrade.UpgradeType;
+import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
+import com.github.nalamodikk.common.utils.upgrade.UpgradeType;
     import com.github.nalamodikk.common.utils.upgrade.api.IUpgradeableMachine;
     import com.github.nalamodikk.register.ModBlockEntities;
     import com.github.nalamodikk.register.ModCapabilities;
@@ -537,6 +537,11 @@
         @Override
         public UpgradeInventory getUpgradeInventory() {
             return upgradeManager.getUpgradeInventory();
+        }
+
+        @Override
+        public boolean supportsUpgradeType(UpgradeType type) {
+            return type == UpgradeType.SPEED || type == UpgradeType.EFFICIENCY;
         }
 
         @Override

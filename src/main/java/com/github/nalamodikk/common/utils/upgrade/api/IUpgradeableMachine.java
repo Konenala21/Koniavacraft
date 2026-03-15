@@ -7,6 +7,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 public interface IUpgradeableMachine {
     UpgradeInventory getUpgradeInventory();
 
+    boolean supportsUpgradeType(UpgradeType type);
+
     default int getSpeedMultiplier() {
         return Math.min(1 + getUpgradeInventory().getUpgradeCount(UpgradeType.SPEED), 5);
     }

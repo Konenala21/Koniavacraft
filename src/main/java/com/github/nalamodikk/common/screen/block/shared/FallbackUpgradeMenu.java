@@ -2,6 +2,7 @@ package com.github.nalamodikk.common.screen.block.shared;
 
 
 import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
+import com.github.nalamodikk.common.utils.upgrade.UpgradeType;
 import com.github.nalamodikk.common.utils.upgrade.api.IUpgradeableMachine;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -25,6 +26,11 @@ public class FallbackUpgradeMenu extends UpgradeMenu {
         @Override
         public int getEfficiencyMultiplier() {
             return 1;
+        }
+
+        @Override
+        public boolean supportsUpgradeType(UpgradeType type) {
+            return false;
         }
 
         @Override

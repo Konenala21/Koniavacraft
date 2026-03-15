@@ -16,6 +16,7 @@ import com.github.nalamodikk.common.sync.MachineSyncManager;
 import com.github.nalamodikk.common.sync.annotation.Sync;
 import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
 import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
+import com.github.nalamodikk.common.utils.upgrade.UpgradeType;
 import com.github.nalamodikk.common.utils.upgrade.api.IUpgradeableMachine;
     import com.github.nalamodikk.register.ModBlockEntities;
     import com.github.nalamodikk.register.ModCapabilities;
@@ -531,6 +532,14 @@ import java.util.Optional;
         @Override
         public UpgradeInventory getUpgradeInventory() {
             return upgradeInventory;
+        }
+
+        @Override
+        public boolean supportsUpgradeType(UpgradeType type) {
+            return type == UpgradeType.ACCELERATED_PROCESSING
+                    || type == UpgradeType.EXPANDED_FUEL_CHAMBER
+                    || type == UpgradeType.CATALYTIC_CONVERTER
+                    || type == UpgradeType.DIAGNOSTIC_DISPLAY;
         }
 
         @Override
