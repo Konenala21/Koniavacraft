@@ -1,6 +1,3 @@
-// 🎯 第一步：創建這個新文件
-// 文件位置：src/main/java/com/github/nalamodikk/common/block/conduit/SimpleVirtualNetwork.java
-
 package com.github.nalamodikk.common.block.blockentity.conduit.manager.network;
 
 import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitBlockEntity;
@@ -18,106 +15,113 @@ import java.util.Set;
 public class VirtualNetwork {
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    // 共享的魔力池
-    private final ManaStorage sharedManaPool = new ManaStorage(10000);
+    // Shared pool — capacity = sum of all connected conduit tier capacities
+    private final ManaStorage sharedManaPool = new ManaStorage(0);
 
-    // 記錄哪些導管在這個網路中
     private final Set<BlockPos> connectedConduits = new HashSet<>();
     private final Map<BlockPos, ArcaneConduitBlockEntity> conduitMap = new HashMap<>();
+    private final Map<BlockPos, Integer> conduitCapacities = new HashMap<>();
 
     public VirtualNetwork() {
-        LOGGER.info("Created simple virtual network");
+        LOGGER.debug("Created virtual network");
     }
 
     public void setTotalManaStored(int amount) {
         sharedManaPool.setMana(Math.max(0, Math.min(amount, sharedManaPool.getMaxManaStored())));
-        LOGGER.info("Virtual network mana set to: {}", sharedManaPool.getManaStored());
+        LOGGER.debug("Virtual network mana set to: {}", sharedManaPool.getManaStored());
     }
 
-    // 🆕 添加 getter 方法
     public int getMaxManaStored() {
         return sharedManaPool.getMaxManaStored();
     }
 
-    // 🆕 添加獲取連接導管的方法
     public Set<BlockPos> getConnectedConduits() {
-        return new HashSet<>(connectedConduits); // 返回副本，避免外部修改
+        return new HashSet<>(connectedConduits);
     }
 
-    // 🆕 添加網路信息日誌
     public void logNetworkInfo() {
-        LOGGER.info("Virtual Network - Mana: {}/{}, Conduits: {}",
+        LOGGER.info("Virtual Network — Mana: {}/{}, Conduits: {}",
                 sharedManaPool.getManaStored(),
                 sharedManaPool.getMaxManaStored(),
                 connectedConduits.size());
     }
 
     /**
-     * 導管加入網路
+     * Add a conduit to the network.
+     * Scales the shared pool capacity up by the conduit's tier capacity,
+     * then merges any mana the conduit was holding.
      */
     public void addConduit(ArcaneConduitBlockEntity conduit) {
         BlockPos pos = conduit.getBlockPos();
         connectedConduits.add(pos);
         conduitMap.put(pos, conduit);
 
-        // 把導管的魔力合併到共享池
-        int conduitMana = conduit.getBufferManaStored(); // 我們需要添加這個方法
+        int tierCapacity = conduit.getTier().getBufferCapacity();
+        conduitCapacities.put(pos, tierCapacity);
+        sharedManaPool.setCapacity(sharedManaPool.getMaxManaStored() + tierCapacity);
+
+        int conduitMana = conduit.getBufferManaStored();
         if (conduitMana > 0) {
             sharedManaPool.receiveMana(conduitMana, ManaAction.EXECUTE);
-            conduit.setBufferMana(0); // 清空導管自己的魔力
+            conduit.setBufferMana(0);
         }
 
-        LOGGER.debug("Added conduit {} to network. Total conduits: {}", pos, connectedConduits.size());
+        LOGGER.debug("Added conduit {} (tier cap: {}). Network: {}/{}",
+                pos, tierCapacity, sharedManaPool.getManaStored(), sharedManaPool.getMaxManaStored());
     }
 
     /**
-     * 導管離開網路
+     * Remove a conduit from the network.
+     * Shrinks the pool capacity by that conduit's tier contribution.
+     * If stored mana exceeds the new cap, it is truncated (unavoidable loss).
      */
     public void removeConduit(BlockPos pos) {
-        if (connectedConduits.remove(pos)) {
-            conduitMap.remove(pos);
-            LOGGER.debug("Removed conduit {} from network. Remaining: {}", pos, connectedConduits.size());
+        if (!connectedConduits.remove(pos)) return;
+
+        conduitMap.remove(pos);
+        Integer removed = conduitCapacities.remove(pos);
+        if (removed != null) {
+            int newMax = Math.max(0, sharedManaPool.getMaxManaStored() - removed);
+            sharedManaPool.setCapacity(newMax); // ManaStorage.setCapacity already truncates mana
         }
+
+        LOGGER.debug("Removed conduit {} from network. Remaining: {}, cap: {}",
+                pos, connectedConduits.size(), sharedManaPool.getMaxManaStored());
     }
 
     /**
-     * 從網路提取魔力
+     * Call this when a conduit upgrades its tier while already in the network.
+     * Adjusts the pool capacity by the delta between old and new tier capacities.
      */
-    public int extractManaFromNetwork(int maxExtract, ManaAction action) { // ✅ 添加 action 參數
-        return sharedManaPool.extractMana(maxExtract, action); // ✅ 使用正確的 action
+    public void updateConduitCapacity(BlockPos pos, int oldCapacity, int newCapacity) {
+        if (!conduitCapacities.containsKey(pos)) return;
+        conduitCapacities.put(pos, newCapacity);
+        int newTotal = sharedManaPool.getMaxManaStored() - oldCapacity + newCapacity;
+        sharedManaPool.setCapacity(Math.max(0, newTotal));
+        LOGGER.debug("Conduit {} tier upgraded: cap {} -> {}. Network max: {}",
+                pos, oldCapacity, newCapacity, sharedManaPool.getMaxManaStored());
     }
 
-    /**
-     * 向網路存入魔力
-     */
-    public int receiveManaToNetwork(int maxReceive, ManaAction action) { // ✅ 添加 action 參數
-        return sharedManaPool.receiveMana(maxReceive, action); // ✅ 使用正確的 action
+    public int extractManaFromNetwork(int maxExtract, ManaAction action) {
+        return sharedManaPool.extractMana(maxExtract, action);
     }
 
-    /**
-     * 獲取網路總魔力
-     */
+    public int receiveManaToNetwork(int maxReceive, ManaAction action) {
+        return sharedManaPool.receiveMana(maxReceive, action);
+    }
+
     public int getTotalManaStored() {
         return sharedManaPool.getManaStored();
     }
 
-    /**
-     * 獲取網路總容量
-     */
     public int getTotalManaCapacity() {
         return sharedManaPool.getMaxManaStored();
     }
 
-    /**
-     * 檢查導管是否在網路中
-     */
     public boolean contains(BlockPos pos) {
         return connectedConduits.contains(pos);
     }
 
-    /**
-     * 獲取網路大小
-     */
     public int getNetworkSize() {
         return connectedConduits.size();
     }

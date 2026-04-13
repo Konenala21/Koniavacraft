@@ -329,7 +329,7 @@ public class TransferManager {
      */
     private void updateTransferState(Direction direction, int amount, long currentTick, boolean success) {
         // 記錄統計
-        statsManager.recordTransfer(direction, amount, success);
+        statsManager.recordTransfer(direction, amount, success, currentTick);
 
         // 更新傳輸狀態
         if (success && amount > 0) {

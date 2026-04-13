@@ -25,7 +25,7 @@ public class StatsManager {
         for (Direction dir : Direction.values()) {
             transferStats.put(dir, new TransferStats());
         }
-        this.lastActivity = System.currentTimeMillis();
+        this.lastActivity = 0;
     }
 
     // === 傳輸統計 ===
@@ -33,12 +33,12 @@ public class StatsManager {
     /**
      * 記錄傳輸事件
      */
-    public void recordTransfer(Direction direction, int amount, boolean success) {
+    public void recordTransfer(Direction direction, int amount, boolean success, long gameTick) {
         TransferStats stats = transferStats.get(direction);
         if (stats != null) {
-            stats.recordTransfer(amount, success);
-            lastActivity = System.currentTimeMillis();
-            isIdle = false; // 有活動就不閒置
+            stats.recordTransfer(amount, success, gameTick);
+            lastActivity = tickCounter;
+            isIdle = false;
         }
     }
 
@@ -78,7 +78,7 @@ public class StatsManager {
      * 記錄活動
      */
     public void recordActivity() {
-        lastActivity = System.currentTimeMillis();
+        lastActivity = tickCounter;
         isIdle = false;
     }
 
@@ -107,8 +107,7 @@ public class StatsManager {
      * 更新閒置狀態
      */
     private void updateIdleStatus() {
-        long currentTime = System.currentTimeMillis();
-        isIdle = (currentTime - lastActivity) > IDLE_THRESHOLD;
+        isIdle = (tickCounter - lastActivity) > IDLE_THRESHOLD;
     }
 
     // === 維護和清理 ===
@@ -117,11 +116,9 @@ public class StatsManager {
      * 執行定期維護
      */
     public void performMaintenance() {
-        long now = System.currentTimeMillis();
-
-        // 衰減長時間無傳輸的統計
+        // 衰減長時間無傳輸的統計 (6000 ticks = 5 分鐘)
         transferStats.values().forEach(stats -> {
-            if (now - stats.lastTransfer > 300000) { // 5分鐘
+            if (tickCounter - stats.lastTransfer > 6000) {
                 stats.averageRate *= 0.8;
             }
         });
@@ -134,7 +131,7 @@ public class StatsManager {
         for (TransferStats stats : transferStats.values()) {
             stats.reset();
         }
-        lastActivity = System.currentTimeMillis();
+        lastActivity = tickCounter;
         isIdle = false;
     }
 
@@ -196,7 +193,7 @@ public class StatsManager {
         public long lastTransfer = 0;
         public double averageRate = 0.0;
 
-        public void recordTransfer(int amount, boolean success) {
+        public void recordTransfer(int amount, boolean success, long gameTick) {
             if (success) {
                 totalTransferred += amount;
                 successfulTransfers++;
@@ -204,7 +201,7 @@ public class StatsManager {
             } else {
                 failedTransfers++;
             }
-            lastTransfer = System.currentTimeMillis();
+            lastTransfer = gameTick;
         }
 
         public double getReliability() {

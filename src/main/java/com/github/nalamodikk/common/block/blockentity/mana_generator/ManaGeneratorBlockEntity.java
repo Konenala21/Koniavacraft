@@ -649,10 +649,4 @@ import java.util.Optional;
             return fuelLogic.isValidFuel(stack); // 您需要在 ManaFuelHandler 中實現這個方法
         }
 
-        // 4. 重寫 setChanged() 以確保數據同步
-        @Override
-        public void setChanged() {
-            super.setChanged();
-        }
-
     }

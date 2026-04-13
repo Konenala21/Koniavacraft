@@ -290,10 +290,8 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
 
     public boolean isTransferringMana(Direction direction) {
         StatsManager.TransferStats stats = statsManager.getTransferStats(direction);
-        if (stats == null) return false;
-
-        long currentTime = System.currentTimeMillis();
-        return (currentTime - stats.lastTransfer) < 1000;
+        if (stats == null || level == null) return false;
+        return (level.getGameTime() - stats.lastTransfer) < 20; // 20 ticks = 1 second
     }
 
     // 連接查詢委派
@@ -566,9 +564,14 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
      */
     public void setTier(ConduitTier newTier) {
         if (newTier != this.tier) {
+            int oldCapacity = this.tier.getBufferCapacity();
             this.tier = newTier;
             // 更新緩衝區容量
             buffer.setCapacity(newTier.getBufferCapacity());
+            // 通知虛擬網路更新共享池容量
+            if (virtualNetwork != null) {
+                virtualNetwork.updateConduitCapacity(worldPosition, oldCapacity, newTier.getBufferCapacity());
+            }
             setChanged();
 
             // 通知客戶端
@@ -898,7 +901,7 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
         virtualNetwork = new VirtualNetwork();
         virtualNetwork.addConduit(this);
 
-        LOGGER.info("Created new virtual network at {}", worldPosition);
+        LOGGER.debug("Created new virtual network at {}", worldPosition);
     }
 
     /**
@@ -908,7 +911,7 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
         virtualNetwork = network;
         network.addConduit(this);
 
-        LOGGER.info("Joined virtual network at {}", worldPosition);
+        LOGGER.debug("Joined virtual network at {}", worldPosition);
     }
 
     /**
@@ -919,7 +922,7 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
             virtualNetwork.removeConduit(worldPosition);
             virtualNetwork = null;
 
-            LOGGER.info("Left virtual network at {}", worldPosition);
+            LOGGER.debug("Left virtual network at {}", worldPosition);
         }
     }
 }

@@ -22,11 +22,11 @@ import java.util.*;
 public class NetworkManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(NetworkManager.class);
-    private long lastScanTime = 0; // 🆕 添加時間戳
-    private static final long MIN_SCAN_INTERVAL = 100; // 🆕 最小掃描間隔（毫秒）
-    // === 更嚴格的日誌頻率控制 ===
-    private long lastLogTime = 0;
-    private static final long LOG_INTERVAL = 30000; // 🔧 改為30秒間隔（原來可能是5秒）
+    private long lastScanTick = 0;
+    private static final long MIN_SCAN_INTERVAL = 2; // 2 ticks ≈ 100ms
+    // === 日誌頻率控制 ===
+    private long lastLogTick = 0;
+    private static final long LOG_INTERVAL = 600; // 600 ticks = 30 秒
     private int suppressedCount = 0;
 
     // === 常量 ===
@@ -90,21 +90,20 @@ public class NetworkManager {
      * 🔧 修復：獲取所有有效的傳輸目標 - 防止遞迴
      */
     public List<Direction> getValidTargets() {
-        long currentTime = System.currentTimeMillis();
+        long currentTick = conduit.getLevel() != null ? conduit.getLevel().getGameTime() : 0L;
 
-        // 🆕 時間間隔檢查：如果剛剛掃描過，直接返回空列表
-        if (currentTime - lastScanTime < MIN_SCAN_INTERVAL) {
+        // 間隔限制：避免同一 tick 內重複掃描
+        if (currentTick - lastScanTick < MIN_SCAN_INTERVAL) {
             return new ArrayList<>();
         }
 
-        // 🚨 遞迴防護：如果正在掃描，靜默返回空列表
+        // 遞迴防護：如果正在掃描，靜默返回空列表
         if (isScanning) {
             suppressedCount++;
-            // 🔧 用你之前的頻率控制邏輯
-            if (currentTime - lastLogTime > LOG_INTERVAL) {
-                LOGGER.debug("⚠️ Concurrent scan attempts: {} times in last 30s at {}",
+            if (currentTick - lastLogTick > LOG_INTERVAL) {
+                LOGGER.debug("Concurrent scan attempts: {} times in last 30s at {}",
                         suppressedCount, conduit.getBlockPos());
-                lastLogTime = currentTime;
+                lastLogTick = currentTick;
                 suppressedCount = 0;
             }
 
@@ -113,8 +112,8 @@ public class NetworkManager {
         // 檢查是否需要重新掃描目標
         if (cacheManager.needsTargetRescan()) {
             try {
-                isScanning = true; // 🔒 設置掃描標記
-                lastScanTime = currentTime; // 🆕 更新掃描時間
+                isScanning = true;
+                lastScanTick = currentTick;
                 rescanTargets();
             } finally {
                 isScanning = false; // 🔓 確保標記被清除
@@ -183,8 +182,6 @@ public class NetworkManager {
      */
     private void scanNetworkTopology() {
         if (!(conduit.getLevel() instanceof ServerLevel)) return;
-
-        long now = System.currentTimeMillis();
 
         // 檢查緩存是否有效
         if (cacheManager.isCacheValid(30000) && !networkDirty) {
