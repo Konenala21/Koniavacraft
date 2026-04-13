@@ -8,10 +8,11 @@
     "MultiNoiseBiomeSourceMixin",
     "NoiseGeneratorSettingsMixin",
     "NoiseSettingsAccessor",
-    "OverworldBiomeBuilderMixin",
+    "OverworldBiomeBuilderMixin"
+  ],
+  "client": [
     "client.MinecraftAccessor"
   ],
-  "client": [],
   "server": [],
   "injectors": {
     "defaultRequire": 1

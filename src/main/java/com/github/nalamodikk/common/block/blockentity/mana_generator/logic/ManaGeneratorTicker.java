@@ -58,7 +58,12 @@ public class ManaGeneratorTicker {
         // but the block-state light update is deferred via debounce below.
         final boolean wantsActive;
         if (!success) {
-            fuelHandler.pauseBurn();
+            // Only pause if we were actually burning — not when idle with no fuel.
+            // Calling pauseBurn() while idle sets failedFuelCooldown=20, which
+            // blocks tryConsumeFuel() and creates an infinite recovery loop.
+            if (fuelHandler.isBurning()) {
+                fuelHandler.pauseBurn();
+            }
             machine.getStateManager().setWorking(false);
             wantsActive = false;
         } else {

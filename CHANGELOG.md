@@ -10,18 +10,45 @@ All notable changes to this project will be documented in this file.
 
 - 升級模組改為可堆疊安裝，並補上詳細 tooltip 說明，現在可直接查看效果數值、可安裝機器與堆疊規則。
 - 提高 **魔力發電機** 的預設能量對外輸出上限至 `1000/t`，讓高容量接收端不再被原本偏低的推送速率卡住。
-- 尚無未發佈項目。
+- **弧光導管** 的共享儲量上限現在會依照連接導管的等級自動加總（BASIC=256、ADVANCED=1024、ELITE=4096），拆除或升級導管時容量同步調整，不再是固定的 10000。
 
 #### English
 
 - Upgrade modules are now stack-installable, with expanded tooltips that explain effect values, supported machines, and stack behavior directly in-game.
 - Increased the **Mana Generator** default external energy output cap to `1000/t`, so high-capacity receivers are no longer bottlenecked by the previous low push rate.
-- No unreleased entries yet.
+- **Arcane Conduit** shared network capacity now scales with connected conduit tiers (BASIC=256, ADVANCED=1024, ELITE=4096). Capacity updates live when conduits are added, removed, or upgraded.
 
 ### 開發者版變更 / Developer-facing Changelog
 
+#### 中文
+
 - 升級物品改為可堆疊，`UpgradeInventory#getUpgradeCount` 現在改為計算堆疊總數；`UpgradeSlot` 也會依機器型別限制可安裝的升級種類。
 - `OutputHandler` 將魔力與能量輸出上限拆開處理；魔力維持 `40/t`，能量預設對外輸出上限提升為 `1000/t`。
+- `VirtualNetwork`：容量從硬寫 10000 改為 `conduitCapacities` Map 追蹤每個導管的 tier 貢獻；`addConduit()` 增加容量，`removeConduit()` 縮容並截斷魔力，`updateConduitCapacity()` 處理 tier 升級 delta。`ArcaneConduitBlockEntity.setTier()` 現在會通知 VirtualNetwork 更新。
+- `StatsManager`：移除全部 `System.currentTimeMillis()` 呼叫，改用內部 `tickCounter` 與 game tick。`recordTransfer()` 新增 `gameTick` 參數；`IDLE_THRESHOLD` 與 `performMaintenance()` 閾值統一以 tick 為單位（600 ticks = 30s、6000 ticks = 5min）。
+- `NetworkManager`：`lastScanTime`/`lastLogTime` 改用 game tick；`MIN_SCAN_INTERVAL` 由 100ms → 2 ticks，`LOG_INTERVAL` 由 30000ms → 600 ticks；移除 `scanNetworkTopology()` 裡的死變數 `now`。
+- `ArcaneConduitBlockEntity.isTransferringMana()`：改用 `level.getGameTime()` 對比 game tick，不再呼叫 `System.currentTimeMillis()`。
+- VirtualNetwork create/join/leave 的 INFO log 降為 DEBUG，避免大型基地 chunk 載入時塞爆 log。
+- `ManaGeneratorBlockEntity`：刪除無作用的空 `setChanged()` override。
+- `gradle.properties`：補回 `org.gradle.java.home=Java 21`（誤刪導致 Gradle Daemon 切回 Java 25 造成 test task 失敗）。
+- 新增 `VirtualNetworkGameTests`：6 個 GameTest 覆蓋容量邏輯（單導管基準、共享網路、移除縮容、魔力截斷、混合 tier、tier 升級）。
+- **Bug Fix** `ManaGeneratorTicker`：修正發電機無法啟動的 bug。原本 `!success → pauseBurn()` 在發電機完全閒置（無燃料、burnTime=0）時也會被呼叫，導致 `failedFuelCooldown=20` 阻擋 `tryConsumeFuel()`，形成無法跳出的 20-tick 無限迴圈。現在 `pauseBurn()` 只在 `isBurning()` 為 true 時（儲量滿導致生成失敗）才呼叫。
+- 新增 `ManaGeneratorGameTests`：4 個 GameTest 覆蓋 MANA 模式產魔、ENERGY 模式產能、儲量滿暫停、NBT 持久化。
+
+#### English
+
+- Upgrade modules are now stack-installable; `UpgradeInventory#getUpgradeCount` now counts stack totals; `UpgradeSlot` restricts installable upgrade types per machine.
+- `OutputHandler` splits mana and energy output caps; mana stays at `40/t`, energy default external cap raised to `1000/t`.
+- `VirtualNetwork`: capacity changed from hardcoded 10000 to a per-conduit `conduitCapacities` Map tracking each conduit's tier contribution. `addConduit()` grows capacity, `removeConduit()` shrinks it and truncates mana, `updateConduitCapacity()` handles tier upgrade deltas. `ArcaneConduitBlockEntity.setTier()` now notifies the network.
+- `StatsManager`: removed all `System.currentTimeMillis()` calls; switched to internal `tickCounter` and game ticks throughout. `recordTransfer()` takes a `gameTick` param; `IDLE_THRESHOLD` and `performMaintenance()` threshold unified to ticks (600 = 30s, 6000 = 5min).
+- `NetworkManager`: `lastScanTime`/`lastLogTime` switched to game ticks; `MIN_SCAN_INTERVAL` 100ms → 2 ticks, `LOG_INTERVAL` 30000ms → 600 ticks; removed dead `now` variable in `scanNetworkTopology()`.
+- `ArcaneConduitBlockEntity.isTransferringMana()`: uses `level.getGameTime()` diff instead of `System.currentTimeMillis()`.
+- VirtualNetwork create/join/leave logs demoted from INFO to DEBUG to prevent log spam on chunk load.
+- `ManaGeneratorBlockEntity`: removed no-op `setChanged()` override.
+- `gradle.properties`: restored `org.gradle.java.home=Java 21` (accidental removal caused Gradle Daemon to fall back to Java 25, breaking test task).
+- Added `VirtualNetworkGameTests`: 6 GameTests covering capacity scaling (single conduit baseline, shared network, removal shrink, mana truncation, mixed tiers, tier upgrade).
+- **Bug Fix** `ManaGeneratorTicker`: fixed generator never starting. `pauseBurn()` was called on every tick with no output (including idle ticks with no fuel), setting `failedFuelCooldown=20` and blocking `tryConsumeFuel()` indefinitely. Now `pauseBurn()` is only called when `isBurning()` is true (generation failed due to full storage).
+- Added `ManaGeneratorGameTests`: 4 GameTests covering MANA mode generation, ENERGY mode generation, pause-when-full behavior, and NBT persistence.
 
 ## [0.0.1.5-beta-hotfix05] - 2026-03-12
 
