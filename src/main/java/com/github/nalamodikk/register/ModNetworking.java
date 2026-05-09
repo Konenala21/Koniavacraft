@@ -11,6 +11,7 @@ import com.github.nalamodikk.common.network.packet.server.manatool.TechWandModeP
 import com.github.nalamodikk.common.network.packet.server.manatool.ToggleModePacket;
 import com.github.nalamodikk.common.network.packet.server.player.gui.OpenExtraEquipmentPacket;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraBindRequestPacket;
+import com.github.nalamodikk.research.network.AspectSyncPacket;
 import com.github.nalamodikk.research.network.ResearchAspectPlacePacket;
 import com.github.nalamodikk.research.network.ResearchCompletePacket;
 import com.github.nalamodikk.research.network.StartResearchPacket;
@@ -50,6 +51,7 @@ public class ModNetworking {
         ResearchAspectPlacePacket.registerTo(registrar);
         WatchSyncPacket.registerTo(registrar);
         StartResearchPacket.registerTo(registrar);
+        AspectSyncPacket.registerTo(registrar);
     }
 
 }

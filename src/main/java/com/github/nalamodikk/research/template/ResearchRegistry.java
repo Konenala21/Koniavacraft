@@ -56,7 +56,7 @@ public final class ResearchRegistry {
                     .aspects(ModAspects.FIRE, ModAspects.ENERGY, ModAspects.MANA)
                     .holeRatio(0.28)
                     .prerequisites(id("mana_flow"))
-                    .unlocks(id("mana_generator"))
+                    .unlocks(id("mana_generator"), id("solar_mana_collector"))
                     .build()
     );
 

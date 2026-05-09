@@ -3,6 +3,7 @@ package com.github.nalamodikk.common.block;
 import com.github.nalamodikk.common.block.blockentity.research.ResearchTableBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.research.ResearchTableMenu;
 import com.github.nalamodikk.research.ResearchGate;
+import com.github.nalamodikk.research.network.AspectSyncPacket;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -54,6 +55,8 @@ public class ResearchTableBlock extends BaseEntityBlock {
                     (id, inv, p) -> new ResearchTableMenu(id, inv, rt),
                     Component.translatable("block.koniava.research_table")
             ), buf -> buf.writeBlockPos(pos));
+            // Sync discovered aspects so the client palette is up-to-date
+            AspectSyncPacket.sendTo(sp);
         }
         return InteractionResult.CONSUME;
     }

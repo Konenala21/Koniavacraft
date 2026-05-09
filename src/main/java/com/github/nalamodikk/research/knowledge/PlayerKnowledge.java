@@ -26,6 +26,13 @@ public class PlayerKnowledge {
     private final Set<ResourceLocation> completedResearch = new HashSet<>();
     private int currentTier = 1;
 
+    public PlayerKnowledge() {
+        // The six primary aspects are always known — no scanning required
+        ModAspects.all().stream()
+                .filter(Aspect::isPrimary)
+                .forEach(a -> discoveredAspects.add(a.getId()));
+    }
+
     // ── Aspect discovery ─────────────────────────────────────────────────────
 
     public boolean hasDiscovered(Aspect aspect) {

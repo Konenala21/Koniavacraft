@@ -98,8 +98,13 @@ public class ResearchTableScreen extends AbstractContainerScreen<ResearchTableMe
     private static List<com.github.nalamodikk.research.aspect.Aspect> buildPalette(
             com.github.nalamodikk.research.template.ResearchTemplate template) {
         var seen = new java.util.LinkedHashSet<com.github.nalamodikk.research.aspect.Aspect>();
-        seen.addAll(template.getRequiredAspects()); // required first for visibility
-        seen.addAll(ModAspects.all());               // then everything else
+        seen.addAll(template.getRequiredAspects()); // required aspects first for visibility
+        // Primary aspects always shown; compound aspects only if discovered via scanning
+        ModAspects.all().stream()
+                .filter(a -> a.isPrimary()
+                        || com.github.nalamodikk.research.client.ClientResearchCache
+                                .hasDiscovered(a.getId()))
+                .forEach(seen::add);
         return List.copyOf(seen);
     }
 }
