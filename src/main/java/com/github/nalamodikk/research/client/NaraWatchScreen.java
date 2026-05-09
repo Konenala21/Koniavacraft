@@ -5,6 +5,7 @@ import com.github.nalamodikk.research.network.StartResearchPacket;
 import com.github.nalamodikk.research.template.ResearchRegistry;
 import com.github.nalamodikk.research.template.ResearchTemplate;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -218,6 +219,7 @@ public class NaraWatchScreen extends Screen {
         g.enableScissor(panelX + NA_X, panelY + NA_Y,
                         panelX + NA_X + NA_W, panelY + NA_Y + NA_H);
         renderConnections(g);
+        ResearchTemplate hoveredNode = null;
         for (ResearchTemplate t : ResearchRegistry.all()) {
             if (!isNodeVisible(t)) continue;
             int[] pos = nodePositions.get(t.getId());
@@ -227,10 +229,8 @@ public class NaraWatchScreen extends Screen {
             if (nx + ns < panelX + NA_X || nx > panelX + NA_X + NA_W ||
                 ny + ns < panelY + NA_Y || ny > panelY + NA_Y + NA_H) continue;
             renderNode(g, pos[0], pos[1], t, partialTick);
-            if (zoom >= 0.7f)
-                g.drawCenteredString(font, Component.translatable(t.getTitleKey()),
-                        nx + ns / 2, ny + ns + 2,
-                        stateOf(t) == NodeState.LOCKED ? 0x888888 : 0xFFFFFF);
+            if (mouseX >= nx && mouseX < nx + ns && mouseY >= ny && mouseY < ny + ns)
+                hoveredNode = t;
         }
         g.disableScissor();
 
@@ -250,6 +250,24 @@ public class NaraWatchScreen extends Screen {
 
         // === Description panel ===
         renderDescPanel(g, mouseX, mouseY);
+
+        // === Node hover tooltip (rendered last so it's above everything) ===
+        if (hoveredNode != null) {
+            List<Component> tip = new ArrayList<>();
+            tip.add(Component.translatable(hoveredNode.getTitleKey()));
+            NodeState state = stateOf(hoveredNode);
+            Component stateLine;
+            switch (state) {
+                case COMPLETED -> stateLine = Component.translatable("research.koniava.state.completed")
+                        .withStyle(ChatFormatting.GREEN);
+                case AVAILABLE -> stateLine = Component.translatable("research.koniava.state.available_short")
+                        .withStyle(ChatFormatting.YELLOW);
+                default        -> stateLine = Component.translatable("research.koniava.state.locked")
+                        .withStyle(ChatFormatting.DARK_GRAY);
+            }
+            tip.add(stateLine);
+            g.renderComponentTooltip(font, tip, mouseX, mouseY);
+        }
     }
 
     private void renderConnections(GuiGraphics g) {

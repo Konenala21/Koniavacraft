@@ -134,10 +134,9 @@ public class ResearchScreen extends Screen {
 
         renderGrid(g, mouseX, mouseY);
         renderConnections(g);
-        renderPalette(g, mouseX, mouseY);
+        renderPaletteIcons(g, mouseX, mouseY);
         renderDragCursor(g, mouseX, mouseY);
-        renderCellTooltip(g, mouseX, mouseY);
-        renderSideItems(g, mouseX, mouseY);
+        renderSideItemIcons(g, mouseX, mouseY);
 
         if (completed) {
             g.drawCenteredString(font,
@@ -146,13 +145,13 @@ public class ResearchScreen extends Screen {
         }
 
         super.render(g, mouseX, mouseY, partialTick);
+
+        // All tooltips rendered LAST so they always appear above every icon
+        renderAllTooltips(g, mouseX, mouseY);
     }
 
-    /**
-     * Renders the research note (left) and ink quill with durability bar (right)
-     * beside the main panel so the player can see what's being consumed.
-     */
-    private void renderSideItems(GuiGraphics g, int mouseX, int mouseY) {
+    /** Icons only — no tooltips (tooltips are rendered later via renderAllTooltips). */
+    private void renderSideItemIcons(GuiGraphics g, int mouseX, int mouseY) {
         assert minecraft != null;
         if (minecraft.level == null) return;
         var be = minecraft.level.getBlockEntity(tablePos);
@@ -166,32 +165,8 @@ public class ResearchScreen extends Screen {
         int panelW = (ResearchGrid.COLS - 1) * COL_SPACING + CELL_W + 20;
         int slotY  = panelY + 4;
 
-        // Note slot — left of panel
-        if (!note.isEmpty()) {
-            int sx = panelX - 26;
-            renderItemSlot(g, note, sx, slotY);
-            if (mouseX >= sx && mouseX < sx + 18 && mouseY >= slotY && mouseY < slotY + 18) {
-                var researchId = ResearchNoteItem.getResearchId(note);
-                if (researchId != null) {
-                    g.renderTooltip(font, note.getHoverName(), mouseX, mouseY);
-                }
-            }
-        }
-
-        // Quill slot — right of panel
-        if (!quill.isEmpty()) {
-            int sx = panelX + panelW + 8;
-            renderItemSlot(g, quill, sx, slotY);
-            if (mouseX >= sx && mouseX < sx + 18 && mouseY >= slotY && mouseY < slotY + 18) {
-                g.renderComponentTooltip(font,
-                        java.util.List.of(
-                                quill.getHoverName(),
-                                net.minecraft.network.chat.Component.literal(
-                                        (quill.getMaxDamage() - quill.getDamageValue()) + " / " + quill.getMaxDamage())
-                                        .withStyle(net.minecraft.ChatFormatting.GRAY)),
-                        mouseX, mouseY);
-            }
-        }
+        if (!note.isEmpty())  renderItemSlot(g, note,  panelX - 26,        slotY);
+        if (!quill.isEmpty()) renderItemSlot(g, quill, panelX + panelW + 8, slotY);
     }
 
     private void renderItemSlot(GuiGraphics g, net.minecraft.world.item.ItemStack stack, int x, int y) {
@@ -203,8 +178,12 @@ public class ResearchScreen extends Screen {
         g.renderItemDecorations(font, stack, x, y);
     }
 
-    /** Shows the aspect name when hovering over any cell that has an aspect (FIXED or PLACED). */
-    private void renderCellTooltip(GuiGraphics g, int mouseX, int mouseY) {
+    /**
+     * Single method that renders ALL tooltips after every icon has been drawn.
+     * Priority: grid cell > palette > side items (only one tooltip shown at a time).
+     */
+    private void renderAllTooltips(GuiGraphics g, int mouseX, int mouseY) {
+        // 1. Grid cell tooltip
         for (int col = 0; col < ResearchGrid.COLS; col++) {
             for (int row = 0; row < ResearchGrid.ROWS; row++) {
                 int cx = cellX(col), cy = cellY(col, row);
@@ -223,8 +202,63 @@ public class ResearchScreen extends Screen {
                         }
                         g.renderComponentTooltip(font, lines, mouseX, mouseY);
                     }
-                    return;
+                    return; // stop after checking cell (even if empty)
                 }
+            }
+        }
+
+        // 2. Palette tooltip
+        for (int i = 0; i < palette.size(); i++) {
+            int px = paletteStartX + i * PALETTE_CELL;
+            if (mouseX >= px && mouseX < px + PALETTE_CELL
+                    && mouseY >= paletteY && mouseY < paletteY + PALETTE_CELL) {
+                Aspect aspect = palette.get(i);
+                List<Component> tip = new ArrayList<>();
+                tip.add(aspect.getName().copy().withStyle(net.minecraft.ChatFormatting.AQUA));
+                if (!aspect.isPrimary()) {
+                    List<Aspect> comps = aspect.getComponents();
+                    tip.add(Component.literal(
+                            comps.get(0).getName().getString()
+                            + " + "
+                            + comps.get(1).getName().getString())
+                            .withStyle(net.minecraft.ChatFormatting.GRAY));
+                }
+                g.renderComponentTooltip(font, tip, mouseX, mouseY);
+                return;
+            }
+        }
+
+        // 3. Side item tooltips
+        assert minecraft != null;
+        if (minecraft.level == null) return;
+        var be = minecraft.level.getBlockEntity(tablePos);
+        if (!(be instanceof ResearchTableBlockEntity table)) return;
+
+        var note  = table.getInventory().getStackInSlot(ResearchTableBlockEntity.NOTE_SLOT);
+        var quill = table.getInventory().getStackInSlot(ResearchTableBlockEntity.QUILL_SLOT);
+        int panelX = gridStartX - 10;
+        int panelY = gridStartY - 22;
+        int panelW = (ResearchGrid.COLS - 1) * COL_SPACING + CELL_W + 20;
+        int slotY  = panelY + 4;
+
+        if (!note.isEmpty()) {
+            int sx = panelX - 26;
+            if (mouseX >= sx && mouseX < sx + 18 && mouseY >= slotY && mouseY < slotY + 18) {
+                g.renderTooltip(font, note.getHoverName(), mouseX, mouseY);
+                return;
+            }
+        }
+        if (!quill.isEmpty()) {
+            int sx = panelX + panelW + 8;
+            if (mouseX >= sx && mouseX < sx + 18 && mouseY >= slotY && mouseY < slotY + 18) {
+                g.renderComponentTooltip(font,
+                        java.util.List.of(
+                                quill.getHoverName(),
+                                Component.literal(
+                                        (quill.getMaxDamage() - quill.getDamageValue())
+                                        + " / " + quill.getMaxDamage())
+                                        .withStyle(net.minecraft.ChatFormatting.GRAY)),
+                        mouseX, mouseY);
             }
         }
     }
@@ -303,7 +337,8 @@ public class ResearchScreen extends Screen {
         }
     }
 
-    private void renderPalette(GuiGraphics g, int mouseX, int mouseY) {
+    /** Icons only — no tooltips (tooltips are rendered later via renderAllTooltips). */
+    private void renderPaletteIcons(GuiGraphics g, int mouseX, int mouseY) {
         for (int i = 0; i < palette.size(); i++) {
             Aspect aspect = palette.get(i);
             int px = paletteStartX + i * PALETTE_CELL;
@@ -321,20 +356,6 @@ public class ResearchScreen extends Screen {
 
             g.drawString(font, aspect.getId().getPath().substring(0, 1).toUpperCase(),
                     px + 5, paletteY + 5, 0xFFFFFF, true);
-
-            if (hover) {
-                List<Component> tip = new ArrayList<>();
-                tip.add(aspect.getName().copy().withStyle(net.minecraft.ChatFormatting.AQUA));
-                if (!aspect.isPrimary()) {
-                    List<Aspect> comps = aspect.getComponents();
-                    tip.add(Component.literal(
-                            comps.get(0).getName().getString()
-                            + " + "
-                            + comps.get(1).getName().getString())
-                            .withStyle(net.minecraft.ChatFormatting.GRAY));
-                }
-                g.renderComponentTooltip(font, tip, mouseX, mouseY);
-            }
         }
     }
 

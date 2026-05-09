@@ -3,6 +3,7 @@ package com.github.nalamodikk.common.block.blockentity.conduit;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.capability.IUnifiedManaHandler;
+import com.github.nalamodikk.research.ResearchGate;
 import com.github.nalamodikk.common.utils.capability.CapabilityUtils;
 import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
 import com.github.nalamodikk.register.ModBlockEntities;
@@ -403,6 +404,10 @@ public class ArcaneConduitBlock extends BaseEntityBlock {
                                             Player player, BlockHitResult hit) {
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
+        }
+
+        if (!ResearchGate.canUse(tier.getSerializedName() + "_arcane_conduit", player, level)) {
+            return InteractionResult.FAIL;
         }
 
         if (!(level.getBlockEntity(pos) instanceof ArcaneConduitBlockEntity conduit)) {
