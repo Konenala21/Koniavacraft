@@ -1,7 +1,10 @@
 package com.github.nalamodikk.narasystem.nara.network.server;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.item.NaraWatchItem;
 import com.github.nalamodikk.narasystem.nara.util.NaraHelper;
+import com.github.nalamodikk.register.ModItems;
+import net.minecraft.world.item.ItemStack;
 import com.mojang.logging.LogUtils;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -43,6 +46,22 @@ public record NaraBindRequestPacket(boolean bind) implements CustomPacketPayload
                 if (sender instanceof ServerPlayer serverPlayer) {
                     PacketDistributor.sendToPlayer(serverPlayer, new NaraSyncPacket(packet.bind()));
                     LOGGER.debug("綁定請求封包發送測試");
+
+                    // Give Nara Watch on successful bind if player doesn't already have one
+                    if (packet.bind()) {
+                        boolean hasWatch = false;
+                        var inv = serverPlayer.getInventory();
+                        for (int i = 0; i < inv.getContainerSize(); i++) {
+                            if (inv.getItem(i).getItem() instanceof NaraWatchItem) {
+                                hasWatch = true;
+                                break;
+                            }
+                        }
+                        if (!hasWatch) {
+                            ItemStack watch = new ItemStack(ModItems.NARA_WATCH.get());
+                            if (!inv.add(watch)) serverPlayer.drop(watch, false);
+                        }
+                    }
                 }
             }
         });

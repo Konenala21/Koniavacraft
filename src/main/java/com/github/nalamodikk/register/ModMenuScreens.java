@@ -2,6 +2,7 @@ package com.github.nalamodikk.register;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.block.blockentity.collector.solarmana.SolarManaCollectorScreen;
+import com.github.nalamodikk.common.block.blockentity.research.ResearchTableScreen;
 import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitConfigScreen;
 import com.github.nalamodikk.common.block.blockentity.mana_crafting.ManaCraftingScreen;
 import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorScreen;
@@ -28,6 +29,7 @@ public class ModMenuScreens {
         event.register(ModMenuTypes.CONDUIT_CONFIG_MENU.get(), ArcaneConduitConfigScreen::new);
         event.register(ModMenuTypes.MANA_INFUSER.get(), ManaInfuserScreen::new);
         event.register(ModMenuTypes.MANA_GRINDER_MENU.get(), ManaGrinderScreen::new);
+        event.register(ModMenuTypes.RESEARCH_TABLE_MENU.get(), ResearchTableScreen::new);
 
     }
 

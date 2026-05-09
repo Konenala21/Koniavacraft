@@ -53,22 +53,8 @@ public class OutputHandler {
             // 魔力接收端處理
             if (manaTarget != null && manaStorage != null && manaTarget.canReceive()) {
                 int demand = manaTarget.getMaxManaStored() - manaTarget.getManaStored();
-                // TODO [OutputHandlerV2]：目前的「需求值」是使用「最大容量 - 當前儲量」來估算接收端的可接收空間
-                // TODO: [OutputHandlerV2] 儲量估算目前為靜態模型
-                // NOTE: 可接下來觀察玩家是否常常讓小容量機器卡不到 mana
-                // NOTE: 預設邏輯雖簡單，但對於高流量場景可能會失衡
-                // 這種靜態需求估算邏輯雖然簡單穩定，但存在以下潛在問題：
-                // - 無法判斷接收端是否實際正在消耗 mana / energy（可能只是一直塞著不動）
-                // - 容易導致處理速度快但容量小的機器長期拿不到 mana（需求低，但其實需要更多）
-                //
-                // 未來可擴充以下機制：
-                // - 引入「過去 N tick 的實際接收量」做動態滑動平均 → 預估真實需求
-                // - 使用上一輪實際輸入比值（成功 / 嘗試）作為下一輪的分配加權
-                // - 抽象出一個 `DemandEstimator` 模型介面，允許外掛不同需求預估策略
-                // - 支援玩家手動配置各方向優先順序（Output Priority UI）
-                //
-                // 目前仍維持簡單邏輯，待模組進入中後期或有玩家反饋後再重構。
-
+                // TODO [OutputHandlerV2]: demand is (maxMana - storedMana) — static model.
+                // Future: dynamic sliding average of actual received mana over past N ticks.
                 if (demand > 0) {
                     manaTargets.add(manaTarget);
                     manaDemands.add(demand);
@@ -84,23 +70,8 @@ public class OutputHandler {
                 // the target being silently skipped).
                 long demandLong = (long) energyTarget.getMaxEnergyStored() - (long) energyTarget.getEnergyStored();
                 int demand = (int) Math.min(demandLong, (long) Integer.MAX_VALUE);
-                // TODO: [OutputHandlerV2] 目前的「需求值」是使用「最大容量 - 當前儲量」來估算接收端的可接收空間。
-                // TODO: [OutputHandlerV2] 儲量估算目前為靜態模型
-                // NOTE: 可接下來觀察玩家是否常常讓小容量機器卡不到 mana
-                // NOTE: 預設邏輯雖簡單，但對於高流量場景可能會失衡
-
-                // 這種靜態需求估算邏輯雖然簡單穩定，但存在以下潛在問題：
-                // - 無法判斷接收端是否實際正在消耗 mana / energy（可能只是一直塞著不動）
-                // - 容易導致處理速度快但容量小的機器長期拿不到 mana（需求低，但其實需要更多）
-                //
-                // 未來可擴充以下機制：
-                // - 引入「過去 N tick 的實際接收量」做動態滑動平均 → 預估真實需求
-                // - 使用上一輪實際輸入比值（成功 / 嘗試）作為下一輪的分配加權
-                // - 抽象出一個 `DemandEstimator` 模型介面，允許外掛不同需求預估策略
-                // - 支援玩家手動配置各方向優先順序（Output Priority UI）
-                //
-                // 目前仍維持簡單邏輯，待模組進入中後期或有玩家反饋後再重構。
-
+                // TODO [OutputHandlerV2]: demand is (maxEnergy - storedEnergy) — static model.
+                // Future: dynamic sliding average of actual received energy over past N ticks.
                 if (demand > 0) {
                     energyTargets.add(energyTarget);
                     energyDemands.add(demand);
@@ -126,10 +97,14 @@ public class OutputHandler {
                 sentTotal += accepted; // 累加實際送出量
             }
 
-            // 處理剩餘的魔力
+            // 處理剩餘的魔力：給需求最大的目標
             int remainder = totalToSend - sentTotal;
             if (remainder > 0 && !manaTargets.isEmpty()) {
-                int accepted = manaTargets.get(0).receiveMana(remainder, ManaAction.EXECUTE);
+                int hungriestIdx = 0;
+                for (int j = 1; j < manaDemands.size(); j++) {
+                    if (manaDemands.get(j) > manaDemands.get(hungriestIdx)) hungriestIdx = j;
+                }
+                int accepted = manaTargets.get(hungriestIdx).receiveMana(remainder, ManaAction.EXECUTE);
                 if (accepted > 0) {
                     manaStorage.extractMana(accepted, ManaAction.EXECUTE);
                     didOutput = true;
@@ -152,10 +127,14 @@ public class OutputHandler {
                 sentTotal += accepted; // 累加實際送出量
             }
 
-            // 處理剩餘的能量
+            // 處理剩餘的能量：給需求最大的目標
             int remainder = totalToSend - sentTotal;
             if (remainder > 0 && !energyTargets.isEmpty()) {
-                int accepted = energyTargets.get(0).receiveEnergy(remainder, false);
+                int hungriestIdx = 0;
+                for (int j = 1; j < energyDemands.size(); j++) {
+                    if (energyDemands.get(j) > energyDemands.get(hungriestIdx)) hungriestIdx = j;
+                }
+                int accepted = energyTargets.get(hungriestIdx).receiveEnergy(remainder, false);
                 if (accepted > 0) {
                     energyStorage.extractEnergy(accepted, false);
                     didOutput = true;

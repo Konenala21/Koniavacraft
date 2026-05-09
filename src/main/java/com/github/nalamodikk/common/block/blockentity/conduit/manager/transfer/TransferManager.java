@@ -1,7 +1,6 @@
 package com.github.nalamodikk.common.block.blockentity.conduit.manager.transfer;
 
 import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitBlockEntity;
-import com.github.nalamodikk.common.block.blockentity.conduit.ConduitTier;
 import com.github.nalamodikk.common.block.blockentity.conduit.manager.core.CacheManager;
 import com.github.nalamodikk.common.block.blockentity.conduit.manager.core.IOManager;
 import com.github.nalamodikk.common.block.blockentity.conduit.manager.core.StatsManager;
@@ -29,9 +28,6 @@ public class TransferManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(TransferManager.class);
 
     // === 常量 ===
-    // ⚠️ 已棄用：使用 ConduitTier 系統取代固定速率
-    @Deprecated
-    private static final int LEGACY_TRANSFER_RATE = ConduitTier.BASIC.getTransferRate();
     private static final int MAX_TRANSFERS_PER_TICK = 2;
     private static final int BACKFLOW_COOLDOWN_TICKS = 100;
     private static final int CIRCULAR_GUARD_TICK_WINDOW = 3;
@@ -137,11 +133,6 @@ public class TransferManager {
      * 找到最佳傳輸目標
      */
     private Direction findBestTarget(long currentTick) {
-        // 定期重新掃描目標（通過NetworkManager）
-        if (currentTick % 10 == 0) {
-            // NetworkManager會自動處理目標重新掃描
-        }
-
         // 使用負載平衡策略選擇目標
         return BalancingStrategy.selectBestTarget(
                 networkManager.getValidTargets(),
@@ -271,9 +262,6 @@ public class TransferManager {
                 }
                 conduit.extractMana(actualReceived, ManaAction.EXECUTE);
 
-//                LOGGER.debug("Transfer executed: {} mana from {} to {} (direction: {})",
-//                        actualReceived, conduit.getBlockPos(), neighborPos, targetDir);
-
                 // 更新狀態
                 updateTransferState(targetDir, actualReceived, currentTick, true);
 
@@ -361,19 +349,8 @@ public class TransferManager {
 
     // === 速率限制相關方法 ===
 
-    /**
-     * 🆕 獲取當前導管的傳輸速率限制
-     * 優先使用導管自身的等級，如果未設定則使用預設值
-     */
     private int getTransferRateLimit() {
-        // 從導管獲取等級
-        ConduitTier tier = conduit.getTier();
-        if (tier != null) {
-            return tier.getTransferRate();
-        }
-
-        // 向後兼容：如果導管還沒有等級系統，使用舊的固定速率
-        return LEGACY_TRANSFER_RATE;
+        return conduit.getTier().getTransferRate();
     }
 
     /**

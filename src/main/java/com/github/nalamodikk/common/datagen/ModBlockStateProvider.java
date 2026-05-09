@@ -43,6 +43,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         createManaModel(ModBlocks.MANA_CRAFTING_TABLE_BLOCK);
         createManaModelWithFacing(ModBlocks.MANA_INFUSER);
         createManaModelWithFacing(ModBlocks.MANA_GRINDER);
+        createManaGeneratorModel();
+        createSolarCollectorModel();
+        createManaModel(ModBlocks.RESEARCH_TABLE);
     }
 
     // ===========================================
@@ -77,6 +80,35 @@ public class ModBlockStateProvider extends BlockStateProvider {
     // ===========================================
     // 🧪 特殊方塊模型
     // ===========================================
+
+    private void createManaGeneratorModel() {
+        Block block = ModBlocks.MANA_GENERATOR.get();
+        ModelFile normal = new ModelFile.UncheckedModelFile(modLoc("block/generator/mana_generator"));
+        ModelFile active = new ModelFile.UncheckedModelFile(modLoc("block/generator/mana_generator_active"));
+
+        var builder = getVariantBuilder(block);
+        for (Direction dir : Direction.Plane.HORIZONTAL) {
+            int y = switch (dir) { case SOUTH -> 180; case WEST -> 270; case EAST -> 90; default -> 0; };
+            builder.partialState()
+                    .with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, dir)
+                    .with(com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorBlock.ACTIVE, false)
+                    .modelForState().modelFile(normal).rotationY(y).addModel();
+            builder.partialState()
+                    .with(net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING, dir)
+                    .with(com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorBlock.ACTIVE, true)
+                    .modelForState().modelFile(active).rotationY(y).addModel();
+        }
+    }
+
+    private void createSolarCollectorModel() {
+        Block block = ModBlocks.SOLAR_MANA_COLLECTOR.get();
+        ModelFile model = new ModelFile.UncheckedModelFile(modLoc("block/collector/solar_mana_collector"));
+        getVariantBuilder(block)
+                .partialState().with(HorizontalDirectionalBlock.FACING, Direction.NORTH).modelForState().modelFile(model).rotationY(180).addModel()
+                .partialState().with(HorizontalDirectionalBlock.FACING, Direction.SOUTH).modelForState().modelFile(model).addModel()
+                .partialState().with(HorizontalDirectionalBlock.FACING, Direction.WEST).modelForState().modelFile(model).rotationY(90).addModel()
+                .partialState().with(HorizontalDirectionalBlock.FACING, Direction.EAST).modelForState().modelFile(model).rotationY(270).addModel();
+    }
 
     /**
      * 🔧 創建基礎魔力方塊模型（無朝向屬性）

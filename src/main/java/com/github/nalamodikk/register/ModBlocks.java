@@ -5,6 +5,7 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.block.blockentity.collector.solarmana.SolarManaCollectorBlock;
 import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitBlock;
 import com.github.nalamodikk.common.block.blockentity.conduit.ConduitTier;
+import com.github.nalamodikk.common.block.ResearchTableBlock;
 import com.github.nalamodikk.common.block.blockentity.mana_crafting.ManaCraftingTableBlock;
 import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorBlock;
 import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderBlock;
@@ -39,6 +40,11 @@ public class ModBlocks {
 
     public static final DeferredBlock<Block> MANA_CRAFTING_TABLE_BLOCK =
             registerBlock("mana_crafting_table", () -> new ManaCraftingTableBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.BIRCH_WOOD)));
+
+    public static final DeferredBlock<Block> RESEARCH_TABLE =
+            registerBlock("research_table", () -> new ResearchTableBlock(
+                    BlockBehaviour.Properties.ofFullCopy(Blocks.BIRCH_WOOD).strength(2.5f)));
+
 
     public static final DeferredBlock<Block> MANA_GENERATOR =
             registerBlock("mana_generator", () -> new ManaGeneratorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).noOcclusion()));

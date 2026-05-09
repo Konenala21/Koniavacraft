@@ -40,7 +40,7 @@ public class VirtualNetwork {
     }
 
     public void logNetworkInfo() {
-        LOGGER.info("Virtual Network — Mana: {}/{}, Conduits: {}",
+        LOGGER.debug("Virtual Network — Mana: {}/{}, Conduits: {}",
                 sharedManaPool.getManaStored(),
                 sharedManaPool.getMaxManaStored(),
                 connectedConduits.size());
@@ -73,16 +73,22 @@ public class VirtualNetwork {
     /**
      * Remove a conduit from the network.
      * Shrinks the pool capacity by that conduit's tier contribution.
-     * If stored mana exceeds the new cap, it is truncated (unavoidable loss).
+     * Excess mana (above the new cap) is returned to the leaving conduit's buffer
+     * so players don't silently lose mana when reorganising their network.
      */
     public void removeConduit(BlockPos pos) {
         if (!connectedConduits.remove(pos)) return;
 
-        conduitMap.remove(pos);
-        Integer removed = conduitCapacities.remove(pos);
-        if (removed != null) {
-            int newMax = Math.max(0, sharedManaPool.getMaxManaStored() - removed);
-            sharedManaPool.setCapacity(newMax); // ManaStorage.setCapacity already truncates mana
+        ArcaneConduitBlockEntity leaving = conduitMap.remove(pos);
+        Integer tierCap = conduitCapacities.remove(pos);
+        if (tierCap != null) {
+            int newMax = Math.max(0, sharedManaPool.getMaxManaStored() - tierCap);
+            int excess = Math.max(0, sharedManaPool.getManaStored() - newMax);
+            if (excess > 0 && leaving != null) {
+                sharedManaPool.extractMana(excess, ManaAction.EXECUTE);
+                leaving.setBufferMana(excess);
+            }
+            sharedManaPool.setCapacity(newMax);
         }
 
         LOGGER.debug("Removed conduit {} from network. Remaining: {}, cap: {}",

@@ -110,6 +110,16 @@ public class ModDataComponents {
                     .networkSynchronized(ByteBufCodecs.VAR_INT)
                     .build();
 
+    /** Stores which research entry a Research Note represents. */
+    public static final DataComponentType<ResourceLocation> RESEARCH_ID =
+            DataComponentType.<ResourceLocation>builder()
+                    .persistent(ResourceLocation.CODEC)
+                    .networkSynchronized(
+                            ByteBufCodecs.stringUtf8(255).map(
+                                    ResourceLocation::tryParse,
+                                    ResourceLocation::toString))
+                    .build();
+
 
     @SubscribeEvent
     public static void register(RegisterEvent event) {
@@ -122,6 +132,7 @@ public class ModDataComponents {
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "nara_imprint"), NARA_IMPRINT);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "mana_stored"), MANA_STORED);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "max_mana"), MAX_MANA);
+            helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "research_id"), RESEARCH_ID);
         });
     }
 }

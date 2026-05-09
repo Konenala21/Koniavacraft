@@ -321,7 +321,7 @@ import com.github.nalamodikk.common.utils.upgrade.UpgradeType;
         }
 
         private boolean isOpenToSky(Level level) {
-            return level.canSeeSkyFromBelowWater(worldPosition.above(2));
+            return level.canSeeSkyFromBelowWater(worldPosition.above());
         }
 
         private boolean isRainingAt(Level level) {

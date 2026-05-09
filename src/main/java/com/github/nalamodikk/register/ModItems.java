@@ -1,7 +1,11 @@
 package com.github.nalamodikk.register;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.item.NaraWatchItem;
 import com.github.nalamodikk.common.item.UpgradeItem;
+import com.github.nalamodikk.common.item.research.CompletedResearchItem;
+import com.github.nalamodikk.common.item.research.InkQuillItem;
+import com.github.nalamodikk.common.item.research.ResearchNoteItem;
 import com.github.nalamodikk.common.item.debug.ManaDebugToolItem;
 import com.github.nalamodikk.common.item.tool.BasicTechWandItem;
 import com.github.nalamodikk.common.utils.upgrade.UpgradeType;
@@ -41,6 +45,23 @@ public class ModItems {
     public static final DeferredItem<Item> CATALYTIC_CONVERTER_UPGRADE = ITEMS.register("catalytic_converter_upgrade", () -> new UpgradeItem(UpgradeType.CATALYTIC_CONVERTER, new Item.Properties().stacksTo(UPGRADE_STACK_SIZE)));
     public static final DeferredItem<Item> DIAGNOSTIC_DISPLAY_UPGRADE = ITEMS.register("diagnostic_display_upgrade", () -> new UpgradeItem(UpgradeType.DIAGNOSTIC_DISPLAY, new Item.Properties().stacksTo(UPGRADE_STACK_SIZE)));
 
+
+    // 研究系統
+    public static final DeferredItem<ResearchNoteItem> RESEARCH_NOTE =
+            ITEMS.register("research_note", () -> new ResearchNoteItem(
+                    new Item.Properties().stacksTo(1)));
+
+    public static final DeferredItem<InkQuillItem> INK_QUILL =
+            ITEMS.register("ink_quill", () -> new InkQuillItem(
+                    new Item.Properties().stacksTo(1).durability(350)));
+
+    public static final DeferredItem<NaraWatchItem> NARA_WATCH =
+            ITEMS.register("nara_watch", () -> new NaraWatchItem(
+                    new Item.Properties().stacksTo(1)));
+
+    public static final DeferredItem<CompletedResearchItem> COMPLETED_RESEARCH =
+            ITEMS.register("completed_research", () -> new CompletedResearchItem(
+                    new Item.Properties().stacksTo(1)));
 
     public static void register(IEventBus eventBus){
         ITEMS.register(eventBus);

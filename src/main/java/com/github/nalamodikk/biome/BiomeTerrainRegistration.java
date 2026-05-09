@@ -62,13 +62,7 @@ public class BiomeTerrainRegistration {
      * 📝 註冊各種生物群系地形
      */
     private static void registerBiomeTerrains() {
-        // 🌱 魔力草原
         registerManaPlains();
-
-        // 🔥 未來可以添加更多生物群系
-        // registerVolcanicLands();
-        // registerCrystalDesert();
-        // registerFrozenWasteland();
     }
 
     /**
@@ -116,81 +110,6 @@ public class BiomeTerrainRegistration {
         if (KoniavacraftMod.IS_DEV) {
             KoniavacraftMod.LOGGER.debug("Registered mana plains terrain with {} climate points.", entries.size());
         }
-    }
-
-    // ===============================
-    // 🔥 未來生物群系註冊範例
-    // ===============================
-
-    /**
-     * 🌋 註冊火山灰原地形（範例）
-     */
-    private static void registerVolcanicLands() {
-        // 當你有火山生物群系時，取消註解：
-        /*
-        BiomeTerrainLibAPI.addVolcanic(
-            ModBiomes.VOLCANIC_ASHLANDS,
-            () -> ModBlocks.VOLCANIC_ASH.get(),
-            () -> ModBlocks.HARDENED_ASH.get()
-        );
-        
-        if (KoniavacraftMod.IS_DEV) {
-            KoniavacraftMod.LOGGER.debug("🌋 已註冊火山灰原地形");
-        }
-        */
-    }
-
-    /**
-     * 💎 註冊水晶沙漠地形（範例）
-     */
-    private static void registerCrystalDesert() {
-        // 當你有水晶沙漠生物群系時，取消註解：
-        /*
-        BiomeTerrainLibAPI.addDesert(
-            ModBiomes.CRYSTAL_DESERT,
-            () -> ModBlocks.CRYSTAL_SAND.get(),
-            () -> ModBlocks.CRYSTAL_SANDSTONE.get()
-        );
-        
-        if (KoniavacraftMod.IS_DEV) {
-            KoniavacraftMod.LOGGER.debug("💎 已註冊水晶沙漠地形");
-        }
-        */
-    }
-
-    /**
-     * ❄️ 註冊冰凍荒地地形（範例）
-     */
-    private static void registerFrozenWasteland() {
-        // 當你有冰凍荒地生物群系時，取消註解：
-        /*
-        BiomeTerrainLibAPI.addSnowy(
-            ModBiomes.FROZEN_WASTELAND,
-            () -> ModBlocks.ETERNAL_SNOW.get(),
-            () -> ModBlocks.PERMAFROST.get()
-        );
-        
-        if (KoniavacraftMod.IS_DEV) {
-            KoniavacraftMod.LOGGER.debug("❄️ 已註冊冰凍荒地地形");
-        }
-        */
-    }
-
-    /**
-     * 🎨 註冊複雜自定義地形（範例）
-     */
-    private static void registerComplexCustomTerrain() {
-        // 展示如何使用完整的 API：
-        /*
-        BiomeTerrainLibAPI.addBiome(ModBiomes.MYSTIC_FOREST)
-            .surface(() -> ModBlocks.ENCHANTED_GRASS.get())
-            .soil(() -> ModBlocks.FERTILE_SOIL.get())
-            .deepSoil(() -> ModBlocks.ANCIENT_SOIL.get(), 15)
-            .stone(() -> ModBlocks.MYSTIC_STONE.get(), 5)
-            .nearWater() // 只在水源附近生成
-            .priority(12)
-            .register();
-        */
     }
 
     /**

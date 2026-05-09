@@ -390,8 +390,8 @@ public class NetworkManager {
                 if (conduit.getLevel().isLoaded(neighborPos)) {
                     BlockEntity neighborBE = conduit.getLevel().getBlockEntity(neighborPos);
 
-                    // 如果鄰居不再是導管或不存在，標記為無效
-                    if (!(neighborBE instanceof ArcaneConduitBlockEntity)) {
+                    // 如果這個方向原本連接的是導管，但現在已不是導管，標記為無效
+                    if (entry.getValue().isConduit && !(neighborBE instanceof ArcaneConduitBlockEntity)) {
                         invalidDirections.add(dir);
                     }
                 }

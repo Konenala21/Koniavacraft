@@ -1,8 +1,0 @@
-{
-  "variants": {
-    "facing=north": { "model": "koniava:block/collector/solar_mana_collector", "y": 180 },
-    "facing=south": { "model": "koniava:block/collector/solar_mana_collector", "y": 0 },
-    "facing=west":  { "model": "koniava:block/collector/solar_mana_collector", "y": 90 },
-    "facing=east":  { "model": "koniava:block/collector/solar_mana_collector", "y": 270 }
-  }
-}

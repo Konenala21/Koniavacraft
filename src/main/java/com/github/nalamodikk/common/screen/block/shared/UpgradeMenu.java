@@ -7,8 +7,10 @@ import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -174,7 +176,11 @@ public class UpgradeMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return true; // 根據實際需求判斷範圍
+        BlockEntity be = machine.getBlockEntity();
+        if (be == null || be.isRemoved()) return false;
+        return AbstractContainerMenu.stillValid(
+                ContainerLevelAccess.create(be.getLevel(), be.getBlockPos()),
+                player, be.getBlockState().getBlock());
     }
 
     public IUpgradeableMachine getMachine() {

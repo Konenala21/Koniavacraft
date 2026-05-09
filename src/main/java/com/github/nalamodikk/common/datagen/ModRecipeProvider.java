@@ -151,6 +151,18 @@ public class ModRecipeProvider extends RecipeProvider {
                 .define('M', Blocks.PISTON)
                 .unlockedBy("has_mana_ingot", has(ModItems.MANA_INGOT.get()))
                 .save(output, "mana_grinder");
+
+        // 📖 研究台
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.RESEARCH_TABLE.get())
+                .pattern("MCM")
+                .pattern("SIS")
+                .pattern("MCM")
+                .define('M', ModItems.MANA_INGOT.get())
+                .define('C', Blocks.DARK_OAK_PLANKS)
+                .define('S', Items.STICK)
+                .define('I', Blocks.IRON_BLOCK)
+                .unlockedBy("has_mana_ingot", has(ModItems.MANA_INGOT.get()))
+                .save(output, "research_table");
     }
 
     // === ⚡ 升級模組配方 ===
@@ -193,6 +205,17 @@ public class ModRecipeProvider extends RecipeProvider {
                 .define('S', Items.STICK)
                 .unlockedBy("has_mana_dust", has(ModItems.MANA_DUST.get()))
                 .save(output, "basic_tech_wand");
+
+        // 🖊️ 墨水羽毛筆
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.INK_QUILL.get())
+                .pattern(" F ")
+                .pattern(" I ")
+                .pattern(" S ")
+                .define('F', Items.FEATHER)
+                .define('I', Items.INK_SAC)
+                .define('S', Items.STICK)
+                .unlockedBy("has_feather", has(Items.FEATHER))
+                .save(output, "ink_quill");
     }
 
     // === 📦 儲存和轉換配方 ===

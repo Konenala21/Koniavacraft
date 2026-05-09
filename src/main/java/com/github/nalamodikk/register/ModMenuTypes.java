@@ -23,6 +23,7 @@ import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderBl
 import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderMenu;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserMenu;
+import com.github.nalamodikk.common.block.blockentity.research.ResearchTableMenu;
 import com.github.nalamodikk.common.screen.block.shared.FallbackUpgradeMenu;
 import com.github.nalamodikk.common.screen.block.shared.UniversalConfigMenu;
 import com.github.nalamodikk.common.screen.block.shared.UpgradeMenu;
@@ -111,6 +112,9 @@ public class ModMenuTypes {
      */
     public static final DeferredHolder<MenuType<?>, MenuType<ExtraEquipmentMenu>> EXTRA_EQUIPMENT_MENU =
             registerMenuType("extra_equipment", ExtraEquipmentMenu::new);
+
+    public static final DeferredHolder<MenuType<?>, MenuType<ResearchTableMenu>> RESEARCH_TABLE_MENU =
+            registerMenuType("research_table", ResearchTableMenu::new);
 
 
     /***

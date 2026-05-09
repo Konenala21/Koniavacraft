@@ -6,6 +6,7 @@ import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitBlock
 import com.github.nalamodikk.common.block.blockentity.mana_crafting.ManaCraftingTableBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderBlockEntity;
+import com.github.nalamodikk.common.block.blockentity.research.ResearchTableBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -58,6 +59,11 @@ public class ModBlockEntities {
 //                    BlockEntityType.Builder.of(ModularMachineBlockEntity::new,
 //                            ModBlocks.MODULAR_MACHINE_BLOCK.get()).build());
 
+
+    public static final Supplier<BlockEntityType<ResearchTableBlockEntity>> RESEARCH_TABLE_BE =
+            BLOCK_ENTITY_TYPES.register("research_table", () ->
+                    BlockEntityType.Builder.of(ResearchTableBlockEntity::new,
+                            ModBlocks.RESEARCH_TABLE.get()).build(null));
 
     public static void register(IEventBus modEventBus) {
         BLOCK_ENTITY_TYPES.register(modEventBus);

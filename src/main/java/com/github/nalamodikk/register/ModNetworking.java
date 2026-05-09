@@ -11,6 +11,10 @@ import com.github.nalamodikk.common.network.packet.server.manatool.TechWandModeP
 import com.github.nalamodikk.common.network.packet.server.manatool.ToggleModePacket;
 import com.github.nalamodikk.common.network.packet.server.player.gui.OpenExtraEquipmentPacket;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraBindRequestPacket;
+import com.github.nalamodikk.research.network.ResearchAspectPlacePacket;
+import com.github.nalamodikk.research.network.ResearchCompletePacket;
+import com.github.nalamodikk.research.network.StartResearchPacket;
+import com.github.nalamodikk.research.network.WatchSyncPacket;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -40,6 +44,12 @@ public class ModNetworking {
         //導管
         PriorityUpdatePacket.registerTo(registrar);
         ResetPrioritiesPacket.registerTo(registrar);
+
+        // 研究系統
+        ResearchCompletePacket.registerTo(registrar);
+        ResearchAspectPlacePacket.registerTo(registrar);
+        WatchSyncPacket.registerTo(registrar);
+        StartResearchPacket.registerTo(registrar);
     }
 
 }
