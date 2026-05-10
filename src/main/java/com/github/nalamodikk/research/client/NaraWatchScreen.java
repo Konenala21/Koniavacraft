@@ -1,6 +1,7 @@
 package com.github.nalamodikk.research.client;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.research.aspect.Aspect;
 import com.github.nalamodikk.research.network.StartResearchPacket;
 import com.github.nalamodikk.research.template.ResearchRegistry;
 import com.github.nalamodikk.research.template.ResearchTemplate;
@@ -522,6 +523,8 @@ public class NaraWatchScreen extends Screen {
         if (tier < t.getTier()) return NodeState.LOCKED;
         for (ResourceLocation prereq : t.getPrerequisites())
             if (!completed.contains(prereq)) return NodeState.LOCKED;
+        for (Aspect aspect : t.getRequiredAspects())
+            if (!ClientResearchCache.hasDiscovered(aspect.getId())) return NodeState.LOCKED;
         return NodeState.AVAILABLE;
     }
 

@@ -6,6 +6,15 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- EN: The Nara Watch scanner now supports dropped item entities as scan targets, not only blocks.
+- EN: Scanning now plays rising tick sounds and emits target particles, making the 0.5-second hold clearer.
+- EN: Research nodes now stay locked until the required compound aspects have been discovered by scanning.
+- EN: Added more aspect scan mappings for vanilla and Koniava blocks/items.
+- ZH: 娜拉手錶掃描器現在可掃描地上的掉落物，不再只支援方塊。
+- ZH: 掃描過程加入漸升音效與目標粒子，0.5 秒長按回饋更清楚。
+- ZH: 研究節點現在會檢查必要本源是否已透過掃描發現，未發現時維持鎖定。
+- ZH: 補充更多原版與 Koniava 方塊/物品的本源掃描對應。
+
 - EN: Completing a research puzzle now gives a Completed Research Scroll. Right-clicking the scroll in the air officially commits the research and unlocks its benefits. First-ever completion triggers a firework celebration.
 - EN: Research aspects now show composition info on hover (compound aspects show "A + B" in the palette tooltip).
 - EN: Fixed research puzzle — aspects now also connect if they share a common component (e.g. Mana ↔ Resonance via Wu), and same-aspect cells always connect.
@@ -21,6 +30,17 @@ All notable changes to this project will be documented in this file.
 - ZH: 升級介面現在會在玩家走遠後正確關閉（之前永遠保持開啟）。
 
 ### Developer Notes / 開發者備註
+
+- EN: `WatchSyncPacket` now carries discovered aspect IDs and updates `ClientResearchCache` before opening `NaraWatchScreen`.
+- EN: `NaraWatchScreen.stateOf()` now checks required aspects through `ClientResearchCache` before marking a node available.
+- EN: `NaraWatchItem` now ray-checks nearby `ItemEntity` targets, scans item aspects, and sends target particles from the server.
+- EN: `AspectScanner` now has item mappings plus tag fallback for common item categories.
+- EN: Added `.gitnexusignore` and ignored `.gitnexus` local index data.
+- ZH: `WatchSyncPacket` 現在會攜帶已發現本源 ID，並在開啟 `NaraWatchScreen` 前更新 `ClientResearchCache`。
+- ZH: `NaraWatchScreen.stateOf()` 現在會先檢查必要本源是否已發現，再判定節點可研究。
+- ZH: `NaraWatchItem` 新增掉落物射線檢查、物品本源掃描，以及伺服器端目標粒子效果。
+- ZH: `AspectScanner` 新增物品對應表與常見物品 tag fallback。
+- ZH: 新增 `.gitnexusignore`，並忽略 `.gitnexus` 本地索引資料。
 
 - EN: `CompletedResearchItem` added — transforms note on puzzle completion; `use()` applies research to `PlayerKnowledge` + triggers first-research firework (particles + sounds).
 - EN: `ResearchCompletePacket` no longer saves to `ResearchSavedData`; responsibility moved to `CompletedResearchItem.use()`.

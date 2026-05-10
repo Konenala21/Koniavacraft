@@ -1,6 +1,7 @@
 package com.github.nalamodikk.research.network;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.research.client.ClientResearchCache;
 import com.github.nalamodikk.research.client.NaraWatchScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -20,7 +21,7 @@ import java.util.Set;
  * Server → client: sends a snapshot of the player's research knowledge so the
  * client can open {@link NaraWatchScreen} without a round-trip for every query.
  */
-public record WatchSyncPacket(List<ResourceLocation> completed, int tier)
+public record WatchSyncPacket(List<ResourceLocation> completed, int tier, List<ResourceLocation> discovered)
         implements CustomPacketPayload {
 
     public static final Type<WatchSyncPacket> TYPE =
@@ -30,22 +31,25 @@ public record WatchSyncPacket(List<ResourceLocation> completed, int tier)
             StreamCodec.composite(
                     ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), WatchSyncPacket::completed,
                     ByteBufCodecs.VAR_INT,                                      WatchSyncPacket::tier,
+                    ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), WatchSyncPacket::discovered,
                     WatchSyncPacket::new
             );
 
     @Override
     public Type<? extends CustomPacketPayload> type() { return TYPE; }
 
-    public static void sendTo(ServerPlayer player, Set<ResourceLocation> completed, int tier) {
+    public static void sendTo(ServerPlayer player, Set<ResourceLocation> completed, int tier,
+                              Set<ResourceLocation> discovered) {
         PacketDistributor.sendToPlayer(player,
-                new WatchSyncPacket(List.copyOf(completed), tier));
+                new WatchSyncPacket(List.copyOf(completed), tier, List.copyOf(discovered)));
     }
 
     public static void handle(WatchSyncPacket packet, IPayloadContext context) {
-        context.enqueueWork(() ->
-                Minecraft.getInstance().setScreen(
-                        new NaraWatchScreen(new HashSet<>(packet.completed()), packet.tier()))
-        );
+        context.enqueueWork(() -> {
+            ClientResearchCache.update(packet.discovered());
+            Minecraft.getInstance().setScreen(
+                    new NaraWatchScreen(new HashSet<>(packet.completed()), packet.tier()));
+        });
     }
 
     public static void registerTo(PayloadRegistrar registrar) {

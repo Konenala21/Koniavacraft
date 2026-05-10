@@ -1,0 +1,20 @@
+# Auxiliary Python research tools; not part of the main NeoForge mod graph.
+thaumcraft4-research-bot/
+universal_tc_research_solver/
+
+# Generated/runtime/build outputs.
+build/
+bin/
+run/
+logs/
+output/
+.gradle/
+.idea/
+.eclipse/
+
+# Decompiled or archival context; too noisy for code graph indexing.
+AI-context/反編譯/
+AI-context/claude-進度完成處/
+
+# Data-generated resources should be regenerated, not hand-edited.
+src/generated/
