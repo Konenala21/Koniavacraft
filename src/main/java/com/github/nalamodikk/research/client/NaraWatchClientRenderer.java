@@ -20,6 +20,8 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -72,13 +74,31 @@ public final class NaraWatchClientRenderer {
             return;
         }
 
-        BlockPos targetPos = BlockSelectorUtils.getTargetBlock(player, WATCH_TARGET_RANGE);
-        if (targetPos == null) {
+        Component name = null;
+
+        // 1. Try Entity (higher priority)
+        Entity entity = BlockSelectorUtils.getTargetEntity(player, WATCH_TARGET_RANGE);
+        if (entity != null) {
+            if (entity instanceof ItemEntity itemEntity) {
+                name = itemEntity.getItem().getHoverName();
+            } else {
+                name = entity.getDisplayName();
+            }
+        }
+
+        // 2. Try Block
+        if (name == null) {
+            BlockPos targetPos = BlockSelectorUtils.getTargetBlock(player, WATCH_TARGET_RANGE);
+            if (targetPos != null) {
+                BlockState state = minecraft.level.getBlockState(targetPos);
+                name = state.getBlock().getName();
+            }
+        }
+
+        if (name == null) {
             return;
         }
 
-        BlockState state = minecraft.level.getBlockState(targetPos);
-        Component name = state.getBlock().getName();
         GuiGraphics graphics = event.getGuiGraphics();
         Font font = minecraft.font;
         int width = font.width(name);

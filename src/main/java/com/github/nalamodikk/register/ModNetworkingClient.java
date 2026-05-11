@@ -5,6 +5,9 @@ import com.github.nalamodikk.common.network.packet.server.manatool.ManaUpdatePac
 import com.github.nalamodikk.narasystem.nara.network.server.NaraSyncPacket;
 import com.github.nalamodikk.narasystem.nara.network.client.NaraSystemIntroMessagePacket;
 import com.github.nalamodikk.narasystem.nara.network.client.OpenNaraInitScreenPacket;
+import com.github.nalamodikk.research.network.AspectSyncPacket;
+import com.github.nalamodikk.research.network.KnowledgeSyncPacket;
+import com.github.nalamodikk.research.network.WatchSyncPacket;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -23,5 +26,9 @@ public class ModNetworkingClient {
         NaraSystemIntroMessagePacket.registerToClient(registrar);
         NaraSyncPacket.registerToClient(registrar); // ✅ 完整放這沒問題
 
+        // 研究同步
+        AspectSyncPacket.registerToClient(registrar);
+        KnowledgeSyncPacket.registerToClient(registrar);
+        WatchSyncPacket.registerToClient(registrar);
     }
 }

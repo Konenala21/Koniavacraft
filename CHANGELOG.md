@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased] - 2026-05-11
+
+### Player Changes / 玩家更新內容
+
+- EN: Machine GUIs now feature a "LOCKED" overlay with a detailed tooltip if the required research is not yet completed.
+- EN: Nara Watch HUD now supports identifying living entities and dropped items, displaying their names when targeted.
+- EN: Research state now syncs instantly upon completing a research scroll, immediately unlocking machines without re-opening GUIs.
+- ZH: 機器介面現在新增「已鎖定」遮罩；若未完成必要研究，將顯示提示並說明所需解鎖的研究條目。
+- ZH: 娜拉手錶 HUD 現在支援識別生物與地面掉落物，對準目標時會即時顯示其名稱。
+- ZH: 研究狀態現在會在點擊研究卷軸後即時同步，不需重新開啟介面即可立刻解鎖機器操作。
+
+### Developer Notes / 開發者備註
+
+- EN: Implemented `ResearchLockWidget` using the `ModularScreen` framework for universal GUI research gating.
+- EN: Added `KnowledgeSyncPacket` to handle full player research state synchronization during login and completion events.
+- EN: Enhanced `BlockSelectorUtils` with entity ray-tracing support (`getTargetEntity`).
+- EN: Added `ResearchGameTests` suite for verifying multi-player research isolation and dynamic unlocking logic.
+- EN: Refactored networking packet handlers (`ResearchClientPayloadHandler`) to prevent `RuntimeDistCleaner` crashes on dedicated servers.
+- EN: Fixed `SolarCollectorSyncHelper` to correctly synchronize upgrade counts and environmental status to the client.
+- ZH: 實作 `ResearchLockWidget` 並整合至 `ModularScreen` 框架，達成通用的介面研究鎖定機制。
+- ZH: 新增 `KnowledgeSyncPacket` 用於處理玩家登入與完成研究時的完整狀態同步。
+- ZH: 強化 `BlockSelectorUtils` 支援實體射線偵測（`getTargetEntity`）。
+- ZH: 新增 `ResearchGameTests` 測試套件，驗證多人環境下的研究隔離與動態解鎖邏輯。
+- ZH: 重構網路封包處理器（`ResearchClientPayloadHandler`），修復專用伺服器端載入客戶端類別導致的崩潰。
+- ZH: 修正 `SolarCollectorSyncHelper` 以正確同步升級模組數量與環境狀態至客戶端。
+
 ## [Unreleased] - 2026-05-09
 
 ### Player Changes / 玩家更新內容

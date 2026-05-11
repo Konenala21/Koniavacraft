@@ -2,8 +2,7 @@ package com.github.nalamodikk.research.network;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.research.client.ClientResearchCache;
-import com.github.nalamodikk.research.client.NaraWatchScreen;
-import net.minecraft.client.Minecraft;
+import com.github.nalamodikk.research.client.ResearchClientPayloadHandler;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -13,13 +12,12 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 /**
  * Server → client: sends a snapshot of the player's research knowledge so the
- * client can open {@link NaraWatchScreen} without a round-trip for every query.
+ * client can open {@link com.github.nalamodikk.research.client.NaraWatchScreen} without a round-trip for every query.
  */
 public record WatchSyncPacket(List<ResourceLocation> completed, int tier, List<ResourceLocation> discovered)
         implements CustomPacketPayload {
@@ -45,14 +43,14 @@ public record WatchSyncPacket(List<ResourceLocation> completed, int tier, List<R
     }
 
     public static void handle(WatchSyncPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            ClientResearchCache.update(packet.discovered());
-            Minecraft.getInstance().setScreen(
-                    new NaraWatchScreen(new HashSet<>(packet.completed()), packet.tier()));
-        });
+        ResearchClientPayloadHandler.handleWatchSync(packet, context);
     }
 
-    public static void registerTo(PayloadRegistrar registrar) {
-        registrar.playToClient(TYPE, STREAM_CODEC, WatchSyncPacket::handle);
+    public static void registerToClient(PayloadRegistrar registrar) {
+        registrar.playToClient(TYPE, STREAM_CODEC, (packet, context) -> {
+            if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
+                ResearchClientPayloadHandler.handleWatchSync(packet, context);
+            }
+        });
     }
 }

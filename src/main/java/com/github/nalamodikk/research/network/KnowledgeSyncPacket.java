@@ -2,6 +2,7 @@ package com.github.nalamodikk.research.network;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.research.client.ClientResearchCache;
+import com.github.nalamodikk.research.client.ResearchClientPayloadHandler;
 import com.github.nalamodikk.research.knowledge.ResearchSavedData;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -44,10 +45,14 @@ public record KnowledgeSyncPacket(List<ResourceLocation> discovered, List<Resour
     }
 
     public static void handle(KnowledgeSyncPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> ClientResearchCache.update(packet.discovered(), packet.completed(), packet.tier()));
+        ResearchClientPayloadHandler.handleKnowledgeSync(packet, context);
     }
 
-    public static void registerTo(PayloadRegistrar registrar) {
-        registrar.playToClient(TYPE, STREAM_CODEC, KnowledgeSyncPacket::handle);
+    public static void registerToClient(PayloadRegistrar registrar) {
+        registrar.playToClient(TYPE, STREAM_CODEC, (packet, context) -> {
+            if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
+                ResearchClientPayloadHandler.handleKnowledgeSync(packet, context);
+            }
+        });
     }
 }

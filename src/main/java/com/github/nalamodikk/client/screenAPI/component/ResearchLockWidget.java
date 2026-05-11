@@ -2,6 +2,9 @@ package com.github.nalamodikk.client.screenAPI.component;
 
 import com.github.nalamodikk.client.screenAPI.framework.AbstractWidget;
 import com.github.nalamodikk.research.ResearchGate;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -30,8 +33,9 @@ public class ResearchLockWidget extends AbstractWidget {
             
             // Draw a lock icon or text in the center
             String text = "LOCKED";
-            int textWidth = graphics.bufferSource().getFont().width(text);
-            graphics.drawString(graphics.bufferSource().getFont(), text, 
+            Font font = Minecraft.getInstance().font;
+            int textWidth = font.width(text);
+            graphics.drawString(font, text, 
                     (width - textWidth) / 2, (height - 8) / 2, 0xFFFF5555, false);
         }
     }
@@ -40,14 +44,14 @@ public class ResearchLockWidget extends AbstractWidget {
     public List<Component> getTooltip() {
         if (!ResearchGate.isUnlockedOnClient(machineId)) {
             List<Component> tooltip = new ArrayList<>();
-            tooltip.add(Component.translatable("research.koniava.locked_gui").withStyle(net.minecraft.ChatFormatting.RED));
+            tooltip.add(Component.translatable("research.koniava.locked_gui").withStyle(ChatFormatting.RED));
             
             ResourceLocation required = ResearchGate.getRequiredResearch(machineId);
             if (required != null) {
                 tooltip.add(Component.translatable("research.koniava.requires")
                         .append(": ")
                         .append(Component.translatable("research." + required.getNamespace() + "." + required.getPath()))
-                        .withStyle(net.minecraft.ChatFormatting.YELLOW));
+                        .withStyle(ChatFormatting.YELLOW));
             }
             return tooltip;
         }
@@ -55,7 +59,7 @@ public class ResearchLockWidget extends AbstractWidget {
     }
     
     @Override
-    public boolean isMouseOver(double mouseX, double mouseY) {
+    public boolean isMouseOver(int mouseX, int mouseY) {
         // Only block interactions if locked
         return !ResearchGate.isUnlockedOnClient(machineId) && super.isMouseOver(mouseX, mouseY);
     }

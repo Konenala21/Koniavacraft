@@ -1,39 +1,43 @@
 package com.github.nalamodikk.common.utils.block;
 
-
-
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.Optional;
+
 public class BlockSelectorUtils {
 
+    /**
+     * Finds the block position being looked at.
+     */
     public static BlockPos getTargetBlock(Player player, double maxDistance) {
-        // 獲取玩家當前世界
-        Level level = player.level();
-
-        // 玩家當前的視角位置和方向
-        Vec3 eyePosition = player.getEyePosition(1.0F); // 玩家眼睛的位置
-        Vec3 lookVector = player.getLookAngle(); // 玩家視角的方向向量
-
-        // 計算視線的終點
-        Vec3 endPosition = eyePosition.add(lookVector.scale(maxDistance));
-
-        // 執行射線追蹤
-        BlockHitResult hitResult = level.clip(new ClipContext(
-                eyePosition, endPosition, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player
-        ));
-
-        // 如果擊中了方塊，返回該方塊的位置
-        if (hitResult.getType() == HitResult.Type.BLOCK) {
-            return hitResult.getBlockPos();
+        HitResult hit = player.pick(maxDistance, 1.0F, false);
+        if (hit.getType() == HitResult.Type.BLOCK) {
+            return ((BlockHitResult) hit).getBlockPos();
         }
-
-        // 如果未擊中方塊，返回 null
         return null;
+    }
+
+    /**
+     * Finds the entity being looked at.
+     */
+    public static Entity getTargetEntity(Player player, double maxDistance) {
+        Level level = player.level();
+        Vec3 eyePos = player.getEyePosition(1.0F);
+        Vec3 lookVec = player.getLookAngle();
+        Vec3 endPos = eyePos.add(lookVec.scale(maxDistance));
+        AABB area = player.getBoundingBox().expandTowards(lookVec.scale(maxDistance)).inflate(1.0D, 1.0D, 1.0D);
+
+        return net.minecraft.world.entity.projectile.ProjectileUtil.getEntityHitResult(
+                player, eyePos, endPos, area, (e) -> !e.isSpectator() && e.isPickable(), maxDistance * maxDistance
+        ) instanceof EntityHitResult entityHit ? entityHit.getEntity() : null;
     }
 }

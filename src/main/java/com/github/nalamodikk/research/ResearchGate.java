@@ -1,6 +1,7 @@
 package com.github.nalamodikk.research;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.research.client.ClientResearchCache;
 import com.github.nalamodikk.research.knowledge.ResearchSavedData;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -86,7 +87,7 @@ public final class ResearchGate {
     public static boolean isUnlockedOnClient(String machineId) {
         ResourceLocation required = REQUIREMENTS.get(machineId);
         if (required == null) return true;
-        return com.github.nalamodikk.research.client.ClientResearchCache.hasCompleted(required);
+        return ClientResearchCache.hasCompleted(required);
     }
 
     private static boolean hasCompleted(ServerLevel serverLevel, UUID playerId, ResourceLocation required) {
