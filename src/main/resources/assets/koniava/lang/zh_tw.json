@@ -54,7 +54,6 @@
   "research.koniava.state.completed": "已完成",
   "research.koniava.state.available": "點擊以獲取研究筆記",
   "research.koniava.state.locked": "鎖定 — 尚未滿足前置條件",
-  "research.koniava.requires": "需要：",
   "research.koniava.note_received": "已獲取研究筆記：%s",
   "research.koniava.already_completed": "已完成研究：%s",
   "research.koniava.already_have_note": "你的背包已有此研究筆記：%s",

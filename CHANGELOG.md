@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - 2026-05-11
+## [0.0.1.6] - 2026-05-11
 
 ### Player Changes / 玩家更新內容
 
