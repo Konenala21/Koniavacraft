@@ -42,7 +42,7 @@ public final class ResearchRegistry {
                     .aspects(ModAspects.WU, ModAspects.WATER, ModAspects.MANA)
                     .holeRatio(0.25)
                     .prerequisites(id("mana_basics"))
-                    .unlocks(id("arcane_conduit"))
+                    .unlocks(id("basic_arcane_conduit"))
                     .build()
     );
 
@@ -74,9 +74,37 @@ public final class ResearchRegistry {
                     .build()
     );
 
-    // ── Tier 2 — 魔法期深化（placeholder，後續補充）────────────────────────────
+    // ── Tier 2 — 魔法期深化 ──────────────────────────────────────────────────
 
-    // Tier 2–4 entries to be added as content expands.
+    /**
+     * Tier 2 entry: player learns to infuse items with mana.
+     * Vitality↔Lifeflow (Vitality∈Lifeflow), Lifeflow↔Mana (Mana∈Lifeflow).
+     */
+    public static final ResearchTemplate MANA_INFUSION = register(
+            ResearchTemplate.builder(id("mana_infusion"))
+                    .tier(2)
+                    .aspects(ModAspects.VITALITY, ModAspects.LIFEFLOW, ModAspects.MANA)
+                    .holeRatio(0.35)
+                    .prerequisites(id("mana_basics"), id("mana_crystallisation"))
+                    .unlocks(id("mana_infuser"))
+                    .build()
+    );
+
+    /**
+     * Tier 2: Higher bandwidth transport.
+     * Mechanism↔Momentum (shared Metal component), Momentum↔Energy (shared WU component).
+     */
+    public static final ResearchTemplate ADVANCED_CONDUITS = register(
+            ResearchTemplate.builder(id("advanced_conduits"))
+                    .tier(2)
+                    .aspects(ModAspects.MECHANISM, ModAspects.MOMENTUM, ModAspects.ENERGY)
+                    .holeRatio(0.38)
+                    .prerequisites(id("mana_flow"), id("mana_crystallisation"))
+                    .unlocks(id("advanced_arcane_conduit"), id("elite_arcane_conduit"))
+                    .build()
+    );
+
+    // Tier 3–4 entries to be added as content expands.
     // They follow the same pattern: aspects get more varied, holeRatio increases (0.30–0.45).
 
     // ── Registry utilities ───────────────────────────────────────────────────

@@ -71,6 +71,25 @@ public class ModAspects {
     /** 折射 — Crystal light, prismatic energy. 晶化+光輝 */
     public static final Aspect REFRACTION  = reg("refraction",  0x87CEEB, List.of(CRYSTAL,    RADIANCE));
 
+    // ── Third-order compounds: Eight Trigrams (八卦) ──────────────────────────
+
+    /** 乾 (Heaven) ☰ — Pure Yang, absolute energy. */
+    public static final Aspect QIAN = reg("qian", 0xFFFFE0, List.of(RADIANCE, MOMENTUM));
+    /** 坤 (Earth) ☷ — Pure Yin, absolute stability. */
+    public static final Aspect KUN = reg("kun", 0x5D4037, List.of(EARTH, NOURISH));
+    /** 震 (Thunder) ☳ — Dynamic power, resonance. */
+    public static final Aspect ZHEN = reg("zhen", 0x00FF00, List.of(ENERGY, RESONANCE));
+    /** 巽 (Wind) ☴ — Phase change, movement. */
+    public static final Aspect XUN = reg("xun", 0x40E0D0, List.of(VAPOR, MOMENTUM));
+    /** 坎 (Water) ☵ — Depth, flowing life. */
+    public static final Aspect KAN = reg("kan", 0x000080, List.of(WATER, LIFEFLOW));
+    /** 離 (Fire) ☲ — Illumination, heat. */
+    public static final Aspect LI = reg("li", 0xFF0000, List.of(FIRE, REFRACTION));
+    /** 艮 (Mountain) ☶ — Weight, stillness. */
+    public static final Aspect GEN = reg("gen", 0x808000, List.of(EARTH, GRAVITY));
+    /** 兌 (Lake) ☱ — Refracted water, joy. */
+    public static final Aspect DUI = reg("dui", 0xADD8E6, List.of(WATER, CRYSTAL));
+
     // ── Registry helpers ──────────────────────────────────────────────────────
 
     private static Aspect reg(String path, int color, List<Aspect> components) {

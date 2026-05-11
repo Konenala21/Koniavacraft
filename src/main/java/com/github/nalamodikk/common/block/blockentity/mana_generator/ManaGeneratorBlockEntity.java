@@ -18,6 +18,7 @@ import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
 import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
 import com.github.nalamodikk.common.utils.upgrade.UpgradeType;
 import com.github.nalamodikk.common.utils.upgrade.api.IUpgradeableMachine;
+import com.github.nalamodikk.research.ResearchGate;
     import com.github.nalamodikk.register.ModBlockEntities;
     import com.github.nalamodikk.register.ModCapabilities;
     import net.minecraft.core.BlockPos;
@@ -282,6 +283,11 @@ import java.util.Optional;
 
         @Override
         public void tickMachine() {
+            if (level != null && !ResearchGate.canOperate("mana_generator", level, ownerId)) {
+                updateBlockActiveState(false);
+                return;
+            }
+
             ticker.tick();
 
             // ✅ 優化：定期同步到客戶端（僅在有顯著變化時）

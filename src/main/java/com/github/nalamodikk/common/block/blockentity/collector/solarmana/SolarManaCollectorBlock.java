@@ -1,7 +1,6 @@
 package com.github.nalamodikk.common.block.blockentity.collector.solarmana;
 
 import com.github.nalamodikk.common.block.blockentity.manabase.BaseMachineBlock;
-import com.github.nalamodikk.research.ResearchGate;
 import com.github.nalamodikk.register.ModBlockEntities;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
@@ -117,9 +116,6 @@ public class SolarManaCollectorBlock extends BaseMachineBlock {
 
     @Override
     protected @NotNull ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hitResult) {
-        if (!level.isClientSide() && !ResearchGate.canUse("solar_mana_collector", player, level)) {
-            return ItemInteractionResult.FAIL;
-        }
         if (!level.isClientSide()) {
                 BlockEntity blockEntity = level.getBlockEntity(pos);
                 if (blockEntity instanceof SolarManaCollectorBlockEntity solarMana) {

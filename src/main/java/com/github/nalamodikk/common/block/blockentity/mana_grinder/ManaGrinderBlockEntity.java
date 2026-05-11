@@ -6,6 +6,7 @@ import com.github.nalamodikk.common.block.blockentity.manabase.AbstractManaMachi
 import com.github.nalamodikk.common.capability.mana.ManaAction;
 import com.github.nalamodikk.common.coreapi.recipe.ProcessingRecipe;
 import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
+import com.github.nalamodikk.research.ResearchGate;
 import com.github.nalamodikk.register.ModBlockEntities;
 import com.github.nalamodikk.register.ModRecipes;
 import net.minecraft.core.BlockPos;
@@ -144,6 +145,16 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock {
     public void tickMachine() {
         if (level == null || level.isClientSide()) return;
         boolean previousComputedWorking = lastComputedWorking;
+
+        if (!ResearchGate.canOperate("mana_grinder", level, ownerId)) {
+            currentRecipe = null;
+            progress = 0;
+            manaSpent = 0;
+            lastComputedWorking = false;
+            updateBlockWorkingState(false);
+            syncHelper.syncFrom(this);
+            return;
+        }
 
         // 2. 處理輸入變化
         if (hasInputChanged) {

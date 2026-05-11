@@ -309,8 +309,16 @@ public class ResearchScreen extends Screen {
         RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
 
         if (cell.hasAspect()) {
-            String label = cell.getAspect().getId().getPath().substring(0, 1).toUpperCase();
-            g.drawString(font, label, x + 5, y + 5, 0xFFFFFF, true);
+            Aspect aspect = cell.getAspect();
+            if (aspect.getId().getPath().equals("qian") || aspect.getId().getPath().equals("kun") || 
+                aspect.getId().getPath().equals("zhen") || aspect.getId().getPath().equals("xun") ||
+                aspect.getId().getPath().equals("kan") || aspect.getId().getPath().equals("li") || 
+                aspect.getId().getPath().equals("gen") || aspect.getId().getPath().equals("dui")) {
+                com.github.nalamodikk.client.screenAPI.utils.TrigramRenderer.render(g, aspect, x + CELL_W / 2, y + CELL_H / 2, 10, 0xFFFFFFFF);
+            } else {
+                String label = aspect.getId().getPath().substring(0, 1).toUpperCase();
+                g.drawString(font, label, x + 5, y + 5, 0xFFFFFF, true);
+            }
         }
     }
 

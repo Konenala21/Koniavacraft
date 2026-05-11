@@ -17,6 +17,7 @@ import com.github.nalamodikk.common.capability.mana.ManaAction;
 import com.github.nalamodikk.common.coreapi.block.IConfigurableBlock;
 import com.github.nalamodikk.common.item.tool.BasicTechWandItem;
 import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
+import com.github.nalamodikk.research.ResearchGate;
 import com.github.nalamodikk.register.ModBlockEntities;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
@@ -38,6 +39,7 @@ import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedManaHandler, IConfigurableBlock {
@@ -75,6 +77,7 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
     private final TransferManager transferManager;
     private VirtualNetwork virtualNetwork;
     private PullManager activePullManager;
+    private UUID ownerId;
 
     // === 簡化的狀態 ===
     private int tickOffset;
@@ -121,6 +124,11 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
         setupEventListeners();
     }
 
+    public void setOwnerId(UUID ownerId) {
+        this.ownerId = ownerId;
+        setChanged();
+    }
+
     // === 🆕 設定事件監聽器 ===
     private void setupEventListeners() {
         ioManager.setChangeListener(new IOManager.IOConfigChangeListener() {
@@ -163,6 +171,9 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
     // === 🆕 超級簡化的 tick 方法 ===
     public void tick() {
         if (level == null || level.isClientSide) return;
+        if (!ResearchGate.canOperate(tier.getSerializedName() + "_arcane_conduit", level, ownerId)) {
+            return;
+        }
 
         // 更新統計管理器
         statsManager.tick();
@@ -370,6 +381,9 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
 
         // 🆕 保存等級
         tag.putString("ConduitTier", tier.getSerializedName());
+        if (ownerId != null) {
+            tag.putUUID("Owner", ownerId);
+        }
 
         // 保存緩衝區
         tag.put("Buffer", buffer.serializeNBT(registries));
@@ -410,6 +424,9 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
             tier = ConduitTier.fromString(tag.getString("ConduitTier"));
             // 更新緩衝區容量
             buffer.setCapacity(tier.getBufferCapacity());
+        }
+        if (tag.hasUUID("Owner")) {
+            ownerId = tag.getUUID("Owner");
         }
 
         // 載入緩衝區

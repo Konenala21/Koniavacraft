@@ -2,15 +2,27 @@ package com.github.nalamodikk.research.dynamic;
 
 import com.github.nalamodikk.research.aspect.Aspect;
 import com.github.nalamodikk.research.aspect.ModAspects;
+import com.github.nalamodikk.register.ModBlocks;
+import com.github.nalamodikk.register.ModItems;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.ArmorMaterials;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.TieredItem;
+import net.minecraft.world.item.Tiers;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Defines the "Atoms" - the base materials that the inference engine uses as a root.
@@ -49,12 +61,44 @@ public class BaseMaterialRegistry {
         atom(Items.END_STONE, ModAspects.EARTH, ModAspects.WU);
         atom(Items.ICE, ModAspects.WATER, ModAspects.EARTH);
 
+        // --- Koniavacraft Items ---
+        atom(ModItems.MANA_DUST.get(), ModAspects.MANA);
+        atom(ModItems.RAW_MANA_DUST.get(), ModAspects.MANA, ModAspects.EARTH);
+        atom(ModItems.REFINED_MANA_DUST.get(), ModAspects.MANA, ModAspects.RADIANCE);
+        atom(ModItems.MANA_INGOT.get(), ModAspects.MANA, ModAspects.METAL);
+        atom(ModItems.MANA_CRYSTAL_FRAGMENT.get(), ModAspects.MANA, ModAspects.CRYSTAL);
+
+        // --- Koniavacraft Blocks ---
+        atom(ModBlocks.MANA_BLOCK.get().asItem(), ModAspects.MANA, ModAspects.METAL);
+        atom(ModBlocks.MAGIC_ORE.get().asItem(), ModAspects.MANA, ModAspects.EARTH);
+        atom(ModBlocks.DEEPSLATE_MAGIC_ORE.get().asItem(), ModAspects.MANA, ModAspects.EARTH);
+        atom(ModBlocks.MANA_SOIL.get().asItem(), ModAspects.MANA, ModAspects.EARTH);
+        atom(ModBlocks.DEEP_MANA_SOIL.get().asItem(), ModAspects.MANA, ModAspects.EARTH);
+        atom(ModBlocks.MANA_GRASS_BLOCK.get().asItem(), ModAspects.MANA, ModAspects.EARTH, ModAspects.WOOD);
+        atom(ModBlocks.MANA_BLOOM.get().asItem(), ModAspects.MANA, ModAspects.WOOD, ModAspects.VITALITY);
+
         // --- Tags (Broad categories) ---
         tag(ItemTags.LOGS, ModAspects.WOOD);
         tag(ItemTags.PLANKS, ModAspects.WOOD);
         tag(ItemTags.LEAVES, ModAspects.WOOD, ModAspects.WATER);
         tag(ItemTags.SAPLINGS, ModAspects.GROWTH, ModAspects.WOOD);
         tag(ItemTags.WOOL, ModAspects.VITALITY, ModAspects.WOOD);
+        tag(ItemTags.FLOWERS, ModAspects.WOOD, ModAspects.GROWTH, ModAspects.VITALITY);
+        tag(ItemTags.SMALL_FLOWERS, ModAspects.WOOD, ModAspects.GROWTH);
+        tag(ItemTags.MEAT, ModAspects.VITALITY);
+        tag(ItemTags.FISHES, ModAspects.WATER, ModAspects.VITALITY);
+        tag(ItemTags.SWORDS, ModAspects.METAL, ModAspects.ENERGY);
+        tag(ItemTags.PICKAXES, ModAspects.METAL, ModAspects.MECHANISM);
+        tag(ItemTags.AXES, ModAspects.METAL, ModAspects.MECHANISM);
+        tag(ItemTags.SHOVELS, ModAspects.METAL, ModAspects.EARTH);
+        tag(ItemTags.HOES, ModAspects.METAL, ModAspects.GROWTH);
+        tag(ItemTags.RAILS, ModAspects.METAL, ModAspects.MECHANISM);
+        tag(ItemTags.BOATS, ModAspects.WOOD, ModAspects.MECHANISM);
+        tag(ItemTags.BOOKSHELF_BOOKS, ModAspects.WOOD, ModAspects.ANIMA);
+        tag(ItemTags.COALS, ModAspects.FIRE, ModAspects.EARTH);
+        tag(ItemTags.ARROWS, ModAspects.WOOD, ModAspects.ENERGY);
+        tag(ItemTags.STONE_TOOL_MATERIALS, ModAspects.EARTH);
+        tag(ItemTags.BEACON_PAYMENT_ITEMS, ModAspects.METAL, ModAspects.RADIANCE);
         
         // NeoForge Common Tags
         tag(c("ores"), ModAspects.EARTH, ModAspects.METAL);
@@ -66,8 +110,7 @@ public class BaseMaterialRegistry {
     }
 
     private static TagKey<Item> c(String path) {
-        return TagKey.create(net.minecraft.core.registries.Registries.ITEM, 
-                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("c", path));
+        return TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath("c", path));
     }
 
     private static void atom(Item item, Aspect... aspects) {
@@ -82,68 +125,154 @@ public class BaseMaterialRegistry {
      * Get base aspects for an item, perturbed by the world seed.
      */
     public static List<Aspect> getBaseAspects(Item item, long seed) {
+        return getSemanticAspects(item, seed);
+    }
+
+    public static List<Aspect> getSemanticAspects(Item item, long genomeSeed) {
         ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
         List<Aspect> aspects = new ArrayList<>(FIXED_ATOMS.getOrDefault(id, List.of()));
+        List<Aspect> candidates = new ArrayList<>();
 
         // 1. Tag Check
         if (aspects.isEmpty()) {
-            for (var entry : TAG_ATOMS.entrySet()) {
+            for (Map.Entry<TagKey<Item>, List<Aspect>> entry : TAG_ATOMS.entrySet()) {
                 if (item.builtInRegistryHolder().is(entry.getKey())) {
-                    aspects.addAll(entry.getValue());
+                    AspectExpression.addAllUnique(aspects, entry.getValue());
                     break;
                 }
             }
+        } else {
+            AspectExpression.addAllUnique(candidates, getLogicalPool(aspects));
         }
 
         // 2. Heuristic Check (Class-based detection for "All Items")
         if (aspects.isEmpty()) {
             aspects.addAll(getHeuristicAspects(item));
+        } else {
+            AspectExpression.addAllUnique(candidates, getHeuristicAspects(item));
         }
 
-        if (aspects.isEmpty()) return List.of();
+        // 3. Registry path keywords for modded content.
+        List<Aspect> keywordAspects = getKeywordAspects(id);
+        if (aspects.isEmpty()) {
+            AspectExpression.addAllUnique(aspects, keywordAspects);
+        } else {
+            AspectExpression.addAllUnique(candidates, keywordAspects);
+        }
 
-        // Apply Seed-Based Perturbation
-        return perturb(aspects, item, seed);
+        if (aspects.isEmpty()) {
+            return List.of();
+        }
+        AspectExpression.addAllUnique(candidates, getLogicalPool(aspects));
+        return AspectExpression.express(id, aspects, candidates, genomeSeed, capacityForItem(item, aspects));
+    }
+
+    public static List<Aspect> getFallbackAspects(Item item, long genomeSeed) {
+        ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
+        List<Aspect> semantic = getSemanticAspects(item, genomeSeed);
+        if (!semantic.isEmpty()) {
+            return semantic;
+        }
+        return AspectExpression.fallback(id, genomeSeed, 2);
     }
 
     private static List<Aspect> getHeuristicAspects(Item item) {
         List<Aspect> h = new ArrayList<>();
         // Food items always have Vitality
-        if (item.getComponents().has(net.minecraft.core.component.DataComponents.FOOD)) {
+        if (item.components().has(DataComponents.FOOD)) {
             h.add(ModAspects.VITALITY);
+            h.add(ModAspects.NOURISH);
         }
         // Tools/Armor heuristics
-        if (item instanceof net.minecraft.world.item.TieredItem tiered) {
+        if (item instanceof TieredItem tiered) {
             h.add(ModAspects.METAL);
-            if (tiered.getTier() == net.minecraft.world.item.Tiers.DIAMOND) h.add(ModAspects.CRYSTAL);
+            h.add(ModAspects.MECHANISM);
+            if (tiered.getTier() == Tiers.DIAMOND) h.add(ModAspects.CRYSTAL);
         }
-        if (item instanceof net.minecraft.world.item.ArmorItem armor) {
+        if (item instanceof ArmorItem armor) {
             h.add(ModAspects.EARTH);
-            if (armor.getMaterial().value().commonArmorTagName().isPresent()) h.add(ModAspects.METAL);
+            if (isMetalArmor(armor)) h.add(ModAspects.METAL);
+            if (armor.getMaterial().is(ArmorMaterials.DIAMOND)) h.add(ModAspects.CRYSTAL);
+            if (armor.getMaterial().is(ArmorMaterials.GOLD)) h.add(ModAspects.RADIANCE);
         }
         // Enchanted books
         if (item == Items.ENCHANTED_BOOK) {
             h.add(ModAspects.MANA);
             h.add(ModAspects.ANIMA);
         }
+        ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
+        if (id.getPath().endsWith("_spawn_egg")) {
+            h.add(ModAspects.VITALITY);
+            h.add(ModAspects.ANIMA);
+        }
         return h;
     }
 
-    private static List<Aspect> perturb(List<Aspect> base, Item item, long seed) {
-        Random random = new Random(seed ^ BuiltInRegistries.ITEM.getKey(item).hashCode());
-        // 20% chance to add a minor secondary aspect from a "logical" pool
-        if (random.nextFloat() < 0.2f) {
-            List<Aspect> pool = getLogicalPool(base);
-            if (!pool.isEmpty()) {
-                Aspect extra = pool.get(random.nextInt(pool.size()));
-                if (!base.contains(extra)) {
-                    List<Aspect> perturbed = new ArrayList<>(base);
-                    perturbed.add(extra);
-                    return perturbed;
-                }
-            }
+    private static boolean isMetalArmor(ArmorItem armor) {
+        return armor.getMaterial().is(ArmorMaterials.CHAIN)
+                || armor.getMaterial().is(ArmorMaterials.IRON)
+                || armor.getMaterial().is(ArmorMaterials.GOLD)
+                || armor.getMaterial().is(ArmorMaterials.DIAMOND)
+                || armor.getMaterial().is(ArmorMaterials.NETHERITE);
+    }
+
+    private static int capacityForItem(Item item, List<Aspect> aspects) {
+        ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
+        String path = id.getPath();
+        if (path.contains("boss") || path.contains("dragon") || path.contains("wither")) {
+            return 5;
         }
-        return base;
+        if (aspects.contains(ModAspects.MANA) || path.contains("magic") || path.contains("mana")) {
+            return 4;
+        }
+        if (item instanceof TieredItem || item instanceof ArmorItem || path.contains("redstone")) {
+            return 3;
+        }
+        return 2;
+    }
+
+    private static List<Aspect> getKeywordAspects(ResourceLocation id) {
+        String path = id.getPath();
+        List<Aspect> aspects = new ArrayList<>();
+        if (path.contains("mana") || path.contains("magic") || path.contains("arcane")) {
+            aspects.add(ModAspects.MANA);
+        }
+        if (path.contains("ore") || path.contains("stone") || path.contains("deepslate") || path.contains("dirt") || path.contains("sand")) {
+            aspects.add(ModAspects.EARTH);
+        }
+        if (path.contains("ingot") || path.contains("metal") || path.contains("iron") || path.contains("gold") || path.contains("copper")) {
+            aspects.add(ModAspects.METAL);
+        }
+        if (path.contains("crystal") || path.contains("gem") || path.contains("diamond") || path.contains("amethyst") || path.contains("quartz")) {
+            aspects.add(ModAspects.CRYSTAL);
+        }
+        if (path.contains("log") || path.contains("wood") || path.contains("plank") || path.contains("stem")) {
+            aspects.add(ModAspects.WOOD);
+        }
+        if (path.contains("leaf") || path.contains("flower") || path.contains("crop") || path.contains("seed") || path.contains("sapling")) {
+            aspects.add(ModAspects.GROWTH);
+            aspects.add(ModAspects.VITALITY);
+        }
+        if (path.contains("water") || path.contains("ice") || path.contains("snow")) {
+            aspects.add(ModAspects.WATER);
+        }
+        if (path.contains("lava") || path.contains("magma") || path.contains("blaze") || path.contains("fire")) {
+            aspects.add(ModAspects.FIRE);
+        }
+        if (path.contains("redstone") || path.contains("echo") || path.contains("sculk")) {
+            aspects.add(ModAspects.RESONANCE);
+        }
+        if (path.contains("soul") || path.contains("ender") || path.contains("end_") || path.contains("void")) {
+            aspects.add(ModAspects.WU);
+            aspects.add(ModAspects.ANIMA);
+        }
+        if (path.contains("glow") || path.contains("light") || path.contains("torch") || path.contains("lantern")) {
+            aspects.add(ModAspects.RADIANCE);
+        }
+        if (path.contains("gear") || path.contains("machine") || path.contains("piston") || path.contains("rail")) {
+            aspects.add(ModAspects.MECHANISM);
+        }
+        return aspects;
     }
 
     private static List<Aspect> getLogicalPool(List<Aspect> base) {
@@ -155,6 +284,9 @@ public class BaseMaterialRegistry {
             if (a == ModAspects.FIRE) { pool.add(ModAspects.ENERGY); pool.add(ModAspects.VAPOR); }
             if (a == ModAspects.EARTH) { pool.add(ModAspects.GRAVITY); pool.add(ModAspects.GROWTH); }
             if (a == ModAspects.WOOD) { pool.add(ModAspects.GROWTH); pool.add(ModAspects.ANIMA); }
+            if (a == ModAspects.MANA) { pool.add(ModAspects.RESONANCE); pool.add(ModAspects.RADIANCE); }
+            if (a == ModAspects.CRYSTAL) { pool.add(ModAspects.RADIANCE); pool.add(ModAspects.GRAVITY); }
+            if (a == ModAspects.VITALITY) { pool.add(ModAspects.NOURISH); pool.add(ModAspects.GROWTH); }
         }
         return new ArrayList<>(pool);
     }

@@ -8,13 +8,15 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Maps machine IDs to their required research.
- * Call {@link #canUse} in machine blocks before opening the GUI.
+ * GUI should remain accessible; call {@link #canOperate} before recipes, ticking, or transfers.
  */
 public final class ResearchGate {
 
@@ -24,6 +26,7 @@ public final class ResearchGate {
         require("mana_generator",      "mana_generation");
         require("mana_grinder",        "mana_crystallisation");
         require("mana_crafting_table", "mana_crystallisation");
+        require("mana_infusion",       "mana_infusion");
         require("basic_arcane_conduit","mana_flow");
         require("advanced_arcane_conduit", "mana_flow");
         require("elite_arcane_conduit","mana_flow");
@@ -36,7 +39,7 @@ public final class ResearchGate {
     }
 
     /**
-     * Returns true if the player may interact with this machine.
+     * Returns true if the player may perform a machine action.
      * If blocked, sends a chat hint and returns false.
      *
      * @param machineId  registry path of the machine block (e.g. "mana_generator")
@@ -48,15 +51,40 @@ public final class ResearchGate {
         if (required == null) return true; // no requirement registered
 
         if (level instanceof ServerLevel serverLevel && player instanceof ServerPlayer serverPlayer) {
-            ResearchSavedData data = ResearchSavedData.get(serverLevel);
-            if (!data.getOrCreate(serverPlayer.getUUID()).hasCompleted(required)) {
-                serverPlayer.sendSystemMessage(Component.translatable(
-                        "research.koniava.locked",
-                        Component.translatable("research." + required.getNamespace() + "." + required.getPath())));
+            if (!hasCompleted(serverLevel, serverPlayer.getUUID(), required)) {
+                sendLockedMessage(serverPlayer, required);
                 return false;
             }
         }
         return true;
+    }
+
+    public static boolean hasResearch(String machineId, Player player, Level level) {
+        ResourceLocation required = REQUIREMENTS.get(machineId);
+        if (required == null) return true;
+        if (!(level instanceof ServerLevel serverLevel)) return true;
+
+        return hasCompleted(serverLevel, player.getUUID(), required);
+    }
+
+    public static boolean canOperate(String machineId, Level level, @Nullable UUID ownerId) {
+        ResourceLocation required = REQUIREMENTS.get(machineId);
+        if (required == null) return true;
+        if (!(level instanceof ServerLevel serverLevel)) return true;
+        if (ownerId == null) return true;
+
+        return hasCompleted(serverLevel, ownerId, required);
+    }
+
+    private static boolean hasCompleted(ServerLevel serverLevel, UUID playerId, ResourceLocation required) {
+        ResearchSavedData data = ResearchSavedData.get(serverLevel);
+        return data.getOrCreate(playerId).hasCompleted(required);
+    }
+
+    private static void sendLockedMessage(ServerPlayer player, ResourceLocation required) {
+        player.sendSystemMessage(Component.translatable(
+                "research.koniava.locked",
+                Component.translatable("research." + required.getNamespace() + "." + required.getPath())));
     }
 
     private ResearchGate() {}

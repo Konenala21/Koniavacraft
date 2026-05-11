@@ -2,17 +2,17 @@ package com.github.nalamodikk.research.dynamic;
 
 import com.github.nalamodikk.research.aspect.Aspect;
 import com.github.nalamodikk.research.aspect.ModAspects;
+import com.github.nalamodikk.research.knowledge.WorldAspectSavedData;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.MobType;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.EnderMan;
-import net.minecraft.world.entity.animal.Cow;
-import net.minecraft.world.entity.animal.Sheep;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 /**
  * Procedurally resolves aspects for living entities based on their classification.
@@ -20,40 +20,92 @@ import java.util.Random;
 public class EntityAspectResolver {
 
     public static List<Aspect> resolve(LivingEntity entity, ServerLevel level) {
+        ResourceLocation id = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
+        WorldAspectSavedData data = WorldAspectSavedData.get(level);
+        List<Aspect> cached = data.getEntityMapping(id);
+        if (cached != null) {
+            return cached;
+        }
+
         List<Aspect> aspects = new ArrayList<>();
-        long seed = level.getSeed() ^ entity.getType().hashCode();
-        Random random = new Random(seed);
+        List<Aspect> candidates = new ArrayList<>();
 
         // 1. Core Classification (Logic)
-        if (entity.getMobType() == MobType.UNDEAD) {
+        if (entity.getType().is(EntityTypeTags.UNDEAD)) {
             aspects.add(ModAspects.ANIMA);
             aspects.add(ModAspects.WU);
-        } else if (entity.getMobType() == MobType.ARTHROPOD) {
+            candidates.add(ModAspects.CORROSION);
+            candidates.add(ModAspects.EARTH);
+        } else if (entity.getType().is(EntityTypeTags.ARTHROPOD)) {
             aspects.add(ModAspects.VITALITY);
             aspects.add(ModAspects.CORROSION);
+            candidates.add(ModAspects.WOOD);
+            candidates.add(ModAspects.EARTH);
+        } else if (entity.getType().is(EntityTypeTags.AQUATIC)) {
+            aspects.add(ModAspects.WATER);
+            aspects.add(ModAspects.VITALITY);
+            candidates.add(ModAspects.GROWTH);
+        } else if (entity.getType().is(EntityTypeTags.ILLAGER)) {
+            aspects.add(ModAspects.ANIMA);
+            candidates.add(ModAspects.ENERGY);
+            candidates.add(ModAspects.WU);
         } else if (entity instanceof Creeper) {
             aspects.add(ModAspects.ENERGY);
             aspects.add(ModAspects.PHLOGISTON);
+            candidates.add(ModAspects.RESONANCE);
         } else if (entity instanceof EnderMan) {
             aspects.add(ModAspects.WU);
             aspects.add(ModAspects.GRAVITY);
+            candidates.add(ModAspects.ANIMA);
         } else {
             // Default to Animal/Living
             aspects.add(ModAspects.VITALITY);
             aspects.add(ModAspects.EARTH);
+            candidates.add(ModAspects.WOOD);
+            candidates.add(ModAspects.GROWTH);
         }
+        addKeywordCandidates(id, aspects, candidates);
 
-        // 2. Add a seed-based "Environmental Variation"
-        Aspect extra = getRandomMinorAspect(random);
-        if (!aspects.contains(extra)) {
-            aspects.add(extra);
+        List<Aspect> result = AspectExpression.express(id, aspects, candidates, data.getGenomeSeed(), capacity(id));
+        if (result.isEmpty()) {
+            result = AspectExpression.fallback(id, data.getGenomeSeed(), 3);
         }
-
-        return aspects.stream().limit(3).toList();
+        data.putEntityMapping(id, result);
+        return result;
     }
 
-    private static Aspect getRandomMinorAspect(Random random) {
-        Aspect[] all = ModAspects.all().toArray(new Aspect[0]);
-        return all[random.nextInt(all.length)];
+    private static void addKeywordCandidates(ResourceLocation id, List<Aspect> aspects, List<Aspect> candidates) {
+        String path = id.getPath();
+        if (path.contains("blaze") || path.contains("magma")) {
+            AspectExpression.addUnique(aspects, ModAspects.FIRE);
+            AspectExpression.addUnique(candidates, ModAspects.ENERGY);
+        }
+        if (path.contains("slime")) {
+            AspectExpression.addUnique(candidates, ModAspects.WATER);
+            AspectExpression.addUnique(candidates, ModAspects.VITALITY);
+        }
+        if (path.contains("warden") || path.contains("sculk")) {
+            AspectExpression.addUnique(aspects, ModAspects.WU);
+            AspectExpression.addUnique(candidates, ModAspects.RESONANCE);
+        }
+        if (path.contains("dragon") || path.contains("ender")) {
+            AspectExpression.addUnique(aspects, ModAspects.WU);
+            AspectExpression.addUnique(candidates, ModAspects.GRAVITY);
+        }
+        if (path.contains("golem")) {
+            AspectExpression.addUnique(aspects, ModAspects.METAL);
+            AspectExpression.addUnique(candidates, ModAspects.MECHANISM);
+        }
+    }
+
+    private static int capacity(ResourceLocation id) {
+        String path = id.getPath();
+        if (path.contains("dragon") || path.contains("wither") || path.contains("warden")) {
+            return 5;
+        }
+        if (path.contains("blaze") || path.contains("ender") || path.contains("golem")) {
+            return 4;
+        }
+        return 3;
     }
 }

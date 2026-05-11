@@ -2,7 +2,6 @@ package com.github.nalamodikk.common.block.blockentity.mana_grinder;
 
 import com.github.nalamodikk.common.block.blockentity.manabase.BaseMachineBlock;
 import com.github.nalamodikk.common.item.tool.BasicTechWandItem;
-import com.github.nalamodikk.research.ResearchGate;
 import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
 import com.github.nalamodikk.register.ModBlockEntities;
 import com.mojang.serialization.MapCodec;
@@ -125,9 +124,6 @@ public class ManaGrinderBlock extends BaseMachineBlock {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
-        if (!level.isClientSide() && !ResearchGate.canUse("mana_grinder", player, level)) {
-            return InteractionResult.FAIL;
-        }
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof ManaGrinderBlockEntity grinder) {
 
             // 🔧 如果拿著科技魔杖，打開配置界面

@@ -4,6 +4,7 @@ import com.github.nalamodikk.common.block.blockentity.mana_infuser.sync.ManaInfu
 import com.github.nalamodikk.common.block.blockentity.manabase.AbstractManaMachineEntityBlock;
 import com.github.nalamodikk.common.capability.mana.ManaAction;
 import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
+import com.github.nalamodikk.research.ResearchGate;
 import com.github.nalamodikk.register.ModBlockEntities;
 import com.github.nalamodikk.register.ModRecipes;
 import com.mojang.logging.LogUtils;
@@ -103,6 +104,15 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock {
     @Override
     public void tickMachine() {
         if (level == null || level.isClientSide()) return;
+
+        if (!ResearchGate.canOperate("mana_infusion", level, ownerId)) {
+            currentRecipe = null;
+            progress = 0;
+            lastComputedWorking = false;
+            updateBlockWorkingState(false);
+            syncHelper.syncFrom(this);
+            return;
+        }
 
         syncHelper.syncFrom(this);
 

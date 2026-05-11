@@ -47,10 +47,11 @@ public class NaraWatchItem extends Item {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        // Aiming at a block or item entity → start 0.5s hold
+        // Aiming at a block, item entity, or living entity → start 0.5s hold
         var blockHit = player.pick(SCAN_RANGE, 0f, false);
         if (blockHit.getType() == HitResult.Type.BLOCK
-                || getItemEntityTarget(player) != null) {
+                || getItemEntityTarget(player) != null
+                || getLivingEntityTarget(player) != null) {
             player.startUsingItem(hand);
             return InteractionResultHolder.consume(stack);
         }
@@ -93,8 +94,11 @@ public class NaraWatchItem extends Item {
         Vec3 targetPos = null;
 
         ItemEntity ie = getItemEntityTarget(player);
+        LivingEntity le = getLivingEntityTarget(player);
         if (ie != null) {
             targetPos = ie.position().add(0, 0.5, 0);
+        } else if (le != null) {
+            targetPos = le.position().add(0, le.getBbHeight() / 2.0, 0);
         } else {
             var hit = player.pick(SCAN_RANGE, 0f, false);
             if (hit instanceof BlockHitResult bhr) {
@@ -114,16 +118,19 @@ public class NaraWatchItem extends Item {
     public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity entity) {
         if (!(entity instanceof ServerPlayer player)) return stack;
 
-        // Try item entity first, then block
+        // Try entities first, then blocks
         ItemEntity itemEntity = getItemEntityTarget(player);
+        LivingEntity livingEntity = getLivingEntityTarget(player);
         List<Aspect> aspects;
 
         if (itemEntity != null) {
-            aspects = AspectScanner.getAspectsForItem(itemEntity.getItem().getItem());
+            aspects = AspectScanner.getAspectsForItem(itemEntity.getItem().getItem(), player.serverLevel());
+        } else if (livingEntity != null) {
+            aspects = AspectScanner.getAspectsForEntity(livingEntity, player.serverLevel());
         } else {
             var hit = player.pick(SCAN_RANGE, 0f, false);
             if (!(hit instanceof BlockHitResult blockHit)) return stack;
-            aspects = AspectScanner.getAspectsFor(level.getBlockState(blockHit.getBlockPos()));
+            aspects = AspectScanner.getAspectsFor(level.getBlockState(blockHit.getBlockPos()), player.serverLevel());
         }
 
         if (aspects.isEmpty()) {
@@ -170,6 +177,20 @@ public class NaraWatchItem extends Item {
             if (!(e instanceof ItemEntity ie)) continue;
             Optional<Vec3> hit = ie.getBoundingBox().inflate(0.2).clip(eye, end);
             if (hit.isPresent()) return ie;
+        }
+        return null;
+    }
+
+    @Nullable
+    private static LivingEntity getLivingEntityTarget(Player player) {
+        Vec3 eye = player.getEyePosition();
+        Vec3 end = eye.add(player.getLookAngle().scale(SCAN_RANGE));
+        AABB searchBox = new AABB(eye, end).inflate(1.0);
+
+        for (Entity e : player.level().getEntities(player, searchBox)) {
+            if (!(e instanceof LivingEntity le) || e instanceof Player) continue;
+            Optional<Vec3> hit = le.getBoundingBox().inflate(0.1).clip(eye, end);
+            if (hit.isPresent()) return le;
         }
         return null;
     }

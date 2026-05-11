@@ -1,5 +1,6 @@
 package com.github.nalamodikk.common.block.blockentity.mana_crafting;
 
+import com.github.nalamodikk.research.ResearchGate;
 import com.github.nalamodikk.register.ModMenuTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -29,7 +30,9 @@ public class ManaCraftingMenu extends AbstractContainerMenu {
     private final ManaCraftingTableBlockEntity blockEntity;
     private final ContainerLevelAccess access;
     private final IItemHandler itemHandler;
+    private final Player menuPlayer;
     private final DataSlot manaStored = DataSlot.standalone();
+    private final DataSlot researchLocked = DataSlot.standalone();
     private static final Logger LOGGER = LogManager.getLogger();
 
 
@@ -64,6 +67,7 @@ public class ManaCraftingMenu extends AbstractContainerMenu {
         super(ModMenuTypes.MANA_CRAFTING_MENU.get(), containerId);
         this.access = access;
         this.itemHandler = itemHandler;
+        this.menuPlayer = playerInventory.player;
 
         // 初始化 blockEntity 變量
         this.blockEntity = access.evaluate((world, pos) -> {
@@ -82,6 +86,8 @@ public class ManaCraftingMenu extends AbstractContainerMenu {
         }
 
         // 設置 3x3 合成槽
+        updateResearchLockedState();
+
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {
                 this.addSlot(new UpdatingSlotItemHandler(itemHandler, j + i * 3, 30 + j * 18, 17 + i * 18, this));
@@ -96,12 +102,27 @@ public class ManaCraftingMenu extends AbstractContainerMenu {
             }
 
             @Override
+            public ItemStack getItem() {
+                return isResearchLocked() ? ItemStack.EMPTY : super.getItem();
+            }
+
+            @Override
+            public boolean hasItem() {
+                return !isResearchLocked() && super.hasItem();
+            }
+
+            @Override
             public boolean mayPickup(Player player) {
-                return this.hasItem(); // ✅ 這行是你漏掉的關鍵
+                return this.hasItem()
+                        && !isResearchLocked();
             }
 
             @Override
             public void onTake(Player player, ItemStack stack) {
+                if (isResearchLocked()) {
+                    return;
+                }
+
                 if (blockEntity != null) {
                     Optional<RecipeHolder<ManaCraftingTableRecipe>> recipeOpt = blockEntity.getLastMatchedRecipeHolder();
 
@@ -130,11 +151,22 @@ public class ManaCraftingMenu extends AbstractContainerMenu {
 
         // 同步魔力值
         this.addDataSlot(manaStored);
+        this.addDataSlot(researchLocked);
     }
 
     // 获取当前的魔力存储量
     public int getManaStored() {
         return manaStored.get();
+    }
+
+    public boolean isResearchLocked() {
+        return researchLocked.get() != 0;
+    }
+
+    public boolean shouldShowMissingResearchWarning() {
+        return isResearchLocked()
+                && blockEntity != null
+                && blockEntity.getLastMatchedRecipeHolder().isPresent();
     }
 
 
@@ -152,6 +184,9 @@ public class ManaCraftingMenu extends AbstractContainerMenu {
         ItemStack clickedStack = slot.getItem();
         ItemStack originalStack = clickedStack.copy();
         if (index == OUTPUT_SLOT) {
+            if (isResearchLocked()) {
+                return ItemStack.EMPTY;
+            }
             blockEntity.updateCraftingResult(); // ✅ 確保 lastMatchedRecipe 有內容
             LOGGER.debug("[QuickMove] Start");
 
@@ -297,13 +332,23 @@ public class ManaCraftingMenu extends AbstractContainerMenu {
 
     @Override
     public void broadcastChanges() {
+        if (blockEntity != null) {
+            Level level = blockEntity.getLevel();
+            if (level != null && !level.isClientSide()) {
+                manaStored.set(blockEntity.getManaStored());
+                updateResearchLockedState();
+            }
+        }
         super.broadcastChanges();
+    }
+
+    private void updateResearchLockedState() {
         if (blockEntity == null) {
             return;
         }
         Level level = blockEntity.getLevel();
         if (level != null && !level.isClientSide()) {
-            manaStored.set(blockEntity.getManaStored());
+            researchLocked.set(ResearchGate.hasResearch("mana_crafting_table", menuPlayer, level) ? 0 : 1);
         }
     }
 

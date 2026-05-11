@@ -3,7 +3,7 @@ package com.github.nalamodikk.common.block.blockentity.conduit;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.capability.IUnifiedManaHandler;
-import com.github.nalamodikk.research.ResearchGate;
+import com.github.nalamodikk.common.item.tool.BasicTechWandItem;
 import com.github.nalamodikk.common.utils.capability.CapabilityUtils;
 import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
 import com.github.nalamodikk.register.ModBlockEntities;
@@ -19,6 +19,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
@@ -183,6 +184,15 @@ public class ArcaneConduitBlock extends BaseEntityBlock {
         ArcaneConduitBlockEntity be = new ArcaneConduitBlockEntity(pos, state);
         be.setTier(this.tier); // 設定方塊的等級
         return be;
+    }
+
+    @Override
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+        super.setPlacedBy(level, pos, state, placer, stack);
+        if (!level.isClientSide && placer instanceof Player player
+                && level.getBlockEntity(pos) instanceof ArcaneConduitBlockEntity conduit) {
+            conduit.setOwnerId(player.getUUID());
+        }
     }
 
     @Nullable
@@ -406,10 +416,6 @@ public class ArcaneConduitBlock extends BaseEntityBlock {
             return InteractionResult.SUCCESS;
         }
 
-        if (!ResearchGate.canUse(tier.getSerializedName() + "_arcane_conduit", player, level)) {
-            return InteractionResult.FAIL;
-        }
-
         if (!(level.getBlockEntity(pos) instanceof ArcaneConduitBlockEntity conduit)) {
             return InteractionResult.PASS;
         }
@@ -418,7 +424,7 @@ public class ArcaneConduitBlock extends BaseEntityBlock {
         boolean isCrouching = player.isCrouching();
 
         // 🎯 科技魔杖 - 永遠優先
-        if (heldItem.getItem() instanceof com.github.nalamodikk.common.item.tool.BasicTechWandItem) {
+        if (heldItem.getItem() instanceof BasicTechWandItem) {
             return conduit.onUse(state, level, pos, player, hit);
         }
 

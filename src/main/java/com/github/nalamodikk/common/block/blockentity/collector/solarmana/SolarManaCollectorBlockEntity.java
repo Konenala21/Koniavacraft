@@ -12,8 +12,9 @@
     import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
     import com.github.nalamodikk.common.utils.nbt.NbtUtils;
 import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
-import com.github.nalamodikk.common.utils.upgrade.UpgradeType;
+    import com.github.nalamodikk.common.utils.upgrade.UpgradeType;
     import com.github.nalamodikk.common.utils.upgrade.api.IUpgradeableMachine;
+    import com.github.nalamodikk.research.ResearchGate;
     import com.github.nalamodikk.register.ModBlockEntities;
     import com.github.nalamodikk.register.ModCapabilities;
     import com.mojang.logging.LogUtils;
@@ -118,6 +119,15 @@ import com.github.nalamodikk.common.utils.upgrade.UpgradeType;
 
         @Override
         public void tickMachine() {
+            if (!ResearchGate.canOperate("solar_mana_collector", level, ownerId)) {
+                if (generating) {
+                    generating = false;
+                    syncHelper.syncFrom(this);
+                    setChanged();
+                }
+                return;
+            }
+
             long gameTime = level.getGameTime();
 
             // 🔄 狀態管理：降低檢查頻率（每 20 tick = 1秒）

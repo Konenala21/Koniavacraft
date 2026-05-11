@@ -4,6 +4,7 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.client.screenAPI.component.ManaBarWidget;
 import com.github.nalamodikk.client.screenAPI.framework.AutoSizedModularScreen;
 import com.github.nalamodikk.client.screenAPI.framework.Panel;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -30,4 +31,14 @@ public class ManaCraftingScreen extends AutoSizedModularScreen<ManaCraftingMenu>
     }
 
     // ✨ v2: renderBg 完全刪除，AutoSizedModularScreen 會自動處理
+    @Override
+    protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
+        super.renderLabels(graphics, mouseX, mouseY);
+
+        if (menu.shouldShowMissingResearchWarning()) {
+            Component warning = Component.translatable("gui.koniava.mana_crafting.missing_research");
+            int x = (imageWidth - font.width(warning)) / 2;
+            graphics.drawString(font, warning, x, 6, 0xAA2E1F, false);
+        }
+    }
 }
