@@ -6,11 +6,13 @@ import com.github.nalamodikk.common.network.packet.server.manatool.ConfigDirecti
 import com.github.nalamodikk.common.network.packet.server.conduit.PriorityUpdatePacket;
 import com.github.nalamodikk.common.network.packet.server.conduit.ResetPrioritiesPacket;
 import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
+import com.github.nalamodikk.research.ResearchGate;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -24,6 +26,15 @@ public class ArcaneConduitConfigScreen extends AbstractContainerScreen<ArcaneCon
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             KoniavacraftMod.MOD_ID, "textures/gui/conduit_config.png"
     );
+
+    private String cachedMachineId = null;
+
+    private String getMachineId() {
+        if (cachedMachineId == null && menu.getConduit() != null) {
+            cachedMachineId = BuiltInRegistries.BLOCK.getKey(menu.getConduit().getBlockState().getBlock()).getPath();
+        }
+        return cachedMachineId != null ? cachedMachineId : "basic_arcane_conduit";
+    }
 
     // 🔧 改用 EditBox 替代滑桿
     private final EnumMap<Direction, EditBox> priorityInputs = new EnumMap<>(Direction.class);
@@ -352,6 +363,32 @@ public class ArcaneConduitConfigScreen extends AbstractContainerScreen<ArcaneCon
         // 渲染背景
         this.renderBackground(guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+
+        // 🎯 研究鎖定遮罩 (手動繪製)
+        String machineId = getMachineId();
+        if (!ResearchGate.isUnlockedOnClient(machineId)) {
+            guiGraphics.pose().pushPose();
+            guiGraphics.pose().translate(0, 0, 500); // 確保在最上層
+            
+            // 填滿背景
+            guiGraphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, 0xAA000000);
+            
+            // 繪製文字
+            Component lockedText = Component.translatable("research.koniava.locked_gui");
+            int textWidth = font.width(lockedText);
+            guiGraphics.drawString(font, lockedText, leftPos + (imageWidth - textWidth) / 2, topPos + (imageHeight / 2) - 10, 0xFFFF5555, false);
+            
+            ResourceLocation required = ResearchGate.getRequiredResearch(machineId);
+            if (required != null) {
+                Component reqText = Component.translatable("research.koniava.requires")
+                        .append(": ")
+                        .append(Component.translatable("research." + required.getNamespace() + "." + required.getPath()));
+                int reqWidth = font.width(reqText);
+                guiGraphics.drawString(font, reqText, leftPos + (imageWidth - reqWidth) / 2, topPos + (imageHeight / 2) + 5, 0xFFFFFF55, false);
+            }
+            
+            guiGraphics.pose().popPose();
+        }
 
         // 渲染工具提示
         this.renderTooltip(guiGraphics, mouseX, mouseY);

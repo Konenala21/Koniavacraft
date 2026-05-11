@@ -2,6 +2,7 @@ package com.github.nalamodikk.common.block.blockentity.mana_infuser;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.client.screenAPI.component.ManaBarWidget;
+import com.github.nalamodikk.client.screenAPI.component.ResearchLockWidget;
 import com.github.nalamodikk.client.screenAPI.framework.AbstractWidget;
 import com.github.nalamodikk.client.screenAPI.framework.AutoSizedModularScreen;
 import com.github.nalamodikk.client.screenAPI.framework.Panel;
@@ -27,6 +28,9 @@ public class ManaInfuserScreen extends AutoSizedModularScreen<ManaInfuserMenu> {
 
     @Override
     protected void buildGui(Panel root) {
+        // 0. 研究鎖定遮罩
+        root.add(new ResearchLockWidget(0, 0, imageWidth, imageHeight, "mana_infuser"));
+
         // 1. 魔力條 (9, 17) - 10x48
         root.add(new ManaBarWidget(9, 17, menu::getCurrentMana, menu::getMaxMana)
                 .setSize(10, 48)

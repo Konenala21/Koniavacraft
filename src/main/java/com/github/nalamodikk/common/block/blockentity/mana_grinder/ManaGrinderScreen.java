@@ -2,6 +2,7 @@ package com.github.nalamodikk.common.block.blockentity.mana_grinder;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.client.screenAPI.component.ManaBarWidget;
+import com.github.nalamodikk.client.screenAPI.component.ResearchLockWidget;
 import com.github.nalamodikk.client.screenAPI.framework.AbstractWidget;
 import com.github.nalamodikk.client.screenAPI.framework.AutoSizedModularScreen;
 import com.github.nalamodikk.client.screenAPI.framework.Panel;
@@ -28,6 +29,9 @@ public class ManaGrinderScreen extends AutoSizedModularScreen<ManaGrinderMenu> {
 
     @Override
     protected void buildGui(Panel root) {
+        // 0. 研究鎖定遮罩
+        root.add(new ResearchLockWidget(0, 0, imageWidth, imageHeight, "mana_grinder"));
+
         // 1. 進度條 (與魔力注入機相同的繪製方式)
         root.add(new AbstractWidget(67, 36, 44, 12) {
             @Override

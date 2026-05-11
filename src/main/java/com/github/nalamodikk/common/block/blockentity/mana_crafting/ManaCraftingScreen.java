@@ -2,6 +2,7 @@ package com.github.nalamodikk.common.block.blockentity.mana_crafting;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.client.screenAPI.component.ManaBarWidget;
+import com.github.nalamodikk.client.screenAPI.component.ResearchLockWidget;
 import com.github.nalamodikk.client.screenAPI.framework.AutoSizedModularScreen;
 import com.github.nalamodikk.client.screenAPI.framework.Panel;
 import net.minecraft.client.gui.GuiGraphics;
@@ -23,6 +24,9 @@ public class ManaCraftingScreen extends AutoSizedModularScreen<ManaCraftingMenu>
 
     @Override
     protected void buildGui(Panel root) {
+        // 0. 研究鎖定遮罩
+        root.add(new ResearchLockWidget(0, 0, imageWidth, imageHeight, "mana_crafting_table"));
+
         // 魔力條 (11, 19) - 7x47
         root.add(new ManaBarWidget(11, 19,
             menu::getManaStored,

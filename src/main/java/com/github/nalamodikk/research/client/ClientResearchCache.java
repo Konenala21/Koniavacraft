@@ -8,17 +8,23 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Client-side cache of the local player's discovered aspects.
- * Updated by {@link com.github.nalamodikk.research.network.AspectSyncPacket}.
- * Read by {@link com.github.nalamodikk.common.block.blockentity.research.ResearchTableScreen}
- * when building the palette.
+ * Client-side cache of the local player's discovered aspects and completed research.
+ * Updated by networking packets.
  */
 public final class ClientResearchCache {
 
     private static Set<ResourceLocation> discoveredAspects = new HashSet<>();
+    private static Set<ResourceLocation> completedResearch = new HashSet<>();
+    private static int currentTier = 1;
 
-    /** Called by AspectSyncPacket handler on the client thread. */
-    public static void update(Collection<ResourceLocation> aspects) {
+    /** Called by networking handlers on the client thread. */
+    public static void update(Collection<ResourceLocation> aspects, Collection<ResourceLocation> research, int tier) {
+        discoveredAspects = new HashSet<>(aspects);
+        completedResearch = new HashSet<>(research);
+        currentTier = tier;
+    }
+
+    public static void updateAspects(Collection<ResourceLocation> aspects) {
         discoveredAspects = new HashSet<>(aspects);
     }
 
@@ -28,6 +34,18 @@ public final class ClientResearchCache {
 
     public static Set<ResourceLocation> getDiscoveredAspects() {
         return Collections.unmodifiableSet(discoveredAspects);
+    }
+
+    public static boolean hasCompleted(ResourceLocation researchId) {
+        return completedResearch.contains(researchId);
+    }
+
+    public static Set<ResourceLocation> getCompletedResearch() {
+        return Collections.unmodifiableSet(completedResearch);
+    }
+
+    public static int getCurrentTier() {
+        return currentTier;
     }
 
     private ClientResearchCache() {}

@@ -4,6 +4,7 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.client.screenAPI.component.BurnProgressWidget;
 import com.github.nalamodikk.client.screenAPI.component.EnergyBarWidget;
 import com.github.nalamodikk.client.screenAPI.component.ManaBarWidget;
+import com.github.nalamodikk.client.screenAPI.component.ResearchLockWidget;
 import com.github.nalamodikk.client.screenAPI.framework.AbstractWidget;
 import com.github.nalamodikk.client.screenAPI.framework.ButtonWidget;
 import com.github.nalamodikk.client.screenAPI.framework.AutoSizedModularScreen;
@@ -39,6 +40,9 @@ public class ManaGeneratorScreen extends AutoSizedModularScreen<ManaGeneratorMen
 
     @Override
     protected void buildGui(Panel root) {
+        // 0. 研究鎖定遮罩
+        root.add(new ResearchLockWidget(0, 0, imageWidth, imageHeight, "mana_generator"));
+
         // 1. 魔力條 (11, 19)
         root.add(new ManaBarWidget(11, 19, menu::getManaStored, menu::getMaxMana)
                 .setSize(7, 47)

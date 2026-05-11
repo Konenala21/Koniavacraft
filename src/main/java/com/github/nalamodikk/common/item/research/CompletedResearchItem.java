@@ -1,6 +1,7 @@
 package com.github.nalamodikk.common.item.research;
 
 import com.github.nalamodikk.research.knowledge.ResearchSavedData;
+import com.github.nalamodikk.research.network.KnowledgeSyncPacket;
 import com.github.nalamodikk.research.template.ResearchRegistry;
 import com.github.nalamodikk.register.ModDataComponents;
 import com.github.nalamodikk.register.ModItems;
@@ -73,6 +74,9 @@ public class CompletedResearchItem extends Item {
 
                 // Consume the scroll
                 stack.shrink(1);
+
+                // 同步至客戶端
+                KnowledgeSyncPacket.sendTo(sp);
             } else {
                 // Already committed before — still consume but just say so
                 sp.sendSystemMessage(Component.translatable(

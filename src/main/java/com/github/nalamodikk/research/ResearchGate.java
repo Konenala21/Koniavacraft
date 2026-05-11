@@ -26,10 +26,10 @@ public final class ResearchGate {
         require("mana_generator",      "mana_generation");
         require("mana_grinder",        "mana_crystallisation");
         require("mana_crafting_table", "mana_crystallisation");
-        require("mana_infusion",       "mana_infusion");
+        require("mana_infuser",        "mana_infusion");
         require("basic_arcane_conduit","mana_flow");
-        require("advanced_arcane_conduit", "mana_flow");
-        require("elite_arcane_conduit","mana_flow");
+        require("advanced_arcane_conduit", "advanced_conduits");
+        require("elite_arcane_conduit","advanced_conduits");
         require("solar_mana_collector","mana_generation");
     }
 
@@ -74,6 +74,19 @@ public final class ResearchGate {
         if (ownerId == null) return true;
 
         return hasCompleted(serverLevel, ownerId, required);
+    }
+
+    public static @Nullable ResourceLocation getRequiredResearch(String machineId) {
+        return REQUIREMENTS.get(machineId);
+    }
+
+    /**
+     * Checks if the machine is unlocked for the local player on the client.
+     */
+    public static boolean isUnlockedOnClient(String machineId) {
+        ResourceLocation required = REQUIREMENTS.get(machineId);
+        if (required == null) return true;
+        return com.github.nalamodikk.research.client.ClientResearchCache.hasCompleted(required);
     }
 
     private static boolean hasCompleted(ServerLevel serverLevel, UUID playerId, ResourceLocation required) {

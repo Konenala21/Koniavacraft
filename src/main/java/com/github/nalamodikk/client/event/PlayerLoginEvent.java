@@ -6,6 +6,7 @@ import com.github.nalamodikk.narasystem.nara.network.client.OpenNaraInitScreenPa
 import com.github.nalamodikk.narasystem.nara.network.server.NaraSyncPacket;
 import com.github.nalamodikk.narasystem.nara.util.NaraHelper;
 import com.github.nalamodikk.register.ModDataAttachments;
+import com.github.nalamodikk.research.network.KnowledgeSyncPacket;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.NonNullList;
 import net.minecraft.gametest.framework.GameTestServer;
@@ -56,5 +57,8 @@ public class PlayerLoginEvent {
             PacketDistributor.sendToPlayer(player, new OpenNaraInitScreenPacket());
             LOGGER.debug("open player one login gui!");
         }
+
+        // 同步研究進度
+        KnowledgeSyncPacket.sendTo(player);
     }
 }

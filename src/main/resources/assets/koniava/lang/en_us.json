@@ -30,6 +30,7 @@
   "block.koniava.mana_generator": "Mana Generator",
   "block.koniava.research_table": "Research Table",
   "research.koniava.locked": "You need to complete '%s' first.",
+  "research.koniava.locked_gui": "Machine Locked",
   "gui.koniava.research_table.begin": "Begin Research",
   "gui.koniava.research_table.note_slot": "Note",
   "gui.koniava.research_table.quill_slot": "Quill",

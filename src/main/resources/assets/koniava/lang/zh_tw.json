@@ -30,6 +30,8 @@
   "block.koniava.mana_generator": "魔力發電機",
   "block.koniava.research_table": "研究台",
   "research.koniava.locked": "你需要先完成「%s」。",
+  "research.koniava.locked_gui": "機器已鎖定",
+  "research.koniava.requires": "需要解鎖研究",
   "gui.koniava.research_table.begin": "開始研究",
   "gui.koniava.research_table.note_slot": "筆記",
   "gui.koniava.research_table.quill_slot": "羽毛筆",
