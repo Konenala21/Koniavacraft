@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [0.0.1.6] - 2026-05-11
 
-### Player Changes / 玩家更新內容
+### 玩家版變更 / Player-facing Changelog
 
 - EN: Machine GUIs now feature a "LOCKED" overlay with a detailed tooltip if the required research is not yet completed.
 - EN: Nara Watch HUD now supports identifying living entities and dropped items, displaying their names when targeted.
@@ -13,7 +13,7 @@ All notable changes to this project will be documented in this file.
 - ZH: 娜拉手錶 HUD 現在支援識別生物與地面掉落物，對準目標時會即時顯示其名稱。
 - ZH: 研究狀態現在會在點擊研究卷軸後即時同步，不需重新開啟介面即可立刻解鎖機器操作。
 
-### Developer Notes / 開發者備註
+### 開發者版變更 / Developer-facing Changelog
 
 - EN: Implemented `ResearchLockWidget` using the `ModularScreen` framework for universal GUI research gating.
 - EN: Added `KnowledgeSyncPacket` to handle full player research state synchronization during login and completion events.
