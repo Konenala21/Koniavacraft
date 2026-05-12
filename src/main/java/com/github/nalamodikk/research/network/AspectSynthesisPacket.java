@@ -2,6 +2,7 @@ package com.github.nalamodikk.research.network;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.block.blockentity.research.ResearchTableBlockEntity;
+import com.github.nalamodikk.common.block.blockentity.research.ResearchTableMenu;
 import com.github.nalamodikk.common.item.research.InkQuillItem;
 import com.github.nalamodikk.research.aspect.Aspect;
 import com.github.nalamodikk.research.aspect.ModAspects;
@@ -14,7 +15,6 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -120,13 +120,21 @@ public record AspectSynthesisPacket(BlockPos tablePos, ResourceLocation aspect1,
         }
 
         int damage = 1 + RandomGenerator.getDefault().nextInt(5);
-        quill.hurtAndBreak(damage, player, EquipmentSlot.MAINHAND);
-        if (quill.isEmpty()) {
+        int nextDamage = quill.getDamageValue() + damage;
+        if (nextDamage >= quill.getMaxDamage()) {
             table.getInventory().setStackInSlot(ResearchTableBlockEntity.QUILL_SLOT, ItemStack.EMPTY);
         } else {
-            table.getInventory().setStackInSlot(ResearchTableBlockEntity.QUILL_SLOT, quill);
+            ItemStack updated = quill.copy();
+            updated.setDamageValue(nextDamage);
+            table.getInventory().setStackInSlot(ResearchTableBlockEntity.QUILL_SLOT, updated);
         }
         table.setChanged();
+        if (table.getLevel() != null && !table.getLevel().isClientSide()) {
+            table.getLevel().sendBlockUpdated(table.getBlockPos(), table.getBlockState(), table.getBlockState(), 3);
+        }
+        if (player.containerMenu instanceof ResearchTableMenu menu && menu.getBlockEntity() == table) {
+            player.containerMenu.broadcastChanges();
+        }
         return true;
     }
 

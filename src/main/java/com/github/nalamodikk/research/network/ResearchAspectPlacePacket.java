@@ -2,15 +2,17 @@ package com.github.nalamodikk.research.network;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.block.blockentity.research.ResearchTableBlockEntity;
+import com.github.nalamodikk.common.block.blockentity.research.ResearchTableMenu;
 import com.github.nalamodikk.research.aspect.Aspect;
+import com.github.nalamodikk.research.knowledge.PlayerKnowledge;
+import com.github.nalamodikk.research.knowledge.ResearchSavedData;
+import net.minecraft.network.chat.Component;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -24,8 +26,7 @@ import java.util.random.RandomGenerator;
 /**
  * Sent client → server each time the player places or removes an aspect on the research grid.
  *
- * On place (aspectId present): saves cell to BlockEntity + damages ink quill 1-5 durability.
- * On remove (aspectId empty):  saves removal to BlockEntity, no quill damage.
+ * On place or remove: saves cell to BlockEntity + damages ink quill 1-5 durability.
  */
 public record ResearchAspectPlacePacket(
         BlockPos tablePos,
@@ -66,31 +67,72 @@ public record ResearchAspectPlacePacket(
             BlockEntity be = player.serverLevel().getBlockEntity(packet.tablePos());
             if (!(be instanceof ResearchTableBlockEntity table)) return;
 
-            // Persist cell state
-            table.saveCellPlacement(
-                    packet.researchId(), packet.q(), packet.r(),
-                    packet.aspectId().orElse(null)
-            );
+            PlayerKnowledge knowledge = ResearchSavedData.get(player.serverLevel()).getOrCreate(player.getUUID());
+            String key = packet.q() + "," + packet.r();
+            String previousAspectId = table.getSavedPlacements().get(key);
+            ResourceLocation newAspectId = packet.aspectId().orElse(null);
 
-            // Damage quill only when placing, not when removing
-            if (packet.aspectId().isPresent()) {
-                ItemStack quill = table.getInventory().getStackInSlot(ResearchTableBlockEntity.QUILL_SLOT);
-                if (!quill.isEmpty()) {
-                    int damage = 1 + RandomGenerator.getDefault().nextInt(5);
-                    quill.hurtAndBreak(damage, player, EquipmentSlot.MAINHAND);
-                    if (quill.isEmpty()) {
-                        table.getInventory().setStackInSlot(ResearchTableBlockEntity.QUILL_SLOT, ItemStack.EMPTY);
-                        KoniavacraftMod.LOGGER.debug("Ink quill broke at {}", packet.tablePos());
-                    }
-                    table.setChanged();
-                    // Sync quill damage to client immediately after hurting
-                    ServerLevel level = player.serverLevel();
-                    level.sendBlockUpdated(packet.tablePos(),
-                            level.getBlockState(packet.tablePos()),
-                            level.getBlockState(packet.tablePos()), 3);
+            // Persist cell state
+            if (newAspectId != null) {
+                Aspect aspect = com.github.nalamodikk.research.aspect.ModAspects.get(newAspectId);
+                if (aspect == null) {
+                    player.sendSystemMessage(Component.translatable("message.koniava.synthesis.invalid_aspect"));
+                    return;
+                }
+                if (knowledge.getAspectCount(newAspectId) <= 0) {
+                    player.sendSystemMessage(Component.translatable("message.koniava.research.not_enough_aspect",
+                            aspect.getName()));
+                    return;
+                }
+            }
+
+            if (previousAspectId != null) {
+                refundAspect(knowledge, ResourceLocation.parse(previousAspectId));
+            }
+
+            if (newAspectId != null) {
+                consumeAspect(knowledge, newAspectId);
+            }
+
+            table.saveCellPlacement(packet.researchId(), packet.q(), packet.r(), newAspectId);
+            ResearchSavedData.get(player.serverLevel()).setDirty();
+            AspectSyncPacket.sendTo(player);
+
+            // Every click on the hex puzzle consumes quill durability, including cancel/removal.
+            ItemStack quill = table.getInventory().getStackInSlot(ResearchTableBlockEntity.QUILL_SLOT);
+            if (!quill.isEmpty()) {
+                int damage = 1 + RandomGenerator.getDefault().nextInt(5);
+                int nextDamage = quill.getDamageValue() + damage;
+                if (nextDamage >= quill.getMaxDamage()) {
+                    KoniavacraftMod.LOGGER.debug("Ink quill broke at {}", packet.tablePos());
+                    table.getInventory().setStackInSlot(ResearchTableBlockEntity.QUILL_SLOT, ItemStack.EMPTY);
+                } else {
+                    ItemStack updated = quill.copy();
+                    updated.setDamageValue(nextDamage);
+                    table.getInventory().setStackInSlot(ResearchTableBlockEntity.QUILL_SLOT, updated);
+                }
+                table.setChanged();
+                // Sync quill damage to client immediately after hurting
+                player.serverLevel().sendBlockUpdated(packet.tablePos(),
+                        player.serverLevel().getBlockState(packet.tablePos()),
+                        player.serverLevel().getBlockState(packet.tablePos()), 3);
+                if (player.containerMenu instanceof ResearchTableMenu menu && menu.getBlockEntity() == table) {
+                    player.containerMenu.broadcastChanges();
                 }
             }
         });
+    }
+
+    private static void consumeAspect(PlayerKnowledge knowledge, ResourceLocation aspectId) {
+        int current = knowledge.getAspectCount(aspectId);
+        if (current > 0) {
+            knowledge.setAspectAmount(aspectId, current - 1);
+        }
+    }
+
+    private static void refundAspect(PlayerKnowledge knowledge, ResourceLocation aspectId) {
+        int current = knowledge.getAspectCount(aspectId);
+        knowledge.setAspectAmount(aspectId, current + 1);
     }
 
     public static void registerTo(PayloadRegistrar registrar) {

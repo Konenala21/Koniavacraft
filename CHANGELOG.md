@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file.
 ### Developer Notes / 開發者備註
 
 - EN: Implemented `ResearchLockWidget` using the `ModularScreen` framework for universal GUI research gating.
+- EN: Added batch research commands: `add_all_aspects` grants every aspect in one call, and `lock_non_primary_aspects` locks every non-primary aspect in one call.
 - EN: Added `KnowledgeSyncPacket` to handle full player research state synchronization during login and completion events.
 - EN: Enhanced `BlockSelectorUtils` with entity ray-tracing support (`getTargetEntity`).
 - EN: Added `ResearchGameTests` suite for verifying multi-player research isolation and dynamic unlocking logic.

@@ -11,6 +11,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -33,14 +34,26 @@ public class ResearchCommand {
                                 .then(Commands.literal("unlock")
                                         .then(Commands.argument("targets", EntityArgument.players())
                                                 .then(Commands.argument("id", ResourceLocationArgument.id())
+                                                        .suggests((context, builder) -> {
+                                                            suggestResearchIds(builder);
+                                                            return builder.buildFuture();
+                                                        })
                                                         .executes(ResearchCommand::unlockResearch))))
                                 .then(Commands.literal("lock")
                                         .then(Commands.argument("targets", EntityArgument.players())
                                                 .then(Commands.argument("id", ResourceLocationArgument.id())
+                                                        .suggests((context, builder) -> {
+                                                            suggestResearchIds(builder);
+                                                            return builder.buildFuture();
+                                                        })
                                                         .executes(ResearchCommand::lockResearch))))
                                 .then(Commands.literal("set_state")
                                         .then(Commands.argument("targets", EntityArgument.players())
                                                 .then(Commands.argument("id", ResourceLocationArgument.id())
+                                                        .suggests((context, builder) -> {
+                                                            suggestResearchIds(builder);
+                                                            return builder.buildFuture();
+                                                        })
                                                         .then(Commands.argument("state", StringArgumentType.word())
                                                                 .suggests((context, builder) -> {
                                                                     builder.suggest("locked");
@@ -57,13 +70,33 @@ public class ResearchCommand {
                                 .then(Commands.literal("set_aspect")
                                         .then(Commands.argument("targets", EntityArgument.players())
                                                 .then(Commands.argument("aspect", ResourceLocationArgument.id())
+                                                        .suggests((context, builder) -> {
+                                                            for (Aspect aspect : ModAspects.all()) {
+                                                                builder.suggest(aspect.getId().toString());
+                                                            }
+                                                            return builder.buildFuture();
+                                                        })
                                                         .then(Commands.argument("amount", IntegerArgumentType.integer(0))
                                                                 .executes(ResearchCommand::setAspect)))))
                                 .then(Commands.literal("add_aspect")
                                         .then(Commands.argument("targets", EntityArgument.players())
                                                 .then(Commands.argument("aspect", ResourceLocationArgument.id())
+                                                        .suggests((context, builder) -> {
+                                                            for (Aspect aspect : ModAspects.all()) {
+                                                                builder.suggest(aspect.getId().toString());
+                                                            }
+                                                            return builder.buildFuture();
+                                                        })
                                                         .then(Commands.argument("amount", IntegerArgumentType.integer())
                                                                 .executes(ResearchCommand::addAspect)))))
+                                .then(Commands.literal("add_all_aspects")
+                                        .then(Commands.argument("targets", EntityArgument.players())
+                                                .executes(context -> addAllAspects(context, 1))
+                                                .then(Commands.argument("amount", IntegerArgumentType.integer(1))
+                                                        .executes(context -> addAllAspects(context, IntegerArgumentType.getInteger(context, "amount"))))))
+                                .then(Commands.literal("lock_non_primary_aspects")
+                                        .then(Commands.argument("targets", EntityArgument.players())
+                                                .executes(ResearchCommand::lockNonPrimaryAspects)))
                                 .then(Commands.literal("list_aspects")
                                         .then(Commands.argument("target", EntityArgument.player())
                                                 .executes(ResearchCommand::listAspects)))
@@ -75,6 +108,7 @@ public class ResearchCommand {
     private static int unlockResearch(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Collection<ServerPlayer> players = EntityArgument.getPlayers(context, "targets");
         ResourceLocation id = ResourceLocationArgument.getId(context, "id");
+        Component idText = Component.literal(id.toString());
         if (!researchExists(context, id)) {
             return 0;
         }
@@ -90,7 +124,7 @@ public class ResearchCommand {
 
         int finalChanged = changed;
         context.getSource().sendSuccess(
-                () -> Component.translatable("commands.koniava.research.unlock.success", id, finalChanged),
+                () -> Component.translatable("commands.koniava.research.unlock.success", idText, finalChanged),
                 true);
         return changed;
     }
@@ -98,6 +132,7 @@ public class ResearchCommand {
     private static int lockResearch(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Collection<ServerPlayer> players = EntityArgument.getPlayers(context, "targets");
         ResourceLocation id = ResourceLocationArgument.getId(context, "id");
+        Component idText = Component.literal(id.toString());
         if (!researchExists(context, id)) {
             return 0;
         }
@@ -110,7 +145,7 @@ public class ResearchCommand {
 
         int playerCount = players.size();
         context.getSource().sendSuccess(
-                () -> Component.translatable("commands.koniava.research.lock.success", id, playerCount),
+                () -> Component.translatable("commands.koniava.research.lock.success", idText, playerCount),
                 true);
         return playerCount;
     }
@@ -118,6 +153,7 @@ public class ResearchCommand {
     private static int setResearchState(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Collection<ServerPlayer> players = EntityArgument.getPlayers(context, "targets");
         ResourceLocation id = ResourceLocationArgument.getId(context, "id");
+        Component idText = Component.literal(id.toString());
         if (!researchExists(context, id)) {
             return 0;
         }
@@ -136,7 +172,7 @@ public class ResearchCommand {
         int playerCount = players.size();
         context.getSource().sendSuccess(
                 () -> Component.translatable("commands.koniava.research.set_state.success",
-                        id, state.name().toLowerCase(), playerCount),
+                        idText, state.name().toLowerCase(), playerCount),
                 true);
         return playerCount;
     }
@@ -161,6 +197,7 @@ public class ResearchCommand {
     private static int setAspect(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Collection<ServerPlayer> players = EntityArgument.getPlayers(context, "targets");
         ResourceLocation aspectId = ResourceLocationArgument.getId(context, "aspect");
+        Component aspectText = Component.literal(aspectId.toString());
         int amount = IntegerArgumentType.getInteger(context, "amount");
 
         for (ServerPlayer player : players) {
@@ -172,7 +209,7 @@ public class ResearchCommand {
         int playerCount = players.size();
         context.getSource().sendSuccess(
                 () -> Component.translatable("commands.koniava.research.set_aspect.success",
-                        aspectId, amount, playerCount),
+                        aspectText, amount, playerCount),
                 true);
         return playerCount;
     }
@@ -180,11 +217,12 @@ public class ResearchCommand {
     private static int addAspect(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Collection<ServerPlayer> players = EntityArgument.getPlayers(context, "targets");
         ResourceLocation aspectId = ResourceLocationArgument.getId(context, "aspect");
+        Component aspectText = Component.literal(aspectId.toString());
         int amount = IntegerArgumentType.getInteger(context, "amount");
         Aspect aspect = ModAspects.get(aspectId);
 
         if (aspect == null) {
-            context.getSource().sendFailure(Component.translatable("commands.koniava.research.aspect.unknown", aspectId));
+            context.getSource().sendFailure(Component.translatable("commands.koniava.research.aspect.unknown", aspectText));
             return 0;
         }
 
@@ -197,9 +235,58 @@ public class ResearchCommand {
         int playerCount = players.size();
         context.getSource().sendSuccess(
                 () -> Component.translatable("commands.koniava.research.add_aspect.success",
-                        aspectId, amount, playerCount),
+                        aspectText, amount, playerCount),
                 true);
         return playerCount;
+    }
+
+    private static int addAllAspects(CommandContext<CommandSourceStack> context, int amount) throws CommandSyntaxException {
+        Collection<ServerPlayer> players = EntityArgument.getPlayers(context, "targets");
+        int aspectCount = ModAspects.all().size();
+
+        for (ServerPlayer player : players) {
+            PlayerKnowledge knowledge = ResearchSavedData.get(player.serverLevel()).getOrCreate(player.getUUID());
+            for (Aspect aspect : ModAspects.all()) {
+                knowledge.discoverAspect(aspect, amount);
+            }
+            syncKnowledge(player);
+        }
+
+        int playerCount = players.size();
+        context.getSource().sendSuccess(
+                () -> Component.translatable("commands.koniava.research.add_all_aspects.success",
+                        amount, aspectCount, playerCount),
+                true);
+        return playerCount * aspectCount;
+    }
+
+    private static int lockNonPrimaryAspects(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Collection<ServerPlayer> players = EntityArgument.getPlayers(context, "targets");
+        int lockedCount = 0;
+
+        for (Aspect aspect : ModAspects.all()) {
+            if (!aspect.isPrimary()) {
+                lockedCount++;
+            }
+        }
+
+        for (ServerPlayer player : players) {
+            PlayerKnowledge knowledge = ResearchSavedData.get(player.serverLevel()).getOrCreate(player.getUUID());
+            for (Aspect aspect : ModAspects.all()) {
+                if (!aspect.isPrimary()) {
+                    knowledge.setResearchState(aspect.getId(), PlayerKnowledge.ResearchState.LOCKED);
+                }
+            }
+            syncKnowledge(player);
+        }
+
+        final int lockedAspectCount = lockedCount;
+        final int playerCount = players.size();
+        context.getSource().sendSuccess(
+                () -> Component.translatable("commands.koniava.research.lock_non_primary_aspects.success",
+                        lockedAspectCount, playerCount),
+                true);
+        return playerCount * lockedAspectCount;
     }
 
     private static int listAspects(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
@@ -215,7 +302,7 @@ public class ResearchCommand {
             Aspect aspect = ModAspects.get(entry.getKey());
             Component name = aspect != null
                     ? aspect.getName()
-                    : Component.translatable("commands.koniava.research.aspect.missing", entry.getKey());
+                    : Component.translatable("commands.koniava.research.aspect.missing", Component.literal(entry.getKey().toString()));
             context.getSource().sendSuccess(
                     () -> Component.translatable("commands.koniava.research.list_aspects.entry",
                             name, entry.getValue()).withStyle(ChatFormatting.AQUA),
@@ -246,11 +333,18 @@ public class ResearchCommand {
         KnowledgeSyncPacket.sendTo(player);
     }
 
+    private static SuggestionsBuilder suggestResearchIds(SuggestionsBuilder builder) {
+        for (var research : ResearchRegistry.all()) {
+            builder.suggest(research.getId().toString());
+        }
+        return builder;
+    }
+
     private static boolean researchExists(CommandContext<CommandSourceStack> context, ResourceLocation id) {
         if (ResearchRegistry.get(id).isPresent()) {
             return true;
         }
-        context.getSource().sendFailure(Component.translatable("commands.koniava.research.unknown", id));
+        context.getSource().sendFailure(Component.translatable("commands.koniava.research.unknown", Component.literal(id.toString())));
         return false;
     }
 

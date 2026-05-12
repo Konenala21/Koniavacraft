@@ -76,6 +76,7 @@ public class ResearchTableScreen extends AbstractContainerScreen<ResearchTableMe
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         renderCurrentResearchName(graphics);
+        this.renderTooltip(graphics, mouseX, mouseY);
     }
 
     @Override

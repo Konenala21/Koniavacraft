@@ -13,6 +13,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Field;
@@ -32,7 +33,9 @@ public class AspectSynthesisScreen extends AbstractContainerScreen<ResearchTable
     private static final int CELL_SIZE = 24;
     private static final int PALETTE_CELL_SIZE = 16;
     private static final int PALETTE_STEP = 18;
-    private static final int PALETTE_PER_ROW = 9;
+    private static final int PALETTE_COLUMNS = 9;
+    private static final int PALETTE_ROWS = 4;
+    private static final int PALETTE_PAGE_SIZE = PALETTE_COLUMNS * PALETTE_ROWS;
     private static final int COUNT_TEXT_COLOR = 0xFFFFFF;
     private static final int COUNT_BG_COLOR = 0x66000000;
     private static final float COUNT_SCALE = 0.5F;
@@ -45,11 +48,15 @@ public class AspectSynthesisScreen extends AbstractContainerScreen<ResearchTable
     private static final int INPUT_Y = 34;
     private static final int QUILL_FRAME_X = 177;
     private static final int QUILL_FRAME_Y = 36;
-    private static final int QUILL_SLOT_X = 177;
-    private static final int QUILL_SLOT_Y = 36;
+    private static final int QUILL_SLOT_X = 178;
+    private static final int QUILL_SLOT_Y = 37;
     private static final int QUILL_SLOT_SIZE = 18;
+    private static final int NOTE_SLOT_HIDDEN_X = -200;
+    private static final int NOTE_SLOT_HIDDEN_Y = -200;
     private static final int PALETTE_X = 8;
     private static final int PALETTE_Y = 85;
+    private static final int PALETTE_ROW4_X = 9;
+    private static final int PALETTE_ROW4_Y = 144;
     private static final int PLAYER_TITLE_X = 4;
     private static final int PLAYER_TITLE_Y = 161;
     private static final int PLAYER_MAIN_START_X = 9;
@@ -80,6 +87,7 @@ public class AspectSynthesisScreen extends AbstractContainerScreen<ResearchTable
     private int guiLeft;
     private int guiTop;
     private boolean synthesisLayoutApplied;
+    private int palettePage;
 
     public AspectSynthesisScreen(ResearchTableMenu menu, Inventory playerInventory, Screen parent) {
         super(menu, playerInventory, Component.translatable("gui.koniava.research_table.synthesis"));
@@ -93,6 +101,7 @@ public class AspectSynthesisScreen extends AbstractContainerScreen<ResearchTable
         super.init();
         this.guiLeft = leftPos;
         this.guiTop = topPos;
+        this.palettePage = 0;
         applySynthesisLayout();
     }
 
@@ -100,8 +109,9 @@ public class AspectSynthesisScreen extends AbstractContainerScreen<ResearchTable
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         super.render(graphics, mouseX, mouseY, partialTick);
         renderPalette(graphics, mouseX, mouseY);
-        renderTooltips(graphics, mouseX, mouseY);
-        this.renderTooltip(graphics, mouseX, mouseY);
+        if (!renderTooltips(graphics, mouseX, mouseY)) {
+            this.renderTooltip(graphics, mouseX, mouseY);
+        }
     }
 
     @Override
@@ -130,6 +140,24 @@ public class AspectSynthesisScreen extends AbstractContainerScreen<ResearchTable
     }
 
     @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (isOverPaletteArea(mouseX, mouseY)) {
+            int pageCount = getPalettePageCount();
+            if (pageCount > 1) {
+                if (scrollY < 0) {
+                    palettePage = Math.min(pageCount - 1, palettePage + 1);
+                    return true;
+                }
+                if (scrollY > 0) {
+                    palettePage = Math.max(0, palettePage - 1);
+                    return true;
+                }
+            }
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+    }
+
+    @Override
     public void onClose() {
         restoreResearchLayout();
         if (minecraft != null) {
@@ -150,6 +178,45 @@ public class AspectSynthesisScreen extends AbstractContainerScreen<ResearchTable
             }
         }
         return aspects;
+    }
+
+    private List<Aspect> getVisiblePaletteAspects() {
+        List<Aspect> aspects = collectDiscoveredAspects();
+        int from = palettePage * PALETTE_PAGE_SIZE;
+        if (from >= aspects.size()) {
+            return List.of();
+        }
+        int to = Math.min(aspects.size(), from + PALETTE_PAGE_SIZE);
+        return aspects.subList(from, to);
+    }
+
+    private int getPalettePageCount() {
+        int count = collectDiscoveredAspects().size();
+        return Math.max(1, (count + PALETTE_PAGE_SIZE - 1) / PALETTE_PAGE_SIZE);
+    }
+
+    private boolean isOverPaletteArea(double mouseX, double mouseY) {
+        int widthPixels = PALETTE_COLUMNS * PALETTE_STEP;
+        int rows = Math.min(PALETTE_ROWS, Math.max(1,
+                (getVisiblePaletteAspects().size() + PALETTE_COLUMNS - 1) / PALETTE_COLUMNS));
+        int heightPixels = paletteRowY(rows - 1) + PALETTE_CELL_SIZE;
+        return mouseX >= guiLeft + PALETTE_X && mouseX < guiLeft + PALETTE_X + widthPixels
+                && mouseY >= guiTop + PALETTE_Y && mouseY < guiTop + PALETTE_Y + heightPixels;
+    }
+
+    private static int paletteRowX(int row) {
+        return row == 3 ? PALETTE_ROW4_X - PALETTE_X : 0;
+    }
+
+    private static int paletteRowY(int row) {
+        return row == 3 ? PALETTE_ROW4_Y - PALETTE_Y : row * PALETTE_STEP;
+    }
+
+    private boolean isQuillHovered(int mouseX, int mouseY) {
+        int x = guiLeft + QUILL_FRAME_X;
+        int y = guiTop + QUILL_FRAME_Y;
+        return mouseX >= x && mouseX < x + QUILL_SLOT_SIZE
+                && mouseY >= y && mouseY < y + QUILL_SLOT_SIZE;
     }
 
     private void tryCombine() {
@@ -200,6 +267,8 @@ public class AspectSynthesisScreen extends AbstractContainerScreen<ResearchTable
 
         Slot quillSlot = menu.slots.get(1);
         setSlotPosition(quillSlot, QUILL_SLOT_X, QUILL_SLOT_Y);
+        Slot noteSlot = menu.slots.get(0);
+        setSlotPosition(noteSlot, NOTE_SLOT_HIDDEN_X, NOTE_SLOT_HIDDEN_Y);
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
@@ -221,6 +290,8 @@ public class AspectSynthesisScreen extends AbstractContainerScreen<ResearchTable
             return;
         }
 
+        Slot noteSlot = menu.slots.get(0);
+        setSlotPosition(noteSlot, 47, 33);
         Slot quillSlot = menu.slots.get(1);
         setSlotPosition(quillSlot, 116, 33);
 
@@ -287,30 +358,58 @@ public class AspectSynthesisScreen extends AbstractContainerScreen<ResearchTable
     }
 
     private void renderPalette(GuiGraphics graphics, int mouseX, int mouseY) {
-        List<Aspect> discoveredAspects = collectDiscoveredAspects();
+        List<Aspect> discoveredAspects = getVisiblePaletteAspects();
         int startX = guiLeft + PALETTE_X;
         int startY = guiTop + PALETTE_Y;
 
         for (int i = 0; i < discoveredAspects.size(); i++) {
             Aspect aspect = discoveredAspects.get(i);
-            int x = startX + (i % PALETTE_PER_ROW) * PALETTE_STEP;
-            int y = startY + (i / PALETTE_PER_ROW) * PALETTE_STEP;
+            int row = i / PALETTE_COLUMNS;
+            int x = startX + paletteRowX(row) + (i % PALETTE_COLUMNS) * PALETTE_STEP;
+            int y = startY + paletteRowY(row);
             renderAspectSlot(graphics, aspect, x, y, mouseX, mouseY, PALETTE_CELL_SIZE,
                     ClientResearchCache.getAspectCount(aspect.getId()));
         }
+
+        if (getPalettePageCount() > 1) {
+            graphics.drawCenteredString(font,
+                    Component.translatable("gui.koniava.page_indicator", palettePage + 1, getPalettePageCount()),
+                    guiLeft + PALETTE_X + (PALETTE_COLUMNS * PALETTE_STEP) / 2,
+                    guiTop + PALETTE_Y + PALETTE_ROWS * PALETTE_STEP + 5,
+                    0xAAAAAA);
+        }
     }
 
-    private void renderTooltips(GuiGraphics graphics, int mouseX, int mouseY) {
+    private boolean renderTooltips(GuiGraphics graphics, int mouseX, int mouseY) {
         Aspect hoveredSynthesis = getSynthesisAspectAt(mouseX, mouseY);
         if (hoveredSynthesis != null) {
             graphics.renderTooltip(font, hoveredSynthesis.getName(), mouseX, mouseY);
-            return;
+            return true;
         }
 
         Aspect hovered = getPaletteAspectAt(mouseX, mouseY);
         if (hovered != null) {
             graphics.renderTooltip(font, hovered.getName(), mouseX, mouseY);
+            return true;
         }
+
+        if (isQuillHovered(mouseX, mouseY)) {
+            if (menu.slots.size() > 1) {
+                ItemStack quill = menu.slots.get(1).getItem();
+                if (!quill.isEmpty()) {
+                    graphics.renderComponentTooltip(font,
+                            java.util.List.of(
+                                    quill.getHoverName(),
+                                    Component.literal(
+                                                    (quill.getMaxDamage() - quill.getDamageValue())
+                                                            + " / " + quill.getMaxDamage())
+                                            .withStyle(net.minecraft.ChatFormatting.GRAY)),
+                            mouseX, mouseY);
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private boolean handlePaletteClick(double mouseX, double mouseY, int button) {
@@ -346,13 +445,14 @@ public class AspectSynthesisScreen extends AbstractContainerScreen<ResearchTable
 
     @Nullable
     private Aspect getPaletteAspectAt(int mouseX, int mouseY) {
-        List<Aspect> discoveredAspects = collectDiscoveredAspects();
+        List<Aspect> discoveredAspects = getVisiblePaletteAspects();
         int startX = guiLeft + PALETTE_X;
         int startY = guiTop + PALETTE_Y;
 
         for (int i = 0; i < discoveredAspects.size(); i++) {
-            int x = startX + (i % PALETTE_PER_ROW) * PALETTE_STEP;
-            int y = startY + (i / PALETTE_PER_ROW) * PALETTE_STEP;
+            int row = i / PALETTE_COLUMNS;
+            int x = startX + paletteRowX(row) + (i % PALETTE_COLUMNS) * PALETTE_STEP;
+            int y = startY + paletteRowY(row);
             if (mouseX >= x && mouseX < x + PALETTE_CELL_SIZE
                     && mouseY >= y && mouseY < y + PALETTE_CELL_SIZE) {
                 return discoveredAspects.get(i);

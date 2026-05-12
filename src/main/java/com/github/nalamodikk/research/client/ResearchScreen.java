@@ -9,6 +9,7 @@ import com.github.nalamodikk.research.grid.GridCell;
 import com.github.nalamodikk.research.grid.HexCoord;
 import com.github.nalamodikk.research.grid.ResearchGrid;
 import com.github.nalamodikk.research.grid.ResearchGridGenerator;
+import com.github.nalamodikk.research.client.ClientResearchCache;
 import com.github.nalamodikk.research.network.ResearchAspectPlacePacket;
 import com.github.nalamodikk.research.network.ResearchCompletePacket;
 import com.github.nalamodikk.research.template.ResearchTemplate;
@@ -46,6 +47,13 @@ public class ResearchScreen extends Screen {
     private static final int ROW_SPACING   = 16;
     private static final int PALETTE_CELL  = 20;
     private static final int PALETTE_GAP   = 12;
+    private static final int PALETTE_COLUMNS = 10;
+    private static final int PALETTE_ROWS = 2;
+    private static final int PALETTE_PAGE_SIZE = PALETTE_COLUMNS * PALETTE_ROWS;
+    private static final int CELL_HIT_MARGIN = 2;
+    private static final float COUNT_SCALE = 0.55F;
+    private static final int COUNT_BG_COLOR = 0xAA000000;
+    private static final int COUNT_TEXT_COLOR = 0xFFFFFF;
 
     private final ResearchTemplate template;
     private final BlockPos tablePos;
@@ -59,6 +67,7 @@ public class ResearchScreen extends Screen {
     private boolean isDragging  = false;
     private int     dragButton  = -1;
     private final Set<HexCoord> draggedCells = new HashSet<>();
+    private int palettePage = 0;
 
     // Layout
     private int gridStartX, gridStartY;
@@ -81,12 +90,13 @@ public class ResearchScreen extends Screen {
     protected void init() {
         int gridPixelW = (ResearchGrid.COLS - 1) * COL_SPACING + CELL_W;
         int gridPixelH = (ResearchGrid.ROWS - 1) * ROW_SPACING + ROW_SPACING / 2 + CELL_H;
-        int paletteW   = palette.size() * PALETTE_CELL;
+        int paletteW   = PALETTE_COLUMNS * PALETTE_CELL;
 
         gridStartX    = (width  - gridPixelW) / 2;
         gridStartY    = (height - gridPixelH) / 2 - PALETTE_GAP;
         paletteStartX = (width  - paletteW)   / 2;
         paletteY      = gridStartY + gridPixelH + PALETTE_GAP;
+        palettePage   = 0;
 
         // Restore saved puzzle state from the block entity (already synced to client)
         assert minecraft != null;
@@ -141,7 +151,7 @@ public class ResearchScreen extends Screen {
         if (completed) {
             g.drawCenteredString(font,
                     Component.translatable("research.koniava.complete"),
-                    width / 2, paletteY + 24, 0x55FF55);
+                    width / 2, gridStartY + (paletteY - gridStartY) / 2, 0x55FF55);
         }
 
         super.render(g, mouseX, mouseY, partialTick);
@@ -187,8 +197,7 @@ public class ResearchScreen extends Screen {
         for (int col = 0; col < ResearchGrid.COLS; col++) {
             for (int row = 0; row < ResearchGrid.ROWS; row++) {
                 int cx = cellX(col), cy = cellY(col, row);
-                if (mouseX >= cx && mouseX < cx + CELL_W
-                        && mouseY >= cy && mouseY < cy + CELL_H) {
+                if (isInsideCellHitbox(mouseX, mouseY, cx, cy)) {
                     GridCell cell = grid.getCell(HexCoord.fromOffset(col, row));
                     if (cell != null && cell.hasAspect()) {
                         List<Component> lines = new ArrayList<>();
@@ -208,11 +217,13 @@ public class ResearchScreen extends Screen {
         }
 
         // 2. Palette tooltip
-        for (int i = 0; i < palette.size(); i++) {
-            int px = paletteStartX + i * PALETTE_CELL;
+        List<Aspect> visibleAspects = getVisiblePaletteAspects();
+        for (int i = 0; i < visibleAspects.size(); i++) {
+            int px = paletteStartX + (i % PALETTE_COLUMNS) * PALETTE_CELL;
+            int py = paletteY + (i / PALETTE_COLUMNS) * PALETTE_CELL;
             if (mouseX >= px && mouseX < px + PALETTE_CELL
-                    && mouseY >= paletteY && mouseY < paletteY + PALETTE_CELL) {
-                Aspect aspect = palette.get(i);
+                    && mouseY >= py && mouseY < py + PALETTE_CELL) {
+                Aspect aspect = visibleAspects.get(i);
                 List<Component> tip = new ArrayList<>();
                 tip.add(aspect.getName().copy().withStyle(net.minecraft.ChatFormatting.AQUA));
                 if (!aspect.isPrimary()) {
@@ -278,8 +289,7 @@ public class ResearchScreen extends Screen {
                             int x, int y, int mouseX, int mouseY) {
         float r, gr, b, a;
 
-        boolean hovered = mouseX >= x && mouseX < x + CELL_W
-                       && mouseY >= y && mouseY < y + CELL_H;
+        boolean hovered = isInsideCellHitbox(mouseX, mouseY, x, y);
 
         if (cell.isHole()) {
             r = 0.08f; gr = 0.05f; b = 0.12f; a = 0.95f;
@@ -347,23 +357,32 @@ public class ResearchScreen extends Screen {
 
     /** Icons only — no tooltips (tooltips are rendered later via renderAllTooltips). */
     private void renderPaletteIcons(GuiGraphics g, int mouseX, int mouseY) {
-        for (int i = 0; i < palette.size(); i++) {
-            Aspect aspect = palette.get(i);
-            int px = paletteStartX + i * PALETTE_CELL;
+        List<Aspect> visibleAspects = getVisiblePaletteAspects();
+        for (int i = 0; i < visibleAspects.size(); i++) {
+            Aspect aspect = visibleAspects.get(i);
+            int px = paletteStartX + (i % PALETTE_COLUMNS) * PALETTE_CELL;
+            int py = paletteY + (i / PALETTE_COLUMNS) * PALETTE_CELL;
             boolean hover    = mouseX >= px && mouseX < px + PALETTE_CELL
-                            && mouseY >= paletteY && mouseY < paletteY + PALETTE_CELL;
+                            && mouseY >= py && mouseY < py + PALETTE_CELL;
             boolean selected = aspect.equals(selectedAspect);
 
             int   c = aspect.getColor();
             float a = (selected || hover) ? 1f : 0.7f;
             RenderSystem.setShaderColor(channel(c, 16), channel(c, 8), channel(c, 0), a);
-            g.blit(HEX_CELL_TEXTURE, px, paletteY, 0, 0, CELL_W, CELL_H, CELL_W, CELL_H);
+            g.blit(HEX_CELL_TEXTURE, px, py, 0, 0, CELL_W, CELL_H, CELL_W, CELL_H);
             RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
 
-            if (selected) g.renderOutline(px - 1, paletteY - 1, CELL_W + 2, CELL_H + 2, 0xFFFFFFFF);
+            if (selected) g.renderOutline(px - 1, py - 1, CELL_W + 2, CELL_H + 2, 0xFFFFFFFF);
 
             g.drawString(font, aspect.getId().getPath().substring(0, 1).toUpperCase(),
-                    px + 5, paletteY + 5, 0xFFFFFF, true);
+                    px + 5, py + 5, 0xFFFFFF, true);
+            renderAspectCount(g, aspect, px, py, PALETTE_CELL);
+        }
+
+        if (getPalettePageCount() > 1) {
+            g.drawCenteredString(font,
+                    Component.translatable("gui.koniava.page_indicator", palettePage + 1, getPalettePageCount()),
+                    width / 2, paletteY + PALETTE_ROWS * PALETTE_CELL + 6, 0xAAAAAA);
         }
     }
 
@@ -384,12 +403,18 @@ public class ResearchScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (completed) {
+            return false;
+        }
+
         // Palette click
-        for (int i = 0; i < palette.size(); i++) {
-            int px = paletteStartX + i * PALETTE_CELL;
+        List<Aspect> visibleAspects = getVisiblePaletteAspects();
+        for (int i = 0; i < visibleAspects.size(); i++) {
+            int px = paletteStartX + (i % PALETTE_COLUMNS) * PALETTE_CELL;
+            int py = paletteY + (i / PALETTE_COLUMNS) * PALETTE_CELL;
             if (mouseX >= px && mouseX < px + PALETTE_CELL
-                    && mouseY >= paletteY && mouseY < paletteY + PALETTE_CELL) {
-                selectedAspect = aspect(i).equals(selectedAspect) ? null : aspect(i);
+                    && mouseY >= py && mouseY < py + PALETTE_CELL) {
+                selectedAspect = visibleAspects.get(i).equals(selectedAspect) ? null : visibleAspects.get(i);
                 return true;
             }
         }
@@ -408,9 +433,27 @@ public class ResearchScreen extends Screen {
     }
 
     @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (isOverPaletteArea(mouseX, mouseY)) {
+            int pageCount = getPalettePageCount();
+            if (pageCount > 1) {
+                if (scrollY < 0) {
+                    palettePage = Math.min(pageCount - 1, palettePage + 1);
+                    return true;
+                }
+                if (scrollY > 0) {
+                    palettePage = Math.max(0, palettePage - 1);
+                    return true;
+                }
+            }
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+    }
+
+    @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button,
                                 double dragX, double dragY) {
-        if (!isDragging || button != dragButton) return false;
+        if (completed || !isDragging || button != dragButton) return false;
 
         HexCoord coord = getCellAt(mouseX, mouseY);
         if (coord != null && !draggedCells.contains(coord)) {
@@ -432,6 +475,10 @@ public class ResearchScreen extends Screen {
     // ── Placement logic ───────────────────────────────────────────────────────
 
     private void applyDragAction(HexCoord coord, int button) {
+        if (completed) {
+            return;
+        }
+
         GridCell cell = grid.getCell(coord);
         if (cell == null || cell.isHole() || cell.isFixed()) return;
 
@@ -452,6 +499,9 @@ public class ResearchScreen extends Screen {
     private void checkCompletion() {
         if (!completed && grid.isComplete()) {
             completed = true;
+            isDragging = false;
+            dragButton = -1;
+            draggedCells.clear();
             ResearchCompletePacket.sendToServer(template.getId(), tablePos);
             KoniavacraftMod.LOGGER.info("Research completed: {}", template.getId());
         }
@@ -462,15 +512,51 @@ public class ResearchScreen extends Screen {
     /** Returns the HexCoord at screen position (x, y), or null if none. */
     @Nullable
     private HexCoord getCellAt(double x, double y) {
+        HexCoord best = null;
+        double bestDist = Double.MAX_VALUE;
         for (int col = 0; col < ResearchGrid.COLS; col++) {
             for (int row = 0; row < ResearchGrid.ROWS; row++) {
                 int cx = cellX(col), cy = cellY(col, row);
-                if (x >= cx && x < cx + CELL_W && y >= cy && y < cy + CELL_H) {
-                    return HexCoord.fromOffset(col, row);
+                if (isInsideCellHitbox(x, y, cx, cy)) {
+                    double centerX = cx + CELL_W / 2.0;
+                    double centerY = cy + CELL_H / 2.0;
+                    double dx = x - centerX;
+                    double dy = y - centerY;
+                    double dist = dx * dx + dy * dy;
+                    if (dist < bestDist) {
+                        bestDist = dist;
+                        best = HexCoord.fromOffset(col, row);
+                    }
                 }
             }
         }
-        return null;
+        return best;
+    }
+
+    private List<Aspect> getVisiblePaletteAspects() {
+        List<Aspect> aspects = new ArrayList<>();
+        for (Aspect aspect : palette) {
+            aspects.add(aspect);
+        }
+        int from = palettePage * PALETTE_PAGE_SIZE;
+        if (from >= aspects.size()) {
+            return List.of();
+        }
+        int to = Math.min(aspects.size(), from + PALETTE_PAGE_SIZE);
+        return aspects.subList(from, to);
+    }
+
+    private int getPalettePageCount() {
+        return Math.max(1, (palette.size() + PALETTE_PAGE_SIZE - 1) / PALETTE_PAGE_SIZE);
+    }
+
+    private boolean isOverPaletteArea(double mouseX, double mouseY) {
+        int widthPixels = PALETTE_COLUMNS * PALETTE_CELL;
+        int rows = Math.min(PALETTE_ROWS, Math.max(1,
+                (getVisiblePaletteAspects().size() + PALETTE_COLUMNS - 1) / PALETTE_COLUMNS));
+        int heightPixels = rows * PALETTE_CELL;
+        return mouseX >= paletteStartX && mouseX < paletteStartX + widthPixels
+                && mouseY >= paletteY && mouseY < paletteY + heightPixels;
     }
 
     private int cellX(int col) { return gridStartX + col * COL_SPACING; }
@@ -484,6 +570,35 @@ public class ResearchScreen extends Screen {
     /** Extract a normalised [0,1] colour channel from a packed RGB int. */
     private static float channel(int color, int shift) {
         return ((color >> shift) & 0xFF) / 255f;
+    }
+
+    private static boolean isInsideCellHitbox(double mouseX, double mouseY, int cellX, int cellY) {
+        int minX = cellX + CELL_HIT_MARGIN;
+        int minY = cellY + CELL_HIT_MARGIN;
+        int maxX = cellX + CELL_W - CELL_HIT_MARGIN;
+        int maxY = cellY + CELL_H - CELL_HIT_MARGIN;
+        return mouseX >= minX && mouseX < maxX
+                && mouseY >= minY && mouseY < maxY;
+    }
+
+    private void renderAspectCount(GuiGraphics g, Aspect aspect, int x, int y, int size) {
+        int count = ClientResearchCache.getAspectCount(aspect.getId());
+        if (count <= 0) {
+            return;
+        }
+
+        String countText = Integer.toString(count);
+        int textWidth = Math.max(1, (int) Math.ceil(font.width(countText) * COUNT_SCALE));
+        int textHeight = Math.max(1, (int) Math.ceil(8 * COUNT_SCALE));
+        int countX = x + size - textWidth - 1;
+        int countY = y + size - textHeight - 1;
+
+        g.fill(countX - 1, countY - 1, countX + textWidth + 1, countY + textHeight + 1, COUNT_BG_COLOR);
+        g.pose().pushPose();
+        g.pose().translate(countX, countY, 0.0F);
+        g.pose().scale(COUNT_SCALE, COUNT_SCALE, 1.0F);
+        g.drawString(font, countText, 0, 0, COUNT_TEXT_COLOR, false);
+        g.pose().popPose();
     }
 
     private static void drawLine(GuiGraphics g, int x1, int y1, int x2, int y2, int color) {

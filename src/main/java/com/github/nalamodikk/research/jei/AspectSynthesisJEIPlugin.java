@@ -4,16 +4,16 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.research.aspect.Aspect;
 import com.github.nalamodikk.research.aspect.ModAspects;
 import com.github.nalamodikk.research.client.AspectSynthesisScreen;
-import com.github.nalamodikk.research.client.ClientResearchCache;
 import com.github.nalamodikk.common.item.research.AspectTokenItem;
+import com.github.nalamodikk.research.jei.compat.JeiAspectAliasBridge;
 import com.github.nalamodikk.research.jei.client.AspectIngredientRenderer;
 import com.github.nalamodikk.register.ModBlocks;
 import com.github.nalamodikk.register.ModItems;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
+import mezz.jei.api.runtime.IJeiRuntime;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
-import mezz.jei.api.registration.IIngredientAliasRegistration;
-import mezz.jei.api.registration.IExtraIngredientRegistration;
+import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.registration.IModIngredientRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
@@ -35,6 +35,7 @@ public class AspectSynthesisJEIPlugin implements IModPlugin {
     private static final ResourceLocation UID = ResourceLocation.fromNamespaceAndPath(
             KoniavacraftMod.MOD_ID, "aspect_synthesis_jei_plugin");
     private static final Logger LOGGER = LoggerFactory.getLogger(AspectSynthesisJEIPlugin.class);
+    private static volatile IJeiRuntime jeiRuntime;
 
     @Override
     public ResourceLocation getPluginUid() {
@@ -82,26 +83,14 @@ public class AspectSynthesisJEIPlugin implements IModPlugin {
     }
 
     @Override
-    public void registerIngredientAliases(IIngredientAliasRegistration registration) {
-        for (Aspect aspect : ModAspects.all()) {
-            if (aspect.isPrimary() || ClientResearchCache.hasDiscovered(aspect.getId())) {
-                registration.addAliases(AspectIngredientType.INSTANCE, aspect, List.of(
-                        aspect.getId().toString(),
-                        aspect.getName().getString()
-                ));
-            }
-        }
-        LOGGER.info("[JEI] Registered aspect ingredient aliases.");
+    public void onRuntimeAvailable(IJeiRuntime runtime) {
+        jeiRuntime = runtime;
+        refreshAspectIngredients();
     }
 
     @Override
-    public void registerExtraIngredients(IExtraIngredientRegistration registration) {
-        List<ItemStack> stacks = new ArrayList<>();
-        for (Aspect aspect : ModAspects.all()) {
-            stacks.add(AspectTokenItem.forAspect(aspect, !aspect.isPrimary()));
-        }
-        registration.addExtraItemStacks(stacks);
-        LOGGER.info("[JEI] Registered {} extra aspect token item stacks.", stacks.size());
+    public void onRuntimeUnavailable() {
+        jeiRuntime = null;
     }
 
     @Override
@@ -115,7 +104,26 @@ public class AspectSynthesisJEIPlugin implements IModPlugin {
         }
 
         registration.addRecipes(AspectSynthesisRecipeCategory.RECIPE_TYPE, recipes);
+        List<ItemStack> hiddenTokenStacks = new ArrayList<>();
+        for (Aspect aspect : ModAspects.all()) {
+            hiddenTokenStacks.add(AspectTokenItem.forAspect(aspect, false));
+            hiddenTokenStacks.add(AspectTokenItem.forAspect(aspect, true));
+        }
+        registration.getIngredientManager().removeIngredientsAtRuntime(VanillaTypes.ITEM_STACK, hiddenTokenStacks);
         LOGGER.info("[JEI] Registered {} aspect synthesis recipes.", recipes.size());
+    }
+
+    public static void refreshAspectIngredients() {
+        IJeiRuntime runtime = jeiRuntime;
+        if (runtime == null) {
+            return;
+        }
+
+        Collection<Aspect> aspects = ModAspects.all();
+        JeiAspectAliasBridge.refresh(runtime);
+        runtime.getIngredientManager().removeIngredientsAtRuntime(AspectIngredientType.INSTANCE, aspects);
+        runtime.getIngredientManager().addIngredientsAtRuntime(AspectIngredientType.INSTANCE, aspects);
+        LOGGER.info("[JEI] Refreshed {} aspect ingredients.", aspects.size());
     }
 
     @Override

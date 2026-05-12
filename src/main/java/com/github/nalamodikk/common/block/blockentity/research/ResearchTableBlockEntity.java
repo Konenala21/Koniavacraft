@@ -11,7 +11,6 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -75,12 +74,6 @@ public class ResearchTableBlockEntity extends BlockEntity {
     }
 
     public void onResearchComplete(@Nullable Player player) {
-        ItemStack quill = inventory.getStackInSlot(QUILL_SLOT);
-        if (!quill.isEmpty() && player != null) {
-            quill.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
-            inventory.setStackInSlot(QUILL_SLOT, quill);
-        }
-
         ItemStack note = inventory.getStackInSlot(NOTE_SLOT);
         if (!note.isEmpty() && player != null) {
             ResourceLocation researchId = ResearchNoteItem.getResearchId(note);
@@ -95,6 +88,9 @@ public class ResearchTableBlockEntity extends BlockEntity {
         inventory.setStackInSlot(NOTE_SLOT, ItemStack.EMPTY);
         clearGridState();
         setChanged();
+        if (level != null && !level.isClientSide()) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
     }
 
     /**
