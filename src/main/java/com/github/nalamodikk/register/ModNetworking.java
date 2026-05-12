@@ -11,12 +11,14 @@ import com.github.nalamodikk.common.network.packet.server.manatool.TechWandModeP
 import com.github.nalamodikk.common.network.packet.server.manatool.ToggleModePacket;
 import com.github.nalamodikk.common.network.packet.server.player.gui.OpenExtraEquipmentPacket;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraBindRequestPacket;
+import com.github.nalamodikk.research.network.AspectSynthesisPacket;
 import com.github.nalamodikk.research.network.ResearchAspectPlacePacket;
 import com.github.nalamodikk.research.network.ResearchCompletePacket;
 import com.github.nalamodikk.research.network.StartResearchPacket;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID)
 public class ModNetworking {
@@ -24,7 +26,7 @@ public class ModNetworking {
 
     @SubscribeEvent
     public static void register(RegisterPayloadHandlersEvent event) {
-        var registrar = event.registrar("1");
+        PayloadRegistrar registrar = event.registrar(VERSION);
 
         TechWandModePacket.registerTo(registrar);
         ModeChangePacket.registerTo(registrar);
@@ -32,22 +34,14 @@ public class ModNetworking {
         ConfigDirectionBatchUpdatePacket.registerTo(registrar);
         ToggleModePacket.registerTo(registrar);
         OpenUpgradeGuiPacket.registerTo(registrar);
-
-        // 娜拉系統
-        NaraBindRequestPacket.registerTo(registrar);
-
-        //玩家的額外裝備gui封包
         OpenExtraEquipmentPacket.registerTo(registrar);
-
-
-        //導管
         PriorityUpdatePacket.registerTo(registrar);
         ResetPrioritiesPacket.registerTo(registrar);
+        NaraBindRequestPacket.registerTo(registrar);
 
-        // 研究系統
         ResearchCompletePacket.registerTo(registrar);
         ResearchAspectPlacePacket.registerTo(registrar);
         StartResearchPacket.registerTo(registrar);
+        AspectSynthesisPacket.registerTo(registrar);
     }
-
 }

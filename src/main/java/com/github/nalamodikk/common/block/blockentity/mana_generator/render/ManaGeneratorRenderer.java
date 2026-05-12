@@ -5,7 +5,7 @@ import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGenerat
 import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorBlockEntity;
 import com.github.nalamodikk.common.utils.render.BlockbenchModelRenderUtils;
 import com.github.nalamodikk.common.utils.render.BlockbenchModelRenderUtils.ModelElement;
-import com.github.nalamodikk.common.utils.render.RenderAnimationLodUtils;
+import com.github.nalamodikk.client.utils.render.RenderAnimationLodUtils;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.blaze3d.vertex.PoseStack;

@@ -1,4 +1,4 @@
-package com.github.nalamodikk.common.utils.render;
+package com.github.nalamodikk.client.utils.render;
 
 import com.github.nalamodikk.common.config.ModClientConfig;
 import net.minecraft.client.Minecraft;

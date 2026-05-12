@@ -47,6 +47,38 @@ public class BaseMaterialRegistry {
         atom(Items.EMERALD, ModAspects.VITALITY, ModAspects.CRYSTAL);
         atom(Items.QUARTZ, ModAspects.CRYSTAL, ModAspects.EARTH);
 
+        // --- High-Level Life Items (Life Flow Sources) ---
+        atom(Items.GOLDEN_APPLE, ModAspects.VITALITY, ModAspects.LIFEFLOW);
+        atom(Items.ENCHANTED_GOLDEN_APPLE, ModAspects.LIFEFLOW, ModAspects.MANA, ModAspects.RADIANCE);
+        atom(Items.TOTEM_OF_UNDYING, ModAspects.LIFEFLOW, ModAspects.ANIMA, ModAspects.RESONANCE);
+        atom(Items.DRAGON_EGG, ModAspects.LIFEFLOW, ModAspects.WU, ModAspects.GRAVITY);
+        atom(Items.NETHER_STAR, ModAspects.LIFEFLOW, ModAspects.RADIANCE, ModAspects.WU);
+        atom(Items.BEACON, ModAspects.QIAN, ModAspects.RADIANCE, ModAspects.CRYSTAL);
+        atom(Items.CONDUIT, ModAspects.KAN, ModAspects.WATER, ModAspects.RESONANCE);
+
+        // --- Elemental Seeds (Ensure all aspects have at least one scan source) ---
+        atom(Items.SUGAR, ModAspects.VAPOR, ModAspects.GROWTH);
+        atom(Items.GLASS_BOTTLE, ModAspects.VAPOR, ModAspects.CRYSTAL);
+        atom(Items.SLIME_BALL, ModAspects.CORROSION, ModAspects.VITALITY);
+        atom(Items.FERMENTED_SPIDER_EYE, ModAspects.CORROSION, ModAspects.ANIMA);
+        atom(Items.SPYGLASS, ModAspects.REFRACTION, ModAspects.METAL);
+        atom(Items.PRISMARINE_SHARD, ModAspects.REFRACTION, ModAspects.WATER);
+        atom(Items.OBSIDIAN, ModAspects.GRAVITY, ModAspects.EARTH, ModAspects.FIRE);
+        atom(Items.ANVIL, ModAspects.GRAVITY, ModAspects.METAL);
+        atom(Items.MAGMA_CREAM, ModAspects.MAGMA, ModAspects.FIRE);
+        atom(Items.BLAZE_POWDER, ModAspects.ENERGY, ModAspects.FIRE);
+        atom(Items.GUNPOWDER, ModAspects.ENERGY, ModAspects.EARTH);
+
+        // --- Missing Seeds (Completing the 24 Aspects) ---
+        atom(Items.CHARCOAL, ModAspects.PHLOGISTON, ModAspects.FIRE);
+        atom(Items.BONE_MEAL, ModAspects.KUN, ModAspects.GROWTH);
+        atom(Items.LIGHTNING_ROD, ModAspects.ZHEN, ModAspects.METAL, ModAspects.ENERGY);
+        atom(Items.FEATHER, ModAspects.XUN, ModAspects.VAPOR);
+        atom(Items.GLOW_BERRIES, ModAspects.LI, ModAspects.RADIANCE, ModAspects.VITALITY);
+        atom(Items.DEEPSLATE, ModAspects.GEN, ModAspects.EARTH, ModAspects.GRAVITY);
+        atom(Items.WET_SPONGE, ModAspects.DUI, ModAspects.WATER);
+        atom(Items.FIREWORK_ROCKET, ModAspects.MOMENTUM, ModAspects.ENERGY);
+
         // --- Common Blocks ---
         atom(Items.STONE, ModAspects.EARTH, ModAspects.METAL);
         atom(Items.COBBLESTONE, ModAspects.EARTH);
@@ -99,7 +131,7 @@ public class BaseMaterialRegistry {
         tag(ItemTags.ARROWS, ModAspects.WOOD, ModAspects.ENERGY);
         tag(ItemTags.STONE_TOOL_MATERIALS, ModAspects.EARTH);
         tag(ItemTags.BEACON_PAYMENT_ITEMS, ModAspects.METAL, ModAspects.RADIANCE);
-        
+
         // NeoForge Common Tags
         tag(c("ores"), ModAspects.EARTH, ModAspects.METAL);
         tag(c("ingots"), ModAspects.METAL);
@@ -219,10 +251,10 @@ public class BaseMaterialRegistry {
     private static int capacityForItem(Item item, List<Aspect> aspects) {
         ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
         String path = id.getPath();
-        if (path.contains("boss") || path.contains("dragon") || path.contains("wither")) {
+        if (path.contains("boss") || path.contains("dragon") || path.contains("wither") || item == Items.NETHER_STAR) {
             return 5;
         }
-        if (aspects.contains(ModAspects.MANA) || path.contains("magic") || path.contains("mana")) {
+        if (aspects.contains(ModAspects.MANA) || path.contains("magic") || path.contains("mana") || path.contains("golden_apple") || item == Items.TOTEM_OF_UNDYING) {
             return 4;
         }
         if (item instanceof TieredItem || item instanceof ArmorItem || path.contains("redstone")) {
@@ -236,6 +268,9 @@ public class BaseMaterialRegistry {
         List<Aspect> aspects = new ArrayList<>();
         if (path.contains("mana") || path.contains("magic") || path.contains("arcane")) {
             aspects.add(ModAspects.MANA);
+        }
+        if (path.contains("life") || path.contains("heart") || path.contains("totem")) {
+            aspects.add(ModAspects.LIFEFLOW);
         }
         if (path.contains("ore") || path.contains("stone") || path.contains("deepslate") || path.contains("dirt") || path.contains("sand")) {
             aspects.add(ModAspects.EARTH);
@@ -284,9 +319,9 @@ public class BaseMaterialRegistry {
             if (a == ModAspects.FIRE) { pool.add(ModAspects.ENERGY); pool.add(ModAspects.VAPOR); }
             if (a == ModAspects.EARTH) { pool.add(ModAspects.GRAVITY); pool.add(ModAspects.GROWTH); }
             if (a == ModAspects.WOOD) { pool.add(ModAspects.GROWTH); pool.add(ModAspects.ANIMA); }
-            if (a == ModAspects.MANA) { pool.add(ModAspects.RESONANCE); pool.add(ModAspects.RADIANCE); }
+            if (a == ModAspects.MANA) { pool.add(ModAspects.RESONANCE); pool.add(ModAspects.RADIANCE); pool.add(ModAspects.LIFEFLOW); }
             if (a == ModAspects.CRYSTAL) { pool.add(ModAspects.RADIANCE); pool.add(ModAspects.GRAVITY); }
-            if (a == ModAspects.VITALITY) { pool.add(ModAspects.NOURISH); pool.add(ModAspects.GROWTH); }
+            if (a == ModAspects.VITALITY) { pool.add(ModAspects.NOURISH); pool.add(ModAspects.GROWTH); pool.add(ModAspects.LIFEFLOW); }
         }
         return new ArrayList<>(pool);
     }

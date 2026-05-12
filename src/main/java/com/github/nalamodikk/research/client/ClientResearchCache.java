@@ -15,12 +15,19 @@ public final class ClientResearchCache {
 
     private static Set<ResourceLocation> discoveredAspects = new HashSet<>();
     private static Set<ResourceLocation> completedResearch = new HashSet<>();
+    private static Set<ResourceLocation> availableResearchOverrides = new HashSet<>();
     private static int currentTier = 1;
 
     /** Called by networking handlers on the client thread. */
     public static void update(Collection<ResourceLocation> aspects, Collection<ResourceLocation> research, int tier) {
+        update(aspects, research, Collections.emptySet(), tier);
+    }
+
+    public static void update(Collection<ResourceLocation> aspects, Collection<ResourceLocation> research,
+                              Collection<ResourceLocation> availableOverrides, int tier) {
         discoveredAspects = new HashSet<>(aspects);
         completedResearch = new HashSet<>(research);
+        availableResearchOverrides = new HashSet<>(availableOverrides);
         currentTier = tier;
     }
 
@@ -42,6 +49,14 @@ public final class ClientResearchCache {
 
     public static Set<ResourceLocation> getCompletedResearch() {
         return Collections.unmodifiableSet(completedResearch);
+    }
+
+    public static boolean isForcedAvailable(ResourceLocation researchId) {
+        return availableResearchOverrides.contains(researchId);
+    }
+
+    public static Set<ResourceLocation> getAvailableResearchOverrides() {
+        return Collections.unmodifiableSet(availableResearchOverrides);
     }
 
     public static int getCurrentTier() {

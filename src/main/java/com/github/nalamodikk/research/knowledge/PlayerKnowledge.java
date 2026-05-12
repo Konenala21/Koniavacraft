@@ -9,82 +9,154 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
-/**
- * Per-player research progress:
- *   - which aspects have been discovered (via scanning)
- *   - which research entries have been completed
- *   - current tier (1–12)
- *
- * Serialised as NBT and stored inside {@link ResearchSavedData}.
- */
 public class PlayerKnowledge {
 
-    private final Set<ResourceLocation> discoveredAspects = new HashSet<>();
-    private final Set<ResourceLocation> completedResearch = new HashSet<>();
-    private int currentTier = 1;
+    private static final int MIN_TIER = 1;
+    private static final int MAX_TIER = 12;
 
-    public PlayerKnowledge() {
-        // The six primary aspects are always known — no scanning required
-        ModAspects.all().stream()
-                .filter(Aspect::isPrimary)
-                .forEach(a -> discoveredAspects.add(a.getId()));
+    private final Map<ResourceLocation, Integer> discoveredAspects = new HashMap<>();
+    private final Set<ResourceLocation> completedResearch = new HashSet<>();
+    private final Set<ResourceLocation> availableResearchOverrides = new HashSet<>();
+    private final Set<ResourceLocation> scannedItems = new HashSet<>();
+    private int currentTier = MIN_TIER;
+
+    public enum ResearchState {
+        LOCKED,
+        FORCED_AVAILABLE,
+        COMPLETED
     }
 
-    // ── Aspect discovery ─────────────────────────────────────────────────────
+    public PlayerKnowledge() {
+        addPrimaryAspects();
+    }
 
     public boolean hasDiscovered(Aspect aspect) {
-        return discoveredAspects.contains(aspect.getId());
+        return discoveredAspects.containsKey(aspect.getId());
     }
 
     public boolean hasDiscovered(ResourceLocation aspectId) {
-        return discoveredAspects.contains(aspectId);
+        return discoveredAspects.containsKey(aspectId);
     }
 
-    /** Returns true if this was a new discovery. */
+    public int getAspectCount(ResourceLocation aspectId) {
+        return discoveredAspects.getOrDefault(aspectId, 0);
+    }
+
+    public boolean discoverAspect(Aspect aspect, int amount) {
+        int current = discoveredAspects.getOrDefault(aspect.getId(), 0);
+        discoveredAspects.put(aspect.getId(), Math.max(0, current + amount));
+        return current == 0 && !aspect.isPrimary();
+    }
+
     public boolean discoverAspect(Aspect aspect) {
-        return discoveredAspects.add(aspect.getId());
+        return discoverAspect(aspect, 1);
+    }
+
+    public void setAspectAmount(ResourceLocation id, int amount) {
+        if (amount < 0) {
+            discoveredAspects.remove(id);
+        } else {
+            discoveredAspects.put(id, amount);
+        }
     }
 
     public Set<ResourceLocation> getDiscoveredAspects() {
-        return Collections.unmodifiableSet(discoveredAspects);
+        return Collections.unmodifiableSet(discoveredAspects.keySet());
     }
 
-    // ── Research completion ──────────────────────────────────────────────────
+    public Map<ResourceLocation, Integer> getDiscoveredAspectsMap() {
+        return Collections.unmodifiableMap(discoveredAspects);
+    }
+
+    public boolean recordItemScan(ResourceLocation itemId) {
+        return scannedItems.add(itemId);
+    }
+
+    public Set<ResourceLocation> getScannedItems() {
+        return Collections.unmodifiableSet(scannedItems);
+    }
 
     public boolean hasCompleted(ResourceLocation researchId) {
         return completedResearch.contains(researchId);
     }
 
-    /** Returns true if this was newly completed. */
     public boolean completeResearch(ResourceLocation researchId) {
+        availableResearchOverrides.remove(researchId);
         return completedResearch.add(researchId);
+    }
+
+    public void setResearchState(ResourceLocation id, boolean completed) {
+        setResearchState(id, completed ? ResearchState.COMPLETED : ResearchState.LOCKED);
+    }
+
+    public void setResearchState(ResourceLocation id, ResearchState state) {
+        completedResearch.remove(id);
+        availableResearchOverrides.remove(id);
+
+        switch (state) {
+            case COMPLETED -> completedResearch.add(id);
+            case FORCED_AVAILABLE -> availableResearchOverrides.add(id);
+            case LOCKED -> {
+            }
+        }
+    }
+
+    public ResearchState getResearchState(ResourceLocation id) {
+        if (completedResearch.contains(id)) {
+            return ResearchState.COMPLETED;
+        }
+        if (availableResearchOverrides.contains(id)) {
+            return ResearchState.FORCED_AVAILABLE;
+        }
+        return ResearchState.LOCKED;
+    }
+
+    public boolean isResearchForcedAvailable(ResourceLocation id) {
+        return availableResearchOverrides.contains(id);
     }
 
     public Set<ResourceLocation> getCompletedResearch() {
         return Collections.unmodifiableSet(completedResearch);
     }
 
-    // ── Tier ────────────────────────────────────────────────────────────────
-
-    public int getCurrentTier() { return currentTier; }
-
-    public void advanceTier() {
-        if (currentTier < 12) currentTier++;
+    public Set<ResourceLocation> getAvailableResearchOverrides() {
+        return Collections.unmodifiableSet(availableResearchOverrides);
     }
 
-    // ── NBT serialisation ────────────────────────────────────────────────────
+    public int getCurrentTier() {
+        return currentTier;
+    }
+
+    public void setTier(int tier) {
+        this.currentTier = clampTier(tier);
+    }
+
+    public void advanceTier() {
+        setTier(currentTier + 1);
+    }
+
+    public void clearProgress() {
+        discoveredAspects.clear();
+        completedResearch.clear();
+        availableResearchOverrides.clear();
+        scannedItems.clear();
+        currentTier = MIN_TIER;
+        addPrimaryAspects();
+    }
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
 
-        ListTag aspectList = new ListTag();
-        for (ResourceLocation id : discoveredAspects) {
-            aspectList.add(StringTag.valueOf(id.toString()));
+        CompoundTag aspectTag = new CompoundTag();
+        for (Map.Entry<ResourceLocation, Integer> entry : discoveredAspects.entrySet()) {
+            aspectTag.putInt(entry.getKey().toString(), entry.getValue());
         }
-        tag.put("DiscoveredAspects", aspectList);
+        tag.put("DiscoveredAspectsQuantities", aspectTag);
 
         ListTag researchList = new ListTag();
         for (ResourceLocation id : completedResearch) {
@@ -92,28 +164,98 @@ public class PlayerKnowledge {
         }
         tag.put("CompletedResearch", researchList);
 
+        ListTag availableOverrideList = new ListTag();
+        for (ResourceLocation id : availableResearchOverrides) {
+            availableOverrideList.add(StringTag.valueOf(id.toString()));
+        }
+        tag.put("AvailableResearchOverrides", availableOverrideList);
+
+        ListTag scannedList = new ListTag();
+        for (ResourceLocation id : scannedItems) {
+            scannedList.add(StringTag.valueOf(id.toString()));
+        }
+        tag.put("ScannedItems", scannedList);
+
         tag.putInt("Tier", currentTier);
         return tag;
     }
 
     public static PlayerKnowledge load(CompoundTag tag) {
         PlayerKnowledge knowledge = new PlayerKnowledge();
+        knowledge.discoveredAspects.clear();
 
-        ListTag aspectList = tag.getList("DiscoveredAspects", Tag.TAG_STRING);
-        for (int i = 0; i < aspectList.size(); i++) {
-            ResourceLocation id = ResourceLocation.tryParse(aspectList.getString(i));
-            if (id != null && ModAspects.contains(id)) {
-                knowledge.discoveredAspects.add(id);
+        if (tag.contains("DiscoveredAspectsQuantities", Tag.TAG_COMPOUND)) {
+            loadAspectQuantities(tag.getCompound("DiscoveredAspectsQuantities"), knowledge);
+        } else {
+            loadLegacyAspects(tag.getList("DiscoveredAspects", Tag.TAG_STRING), knowledge);
+        }
+
+        loadResearch(tag.getList("CompletedResearch", Tag.TAG_STRING), knowledge);
+        loadAvailableResearchOverrides(tag, knowledge);
+        loadScannedItems(tag.getList("ScannedItems", Tag.TAG_STRING), knowledge);
+        knowledge.addPrimaryAspects();
+        knowledge.currentTier = clampTier(tag.getInt("Tier"));
+        return knowledge;
+    }
+
+    private static void loadAspectQuantities(CompoundTag aspectTag, PlayerKnowledge knowledge) {
+        for (String key : aspectTag.getAllKeys()) {
+            ResourceLocation id = ResourceLocation.tryParse(key);
+            if (id != null) {
+                knowledge.discoveredAspects.put(id, Math.max(0, aspectTag.getInt(key)));
             }
         }
+    }
 
-        ListTag researchList = tag.getList("CompletedResearch", Tag.TAG_STRING);
+    private static void loadLegacyAspects(ListTag aspectList, PlayerKnowledge knowledge) {
+        for (int i = 0; i < aspectList.size(); i++) {
+            ResourceLocation id = ResourceLocation.tryParse(aspectList.getString(i));
+            if (id != null) {
+                knowledge.discoveredAspects.put(id, 1);
+            }
+        }
+    }
+
+    private static void loadResearch(ListTag researchList, PlayerKnowledge knowledge) {
         for (int i = 0; i < researchList.size(); i++) {
             ResourceLocation id = ResourceLocation.tryParse(researchList.getString(i));
-            if (id != null) knowledge.completedResearch.add(id);
+            if (id != null) {
+                knowledge.completedResearch.add(id);
+            }
         }
+    }
 
-        knowledge.currentTier = Math.clamp(tag.getInt("Tier"), 1, 12);
-        return knowledge;
+    private static void loadAvailableResearchOverrides(CompoundTag tag, PlayerKnowledge knowledge) {
+        ListTag availableList = tag.contains("AvailableResearchOverrides", Tag.TAG_LIST)
+                ? tag.getList("AvailableResearchOverrides", Tag.TAG_STRING)
+                : tag.getList("AvailableResearch", Tag.TAG_STRING);
+
+        for (int i = 0; i < availableList.size(); i++) {
+            ResourceLocation id = ResourceLocation.tryParse(availableList.getString(i));
+            if (id != null && !knowledge.completedResearch.contains(id)) {
+                knowledge.availableResearchOverrides.add(id);
+            }
+        }
+    }
+
+    private static void loadScannedItems(ListTag scannedList, PlayerKnowledge knowledge) {
+        for (int i = 0; i < scannedList.size(); i++) {
+            ResourceLocation id = ResourceLocation.tryParse(scannedList.getString(i));
+            if (id != null) {
+                knowledge.scannedItems.add(id);
+            }
+        }
+    }
+
+    private void addPrimaryAspects() {
+        for (Aspect aspect : ModAspects.all()) {
+            if (aspect.isPrimary()) {
+                discoveredAspects.putIfAbsent(aspect.getId(), 0);
+            }
+        }
+    }
+
+    private static int clampTier(int tier) {
+        return Math.max(MIN_TIER, Math.min(MAX_TIER, tier));
     }
 }

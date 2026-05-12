@@ -8,8 +8,11 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
@@ -21,7 +24,7 @@ import java.util.random.RandomGenerator;
 /**
  * Sent client → server each time the player places or removes an aspect on the research grid.
  *
- * On place (aspectId present): saves cell to BlockEntity + damages ink quill 3-5 durability.
+ * On place (aspectId present): saves cell to BlockEntity + damages ink quill 1-5 durability.
  * On remove (aspectId empty):  saves removal to BlockEntity, no quill damage.
  */
 public record ResearchAspectPlacePacket(
@@ -60,7 +63,7 @@ public record ResearchAspectPlacePacket(
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
 
-            var be = player.serverLevel().getBlockEntity(packet.tablePos());
+            BlockEntity be = player.serverLevel().getBlockEntity(packet.tablePos());
             if (!(be instanceof ResearchTableBlockEntity table)) return;
 
             // Persist cell state
@@ -73,15 +76,15 @@ public record ResearchAspectPlacePacket(
             if (packet.aspectId().isPresent()) {
                 ItemStack quill = table.getInventory().getStackInSlot(ResearchTableBlockEntity.QUILL_SLOT);
                 if (!quill.isEmpty()) {
-                    int damage = 3 + RandomGenerator.getDefault().nextInt(3);
-                    quill.hurtAndBreak(damage, player, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
+                    int damage = 1 + RandomGenerator.getDefault().nextInt(5);
+                    quill.hurtAndBreak(damage, player, EquipmentSlot.MAINHAND);
                     if (quill.isEmpty()) {
                         table.getInventory().setStackInSlot(ResearchTableBlockEntity.QUILL_SLOT, ItemStack.EMPTY);
                         KoniavacraftMod.LOGGER.debug("Ink quill broke at {}", packet.tablePos());
                     }
                     table.setChanged();
                     // Sync quill damage to client immediately after hurting
-                    var level = player.serverLevel();
+                    ServerLevel level = player.serverLevel();
                     level.sendBlockUpdated(packet.tablePos(),
                             level.getBlockState(packet.tablePos()),
                             level.getBlockState(packet.tablePos()), 3);

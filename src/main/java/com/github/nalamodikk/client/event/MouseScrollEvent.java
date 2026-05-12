@@ -3,7 +3,10 @@ package com.github.nalamodikk.client.event;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.item.debug.ManaDebugToolItem;
+import com.github.nalamodikk.common.item.tool.BasicTechWandItem;
 import com.github.nalamodikk.common.network.packet.server.manatool.ModeChangePacket;
+import com.github.nalamodikk.common.network.packet.server.manatool.TechWandModePacket;
+import com.github.nalamodikk.register.ModDataComponents;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
@@ -22,10 +25,18 @@ public class MouseScrollEvent {
         if (player == null || !player.isCrouching()) return;
 
         ItemStack heldItem = player.getItemInHand(InteractionHand.MAIN_HAND);
-        if (!(heldItem.getItem() instanceof ManaDebugToolItem)) return;
-
         boolean forward = event.getScrollDeltaY() > 0;
-        ModeChangePacket.sendToServer(forward);
-        event.setCanceled(true);
+        if (heldItem.getItem() instanceof ManaDebugToolItem) {
+            ModeChangePacket.sendToServer(forward);
+            event.setCanceled(true);
+            return;
+        }
+
+        if (heldItem.getItem() instanceof BasicTechWandItem wand) {
+            BasicTechWandItem.TechWandMode next = wand.getMode(heldItem).cycle(forward);
+            heldItem.set(ModDataComponents.TECH_WAND_MODE, next);
+            TechWandModePacket.sendToServer(next);
+            event.setCanceled(true);
+        }
     }
 }

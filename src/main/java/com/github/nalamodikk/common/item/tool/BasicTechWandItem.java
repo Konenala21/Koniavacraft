@@ -1,15 +1,15 @@
-// 已重構 BasicTechWandItem：使用 NeoForge DataComponent API + Packet + 滾輪切換 + 儲存方向提示
+// 撌脤?瑽?BasicTechWandItem嚗蝙??NeoForge DataComponent API + Packet + 皛曇憚?? + ?脣??孵??內
 /**
- * 🔧 BasicTechWandItem
+ * ? BasicTechWandItem
  *
- * 本類是自訂的科技魔杖物品，繼承自 Minecraft 的 Item 類別。
- * 其邏輯透過 `useOn()` 方法在玩家右鍵方塊時自動觸發，
- * 無需事件訂閱（不需使用 @SubscribeEvent 或 EventBus）。
+ * ?祇??航閮?蝘?擳??拙?嚗匱?輯 Minecraft ??Item 憿??
+ * ?園?頛舫? `useOn()` ?寞??函摰嗅?菜憛??芸?閫貊嚗?
+ * ?⊿?鈭辣閮嚗??雿輻 @SubscribeEvent ??EventBus嚗?
  *
- * 此物品可搭配 TechWandMode 進行模式切換操作，
- * 如：輸入輸出配置、方向設定、自轉行為等。
+ * 甇斤??剝? TechWandMode ?脰?璅∪?????嚗?
+ * 憒?頛詨頛詨?蔭??身摰頧??箇???
  *
- * ✅ 此類需註冊至 ModItems，讓遊戲認得它是一個有效物品。
+ * ??甇日??閮餃???ModItems嚗??隤?摰銝?????
  */
 
 package com.github.nalamodikk.common.item.tool;
@@ -18,7 +18,6 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.coreapi.block.IConfigurableBlock;
 import com.github.nalamodikk.common.network.packet.server.manatool.ConfigDirectionUpdatePacket;
 import com.github.nalamodikk.common.network.packet.server.manatool.ManaUpdatePacket;
-import com.github.nalamodikk.common.network.packet.server.manatool.TechWandModePacket;
 import com.github.nalamodikk.common.screen.block.shared.UniversalConfigMenu;
 import com.github.nalamodikk.common.utils.block.BlockSelectorUtils;
 import com.github.nalamodikk.common.utils.capability.CapabilityUtils;
@@ -27,8 +26,6 @@ import com.github.nalamodikk.common.utils.data.CodecsLibrary;
 import com.github.nalamodikk.common.utils.data.TechDataComponents;
 import com.github.nalamodikk.register.ModDataComponents;
 import com.mojang.logging.LogUtils;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.NbtOps;
@@ -49,7 +46,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.slf4j.Logger;
@@ -63,7 +59,6 @@ public class BasicTechWandItem extends Item {
     public BasicTechWandItem(Properties properties) {
         super(properties.component(ModDataComponents.TECH_WAND_MODE, TechWandMode.CONFIGURE_IO));
         NeoForge.EVENT_BUS.addListener(this::onLeftClickBlock);
-        NeoForge.EVENT_BUS.addListener(this::onMouseScroll);
     }
 
     public TechWandMode getMode(ItemStack stack) {
@@ -108,7 +103,7 @@ public class BasicTechWandItem extends Item {
             try {
                 TechDataComponents.saveConfigDirections(stack, target, configBlock);
 
-                // 🎯 關鍵修復：安全的 Component 創建
+                // ? ?靽桀儔嚗??函? Component ?萄遣
                 Component positionText = Component.literal(String.format("(%d, %d, %d)",
                         target.getX(), target.getY(), target.getZ()));
 
@@ -120,7 +115,7 @@ public class BasicTechWandItem extends Item {
                 event.setCanceled(true);
 
             } catch (Exception e) {
-                // 🛡️ 錯誤處理：避免崩潰
+                // ?儭??航炊??嚗?援瞏?
                 LOGGER.error("Failed to save block configuration: {}", e.getMessage());
                 player.displayClientMessage(
                         Component.translatable("message.koniava.config_save_failed"),
@@ -135,7 +130,7 @@ public class BasicTechWandItem extends Item {
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Player player = context.getPlayer();
-        if (player == null) return InteractionResult.PASS;  // ✅ 移除 !player.isCrouching() 檢查
+        if (player == null) return InteractionResult.PASS;  // ??蝘駁 !player.isCrouching() 瑼Ｘ
 
         Level level = context.getLevel();
         BlockPos pos = context.getClickedPos();
@@ -154,20 +149,20 @@ public class BasicTechWandItem extends Item {
                     IOHandlerUtils.IOType next = IOHandlerUtils.nextIOType(current);
 
                     if (level.isClientSide) {
-                        // ✅ 客戶端：只發送 Packet，不直接修改配置
+                        // ??摰Ｘ蝡荔??芰??Packet嚗??湔靽格?蔭
                         PacketDistributor.sendToServer(new ConfigDirectionUpdatePacket(pos, face, next));
 
-                        // 客戶端顯示臨時消息
+                        // 摰Ｘ蝡舫＊蝷箄????
                         player.displayClientMessage(Component.translatable(
                                 "message.koniava.config_changed",
                                 face.getName(),
                                 Component.translatable("mode.koniava." + next.name().toLowerCase())
                         ), true);
                     } else {
-                        // ✅ 服務器端：只修改配置，不發送 Packet
+                        // ?????函垢嚗靽格?蔭嚗??潮?Packet
                         configBlock.setIOConfig(face, next);
 
-                        // 服務器端的消息（可選）
+                        // ???函垢???荔??舫嚗?
                         player.displayClientMessage(Component.translatable(
                                 "message.koniava.config_changed",
                                 face.getName(),
@@ -196,12 +191,12 @@ public class BasicTechWandItem extends Item {
 
                             @Override
                             public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
-                                return new UniversalConfigMenu(id, inv, be, stack); // ✅ 伺服器端建構用
+                                return new UniversalConfigMenu(id, inv, be, stack); // ??隡箸??函垢撱箸???
                             }
                         }, (buf) -> {
                             buf.writeBlockPos(be.getBlockPos());
                             buf.writeWithCodec(NbtOps.INSTANCE, ItemStack.CODEC, stack);
-                            buf.writeWithCodec(NbtOps.INSTANCE, CodecsLibrary.DIRECTION_IOTYPE_MAP, configurableBlock.getIOMap()); // ✅ 寫入新的 IOType map
+                            buf.writeWithCodec(NbtOps.INSTANCE, CodecsLibrary.DIRECTION_IOTYPE_MAP, configurableBlock.getIOMap()); // ??撖怠?啁? IOType map
                         });
 
 
@@ -236,23 +231,6 @@ public class BasicTechWandItem extends Item {
     }
 
 
-    public void onMouseScroll(InputEvent.MouseScrollingEvent event) {
-        LocalPlayer player = Minecraft.getInstance().player;
-        if (player == null || !player.isCrouching()) return;
-
-        ItemStack held = player.getItemInHand(InteractionHand.MAIN_HAND);
-        if (!(held.getItem() instanceof BasicTechWandItem wand)) return;
-
-        boolean forward = event.getScrollDeltaY() > 0;
-        TechWandMode current = wand.getMode(held);
-        TechWandMode next = current.cycle(forward);
-        wand.setMode(held, next); // 客戶端立即更新，避免快速滾動時讀到舊值
-        TechWandModePacket.sendToServer(next);
-
-        KoniavacraftMod.LOGGER.debug("Sending TechWandModePacket: " + next);
-        event.setCanceled(true);
-    }
-
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipComponents, TooltipFlag tooltipFlag) {
         tooltipComponents.add(Component.translatable("tooltip.koniava.mode",
@@ -262,17 +240,17 @@ public class BasicTechWandItem extends Item {
 //        MagicalIndustryMod.LOGGER.info("[Tooltip] Stack: {}, HasConfig = {}", stack.getItem(), config != null);
 
         if (config != null && !config.isEmpty()) {
-            // 用 Map<Boolean, List<Direction>> 來分類
+            // ??Map<Boolean, List<Direction>> 靘?憿?
             Map<Boolean, List<Direction>> groupedDirections = new HashMap<>();
             groupedDirections.put(true, new ArrayList<>());
             groupedDirections.put(false, new ArrayList<>());
 
             for (Direction dir : Direction.values()) {
-                boolean isOutput = config.getOrDefault(dir, false); // 預設為輸入
+                boolean isOutput = config.getOrDefault(dir, false); // ?身?箄撓??
                 groupedDirections.get(isOutput).add(dir);
             }
 
-            // 加入提示
+            // ??內
             for (Map.Entry<Boolean, List<Direction>> entry : groupedDirections.entrySet()) {
                 List<Direction> dirs = entry.getValue();
                 if (!dirs.isEmpty()) {
@@ -295,7 +273,7 @@ public class BasicTechWandItem extends Item {
     public enum TechWandMode implements StringRepresentable {
         CONFIGURE_IO,
         DIRECTION_CONFIG,
-        ROTATE; // 🆕 新增優先級配置模式
+        ROTATE; // ?? ?啣??芸?蝝?蝵格芋撘?
 
         public TechWandMode next() {
             return values()[(this.ordinal() + 1) % values().length];

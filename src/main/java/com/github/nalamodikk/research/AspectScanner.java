@@ -5,8 +5,9 @@ import com.github.nalamodikk.research.dynamic.BlockAspectResolver;
 import com.github.nalamodikk.research.dynamic.EntityAspectResolver;
 import com.github.nalamodikk.research.dynamic.RecipeInferenceEngine;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.List;
@@ -21,11 +22,15 @@ public final class AspectScanner {
         return BlockAspectResolver.resolve(state, level);
     }
 
+    public static List<Aspect> getAspectsForFluid(FluidState state, ServerLevel level) {
+        return BlockAspectResolver.resolveFluid(state, level);
+    }
+
     public static List<Aspect> getAspectsForItem(Item item, ServerLevel level) {
         return RecipeInferenceEngine.resolve(item, level);
     }
 
-    public static List<Aspect> getAspectsForEntity(LivingEntity entity, ServerLevel level) {
+    public static List<Aspect> getAspectsForEntity(Entity entity, ServerLevel level) {
         return EntityAspectResolver.resolve(entity, level);
     }
 

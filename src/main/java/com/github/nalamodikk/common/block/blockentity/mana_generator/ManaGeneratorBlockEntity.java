@@ -1,4 +1,3 @@
-    // ⚠ 自動產生：結合 NeoForge 能量與魔力產出邏輯
     package com.github.nalamodikk.common.block.blockentity.mana_generator;
 
     import com.github.nalamodikk.KoniavacraftMod;
@@ -69,7 +68,7 @@ import java.util.Optional;
         private static final int MANA_PER_CYCLE = 10;
         private static final int FUEL_SLOT_COUNT = 1;
         private static final int UPGRADE_SLOT_COUNT = 4;
-        private static final int DEFAULT_ENERGY_PER_TICK = 40; // 或你想用的預設值
+        private static final int DEFAULT_ENERGY_PER_TICK = 40;
         private final MachineSyncManager syncManager = new MachineSyncManager();
         private FuelManaGenHelper manaGenHandler;
         private EnergyGenerationHandler energyGenHandler;
@@ -80,10 +79,23 @@ import java.util.Optional;
         private final ManaGeneratorStateManager stateManager = new ManaGeneratorStateManager();
 
 
-        private final ItemStackHandler fuelHandler = new ItemStackHandler(FUEL_SLOT_COUNT);
+        private final ItemStackHandler fuelHandler = new ItemStackHandler(FUEL_SLOT_COUNT) {
+            @Override
+            protected void onContentsChanged(int slot) {
+                setChanged();
+                fuelLogic.markNeedsFuel();
+                if (level != null && !level.isClientSide()) {
+                    level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+                }
+            }
+
+            @Override
+            public boolean isItemValid(int slot, ItemStack stack) {
+                return fuelLogic.isValidFuel(stack);
+            }
+        };
         private final UpgradeInventory upgradeInventory = new UpgradeInventory(UPGRADE_SLOT_COUNT);
         private ContainerLevelAccess access;
-        // ✅ 用來避免每幀都重播動畫，造成動畫 reset、跳針或閃爍
         private String currentAnimation = "";
         private boolean forceRefreshAnimation = false;
 
@@ -92,14 +104,12 @@ import java.util.Optional;
         public OutputHandler.OutputThrottleController getOutputThrottle() {return outputThrottle;}
 
         public ManaGeneratorBlockEntity(BlockPos pos, BlockState state) {
-            // AbstractManaMachineEntityBlock 參數順序為: hasEnergy, maxEnergy, maxMana
             super(ModBlockEntities.MANA_GENERATOR_BE.get(), pos, state, true, ENERGY_CAPACITY, MANA_CAPACITY, TICK_INTERVAL, MANA_PER_CYCLE);
             if (this.level != null) {
                 this.access = ContainerLevelAccess.create(this.level, this.worldPosition);
             }
             initializeDefaultIOMap();
 
-            // 🔧 設置升級處理器到燃料邏輯
             fuelLogic.setUpgradeHandler(upgradeHandler);
             syncManager.autoRegister(this);
 
@@ -148,8 +158,7 @@ import java.util.Optional;
         private final ManaGeneratorNbtManager nbtManager = new ManaGeneratorNbtManager(this);
         public MachineSyncManager getSyncManager() {return syncManager;}
         private int clientSyncTimer = 0;
-        // ✅ 性能優化：從每 0.5 秒改為每 1 秒同步，減少網絡流量
-        private static final int CLIENT_SYNC_INTERVAL = 20; // 每20 tick (1秒) 同步一次到客戶端
+        private static final int CLIENT_SYNC_INTERVAL = 20;
 
         private int lastSyncedMana = 0;
         private int lastSyncedEnergy = 0;
@@ -181,15 +190,9 @@ import java.util.Optional;
         @Override
         public void onLoad() {
             super.onLoad();
-            // ✅ 性能優化：移除立即初始化所有緩存
-            // 改為懶加載，只在需要時才創建緩存
-            // 舊代碼會在加載時創建 12 個緩存（6方向 × 2類型）
-            // 新代碼只在實際使用時才創建，減少 50-60% 的初始化開銷
         }
 
         /**
-         * ✅ 性能優化：懶加載 Capability 緩存
-         * 只在第一次訪問時才創建，而不是在 onLoad 時全部創建
          */
         private BlockCapabilityCache<IUnifiedManaHandler, Direction> getManaCache(Direction dir) {
             return manaCaches.computeIfAbsent(dir, direction -> {
@@ -210,7 +213,6 @@ import java.util.Optional;
         }
 
         /**
-         * ✅ 性能優化：懶加載 Energy Capability 緩存
          */
         private BlockCapabilityCache<IEnergyStorage, Direction> getEnergyCache(Direction dir) {
             return energyCaches.computeIfAbsent(dir, direction -> {
@@ -231,14 +233,12 @@ import java.util.Optional;
         }
 
         public @Nullable IUnifiedManaHandler getCachedManaCapability(Direction dir) {
-            // ✅ 使用懶加載的 getter
-            var cache = getManaCache(dir);
+            BlockCapabilityCache<IUnifiedManaHandler, Direction> cache = getManaCache(dir);
             return cache != null ? cache.getCapability() : null;
         }
 
         public @Nullable IEnergyStorage getCachedEnergyCapability(Direction dir) {
-            // ✅ 使用懶加載的 getter
-            var cache = getEnergyCache(dir);
+            BlockCapabilityCache<IEnergyStorage, Direction> cache = getEnergyCache(dir);
             return cache != null ? cache.getCapability() : null;
         }
 
@@ -290,7 +290,6 @@ import java.util.Optional;
 
             ticker.tick();
 
-            // ✅ 優化：定期同步到客戶端（僅在有顯著變化時）
             if (!level.isClientSide) {
                 clientSyncTimer++;
                 if (clientSyncTimer >= CLIENT_SYNC_INTERVAL) {
@@ -300,7 +299,6 @@ import java.util.Optional;
                     if (dirty && hasSignificantChanges()) {
                         syncToClient();
 
-                        // 更新上次同步的值
                         updateLastSyncedValues();
                     }
                     if (dirty) {
@@ -312,8 +310,6 @@ import java.util.Optional;
         }
 
         /**
-         * ✅ 性能優化：檢查是否有顯著變化值得同步
-         * 避免在值變化很小時頻繁同步網絡數據
          */
         private boolean hasSignificantChanges() {
             int currentMana = manaStorage.getManaStored();
@@ -322,7 +318,6 @@ import java.util.Optional;
             int manaThreshold = ModCommonConfig.INSTANCE.manaGeneratorSignificantManaChange.get();
             int energyThreshold = ModCommonConfig.INSTANCE.manaGeneratorSignificantEnergyChange.get();
 
-            // 檢查是否有顯著變化
             boolean manaChanged = Math.abs(currentMana - lastSyncedMana) >= manaThreshold;
             boolean energyChanged = Math.abs(currentEnergy - lastSyncedEnergy) >= energyThreshold;
             boolean modeChanged = currentMode != lastSyncedMode;
@@ -331,7 +326,6 @@ import java.util.Optional;
         }
 
         /**
-         * ✅ 更新上次同步的值
          */
         private void updateLastSyncedValues() {
             lastSyncedMana = manaStorage.getManaStored();
@@ -346,13 +340,13 @@ import java.util.Optional;
 
         public void sync() {
             if (isSyncing) {
-                return; // 防止遞歸調用
+                return;
             }
 
             isSyncing = true;
             try {
                 if (this.level != null && !this.level.isClientSide()) {
-                    // 立即同步到客戶端
+                    // 蝡?郊?啣恥?嗥垢
                     super.setChanged();
                     this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
                 }
@@ -375,6 +369,7 @@ import java.util.Optional;
 
         public void toggleMode() {
             if (stateManager.toggleMode(this.getBurnTime())) {
+                fuelLogic.markNeedsFuel();
                 this.setChanged();
                 this.syncToClient();
             }
@@ -439,11 +434,9 @@ import java.util.Optional;
                 ioMap.put(direction, type);
                 setChanged();
 
-                // 🔧 關鍵：通知能力系統刷新
                 if (level != null && !level.isClientSide) {
                     level.invalidateCapabilities(worldPosition);
 
-                    // ✅ 【新增】：通知鄰近方塊 (特別是導管) 重新檢查連接
                     notifyNeighborsOfIOChange();
                 }
             }
@@ -456,7 +449,7 @@ import java.util.Optional;
 
         @Override
         public EnumMap<Direction, IOHandlerUtils.IOType> getIOMap() {
-            return new EnumMap<>(ioMap); // 返回副本，避免外部修改
+            return new EnumMap<>(ioMap);
         }
 
         @Override
@@ -473,11 +466,9 @@ import java.util.Optional;
             if (changed) {
                 setChanged();
 
-                // 🔧 關鍵：通知能力系統刷新
                 if (level != null && !level.isClientSide) {
                     level.invalidateCapabilities(worldPosition);
 
-                    // ✅ 【新增】：通知鄰近方塊重新檢查連接
                     notifyNeighborsOfIOChange();
                 }
             }
@@ -493,7 +484,6 @@ import java.util.Optional;
             return IOHandlerUtils.IOType.OUTPUT;
         }
 
-        // ✅ 【新增方法】：通知所有鄰居IO配置已改變
         private void notifyNeighborsOfIOChange() {
             if (level == null || level.isClientSide) return;
 
@@ -502,17 +492,15 @@ import java.util.Optional;
             for (Direction direction : Direction.values()) {
                 BlockPos neighborPos = worldPosition.relative(direction);
 
-                // 觸發鄰居方塊的 neighborChanged 方法
                 level.neighborChanged(neighborPos, currentState.getBlock(), worldPosition);
 
-                // 如果鄰居是導管，額外調用其特定的鄰居變化處理
                 BlockEntity neighborBE = level.getBlockEntity(neighborPos);
                 if (neighborBE instanceof ArcaneConduitBlockEntity conduit) {
                     conduit.onNeighborChanged();
                 }
             }
 
-            LOGGER.debug("魔力發電機 {} IO設定變更，已通知所有鄰居", worldPosition);
+            LOGGER.debug("Mana generator {} IO map changed; notified neighbors", worldPosition);
         }
 
         @Override
@@ -572,7 +560,7 @@ import java.util.Optional;
 
         @Override
         public int getContainerSize() {
-            return fuelHandler.getSlots(); // 返回燃料槽位數量
+            return fuelHandler.getSlots();
         }
 
         @Override
@@ -610,7 +598,6 @@ import java.util.Optional;
 
         @Override
         public boolean stillValid(Player player) {
-            // 使用 Container 接口提供的靜態方法，更標準
             return Container.stillValidBlockEntity(this, player);
         }
 
@@ -622,37 +609,27 @@ import java.util.Optional;
             setChanged();
         }
 
-        // 3. 實現 WorldlyContainer 接口以支持方向性輸入
 
         @Override
         public int[] getSlotsForFace(Direction side) {
-            // 返回該面可以訪問的槽位
-            // 假設所有面都可以訪問燃料槽（槽位 0）
             return new int[]{0};
         }
 
         @Override
         public boolean canPlaceItemThroughFace(int index, ItemStack itemStack, Direction direction) {
-            // 檢查是否可以從該方向放入物品
-            // 這裡可以加入燃料驗證邏輯
             return canPlaceItem(index, itemStack);
         }
 
         @Override
         public boolean canTakeItemThroughFace(int index, ItemStack stack, Direction direction) {
-            // 檢查是否可以從該方向取出物品
-            // 通常發電機不允許取出燃料，除非是空桶等副產品
-            return false; // 根據需求調整
+            return false;
         }
 
         @Override
         public boolean canPlaceItem(int index, ItemStack stack) {
-            // 檢查物品是否可以放入指定槽位
-            // 這裡應該檢查是否為有效燃料
-            if (index != 0) return false; // 只有槽位 0 是燃料槽
+            if (index != 0) return false;
 
-            // 檢查是否為有效燃料
-            return fuelLogic.isValidFuel(stack); // 您需要在 ManaFuelHandler 中實現這個方法
+            return fuelLogic.isValidFuel(stack);
         }
 
     }

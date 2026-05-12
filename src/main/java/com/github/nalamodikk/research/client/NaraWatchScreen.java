@@ -12,6 +12,7 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FormattedCharSequence;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -396,16 +397,16 @@ public class NaraWatchScreen extends Screen {
         dy += 13;
 
         String descKey = "research.koniava." + selectedNode.getId().getPath() + ".description";
-        for (var line : font.split(Component.translatable(descKey), maxW)) {
+        for (FormattedCharSequence line : font.split(Component.translatable(descKey), maxW)) {
             g.drawString(font, line, dx, dy, 0x223355, false);
             dy += 9;
         }
 
         String loreKey = "research.koniava." + selectedNode.getId().getPath() + ".lore";
-        var loreComp = Component.translatable(loreKey);
+        Component loreComp = Component.translatable(loreKey);
         if (!loreComp.getString().equals(loreKey)) {
             dy += 4;
-            for (var line : font.split(loreComp, maxW)) {
+            for (FormattedCharSequence line : font.split(loreComp, maxW)) {
                 g.drawString(font, line, dx, dy, 0x445566, false);
                 dy += 9;
             }
@@ -520,6 +521,7 @@ public class NaraWatchScreen extends Screen {
 
     private NodeState stateOf(ResearchTemplate t) {
         if (completed.contains(t.getId())) return NodeState.COMPLETED;
+        if (ClientResearchCache.isForcedAvailable(t.getId())) return NodeState.AVAILABLE;
         if (tier < t.getTier()) return NodeState.LOCKED;
         for (ResourceLocation prereq : t.getPrerequisites())
             if (!completed.contains(prereq)) return NodeState.LOCKED;

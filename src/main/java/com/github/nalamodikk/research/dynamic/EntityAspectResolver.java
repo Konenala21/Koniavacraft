@@ -7,19 +7,23 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.EntityTypeTags;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.entity.vehicle.AbstractMinecart;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Procedurally resolves aspects for living entities based on their classification.
- */
 public class EntityAspectResolver {
 
-    public static List<Aspect> resolve(LivingEntity entity, ServerLevel level) {
+    public static List<Aspect> resolve(Entity entity, ServerLevel level) {
+        if (entity == null) {
+            return List.of();
+        }
+
         ResourceLocation id = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
         WorldAspectSavedData data = WorldAspectSavedData.get(level);
         List<Aspect> cached = data.getEntityMapping(id);
@@ -29,8 +33,43 @@ public class EntityAspectResolver {
 
         List<Aspect> aspects = new ArrayList<>();
         List<Aspect> candidates = new ArrayList<>();
+        addClassificationAspects(entity, aspects, candidates);
+        addKeywordCandidates(id, aspects, candidates);
 
-        // 1. Core Classification (Logic)
+        List<Aspect> result = AspectExpression.express(id, aspects, candidates, data.getGenomeSeed(), capacity(id));
+        if (result.isEmpty()) {
+            result = AspectExpression.fallback(id, data.getGenomeSeed(), 3);
+        }
+        data.putEntityMapping(id, result);
+        return result;
+    }
+
+    private static void addClassificationAspects(Entity entity, List<Aspect> aspects, List<Aspect> candidates) {
+        if (entity instanceof LivingEntity livingEntity) {
+            addLivingEntityAspects(livingEntity, aspects, candidates);
+            return;
+        }
+
+        if (entity instanceof AbstractMinecart) {
+            aspects.add(ModAspects.METAL);
+            aspects.add(ModAspects.MECHANISM);
+            candidates.add(ModAspects.MOMENTUM);
+            candidates.add(ModAspects.EARTH);
+            return;
+        }
+
+        if (entity instanceof Projectile) {
+            aspects.add(ModAspects.ENERGY);
+            aspects.add(ModAspects.MOMENTUM);
+            candidates.add(ModAspects.WOOD);
+            return;
+        }
+
+        aspects.add(ModAspects.EARTH);
+        candidates.add(ModAspects.MECHANISM);
+    }
+
+    private static void addLivingEntityAspects(LivingEntity entity, List<Aspect> aspects, List<Aspect> candidates) {
         if (entity.getType().is(EntityTypeTags.UNDEAD)) {
             aspects.add(ModAspects.ANIMA);
             aspects.add(ModAspects.WU);
@@ -58,20 +97,11 @@ public class EntityAspectResolver {
             aspects.add(ModAspects.GRAVITY);
             candidates.add(ModAspects.ANIMA);
         } else {
-            // Default to Animal/Living
             aspects.add(ModAspects.VITALITY);
             aspects.add(ModAspects.EARTH);
             candidates.add(ModAspects.WOOD);
             candidates.add(ModAspects.GROWTH);
         }
-        addKeywordCandidates(id, aspects, candidates);
-
-        List<Aspect> result = AspectExpression.express(id, aspects, candidates, data.getGenomeSeed(), capacity(id));
-        if (result.isEmpty()) {
-            result = AspectExpression.fallback(id, data.getGenomeSeed(), 3);
-        }
-        data.putEntityMapping(id, result);
-        return result;
     }
 
     private static void addKeywordCandidates(ResourceLocation id, List<Aspect> aspects, List<Aspect> candidates) {

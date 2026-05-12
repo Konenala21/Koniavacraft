@@ -11,7 +11,8 @@ import java.util.HashSet;
 public class ResearchClientPayloadHandler {
 
     public static void handleKnowledgeSync(KnowledgeSyncPacket packet, IPayloadContext context) {
-        context.enqueueWork(() -> ClientResearchCache.update(packet.discovered(), packet.completed(), packet.tier()));
+        context.enqueueWork(() -> ClientResearchCache.update(packet.discovered(), packet.completed(),
+                packet.availableOverrides(), packet.tier()));
     }
 
     public static void handleAspectSync(AspectSyncPacket packet, IPayloadContext context) {
@@ -20,7 +21,7 @@ public class ResearchClientPayloadHandler {
 
     public static void handleWatchSync(WatchSyncPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            ClientResearchCache.update(packet.discovered(), packet.completed(), packet.tier());
+            ClientResearchCache.update(packet.discovered(), packet.completed(), packet.availableOverrides(), packet.tier());
             Minecraft.getInstance().setScreen(
                     new NaraWatchScreen(new HashSet<>(packet.completed()), packet.tier()));
         });

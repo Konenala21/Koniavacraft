@@ -4,7 +4,7 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.client.screenAPI.tooltip.DynamicTooltip;
 import com.github.nalamodikk.register.ModBlocks;
 import com.github.nalamodikk.register.ModRecipes;
-import com.github.nalamodikk.common.utils.gui.GuiRenderUtils;
+import com.github.nalamodikk.client.utils.gui.GuiRenderUtils;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;

@@ -19,7 +19,8 @@ import java.util.Set;
  * Server → client: sends a snapshot of the player's research knowledge so the
  * client can open {@link com.github.nalamodikk.research.client.NaraWatchScreen} without a round-trip for every query.
  */
-public record WatchSyncPacket(List<ResourceLocation> completed, int tier, List<ResourceLocation> discovered)
+public record WatchSyncPacket(List<ResourceLocation> completed, List<ResourceLocation> availableOverrides, int tier,
+                              List<ResourceLocation> discovered)
         implements CustomPacketPayload {
 
     public static final Type<WatchSyncPacket> TYPE =
@@ -28,6 +29,7 @@ public record WatchSyncPacket(List<ResourceLocation> completed, int tier, List<R
     public static final StreamCodec<io.netty.buffer.ByteBuf, WatchSyncPacket> STREAM_CODEC =
             StreamCodec.composite(
                     ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), WatchSyncPacket::completed,
+                    ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), WatchSyncPacket::availableOverrides,
                     ByteBufCodecs.VAR_INT,                                      WatchSyncPacket::tier,
                     ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), WatchSyncPacket::discovered,
                     WatchSyncPacket::new
@@ -36,10 +38,10 @@ public record WatchSyncPacket(List<ResourceLocation> completed, int tier, List<R
     @Override
     public Type<? extends CustomPacketPayload> type() { return TYPE; }
 
-    public static void sendTo(ServerPlayer player, Set<ResourceLocation> completed, int tier,
+    public static void sendTo(ServerPlayer player, Set<ResourceLocation> completed, Set<ResourceLocation> availableOverrides, int tier,
                               Set<ResourceLocation> discovered) {
         PacketDistributor.sendToPlayer(player,
-                new WatchSyncPacket(List.copyOf(completed), tier, List.copyOf(discovered)));
+                new WatchSyncPacket(List.copyOf(completed), List.copyOf(availableOverrides), tier, List.copyOf(discovered)));
     }
 
     public static void handle(WatchSyncPacket packet, IPayloadContext context) {

@@ -12,6 +12,7 @@ import net.minecraft.tags.FluidTags;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +41,30 @@ public final class BlockAspectResolver {
             data.putBlockMapping(id, aspects);
         }
         return aspects;
+    }
+
+    public static List<Aspect> resolveFluid(FluidState state, ServerLevel level) {
+        if (state.isEmpty()) {
+            return List.of();
+        }
+
+        ResourceLocation id = BuiltInRegistries.FLUID.getKey(state.getType());
+        List<Aspect> base = new ArrayList<>();
+        List<Aspect> candidates = new ArrayList<>();
+
+        if (state.is(FluidTags.WATER)) {
+            AspectExpression.addUnique(base, ModAspects.WATER);
+            AspectExpression.addUnique(candidates, ModAspects.VITALITY);
+        } else if (state.is(FluidTags.LAVA)) {
+            AspectExpression.addUnique(base, ModAspects.FIRE);
+            AspectExpression.addUnique(candidates, ModAspects.MAGMA);
+            AspectExpression.addUnique(candidates, ModAspects.EARTH);
+        }
+
+        if (base.isEmpty()) {
+            return AspectExpression.fallback(id, WorldAspectSavedData.get(level).getGenomeSeed(), 2);
+        }
+        return AspectExpression.express(id, base, candidates, WorldAspectSavedData.get(level).getGenomeSeed(), 2);
     }
 
     private static List<Aspect> inferFromState(BlockState state, ResourceLocation id, long genomeSeed) {

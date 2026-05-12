@@ -6,8 +6,6 @@ import net.minecraft.resources.ResourceLocation;
 import java.util.List;
 
 /**
- * A single aspect (面向) in the research system.
- * Primary aspects (水火木金土烏) have no components.
  * Compound aspects are composed of exactly two other aspects.
  *
  * Connection rule: two adjacent grid cells can connect if and only if
@@ -37,13 +35,14 @@ public class Aspect {
      * Returns true if this aspect and {@code other} can connect on adjacent grid cells.
      *
      * Rules (any one is sufficient):
-     *   1. Same aspect (A ↔ A) — lets players extend a fixed node with the same aspect.
-     *   2. Direct parent-child: one aspect is a component of the other.
-     *   3. Shared component: both are compounds that share at least one common component
-     *      (e.g. MANA(WU,Water) ↔ RESONANCE(WU,Metal) because both contain WU).
+     *   1. Direct parent-child: one aspect is a component of the other (one step in the hierarchy).
+     *   2. Shared component: both are compounds that share at least one common component
+     *      (e.g. MANA(WU,Water) ??RESONANCE(WU,Metal) because both contain WU).
+     *
+     * Note: Same-aspect connection (A ??A) is explicitly disallowed to increase puzzle difficulty.
      */
     public boolean canConnectTo(Aspect other) {
-        if (this.equals(other)) return true;
+        if (this.equals(other)) return false;
         if (this.components.contains(other) || other.components.contains(this)) return true;
         for (Aspect c : this.components) {
             if (other.components.contains(c)) return true;

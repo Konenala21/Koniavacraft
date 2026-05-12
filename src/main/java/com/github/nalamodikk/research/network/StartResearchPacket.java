@@ -2,13 +2,16 @@ package com.github.nalamodikk.research.network;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.item.research.ResearchNoteItem;
+import com.github.nalamodikk.research.knowledge.PlayerKnowledge;
 import com.github.nalamodikk.research.knowledge.ResearchSavedData;
 import com.github.nalamodikk.research.template.ResearchRegistry;
+import com.github.nalamodikk.research.template.ResearchTemplate;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -41,11 +44,11 @@ public record StartResearchPacket(ResourceLocation researchId)
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
 
-            var template = ResearchRegistry.get(packet.researchId()).orElse(null);
+            ResearchTemplate template = ResearchRegistry.get(packet.researchId()).orElse(null);
             if (template == null) return;
 
-            var data      = ResearchSavedData.get(player.serverLevel());
-            var knowledge = data.getOrCreate(player.getUUID());
+            ResearchSavedData data = ResearchSavedData.get(player.serverLevel());
+            PlayerKnowledge knowledge = data.getOrCreate(player.getUUID());
 
             // Already completed — don't give another note
             if (knowledge.hasCompleted(packet.researchId())) {
@@ -56,7 +59,7 @@ public record StartResearchPacket(ResourceLocation researchId)
             }
 
             // Already have the note in inventory — don't give a duplicate
-            var inv = player.getInventory();
+            Inventory inv = player.getInventory();
             for (int i = 0; i < inv.getContainerSize(); i++) {
                 if (packet.researchId().equals(ResearchNoteItem.getResearchId(inv.getItem(i)))) {
                     player.sendSystemMessage(Component.translatable(
@@ -66,10 +69,11 @@ public record StartResearchPacket(ResourceLocation researchId)
                 }
             }
 
-            // Check prerequisites and tier (aspect requirement skipped for note pickup)
-            if (knowledge.getCurrentTier() < template.getTier()) return;
-            for (ResourceLocation prereq : template.getPrerequisites()) {
-                if (!knowledge.hasCompleted(prereq)) return;
+            if (!template.isAvailableTo(knowledge)) {
+                player.sendSystemMessage(Component.translatable(
+                        "research.koniava.not_available",
+                        Component.translatable(template.getTitleKey())));
+                return;
             }
 
             // Give research note

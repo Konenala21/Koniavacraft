@@ -1,32 +1,41 @@
 package com.github.nalamodikk.common.block.blockentity.research;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.research.aspect.Aspect;
 import com.github.nalamodikk.research.aspect.ModAspects;
+import com.github.nalamodikk.research.client.AspectSynthesisScreen;
+import com.github.nalamodikk.research.client.ClientResearchCache;
 import com.github.nalamodikk.research.client.ResearchScreen;
 import com.github.nalamodikk.research.template.ResearchRegistry;
+import com.github.nalamodikk.research.template.ResearchTemplate;
+import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
-/**
- * Research Table GUI — shows the two item slots (note + quill) and a
- * "Begin Research" button that opens the puzzle screen when both are present.
- */
 public class ResearchTableScreen extends AbstractContainerScreen<ResearchTableMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             KoniavacraftMod.MOD_ID, "textures/gui/research_table_gui.png");
+    private static final float GUI_TINT_R = 1.0F;
+    private static final float GUI_TINT_G = 1.0F;
+    private static final float GUI_TINT_B = 1.0F;
 
     private Button beginButton;
+    private Button synthesisButton;
 
     public ResearchTableScreen(ResearchTableMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
-        this.imageWidth  = 176;
+        this.imageWidth = 176;
         this.imageHeight = 181;
     }
 
@@ -36,10 +45,18 @@ public class ResearchTableScreen extends AbstractContainerScreen<ResearchTableMe
 
         beginButton = Button.builder(
                         Component.translatable("gui.koniava.research_table.begin"),
-                        btn -> openResearchPuzzle())
+                        button -> openResearchPuzzle())
                 .bounds(leftPos + 54, topPos + 65, 68, 20)
                 .build();
         this.addRenderableWidget(beginButton);
+
+        synthesisButton = Button.builder(
+                        Component.translatable("gui.koniava.research_table.synthesis_short"),
+                        button -> openSynthesisUI())
+                .bounds(leftPos + 78, topPos + 30, 20, 20)
+                .tooltip(Tooltip.create(Component.translatable("gui.koniava.research_table.synthesis")))
+                .build();
+        this.addRenderableWidget(synthesisButton);
     }
 
     @Override
@@ -48,63 +65,63 @@ public class ResearchTableScreen extends AbstractContainerScreen<ResearchTableMe
         beginButton.active = menu.isReadyToResearch();
     }
 
-    // ── Render ───────────────────────────────────────────────────────────────
-
     @Override
-    protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
-        g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 256, 256);
+    protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
+        RenderSystem.setShaderColor(GUI_TINT_R, GUI_TINT_G, GUI_TINT_B, 1.0F);
+        graphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 256, 256);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
     @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        super.render(g, mouseX, mouseY, partialTick);
-        this.renderTooltip(g, mouseX, mouseY);
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        super.render(graphics, mouseX, mouseY, partialTick);
+        renderCurrentResearchName(graphics);
+    }
 
-        // Show research name between slots and button if note is present
+    @Override
+    protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
+        graphics.drawString(font, this.title, 9, 4, 0xFFFFFF, false);
+        graphics.drawString(font, this.playerInventoryTitle, 9, imageHeight - 94, 0x404040, false);
+    }
+
+    private void renderCurrentResearchName(GuiGraphics graphics) {
         ResourceLocation researchId = menu.getBlockEntity().getCurrentResearchId();
-        if (researchId != null) {
-            ResearchRegistry.get(researchId).ifPresent(template -> {
-                var name = Component.translatable(template.getTitleKey())
-                        .withStyle(net.minecraft.ChatFormatting.AQUA);
-                g.drawCenteredString(font, name, leftPos + imageWidth / 2, topPos + 57, 0xFFFFFF);
-            });
+        if (researchId == null) {
+            return;
         }
+
+        ResearchRegistry.get(researchId).ifPresent(template -> {
+            Component name = Component.translatable(template.getTitleKey()).withStyle(ChatFormatting.AQUA);
+            graphics.drawCenteredString(font, name, leftPos + imageWidth / 2, topPos + 57, 0xFFFFFF);
+        });
     }
 
-    @Override
-    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
-        g.drawString(font, this.title, 9, 4, 0xFFFFFF, false);
-        g.drawString(font, this.playerInventoryTitle, 9, imageHeight - 94, 0x404040, false);
+    private void openSynthesisUI() {
+        this.onClose();
+        minecraft.setScreen(new AspectSynthesisScreen(this, menu.getBlockEntity().getBlockPos(), minecraft.player.getInventory()));
     }
 
     private void openResearchPuzzle() {
         ResourceLocation researchId = menu.getBlockEntity().getCurrentResearchId();
-        if (researchId == null) return;
+        if (researchId == null) {
+            return;
+        }
 
         ResearchRegistry.get(researchId).ifPresent(template -> {
-            // Build palette from the research's required aspects + their direct components.
-            // This gives players exactly the aspects they need to bridge fixed nodes.
-            var palette = buildPalette(template);
+            List<Aspect> palette = buildPalette(template);
             this.onClose();
-            minecraft.setScreen(new ResearchScreen(template, palette,
-                    menu.getBlockEntity().getBlockPos()));
+            minecraft.setScreen(new ResearchScreen(template, palette, menu.getBlockEntity().getBlockPos()));
         });
     }
 
-    /**
-     * Palette = all registered aspects (primaries first, then compounds).
-     * Required aspects appear first so they're easy to find; remaining aspects follow.
-     */
-    private static List<com.github.nalamodikk.research.aspect.Aspect> buildPalette(
-            com.github.nalamodikk.research.template.ResearchTemplate template) {
-        var seen = new java.util.LinkedHashSet<com.github.nalamodikk.research.aspect.Aspect>();
-        seen.addAll(template.getRequiredAspects()); // required aspects first for visibility
-        // Primary aspects always shown; compound aspects only if discovered via scanning
-        ModAspects.all().stream()
-                .filter(a -> a.isPrimary()
-                        || com.github.nalamodikk.research.client.ClientResearchCache
-                                .hasDiscovered(a.getId()))
-                .forEach(seen::add);
+    private static List<Aspect> buildPalette(ResearchTemplate template) {
+        Set<Aspect> seen = new LinkedHashSet<>();
+        seen.addAll(template.getRequiredAspects());
+        for (Aspect aspect : ModAspects.all()) {
+            if (aspect.isPrimary() || ClientResearchCache.hasDiscovered(aspect.getId())) {
+                seen.add(aspect);
+            }
+        }
         return List.copyOf(seen);
     }
 }

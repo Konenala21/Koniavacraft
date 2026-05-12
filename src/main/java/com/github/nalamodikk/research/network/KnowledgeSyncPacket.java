@@ -3,6 +3,7 @@ package com.github.nalamodikk.research.network;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.research.client.ClientResearchCache;
 import com.github.nalamodikk.research.client.ResearchClientPayloadHandler;
+import com.github.nalamodikk.research.knowledge.PlayerKnowledge;
 import com.github.nalamodikk.research.knowledge.ResearchSavedData;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -18,7 +19,8 @@ import java.util.List;
 /**
  * Server → client: syncs the player's full research knowledge (aspects + research + tier).
  */
-public record KnowledgeSyncPacket(List<ResourceLocation> discovered, List<ResourceLocation> completed, int tier)
+public record KnowledgeSyncPacket(List<ResourceLocation> discovered, List<ResourceLocation> completed,
+                                  List<ResourceLocation> availableOverrides, int tier)
         implements CustomPacketPayload {
 
     public static final Type<KnowledgeSyncPacket> TYPE =
@@ -28,6 +30,7 @@ public record KnowledgeSyncPacket(List<ResourceLocation> discovered, List<Resour
             StreamCodec.composite(
                     ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), KnowledgeSyncPacket::discovered,
                     ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), KnowledgeSyncPacket::completed,
+                    ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), KnowledgeSyncPacket::availableOverrides,
                     ByteBufCodecs.VAR_INT, KnowledgeSyncPacket::tier,
                     KnowledgeSyncPacket::new
             );
@@ -36,10 +39,11 @@ public record KnowledgeSyncPacket(List<ResourceLocation> discovered, List<Resour
     public Type<? extends CustomPacketPayload> type() { return TYPE; }
 
     public static void sendTo(ServerPlayer player) {
-        var knowledge = ResearchSavedData.get(player.serverLevel()).getOrCreate(player.getUUID());
+        PlayerKnowledge knowledge = ResearchSavedData.get(player.serverLevel()).getOrCreate(player.getUUID());
         PacketDistributor.sendToPlayer(player, new KnowledgeSyncPacket(
                 List.copyOf(knowledge.getDiscoveredAspects()),
                 List.copyOf(knowledge.getCompletedResearch()),
+                List.copyOf(knowledge.getAvailableResearchOverrides()),
                 knowledge.getCurrentTier()
         ));
     }
