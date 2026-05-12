@@ -97,8 +97,7 @@ public class ResearchTableScreen extends AbstractContainerScreen<ResearchTableMe
     }
 
     private void openSynthesisUI() {
-        this.onClose();
-        minecraft.setScreen(new AspectSynthesisScreen(this, menu.getBlockEntity().getBlockPos(), minecraft.player.getInventory()));
+        minecraft.setScreen(new AspectSynthesisScreen(menu, minecraft.player.getInventory(), this));
     }
 
     private void openResearchPuzzle() {

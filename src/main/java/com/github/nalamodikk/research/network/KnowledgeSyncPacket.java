@@ -14,12 +14,14 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Server → client: syncs the player's full research knowledge (aspects + research + tier).
  */
-public record KnowledgeSyncPacket(List<ResourceLocation> discovered, List<ResourceLocation> completed,
+public record KnowledgeSyncPacket(Map<ResourceLocation, Integer> discovered, List<ResourceLocation> completed,
                                   List<ResourceLocation> availableOverrides, int tier)
         implements CustomPacketPayload {
 
@@ -28,7 +30,7 @@ public record KnowledgeSyncPacket(List<ResourceLocation> discovered, List<Resour
 
     public static final StreamCodec<io.netty.buffer.ByteBuf, KnowledgeSyncPacket> STREAM_CODEC =
             StreamCodec.composite(
-                    ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), KnowledgeSyncPacket::discovered,
+                    ByteBufCodecs.map(HashMap::new, ResourceLocation.STREAM_CODEC, ByteBufCodecs.VAR_INT), KnowledgeSyncPacket::discovered,
                     ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), KnowledgeSyncPacket::completed,
                     ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), KnowledgeSyncPacket::availableOverrides,
                     ByteBufCodecs.VAR_INT, KnowledgeSyncPacket::tier,
@@ -41,7 +43,7 @@ public record KnowledgeSyncPacket(List<ResourceLocation> discovered, List<Resour
     public static void sendTo(ServerPlayer player) {
         PlayerKnowledge knowledge = ResearchSavedData.get(player.serverLevel()).getOrCreate(player.getUUID());
         PacketDistributor.sendToPlayer(player, new KnowledgeSyncPacket(
-                List.copyOf(knowledge.getDiscoveredAspects()),
+                new HashMap<>(knowledge.getDiscoveredAspectsMap()),
                 List.copyOf(knowledge.getCompletedResearch()),
                 List.copyOf(knowledge.getAvailableResearchOverrides()),
                 knowledge.getCurrentTier()

@@ -12,7 +12,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -20,7 +22,7 @@ import java.util.Set;
  * client can open {@link com.github.nalamodikk.research.client.NaraWatchScreen} without a round-trip for every query.
  */
 public record WatchSyncPacket(List<ResourceLocation> completed, List<ResourceLocation> availableOverrides, int tier,
-                              List<ResourceLocation> discovered)
+                              Map<ResourceLocation, Integer> discovered)
         implements CustomPacketPayload {
 
     public static final Type<WatchSyncPacket> TYPE =
@@ -31,7 +33,7 @@ public record WatchSyncPacket(List<ResourceLocation> completed, List<ResourceLoc
                     ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), WatchSyncPacket::completed,
                     ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), WatchSyncPacket::availableOverrides,
                     ByteBufCodecs.VAR_INT,                                      WatchSyncPacket::tier,
-                    ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), WatchSyncPacket::discovered,
+                    ByteBufCodecs.map(HashMap::new, ResourceLocation.STREAM_CODEC, ByteBufCodecs.VAR_INT), WatchSyncPacket::discovered,
                     WatchSyncPacket::new
             );
 
@@ -39,9 +41,9 @@ public record WatchSyncPacket(List<ResourceLocation> completed, List<ResourceLoc
     public Type<? extends CustomPacketPayload> type() { return TYPE; }
 
     public static void sendTo(ServerPlayer player, Set<ResourceLocation> completed, Set<ResourceLocation> availableOverrides, int tier,
-                              Set<ResourceLocation> discovered) {
+                              Map<ResourceLocation, Integer> discovered) {
         PacketDistributor.sendToPlayer(player,
-                new WatchSyncPacket(List.copyOf(completed), List.copyOf(availableOverrides), tier, List.copyOf(discovered)));
+                new WatchSyncPacket(List.copyOf(completed), List.copyOf(availableOverrides), tier, new HashMap<>(discovered)));
     }
 
     public static void handle(WatchSyncPacket packet, IPayloadContext context) {

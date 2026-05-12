@@ -120,6 +120,23 @@ public class ModDataComponents {
                                     ResourceLocation::toString))
                     .build();
 
+    /** Stores which aspect an Aspect Token represents. */
+    public static final DataComponentType<ResourceLocation> ASPECT_ID =
+            DataComponentType.<ResourceLocation>builder()
+                    .persistent(ResourceLocation.CODEC)
+                    .networkSynchronized(
+                            ByteBufCodecs.stringUtf8(255).map(
+                                    ResourceLocation::tryParse,
+                                    ResourceLocation::toString))
+                    .build();
+
+    /** Controls whether an Aspect Token should reveal the aspect's real name. */
+    public static final DataComponentType<Boolean> ASPECT_HIDDEN =
+            DataComponentType.<Boolean>builder()
+                    .persistent(Codec.BOOL)
+                    .networkSynchronized(ByteBufCodecs.BOOL)
+                    .build();
+
 
     @SubscribeEvent
     public static void register(RegisterEvent event) {
@@ -133,6 +150,8 @@ public class ModDataComponents {
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "mana_stored"), MANA_STORED);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "max_mana"), MAX_MANA);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "research_id"), RESEARCH_ID);
+            helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "aspect_id"), ASPECT_ID);
+            helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "aspect_hidden"), ASPECT_HIDDEN);
         });
     }
 }

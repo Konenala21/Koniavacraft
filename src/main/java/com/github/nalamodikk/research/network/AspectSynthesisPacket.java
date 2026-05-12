@@ -86,6 +86,8 @@ public record AspectSynthesisPacket(BlockPos tablePos, ResourceLocation aspect1,
                 return;
             }
 
+            consumeAspect(knowledge, first);
+            consumeAspect(knowledge, second);
             boolean newlyDiscovered = knowledge.discoverAspect(result, 1);
             ResearchSavedData.get(player.serverLevel()).setDirty();
             AspectSyncPacket.sendTo(player);
@@ -101,7 +103,14 @@ public record AspectSynthesisPacket(BlockPos tablePos, ResourceLocation aspect1,
     }
 
     private static boolean canUse(PlayerKnowledge knowledge, Aspect aspect) {
-        return aspect.isPrimary() || knowledge.hasDiscovered(aspect.getId());
+        return knowledge.getAspectCount(aspect.getId()) > 0;
+    }
+
+    private static void consumeAspect(PlayerKnowledge knowledge, Aspect aspect) {
+        int current = knowledge.getAspectCount(aspect.getId());
+        if (current > 0) {
+            knowledge.setAspectAmount(aspect.getId(), current - 1);
+        }
     }
 
     private static boolean damageQuill(ResearchTableBlockEntity table, ServerPlayer player) {

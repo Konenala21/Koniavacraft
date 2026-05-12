@@ -1,6 +1,7 @@
 package com.github.nalamodikk.research.jei;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.item.research.AspectTokenItem;
 import com.github.nalamodikk.research.client.ClientResearchCache;
 import com.github.nalamodikk.client.utils.gui.GuiRenderUtils;
 import com.github.nalamodikk.research.aspect.Aspect;
@@ -11,14 +12,18 @@ import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.IFocusGroup;
+import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import mezz.jei.api.gui.builder.ITooltipBuilder;
+import mezz.jei.api.gui.builder.IIngredientAcceptor;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
 
 public class AspectSynthesisRecipeCategory implements IRecipeCategory<AspectSynthesisRecipe> {
 
@@ -31,18 +36,15 @@ public class AspectSynthesisRecipeCategory implements IRecipeCategory<AspectSynt
             KoniavacraftMod.MOD_ID, "textures/gui/research/aspect_synthesis.png");
     private static final ResourceLocation HEX_CELL_TEXTURE = ResourceLocation.fromNamespaceAndPath(
             KoniavacraftMod.MOD_ID, "textures/gui/research/hex_cell.png");
-    private static final ResourceLocation UNKNOWN_TEXTURE = ResourceLocation.fromNamespaceAndPath(
-            KoniavacraftMod.MOD_ID, "textures/gui/research/unknow_aspect.png");
-
     private static final int WIDTH = 176;
     private static final int HEIGHT = 76;
     private static final int TEXTURE_WIDTH = 256;
     private static final int TEXTURE_HEIGHT = 256;
-    private static final int CELL_SIZE = 24;
-    private static final int INPUT_ONE_X = 27;
-    private static final int INPUT_TWO_X = 84;
-    private static final int RESULT_X = 141;
-    private static final int INPUT_Y = 38;
+    private static final int CELL_SIZE = 32;
+    private static final int INPUT_ONE_X = 24;
+    private static final int INPUT_TWO_X = 80;
+    private static final int RESULT_X = 137;
+    private static final int INPUT_Y = 34;
 
     private final IDrawable icon;
 
@@ -78,6 +80,27 @@ public class AspectSynthesisRecipeCategory implements IRecipeCategory<AspectSynt
 
     @Override
     public void setRecipe(@NotNull IRecipeLayoutBuilder builder, @NotNull AspectSynthesisRecipe recipe, @NotNull IFocusGroup focuses) {
+        IIngredientAcceptor<?> inputAspectIngredients = builder.addInvisibleIngredients(RecipeIngredientRole.INPUT);
+        inputAspectIngredients.addIngredients(AspectIngredientType.INSTANCE, List.of(recipe.first(), recipe.second()));
+
+        IIngredientAcceptor<?> outputAspectIngredients = builder.addInvisibleIngredients(RecipeIngredientRole.OUTPUT);
+        outputAspectIngredients.addIngredient(AspectIngredientType.INSTANCE, recipe.result());
+        outputAspectIngredients.addIngredient(AspectIngredientType.INSTANCE, recipe.result());
+
+        IIngredientAcceptor<?> inputTokenIngredients = builder.addInvisibleIngredients(RecipeIngredientRole.INPUT);
+        inputTokenIngredients.addItemStack(AspectTokenItem.forAspect(recipe.first(), !recipe.first().isPrimary()));
+        inputTokenIngredients.addItemStack(AspectTokenItem.forAspect(recipe.second(), !recipe.second().isPrimary()));
+
+        IIngredientAcceptor<?> outputTokenIngredients = builder.addInvisibleIngredients(RecipeIngredientRole.OUTPUT);
+        outputTokenIngredients.addItemStack(AspectTokenItem.forAspect(recipe.result(), !recipe.result().isPrimary()));
+        outputTokenIngredients.addItemStack(AspectTokenItem.forAspect(recipe.result(), !recipe.result().isPrimary()));
+
+        builder.createFocusLink(
+                inputAspectIngredients,
+                outputAspectIngredients,
+                inputTokenIngredients,
+                outputTokenIngredients
+        );
     }
 
     @Override
@@ -108,7 +131,7 @@ public class AspectSynthesisRecipeCategory implements IRecipeCategory<AspectSynt
     private void drawAspectCell(GuiGraphics graphics, Aspect aspect, int x, int y, double mouseX, double mouseY) {
         boolean unknown = !aspect.isPrimary() && !ClientResearchCache.hasDiscovered(aspect.getId());
         if (unknown) {
-            graphics.blit(UNKNOWN_TEXTURE, x, y, 0, 0, CELL_SIZE, CELL_SIZE, 32, 32);
+            graphics.renderItem(AspectTokenItem.forAspect(aspect, true), x + 8, y + 8);
         } else {
             int color = aspect.getColor();
             GuiRenderUtils renderUtils = new GuiRenderUtils(graphics.pose());

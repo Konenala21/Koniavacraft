@@ -3,6 +3,7 @@ package com.github.nalamodikk.register;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.item.NaraWatchItem;
 import com.github.nalamodikk.common.item.UpgradeItem;
+import com.github.nalamodikk.common.item.research.AspectTokenItem;
 import com.github.nalamodikk.common.item.research.CompletedResearchItem;
 import com.github.nalamodikk.common.item.research.InkQuillItem;
 import com.github.nalamodikk.common.item.research.ResearchNoteItem;
@@ -61,6 +62,10 @@ public class ModItems {
 
     public static final DeferredItem<CompletedResearchItem> COMPLETED_RESEARCH =
             ITEMS.register("completed_research", () -> new CompletedResearchItem(
+                    new Item.Properties().stacksTo(1)));
+
+    public static final DeferredItem<AspectTokenItem> ASPECT_TOKEN =
+            ITEMS.register("aspect_token", () -> new AspectTokenItem(
                     new Item.Properties().stacksTo(1)));
 
     public static void register(IEventBus eventBus){

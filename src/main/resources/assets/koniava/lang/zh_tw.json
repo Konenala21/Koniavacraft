@@ -10,7 +10,7 @@
   "item.koniava.condensed_mana_dust": "濃縮魔塵",
   "item.koniava.mana_crystal_fragment": "魔力晶核碎片",
   "item.koniava.refined_mana_dust": "精煉魔力粉",
-
+  "item.koniava.aspect_token": "本源載體",
   "//2": "=== 模組 ===",
   "item.koniava.module.koniava.mana_storage": "魔力儲存模塊",
   "item.koniava.module.koniava.mana_producer": "魔力產生器模塊",
@@ -22,7 +22,6 @@
   "item.koniava.expanded_fuel_chamber_upgrade": "擴展燃料室升級模組",
   "item.koniava.catalytic_converter_upgrade": "催化轉換器升級模組",
   "item.koniava.diagnostic_display_upgrade": "診斷顯示升級模組",
-
   "//3": "=== 方塊 ===",
   "block.koniava.mana_block": "魔法錠磚",
   "block.koniava.magic_ore": "魔法礦",
@@ -126,6 +125,14 @@
   "aspect.koniava.corrosion": "腐蝕",
   "aspect.koniava.vapor": "蒸騰",
   "aspect.koniava.growth": "孕育",
+  "aspect.koniava.qian": "乾",
+  "aspect.koniava.kun": "坤",
+  "aspect.koniava.zhen": "震",
+  "aspect.koniava.xun": "巽",
+  "aspect.koniava.kan": "坎",
+  "aspect.koniava.li": "離",
+  "aspect.koniava.gen": "艮",
+  "aspect.koniava.dui": "兌",
   "aspect.koniava.lifeflow": "靈流",
   "aspect.koniava.momentum": "動力",
   "aspect.koniava.refraction": "折射",
@@ -145,7 +152,6 @@
   "block.koniava.mana_bloom": "魔力花",
   "block.koniava.mana_infuser": "魔力注入機",
   "block.koniava.mana_grinder": "魔力粉碎機",
-
   "//4": "=== RPG 系統 ===",
   "rpg.class.none": "無職業",
   "rpg.class.warrior": "戰士",
@@ -165,8 +171,7 @@
   "rpg.skill.type.buff": "增益",
   "rpg.skill.type.debuff": "減益",
   "rpg.skill.type.utility": "功能",
-
-  "//5": "=== 裝備 ===",
+  "//5": "=== 按鍵綁定 ===",
   "equipment.koniava.helmet": "戰術頭盔",
   "equipment.koniava.chestplate": "動力胸甲",
   "equipment.koniava.leggings": "裝甲護腿",
@@ -179,11 +184,8 @@
   "equipment.koniava.engine": "動力引擎",
   "equipment.koniava.reactor": "能量反應爐",
   "equipment.koniava.exoskeleton": "外骨骼系統",
-
-  "//5": "=== 按鍵綁定 ===",
   "key.koniava.open_floating_gui": "[實驗性] 開啟浮空面板",
   "key.categories.koniava": "魔法工業",
-
   "//6": "=== 工具提示 ===",
   "tooltip.koniava.refined_mana_dust": "§7經過高溫精煉的魔力粉，§b純度更高§7，適合製作進階材料。",
   "tooltip.koniava.saved_direction_config": "%s: %s",
@@ -255,7 +257,6 @@
   "key.koniava.debug_details": "進階資訊",
   "tooltip.koniava.mana_infuser.mana_cost": "魔力消耗: %d",
   "tooltip.koniava.mana_infuser.infusion_time": "注入時間: %d tick",
-
   "//7": "=== JEI 整合 ===",
   "jei.koniava.aspect_synthesis": "要素合成",
   "jei.koniava.aspect_synthesis.input": "輸入：%s",
@@ -290,8 +291,7 @@
   "message.koniava.config_button_clicked": "配置按鈕已點擊！",
   "message.koniava.config_changed": "側面 %s 的配置已更改為 %s。",
   "message.koniava.io_mode_changed": "I/O 模式已變更",
-
-  "//9": "=== 娜拉系統訊息 ===",
+  "//9": "=== 導管等級 ===",
   "message.koniava.nara.disconnect_message": "你已選擇中斷與娜拉系統的連結。",
   "message.koniava.nara.system_online": "▸ 娜拉系統接入成功。",
   "message.koniava.nara.stabilized": "▸ 意識波動已穩定。",
@@ -304,7 +304,6 @@
   "message.koniava.synthesis.insufficient_knowledge": "你還沒有掌握其中一個要素。",
   "message.koniava.synthesis.invalid_aspect": "要素資料無效。",
   "message.koniava.synthesis.invalid_table": "研究台狀態無效。",
-
   "//10": "=== 導管訊息 ===",
   "message.koniava.conduit.hold_shift_to_place": "按住 Shift + 右鍵 來放置方塊",
   "message.koniava.conduit.gentle_hint": "想放置 %s 嗎？點擊導管邊緣或按住Shift！",
@@ -326,13 +325,10 @@
   "message.koniava.conduit.transfer_stats": "§7連接數: %s | 傳輸速率: %s",
   "message.koniava.conduit.detailed_config": "§e%s: §f%s §7(優先級: %d)",
   "message.koniava.conduit.technical_info": "§6技術信息§r\n位置: %s\n魔力: %s\n網路: %s",
-
-  "//9": "=== 導管等級 ===",
   "tier.koniava.conduit.basic": "基礎",
   "tier.koniava.conduit.advanced": "進階",
   "tier.koniava.conduit.elite": "精英",
   "message.koniava.manual_mana_transfer_todo": "§e手動魔力傳輸功能開發中...",
-
   "//11": "=== 機器訊息 ===",
   "message.koniava.screen.generator_working": "發電機正在工作，無法切換模式。",
   "message.koniava.machine.restored_count": "已還原上一個拼裝狀態，並退回 %s 個模組。",
@@ -341,14 +337,12 @@
   "message.koniava.machine.cleared_count": "已退還 %s 個模組物品。",
   "message.koniava.machine.nothing_to_clear": "沒有模組物品可退還。",
   "message.koniava.machine.no_space": "沒有可用的模組插槽。",
-
   "//12": "=== 科技魔杖模式 ===",
   "message.koniava.tech_wand.mode.configure_input": "配置輸入模式",
   "message.koniava.tech_wand.mode.configure_output": "配置輸出模式",
   "message.koniava.tech_wand.mode.add_mana": "增加魔力模式",
   "message.koniava.tech_wand.mode.rotate": "旋轉方塊模式",
   "message.koniava.tech_wand.mode.priority_config": "優先級配置模式",
-
   "//13": "=== 方向 ===",
   "direction.koniava.up": "上方",
   "direction.koniava.down": "下方",
@@ -356,7 +350,6 @@
   "direction.koniava.south": "南方",
   "direction.koniava.west": "西方",
   "direction.koniava.east": "東方",
-
   "//14": "=== 界面 ===",
   "screen.koniava.upgrade.speed": "速度升級：%s",
   "screen.koniava.upgrade.efficiency": "效率升級：%s",
@@ -379,7 +372,6 @@
   "screen.koniava.upgrade.machine_info": "%s (%d 個升級槽位)",
   "screen.koniava.upgrade.extended_hint": "使用更多升級來提升機器性能！",
   "screen.koniava.upgrade.unknown_machine": "未知機器",
-
   "//15": "=== 娜拉系統界面 ===",
   "screen.koniava.nara.bind": "綁定",
   "screen.koniava.nara.cancel": "離開",
@@ -394,7 +386,6 @@
   "screen.koniava.nara.warning": "此操作無法復原，請審慎選擇。",
   "screen.koniava.nara.screen_title": "娜拉系統初始化",
   "screen.koniava.nara.intro_welcome": "歡迎來到 Koniavacraft",
-
   "//16": "=== GUI 組件 ===",
   "gui.koniava.conduit_config": "導管配置",
   "gui.koniava.io_type": "IO類型",
@@ -405,7 +396,6 @@
   "gui.koniava.config.biome.category.performance": "性能控制",
   "gui.koniava.config.biome.category.memory": "記憶體管理",
   "gui.koniava.config.biome.category.adaptive": "智能功能",
-
   "gui.koniava.mana_infuser.mana": "魔力: %d/%d",
   "gui.koniava.mana_infuser.progress": "進度: %d%%",
   "gui.koniava.mana_infuser.status.idle": "待機",
@@ -417,10 +407,8 @@
   "jei.koniava.grinder.time": "時間: %s ticks",
   "jei.koniava.grinder.chance": "%s%%",
   "jei.koniava.grinder.chance_detail": "副產物機率: %s%%",
-
   "gui.koniava.rate": "產率: %s",
   "gui.koniava.total_yield": "總產出: %s",
-
   "//17": "=== 模式 ===",
   "mode.koniava.mana": "魔力",
   "mode.koniava.energy": "能量",
@@ -433,7 +421,6 @@
   "mode.koniava.disabled": "停用",
   "mode.koniava.both": "雙向",
   "mode.koniava.priority_config": "優先級配置模式",
-
   "//18": "=== 按鈕 ===",
   "button.koniava.reset_priorities": "重置",
   "button.koniava.toggle_mode.tooltip_auto": "自動模式",
@@ -449,12 +436,10 @@
   "button.koniava.config.reset": "重置為預設值",
   "button.mode.auto": "自動模式",
   "button.mode.manual": "手動模式",
-
   "//19": "=== 創造模式標籤 ===",
   "creativetab.koniava_items": "娜拉工藝-物品",
   "creativetab.koniava_blocks": "娜拉工藝-方塊",
   "creativetab.koniava_modules": "娜拉工藝-模塊零件",
-
   "//20": "=== 配置選項 ===",
   "koniava.config.calculateThreadCount": "粒子運算線程池大小（建議：CPU 核心數 - 1）",
   "koniava.config.manaRecipeRefreshInterval": "每幾 tick 更新一次魔力合成配方結果（建議值：2～10）",
@@ -475,7 +460,6 @@
   "koniava.config.render.fullAnimationDistance": "完整動畫渲染距離",
   "koniava.config.render.reducedAnimationDistance": "降級動畫渲染距離",
   "koniava.config.render.reducedAnimationScale": "降級動畫強度倍率",
-
   "//21": "=== 配置狀態訊息 ===",
   "message.koniava.config.biome.performance_low": "§e[生態系] 性能模式：低配置伺服器優化",
   "message.koniava.config.biome.performance_high": "§a[生態系] 性能模式：高配置伺服器優化",
@@ -487,35 +471,28 @@
   "message.koniava.biome.emergency_exit": "§a[生態系] 退出緊急模式",
   "message.koniava.biome.memory_warning": "§6[生態系] 記憶體使用量偏高：%.1fMB / %dMB",
   "message.koniava.biome.thread_init": "§e[生態系] 已初始化 %s，使用 %d 個線程",
-
   "//22": "=== 配置GUI翻譯 ===",
   "koniava.configuration.title": "魔法工業配置",
   "koniava.configuration.section.koniava.common.toml.title": "通用設定",
   "koniava.configuration.section.koniava.common.toml": "魔法工業的通用配置選項",
   "koniava.configuration.section.koniava.client.toml.title": "客戶端設定",
   "koniava.configuration.section.koniava.client.toml": "客戶端渲染與視覺效果選項",
-
   "koniava.configuration.biome_processing": "生物群系處理",
   "koniava.configuration.biome_processing.tooltip": "生物群系處理系統設定",
   "koniava.configuration.biome_processing.button": "生物群系處理",
-
   "koniava.configuration.multithreading": "多線程",
   "koniava.configuration.multithreading.tooltip": "多線程配置選項",
   "koniava.configuration.multithreading.button": "多線程",
-
   "koniava.configuration.performance": "性能控制",
   "koniava.configuration.performance.tooltip": "性能控制設定",
   "koniava.configuration.performance.button": "性能",
-
   "koniava.configuration.memory": "記憶體管理",
   "koniava.configuration.memory.tooltip": "記憶體使用和優化設定",
   "koniava.configuration.memory.button": "記憶體",
   "koniava.configuration.render": "渲染設定",
-
   "koniava.configuration.adaptive": "智能功能",
   "koniava.configuration.adaptive.tooltip": "自適應和智能功能",
   "koniava.configuration.adaptive.button": "智能功能",
-
   "koniava.config.manaRecipeRefreshInterval.tooltip": "魔力合成配方刷新頻率（tick）",
   "koniava.config.showIntroAnimation.tooltip": "玩家加入時顯示介紹動畫",
   "koniava.config.developerModeEnabled.tooltip": "手動啟用開發者模式。正式發佈建議維持關閉。",
@@ -533,7 +510,6 @@
   "koniava.config.render.fullAnimationDistance.tooltip": "方塊實體完整動畫的可視距離（單位：格）。",
   "koniava.config.render.reducedAnimationDistance.tooltip": "超過完整距離後，降級動畫維持到此距離；再遠則停止動畫。",
   "koniava.config.render.reducedAnimationScale.tooltip": "在降級距離區間內的動畫速度與振幅倍率。",
-
   "//23": "=== 配置工具提示 ===",
   "koniava.config.biome.multithreading.tooltip": "啟用多線程加速生物群系處理。建議4核心以上CPU的伺服器使用。",
   "koniava.config.biome.threadCount.tooltip": "生物群系處理使用的線程數量。建議值：CPU核心數 - 2（最少1個，最多8個）。",

@@ -18,6 +18,7 @@ public class PlayerKnowledge {
 
     private static final int MIN_TIER = 1;
     private static final int MAX_TIER = 12;
+    private static final int PRIMARY_ASPECT_START_AMOUNT = 5;
 
     private final Map<ResourceLocation, Integer> discoveredAspects = new HashMap<>();
     private final Set<ResourceLocation> completedResearch = new HashSet<>();
@@ -250,7 +251,7 @@ public class PlayerKnowledge {
     private void addPrimaryAspects() {
         for (Aspect aspect : ModAspects.all()) {
             if (aspect.isPrimary()) {
-                discoveredAspects.putIfAbsent(aspect.getId(), 0);
+                discoveredAspects.putIfAbsent(aspect.getId(), PRIMARY_ASPECT_START_AMOUNT);
             }
         }
     }

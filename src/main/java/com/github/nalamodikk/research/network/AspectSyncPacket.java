@@ -13,14 +13,14 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
-import java.util.List;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Server → client: syncs the player's discovered aspects to {@link ClientResearchCache}.
  * Does NOT open any screen — use this whenever aspects change outside the watch-open flow.
  */
-public record AspectSyncPacket(List<ResourceLocation> discovered)
+public record AspectSyncPacket(Map<ResourceLocation, Integer> discovered)
         implements CustomPacketPayload {
 
     public static final Type<AspectSyncPacket> TYPE =
@@ -28,7 +28,7 @@ public record AspectSyncPacket(List<ResourceLocation> discovered)
 
     public static final StreamCodec<io.netty.buffer.ByteBuf, AspectSyncPacket> STREAM_CODEC =
             StreamCodec.composite(
-                    ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()),
+                    ByteBufCodecs.map(HashMap::new, ResourceLocation.STREAM_CODEC, ByteBufCodecs.VAR_INT),
                     AspectSyncPacket::discovered,
                     AspectSyncPacket::new
             );
@@ -38,8 +38,7 @@ public record AspectSyncPacket(List<ResourceLocation> discovered)
 
     public static void sendTo(ServerPlayer player) {
         var knowledge = ResearchSavedData.get(player.serverLevel()).getOrCreate(player.getUUID());
-        Set<ResourceLocation> discovered = knowledge.getDiscoveredAspects();
-        PacketDistributor.sendToPlayer(player, new AspectSyncPacket(List.copyOf(discovered)));
+        PacketDistributor.sendToPlayer(player, new AspectSyncPacket(new HashMap<>(knowledge.getDiscoveredAspectsMap())));
     }
 
     public static void handle(AspectSyncPacket packet, IPayloadContext context) {

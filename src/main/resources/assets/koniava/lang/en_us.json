@@ -10,7 +10,7 @@
   "item.koniava.condensed_mana_dust": "Condensed Mana Dust",
   "item.koniava.mana_crystal_fragment": "Mana Crystal Fragment",
   "item.koniava.refined_mana_dust": "Refined Mana Dust",
-
+  "item.koniava.aspect_token": "Aspect Token",
   "//2": "=== MODULES ===",
   "item.koniava.module.koniava.mana_storage": "Mana Storage Module",
   "item.koniava.module.koniava.mana_producer": "Mana Producer Module",
@@ -22,7 +22,6 @@
   "item.koniava.expanded_fuel_chamber_upgrade": "Expanded Fuel Chamber Upgrade",
   "item.koniava.catalytic_converter_upgrade": "Catalytic Converter Upgrade",
   "item.koniava.diagnostic_display_upgrade": "Diagnostic Display Upgrade",
-
   "//3": "=== BLOCKS ===",
   "block.koniava.mana_block": "Mana Block",
   "block.koniava.magic_ore": "Magic Ore",
@@ -126,6 +125,14 @@
   "aspect.koniava.corrosion": "Corrosion",
   "aspect.koniava.vapor": "Vapor",
   "aspect.koniava.growth": "Growth",
+  "aspect.koniava.qian": "Qian",
+  "aspect.koniava.kun": "Kun",
+  "aspect.koniava.zhen": "Zhen",
+  "aspect.koniava.xun": "Xun",
+  "aspect.koniava.kan": "Kan",
+  "aspect.koniava.li": "Li",
+  "aspect.koniava.gen": "Gen",
+  "aspect.koniava.dui": "Dui",
   "aspect.koniava.lifeflow": "Life Flow",
   "aspect.koniava.momentum": "Momentum",
   "aspect.koniava.refraction": "Refraction",
@@ -145,7 +152,6 @@
   "block.koniava.mana_bloom": "Mana Bloom",
   "block.koniava.mana_infuser": "Mana Infuser",
   "block.koniava.mana_grinder": "Mana Grinder",
-
   "//4": "=== RPG SYSTEM ===",
   "rpg.class.none": "None",
   "rpg.class.warrior": "Warrior",
@@ -165,8 +171,7 @@
   "rpg.skill.type.buff": "Buff",
   "rpg.skill.type.debuff": "Debuff",
   "rpg.skill.type.utility": "Utility",
-
-  "//5": "=== EQUIPMENT ===",
+  "//5": "=== KEYBINDINGS ===",
   "equipment.koniava.helmet": "Tactical Helmet",
   "equipment.koniava.chestplate": "Power Chestplate",
   "equipment.koniava.leggings": "Armored Leggings",
@@ -179,11 +184,8 @@
   "equipment.koniava.engine": "Power Engine",
   "equipment.koniava.reactor": "Energy Reactor",
   "equipment.koniava.exoskeleton": "Exoskeleton System",
-
-  "//5": "=== KEYBINDINGS ===",
   "key.koniava.open_floating_gui": "[Experimental] Open Floating Panel",
   "key.categories.koniava": "Koniavacraft",
-
   "//6": "=== TOOLTIPS ===",
   "tooltip.koniava.refined_mana_dust": "§7High-temperature refined mana dust with §bgreater purity§7, suitable for advanced materials.",
   "tooltip.koniava.saved_direction_config": "%s: %s",
@@ -255,7 +257,6 @@
   "tooltip.koniava.boolean.false": "No",
   "tooltip.koniava.debug.hint": "Hold %s for details",
   "key.koniava.debug_details": "Debug Details",
-
   "//7": "=== JEI INTEGRATION ===",
   "jei.koniava.aspect_synthesis": "Aspect Synthesis",
   "jei.koniava.aspect_synthesis.input": "Input: %s",
@@ -268,7 +269,6 @@
   "jei.koniava.burn_time": "Burn Time: %s ticks",
   "jei.koniava.mana_cost": "Mana Cost: %s",
   "jei.koniava.infusion_time": "Infusion Time: %s sec",
-
   "//8": "=== MESSAGES ===",
   "message.koniava.nara.sync_error": "An error occurred while syncing Nara state: %s",
   "message.koniava.mana_added": "Added %s Mana. Current Mana: %s",
@@ -291,8 +291,7 @@
   "message.koniava.config_button_clicked": "Configuration button clicked!",
   "message.koniava.config_changed": "Configuration for side %s has been changed to %s.",
   "message.koniava.io_mode_changed": "I/O Mode Changed",
-
-  "//9": "=== NARA SYSTEM MESSAGES ===",
+  "//9": "=== Conduit Tiers ===",
   "message.koniava.nara.disconnect_message": "You have chosen to sever your connection with the Nara System.",
   "message.koniava.nara.system_online": "▸ NARA SYSTEM ONLINE",
   "message.koniava.nara.stabilized": "▸ Conscious alignment stabilized.",
@@ -305,7 +304,6 @@
   "message.koniava.synthesis.insufficient_knowledge": "You have not discovered one of those aspects yet.",
   "message.koniava.synthesis.invalid_aspect": "Invalid aspect data.",
   "message.koniava.synthesis.invalid_table": "Invalid research table state.",
-
   "//10": "=== CONDUIT MESSAGES ===",
   "message.koniava.conduit.hold_shift_to_place": "Hold Shift + Right Click to place blocks",
   "message.koniava.conduit.gentle_hint": "Want to place %s? Click conduit edge or hold Shift!",
@@ -327,14 +325,10 @@
   "message.koniava.conduit.transfer_stats": "§7Connections: %s | Transfer Rate: %s",
   "message.koniava.conduit.detailed_config": "§e%s: §f%s §7(Priority: %d)",
   "message.koniava.conduit.technical_info": "§6Technical Info§r\nPosition: %s\nMana: %s\nNetwork: %s",
-
-  "//9": "=== Conduit Tiers ===",
   "tier.koniava.conduit.basic": "Basic",
   "tier.koniava.conduit.advanced": "Advanced",
   "tier.koniava.conduit.elite": "Elite",
-
   "message.koniava.manual_mana_transfer_todo": "§eManual mana transfer feature in development...",
-
   "//11": "=== MACHINE MESSAGES ===",
   "message.koniava.screen.generator_working": "Generator is working. Mode switching is disabled.",
   "message.koniava.machine.restored_count": "Restored previous setup. Returned %s module(s) to you.",
@@ -343,14 +337,12 @@
   "message.koniava.machine.cleared_count": "Returned %s module item(s).",
   "message.koniava.machine.nothing_to_clear": "No module items to return.",
   "message.koniava.machine.no_space": "No available module slot.",
-
   "//12": "=== TECH WAND MODES ===",
   "message.koniava.tech_wand.mode.configure_input": "Configure Input Mode",
   "message.koniava.tech_wand.mode.configure_output": "Configure Output Mode",
   "message.koniava.tech_wand.mode.add_mana": "Add Mana Mode",
   "message.koniava.tech_wand.mode.rotate": "Rotate Block Mode",
   "message.koniava.tech_wand.mode.priority_config": "Priority Configuration Mode",
-
   "//13": "=== DIRECTIONS ===",
   "direction.koniava.up": "Up",
   "direction.koniava.down": "Down",
@@ -358,7 +350,6 @@
   "direction.koniava.south": "South",
   "direction.koniava.west": "West",
   "direction.koniava.east": "East",
-
   "//14": "=== SCREENS ===",
   "screen.koniava.upgrade.speed": "Speed : %s",
   "screen.koniava.upgrade.efficiency": "Efficiency : %s",
@@ -381,7 +372,6 @@
   "screen.koniava.upgrade.machine_info": "%s (%d upgrade slots)",
   "screen.koniava.upgrade.extended_hint": "Use more upgrades to improve machine performance!",
   "screen.koniava.upgrade.unknown_machine": "Unknown Machine",
-
   "//15": "=== NARA SYSTEM SCREENS ===",
   "screen.koniava.nara.bind": "Bind to Nara System",
   "screen.koniava.nara.cancel": "Cancel",
@@ -396,7 +386,6 @@
   "screen.koniava.nara.warning": "This operation is irreversible. Please proceed with caution.",
   "screen.koniava.nara.screen_title": "Nara System Initialization",
   "screen.koniava.nara.intro_welcome": "Welcome to Koniavacraft",
-
   "//16": "=== GUI COMPONENTS ===",
   "gui.koniava.conduit_config": "Conduit Configuration",
   "gui.koniava.io_type": "IO Type",
@@ -418,10 +407,8 @@
   "jei.koniava.grinder.time": "Time: %s ticks",
   "jei.koniava.grinder.chance": "%s%%",
   "jei.koniava.grinder.chance_detail": "Byproduct chance: %s%%",
-
   "gui.koniava.rate": "Rate: %s",
   "gui.koniava.total_yield": "Total Yield: %s",
-
   "//17": "=== MODES ===",
   "mode.koniava.mana": "Mana",
   "mode.koniava.energy": "Energy",
@@ -434,7 +421,6 @@
   "mode.koniava.disabled": "Disabled",
   "mode.koniava.both": "Input & Output",
   "mode.koniava.priority_config": "Priority Config",
-
   "//18": "=== BUTTONS ===",
   "button.koniava.reset_priorities": "Reset",
   "button.koniava.toggle_mode.tooltip_auto": "Automatic Mode",
@@ -450,12 +436,10 @@
   "button.koniava.config.reset": "Reset to Default",
   "button.mode.auto": "auto mode",
   "button.mode.manual": "manual mode",
-
   "//19": "=== CREATIVE TABS ===",
   "creativetab.koniava_items": "Koniavacraft - Items",
   "creativetab.koniava_blocks": "Koniavacraft - Blocks",
   "creativetab.koniava_modules": "Koniavacraft - Modules",
-
   "//20": "=== CONFIG OPTIONS ===",
   "koniava.config.calculateThreadCount": "Thread Pool Size for Particle Calculation (Recommended: CPU cores - 1)",
   "koniava.config.manaRecipeRefreshInterval": "How many ticks to refresh the mana crafting recipe result (Recommended value: 2-10)",
@@ -476,7 +460,6 @@
   "koniava.config.render.fullAnimationDistance": "Render Full Animation Distance",
   "koniava.config.render.reducedAnimationDistance": "Render Reduced Animation Distance",
   "koniava.config.render.reducedAnimationScale": "Render Reduced Animation Scale",
-
   "//21": "=== CONFIG STATUS MESSAGES ===",
   "message.koniava.config.biome.performance_low": "§e[Biome] Performance mode: Low-end server optimized",
   "message.koniava.config.biome.performance_high": "§a[Biome] Performance mode: High-end server optimized",
@@ -488,35 +471,28 @@
   "message.koniava.biome.emergency_exit": "§a[Biome] Exited emergency mode",
   "message.koniava.biome.memory_warning": "§6[Biome] Memory usage high: %.1fMB / %dMB",
   "message.koniava.biome.thread_init": "§e[Biome] Initialized %s with %d threads",
-
   "//22": "=== CONFIG GUI TRANSLATIONS ===",
   "koniava.configuration.title": "Koniavacraft Configuration",
   "koniava.configuration.section.koniava.common.toml.title": "Common Settings",
   "koniava.configuration.section.koniava.common.toml": "Common configuration options for Koniavacraft",
   "koniava.configuration.section.koniava.client.toml.title": "Client Settings",
   "koniava.configuration.section.koniava.client.toml": "Client-side rendering and visual options",
-
   "koniava.configuration.biome_processing": "Biome Processing",
   "koniava.configuration.biome_processing.tooltip": "Settings for biome processing system",
   "koniava.configuration.biome_processing.button": "Biome Processing",
-
   "koniava.configuration.multithreading": "Multithreading",
   "koniava.configuration.multithreading.tooltip": "Multithreading configuration options",
   "koniava.configuration.multithreading.button": "Multithreading",
-
   "koniava.configuration.performance": "Performance",
   "koniava.configuration.performance.tooltip": "Performance control settings",
   "koniava.configuration.performance.button": "Performance",
-
   "koniava.configuration.memory": "Memory Management",
   "koniava.configuration.memory.tooltip": "Memory usage and optimization settings",
   "koniava.configuration.memory.button": "Memory",
   "koniava.configuration.render": "Render",
-
   "koniava.configuration.adaptive": "Smart Features",
   "koniava.configuration.adaptive.tooltip": "Adaptive and intelligent features",
   "koniava.configuration.adaptive.button": "Smart Features",
-
   "koniava.config.manaRecipeRefreshInterval.tooltip": "How often to refresh mana crafting recipes (in ticks)",
   "koniava.config.showIntroAnimation.tooltip": "Show introduction animation when player joins",
   "koniava.config.developerModeEnabled.tooltip": "Manually enable developer mode. Keep disabled for releases.",
@@ -529,13 +505,11 @@
   "screen.koniava.dev_mode_confirm.phrase_hint": "Type: I_AM_DEVELOPER",
   "screen.koniava.dev_mode_confirm.confirm": "Enable",
   "screen.koniava.dev_mode_confirm.cancel": "Cancel",
-
-    "koniava.config.biome.processingEnabled": "Enable Biome Surface Processing",
+  "koniava.config.biome.processingEnabled": "Enable Biome Surface Processing",
   "koniava.config.biome.processingEnabled.tooltip": "When enabled, the server will replace surface blocks for selected biomes.",
   "koniava.config.render.fullAnimationDistance.tooltip": "Distance (in blocks) for full block-entity animation.",
   "koniava.config.render.reducedAnimationDistance.tooltip": "Distance (in blocks) for reduced animation quality before stopping animation.",
   "koniava.config.render.reducedAnimationScale.tooltip": "Animation speed and amplitude multiplier in the reduced-distance range.",
-
   "//23": "=== CONFIG TOOLTIPS ===",
   "koniava.config.biome.multithreading.tooltip": "Enable multithreading for faster biome processing. Recommended for servers with 4+ CPU cores.",
   "koniava.config.biome.threadCount.tooltip": "Number of threads to use for biome processing. Recommended: CPU cores - 2 (minimum 1, maximum 8).",
