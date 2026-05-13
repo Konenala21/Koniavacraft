@@ -6,14 +6,14 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
-- EN: All 48 new aspects are now discoverable by scanning blocks, items, and entities — no longer limited to synthesis only.
-- EN: Fixed aspect palette scroll not working on the third page in both the Research Puzzle and Aspect Synthesis screens.
-- EN: Over 60 entity types now return meaningful aspects when scanned (e.g. zombie → Undead+Death, bee → Vitality+Harvest, villager → Humanity+Commerce, ender dragon → Void+Eldritch).
-- EN: Completed Research scroll now displays its custom item texture correctly.
-- ZH: 全部 48 種新本源現在可透過掃描方塊、物品、實體發現，不再只能靠合成取得。
-- ZH: 修正研究謎題與本源合成介面的本源板第三頁無法滾動的問題。
-- ZH: 超過 60 種實體現在掃描後會回傳對應本源（例如：殭屍→亡靈+死滅、蜜蜂→生機+豐收、村民→人性+交易、末影龍→虛空+異界）。
-- ZH: 完成研究卷軸現在能正確顯示自訂貼圖。
+- All 48 new aspects are now discoverable by scanning blocks, items, and entities — no longer synthesis only.
+- 全部 48 種新本源現在可透過掃描方塊、物品、實體發現，不再只能靠合成取得。
+- Fixed aspect palette scroll not working on the third page in the Research Puzzle and Aspect Synthesis screens.
+- 修正研究謎題與本源合成介面的本源板第三頁無法滾動的問題。
+- Over 60 entity types now return meaningful aspects when scanned (e.g. Zombie → Undead+Death, Bee → Vitality+Harvest, Villager → Humanity+Commerce, Ender Dragon → Void+Eldritch).
+- 超過 60 種實體掃描後回傳對應本源（例：殭屍→亡靈+死滅、蜜蜂→生機+豐收、村民→人性+交易、末影龍→虛空+異界）。
+- Completed Research scroll now displays its custom item texture.
+- 完成研究卷軸現在能正確顯示自訂貼圖。
 
 ### Developer Notes / 開發者備註
 
@@ -32,139 +32,40 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
-- EN: The aspect system has been greatly expanded — 48 new aspects added across 7 categories: Natural Phenomena, Knowledge & Mind, Magic, Life & Biology, Economy, Machines & Industry, and Society & Civilization. Total aspects now: 80.
-- EN: Completed Research scroll now has a proper item texture.
-- EN: Fixed an issue where resetting research could leave the client in an out-of-sync state.
-- EN: Fixed research puzzle progress and aspect counts not syncing correctly after reconnect.
-- EN: Fixed JEI aspect synthesis display not refreshing after research unlock.
-- ZH: 本源系統大幅擴充——新增 48 種本源，分為七大類別：自然現象、知識心靈、魔法、生命生物、經濟資源、機器工業、社會文明。本源總數現為 80 種。
-- ZH: 完成研究卷軸現在擁有正確的物品貼圖。
-- ZH: 修正重置研究後客戶端狀態可能不同步的問題。
-- ZH: 修正重新連線後研究謎題進度與本源計數無法正確同步的問題。
-- ZH: 修正 JEI 本源合成顯示在研究解鎖後未重新整理的問題。
+- The aspect system has been greatly expanded — 80 aspects total across 7 categories: Natural Phenomena, Knowledge & Mind, Magic, Life & Biology, Economy, Machines & Industry, and Society & Civilization.
+- 本源系統大幅擴充，共 80 種本源，分為七大類別：自然現象、知識心靈、魔法、生命生物、經濟資源、機器工業、社會文明。
+- Fixed research state going out of sync after resetting research.
+- 修正重置研究後客戶端狀態不同步的問題。
+- Fixed research puzzle progress and aspect counts not syncing correctly after reconnecting.
+- 修正重新連線後研究謎題進度與本源計數無法正確同步的問題。
+- Fixed JEI aspect synthesis display not refreshing after unlocking research.
+- 修正 JEI 本源合成顯示在解鎖研究後未重新整理的問題。
 
 ### Developer Notes / 開發者備註
 
-- EN: `ModAspects` expanded from 32 to 80 aspects. New aspects added in dependency tiers (A→E) to preserve static initialisation order. `void` is registered as `VOID_ASPECT` field due to Java keyword conflict.
-- EN: New aspect IDs: shadow, frost, cognition, venom, undead, mending, taint, binding, flight, harvest, instrument, eldritch, wealth, arcana, famine, void, death, corpus, primordial, propagation, vitae, steam, sensus, blade, warding, excavation, machine, furnace, alchemy, aura, spiritus, bestia, desire, storm, humanity, instinct, fortify, gear, pipeline, arc, faith, wisdom, language, order, commerce, law, automation, civilization.
-- EN: `AspectScanner` mappings for the 48 new aspects are not yet added — aspects are registered and visible in the research UI but cannot be discovered by scanning yet.
-- EN: Full bilingual lang keys added to `en_us.json` and `zh_tw.json`.
-- EN: Aspect wiki written to `AI-context/aspect-wiki.md`.
-- EN: `PlayerKnowledge` and sync packets require no changes — the aspect storage is generic.
-- EN: Fixed `ResearchCommand` reset logic and client-side `ClientResearchCache` staleness.
-- EN: Fixed `ResearchScreen` puzzle count desync on reconnect via `KnowledgeSyncPacket`.
-- EN: Fixed `AspectSynthesisJEIPlugin` not triggering a refresh after research state changes.
-- ZH: `ModAspects` 從 32 種擴充至 80 種。新本源依賴層次（A→E）依序插入以保持靜態初始化順序正確。`void` 因為 Java 關鍵字衝突，欄位名稱為 `VOID_ASPECT`。
-- ZH: `AspectScanner` 尚未為新增的 48 種本源添加掃描對應——本源已在研究 UI 中顯示，但目前無法透過掃描發現。
-- ZH: 修正 `ResearchCommand` 重置邏輯與 `ClientResearchCache` 過期問題。
-- ZH: 修正重新連線時 `ResearchScreen` 謎題計數透過 `KnowledgeSyncPacket` 不同步的問題。
-- ZH: 修正 `AspectSynthesisJEIPlugin` 在研究狀態變更後未觸發重新整理的問題。
+- `ModAspects` expanded from 32 to 80 aspects in dependency tiers (A→E). `void` field name is `VOID_ASPECT` due to Java keyword conflict.
+- Scanner mappings for 48 new aspects added in v0.0.1.6-2.
+- Fixed `ResearchCommand` reset logic and `ClientResearchCache` staleness.
+- Fixed `ResearchScreen` puzzle count desync via `KnowledgeSyncPacket`.
+- Fixed `AspectSynthesisJEIPlugin` not refreshing after research state change.
 
 ## [0.0.1.6] - 2026-05-11
 
 ### Player Changes / 玩家更新內容
 
-- EN: Machine GUIs now feature a "LOCKED" overlay with a detailed tooltip if the required research is not yet completed.
-- EN: Nara Watch HUD now supports identifying living entities and dropped items, displaying their names when targeted.
-- EN: Research state now syncs instantly upon completing a research scroll, immediately unlocking machines without re-opening GUIs.
-- ZH: 機器介面現在新增「已鎖定」遮罩；若未完成必要研究，將顯示提示並說明所需解鎖的研究條目。
-- ZH: 娜拉手錶 HUD 現在支援識別生物與地面掉落物，對準目標時會即時顯示其名稱。
-- ZH: 研究狀態現在會在點擊研究卷軸後即時同步，不需重新開啟介面即可立刻解鎖機器操作。
+- Machine GUIs now show a "LOCKED" overlay with a tooltip explaining which research is required.
+- 機器介面新增「已鎖定」遮罩，並顯示提示說明所需研究。
+- Nara Watch HUD now identifies living entities and dropped items by name when targeted.
+- 娜拉手錶 HUD 現在可對準生物與地面掉落物顯示其名稱。
+- Completing a research scroll now instantly syncs research state and unlocks machines without reopening GUIs.
+- 完成研究卷軸後立即同步研究狀態，不需重新開啟介面即可解鎖機器。
 
 ### Developer Notes / 開發者備註
 
-- EN: Implemented `ResearchLockWidget` using the `ModularScreen` framework for universal GUI research gating.
-- EN: Added batch research commands: `add_all_aspects` grants every aspect in one call, and `reset_non_primary_aspects` clears every non-primary aspect while restoring primary aspect amounts to their initial value in one call.
-- EN: Added `KnowledgeSyncPacket` to handle full player research state synchronization during login and completion events.
-- EN: Enhanced `BlockSelectorUtils` with entity ray-tracing support (`getTargetEntity`).
-- EN: Added `ResearchGameTests` suite for verifying multi-player research isolation and dynamic unlocking logic.
-- EN: Refactored networking packet handlers (`ResearchClientPayloadHandler`) to prevent `RuntimeDistCleaner` crashes on dedicated servers.
-- EN: Fixed `SolarCollectorSyncHelper` to correctly synchronize upgrade counts and environmental status to the client.
-- ZH: 實作 `ResearchLockWidget` 並整合至 `ModularScreen` 框架，達成通用的介面研究鎖定機制。
-- ZH: 新增 `KnowledgeSyncPacket` 用於處理玩家登入與完成研究時的完整狀態同步。
-- ZH: 強化 `BlockSelectorUtils` 支援實體射線偵測（`getTargetEntity`）。
-- ZH: 新增 `ResearchGameTests` 測試套件，驗證多人環境下的研究隔離與動態解鎖邏輯。
-- ZH: 重構網路封包處理器（`ResearchClientPayloadHandler`），修復專用伺服器端載入客戶端類別導致的崩潰。
-- ZH: 修正 `SolarCollectorSyncHelper` 以正確同步升級模組數量與環境狀態至客戶端。
-
-## [Unreleased] - 2026-05-09
-
-### Player Changes / 玩家更新內容
-
-- EN: The Nara Watch scanner now supports dropped item entities as scan targets, not only blocks.
-- EN: Scanning now plays rising tick sounds and emits target particles, making the 0.5-second hold clearer.
-- EN: Research nodes now stay locked until the required compound aspects have been discovered by scanning.
-- EN: Added more aspect scan mappings for vanilla and Koniava blocks/items.
-- ZH: 娜拉手錶掃描器現在可掃描地上的掉落物，不再只支援方塊。
-- ZH: 掃描過程加入漸升音效與目標粒子，0.5 秒長按回饋更清楚。
-- ZH: 研究節點現在會檢查必要本源是否已透過掃描發現，未發現時維持鎖定。
-- ZH: 補充更多原版與 Koniava 方塊/物品的本源掃描對應。
-
-- EN: Completing a research puzzle now gives a Completed Research Scroll. Right-clicking the scroll in the air officially commits the research and unlocks its benefits. First-ever completion triggers a firework celebration.
-- EN: Research aspects now show composition info on hover (compound aspects show "A + B" in the palette tooltip).
-- EN: Fixed research puzzle — aspects now also connect if they share a common component (e.g. Mana ↔ Resonance via Wu), and same-aspect cells always connect.
-- EN: Research node graph (Nara Watch) now supports scroll-to-zoom and drag-to-pan. Click an AVAILABLE node to receive the Research Note.
-- EN: Clicking a node in the Nara Watch checks for duplicate notes in inventory and already-completed research before giving a note.
-- EN: Solar Mana Collector now correctly stops when any block is placed directly above it.
-- EN: Nara system bind now grants the Nara Holographic Watch if the player doesn't already have one.
-- EN: Research Table GUI now uses the custom texture drawn by the artist — looks much better than the old placeholder.
-- EN: Removing an Arcane Conduit from a network no longer silently destroys stored mana — excess mana is returned to the conduit's own buffer.
-- EN: Upgrade GUI now correctly closes when you move too far from the machine (was always staying open before).
-- ZH: 研究台介面現在使用自訂貼圖，不再是佔位色塊。
-- ZH: 從網路移除弧光導管時，多餘的魔力不再無聲消失，而是退回到被移除導管的 buffer 中。
-- ZH: 升級介面現在會在玩家走遠後正確關閉（之前永遠保持開啟）。
-
-### Developer Notes / 開發者備註
-
-- EN: `WatchSyncPacket` now carries discovered aspect IDs and updates `ClientResearchCache` before opening `NaraWatchScreen`.
-- EN: `NaraWatchScreen.stateOf()` now checks required aspects through `ClientResearchCache` before marking a node available.
-- EN: `NaraWatchItem` now ray-checks nearby `ItemEntity` targets, scans item aspects, and sends target particles from the server.
-- EN: `AspectScanner` now has item mappings plus tag fallback for common item categories.
-- EN: Added `.gitnexusignore` and ignored `.gitnexus` local index data.
-- ZH: `WatchSyncPacket` 現在會攜帶已發現本源 ID，並在開啟 `NaraWatchScreen` 前更新 `ClientResearchCache`。
-- ZH: `NaraWatchScreen.stateOf()` 現在會先檢查必要本源是否已發現，再判定節點可研究。
-- ZH: `NaraWatchItem` 新增掉落物射線檢查、物品本源掃描，以及伺服器端目標粒子效果。
-- ZH: `AspectScanner` 新增物品對應表與常見物品 tag fallback。
-- ZH: 新增 `.gitnexusignore`，並忽略 `.gitnexus` 本地索引資料。
-
-- EN: `CompletedResearchItem` added — transforms note on puzzle completion; `use()` applies research to `PlayerKnowledge` + triggers first-research firework (particles + sounds).
-- EN: `ResearchCompletePacket` no longer saves to `ResearchSavedData`; responsibility moved to `CompletedResearchItem.use()`.
-- EN: `Aspect.canConnectTo()` extended with same-aspect rule and shared-component rule.
-- EN: `ResearchRegistry` aspect lists corrected so all required aspects can connect: MANA_FLOW uses WU+WATER+MANA, MANA_GENERATION uses FIRE+ENERGY+MANA, MANA_CRYSTALLISATION uses CRYSTAL+RESONANCE+MANA.
-- EN: `SolarManaCollectorBlockEntity.isOpenToSky()` fixed — was checking `above(2)`, now checks `above(1)` so a block directly on top correctly stops generation.
-- EN: `NaraWatchScreen` — added left tier-filter tabs and right status-filter tabs protruding into empty screen space outside the 400×252 panel; replaced planned aspect-filter tabs with a search `EditBox` below the panel; `isNodeVisible()` dynamically stacks tier/status/search filters; typing in the search box no longer closes the screen via E key.
-- EN: `NaraWatchScreen` added scroll-zoom (pivot at cursor, 0.4x–3.0x) and drag-to-pan.
-- EN: `StartResearchPacket` now checks for duplicate research note in player inventory before giving another.
-- EN: `NaraBindRequestPacket` gives `NaraWatchItem` on successful bind if player doesn't already have one.
-- EN: `ResearchTableScreen` now blits `textures/gui/research_table_gui.png` (176×181) as background; removed all programmatic fill/outline drawing. `imageHeight` updated from 166 to 181.
-- EN: `ResearchTableMenu` slot positions updated to align with texture pixel data: NOTE_SLOT (47,33), QUILL_SLOT (116,33); player inventory shifted to x=9+col*18, y=99+row*18; hotbar at y=157.
-- EN: Nara Watch UI redesigned — purple area is the interactive node graph (drag/zoom/click); blue area shows research description and lore on selection. Two-click confirmation: first click selects a node and shows its description, second click on the same node receives the note.
-- EN: Nara Watch research tree now has side tabs — left tabs filter by tier (All / T1–T4), right tabs filter by status (All / Unlockable / Completed), and a search box below the panel for name searching. All three filters stack.
-- EN: Added Nara Holographic Watch item — right-click to open TC4-style research node graph. Click an available node to receive the corresponding Research Note.
-- EN: Research puzzle grid is now persisted in `ResearchTableBlockEntity` via NBT — closing and reopening the puzzle screen resumes the same grid state.
-- EN: `ResearchAspectPlacePacket` extended to carry `researchId`, `q`, `r`, and optional `aspectId`; server now saves each cell change to the block entity and only damages the quill on placement (not removal).
-- ZH: `ResearchTableScreen` 改為 blit `research_table_gui.png`（176×181）作為背景，刪除所有程式碼繪製的色塊與外框。`imageHeight` 從 166 更新為 181。
-- ZH: `ResearchTableMenu` 插槽座標依貼圖像素調整：NOTE_SLOT (47,33)、QUILL_SLOT (116,33)；玩家背包移至 x=9+col*18、y=99+row*18；快捷欄改為 y=157。
-- ZH: 娜拉手錶研究樹新增側邊標籤 — 左側按等級篩選（全/T1-T4），右側按狀態篩選（全部/可解鎖/已完成），面板下方新增搜尋框可依名稱篩選，三種條件可同時疊加。
-- ZH: 新增娜拉全息手錶物品 — 右鍵開啟 TC4 風格研究節點圖，點選可用節點即可獲取對應研究筆記。
-- ZH: `NaraWatchScreen` — 新增向外突出至空白螢幕空間的左側等級篩選標籤與右側狀態篩選標籤；將原先規劃的元素篩選標籤改為面板下方搜尋框 `EditBox`；`isNodeVisible()` 動態疊加等級/狀態/搜尋三種篩選；搜尋框有焦點時按 E 不再關閉介面。
-- ZH: 研究謎題格子狀態現在透過 NBT 存進 `ResearchTableBlockEntity`，關閉再開啟謎題畫面會還原上次進度。
-- ZH: `ResearchAspectPlacePacket` 擴充攜帶 `researchId`、`q`、`r` 及可選的 `aspectId`；伺服器現在將每個格子變更存入 BE，且只有放置時才損耗羽毛筆（移除不損耗）。
-
-- EN: `VirtualNetwork.removeConduit()` now returns excess mana to the leaving conduit's buffer before shrinking capacity, instead of truncating silently.
-- EN: `VirtualNetwork.logNetworkInfo()` demoted from `LOGGER.info` to `LOGGER.debug` to stop log spam.
-- EN: `NetworkManager.performPassiveCleanup()` bug fixed — was incorrectly evicting all non-conduit endpoints (machines) from cache; now only removes entries where the neighbour *was* a conduit but no longer is.
-- EN: `UpgradeMenu.stillValid()` now checks player proximity via `ContainerLevelAccess` instead of always returning `true`.
-- EN: `TransferManager` — removed deprecated `LEGACY_TRANSFER_RATE` constant and dead fallback branch in `getTransferRateLimit()`; removed empty `if (currentTick % 10 == 0)` block; removed commented-out debug logger.
-- EN: `OutputHandler` — remainder mana/energy after proportional distribution now goes to the hungriest target instead of always `targets[0]`; collapsed duplicate 15-line TODO blocks to 2 lines each.
-- EN: `BiomeTerrainRegistration` — removed 4 dead stub methods (`registerVolcanicLands`, `registerCrystalDesert`, `registerFrozenWasteland`, `registerComplexCustomTerrain`) that were never called.
-- ZH: `VirtualNetwork.removeConduit()` 現在在縮容前先把多餘魔力退還給離開的導管，不再靜默截斷。
-- ZH: `VirtualNetwork.logNetworkInfo()` 從 `info` 降至 `debug`，避免正式環境 log 爆量。
-- ZH: `NetworkManager.performPassiveCleanup()` 修正 bug：之前會錯誤地把所有非導管端點（機器連線）從快取中移除；現在只移除「原本是導管但已不再是導管」的方向。
-- ZH: `UpgradeMenu.stillValid()` 改為透過 `ContainerLevelAccess` 檢查玩家距離，不再永遠回傳 `true`。
-- ZH: `TransferManager` 刪除已棄用的 `LEGACY_TRANSFER_RATE` 常數及其 fallback 分支；刪除空的 `if (tickCounter % 10 == 0)` 區塊；刪除被 comment out 的 debug logger。
-- ZH: `OutputHandler` 魔力/能量分配的餘數現在流向需求最大的目標，不再固定給 `targets[0]`；將兩段重複的 15 行 TODO 各縮短為 2 行。
-- ZH: `BiomeTerrainRegistration` 刪除 4 個從未被呼叫的 dead stub method。
+- Implemented `ResearchLockWidget` for universal GUI research gating.
+- Added `KnowledgeSyncPacket` for login and completion-time research sync.
+- Refactored `ResearchClientPayloadHandler` to fix dedicated server crashes.
+- Fixed `SolarCollectorSyncHelper` upgrade count sync.
 
 ## [0.0.1.5-beta-hotfix06] - 2026-04-14
 

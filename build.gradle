@@ -336,32 +336,12 @@ def extractChangelog(String version) {
             "Player Changes / 玩家更新內容",
             "Player Changes"
     ]
-    def devHeaders = [
-            "開發者版變更 / Developer-facing Changelog",
-            "Developer Notes / 開發者備註",
-            "Developer Notes"
-    ]
 
     def playerFacing = extractChangelogSectionByHeader(version, playerHeaders)
-    def developerFacing = extractChangelogSectionByHeader(version, devHeaders)
-
-    def combined = combineChangelogSections(playerFacing, developerFacing)
-    if (!combined.trim().isEmpty()) return combined.trim()
+    if (!playerFacing.trim().isEmpty()) return playerFacing.trim()
 
     playerFacing = extractChangelogSectionByHeader("Unreleased", playerHeaders)
-    developerFacing = extractChangelogSectionByHeader("Unreleased", devHeaders)
-    return combineChangelogSections(playerFacing, developerFacing).trim()
-}
-
-def combineChangelogSections(String playerFacing, String developerFacing) {
-    def combined = ""
-    if (!playerFacing.isEmpty()) {
-        combined += "### Player Changes / 玩家更新內容\n\n" + playerFacing + "\n\n"
-    }
-    if (!developerFacing.isEmpty()) {
-        combined += "### Developer Notes / 開發者備註\n\n" + developerFacing
-    }
-    return combined
+    return playerFacing.trim()
 }
 // ========== Modrinth ?澆? ==========
 modrinth {
