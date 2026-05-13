@@ -74,31 +74,31 @@ public final class ResearchRegistry {
                     .build()
     );
 
-    // ── Tier 2 — 魔法期深化 ──────────────────────────────────────────────────
+    // ── Tier 1 continued — 魔法期完整 ────────────────────────────────────────
 
     /**
-     * Tier 2 entry: player learns to infuse items with mana.
+     * Mana infusion: player learns to infuse items with mana.
      * Vitality↔Lifeflow (Vitality∈Lifeflow), Lifeflow↔Mana (Mana∈Lifeflow).
      */
     public static final ResearchTemplate MANA_INFUSION = register(
             ResearchTemplate.builder(id("mana_infusion"))
-                    .tier(2)
+                    .tier(1)
                     .aspects(ModAspects.VITALITY, ModAspects.LIFEFLOW, ModAspects.MANA)
-                    .holeRatio(0.35)
+                    .holeRatio(0.32)
                     .prerequisites(id("mana_basics"), id("mana_crystallisation"))
                     .unlocks(id("mana_infuser"))
                     .build()
     );
 
     /**
-     * Tier 2: Higher bandwidth transport.
+     * Advanced conduits: higher bandwidth mana transport.
      * Mechanism↔Momentum (shared Metal component), Momentum↔Energy (shared WU component).
      */
     public static final ResearchTemplate ADVANCED_CONDUITS = register(
             ResearchTemplate.builder(id("advanced_conduits"))
-                    .tier(2)
+                    .tier(1)
                     .aspects(ModAspects.MECHANISM, ModAspects.MOMENTUM, ModAspects.ENERGY)
-                    .holeRatio(0.38)
+                    .holeRatio(0.33)
                     .prerequisites(id("mana_flow"), id("mana_crystallisation"))
                     .unlocks(id("advanced_arcane_conduit"), id("elite_arcane_conduit"))
                     .build()
