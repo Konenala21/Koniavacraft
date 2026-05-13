@@ -163,6 +163,18 @@ public class ModRecipeProvider extends RecipeProvider {
                 .define('I', Blocks.IRON_BLOCK)
                 .unlockedBy("has_mana_ingot", has(ModItems.MANA_INGOT.get()))
                 .save(output, "research_table");
+
+        // 🔬 魔力注入器
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.MANA_INFUSER.get())
+                .pattern("CMC")
+                .pattern("IBI")
+                .pattern("CMC")
+                .define('C', ModItems.MANA_CRYSTAL.get())
+                .define('M', ModItems.MANA_INGOT.get())
+                .define('I', Items.IRON_INGOT)
+                .define('B', Blocks.IRON_BLOCK)
+                .unlockedBy("has_mana_crystal", has(ModItems.MANA_CRYSTAL.get()))
+                .save(output, "mana_infuser");
     }
 
     // === ⚡ 升級模組配方 ===
@@ -193,6 +205,24 @@ public class ModRecipeProvider extends RecipeProvider {
 
     // === 🔧 工具配方 ===
     private void generateToolRecipes(RecipeOutput output) {
+        // 💎 魔力水晶（4 碎片 → 1 完整）
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.MANA_CRYSTAL.get())
+                .pattern("FF")
+                .pattern("FF")
+                .define('F', ModItems.MANA_CRYSTAL_FRAGMENT.get())
+                .unlockedBy("has_mana_crystal_fragment", has(ModItems.MANA_CRYSTAL_FRAGMENT.get()))
+                .save(output, "mana_crystal");
+
+        // ⛏️ 魔力鎬
+        ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, ModItems.MANA_PICKAXE.get())
+                .pattern("CCC")
+                .pattern(" S ")
+                .pattern(" S ")
+                .define('C', ModItems.MANA_CRYSTAL.get())
+                .define('S', Items.STICK)
+                .unlockedBy("has_mana_crystal", has(ModItems.MANA_CRYSTAL.get()))
+                .save(output, "mana_pickaxe");
+
         // 🛠️ 基礎科技魔杖
         ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, ModItems.BASIC_TECH_WAND.get())
                 .pattern("RMR")

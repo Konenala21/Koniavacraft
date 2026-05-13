@@ -35,6 +35,13 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent(ModItems.COMPLETED_RESEARCH.getId().getPath(),
                 ResourceLocation.parse("item/generated"))
                 .texture("layer0", modLoc("item/completed_research"));
+        // 魔力水晶：使用自訂貼圖
+        withExistingParent(ModItems.MANA_CRYSTAL.getId().getPath(),
+                ResourceLocation.parse("item/generated"))
+                .texture("layer0", modLoc("item/mana_crystal"));
+        // 魔力鎬：手持工具（貼圖待製作，暫用鑽石鎬佔位）
+        withExistingParent(ModItems.MANA_PICKAXE.getId().getPath(),
+                ResourceLocation.withDefaultNamespace("item/diamond_pickaxe"));
 
         ModItems.ITEMS.getEntries().forEach(item -> {
             Item instance = item.get();
@@ -47,7 +54,8 @@ public class ModItemModelProvider extends ItemModelProvider {
 
             // ❌ 跳過已在上方明確處理的物品
             if (name.equals("research_note") || name.equals("ink_quill")
-                    || name.equals("nara_watch") || name.equals("completed_research")) {
+                    || name.equals("nara_watch") || name.equals("completed_research")
+                    || name.equals("mana_crystal") || name.equals("mana_pickaxe")) {
                 return;
             }
 

@@ -9,6 +9,8 @@ import com.github.nalamodikk.common.item.research.InkQuillItem;
 import com.github.nalamodikk.common.item.research.ResearchNoteItem;
 import com.github.nalamodikk.common.item.debug.ManaDebugToolItem;
 import com.github.nalamodikk.common.item.tool.BasicTechWandItem;
+import com.github.nalamodikk.common.item.tool.ManaPickaxeItem;
+import com.github.nalamodikk.common.item.tool.ModToolTiers;
 import com.github.nalamodikk.common.utils.upgrade.UpgradeType;
 import net.minecraft.world.item.Item;
 import net.neoforged.bus.api.IEventBus;
@@ -28,11 +30,14 @@ public class ModItems {
     public static final DeferredItem<Item> CONDENSED_MANA_DUST = ITEMS.register("condensed_mana_dust", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> MANA_CRYSTAL_FRAGMENT = ITEMS.register("mana_crystal_fragment", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> REFINED_MANA_DUST = ITEMS.register("refined_mana_dust", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> MANA_CRYSTAL = ITEMS.register("mana_crystal", () -> new Item(new Item.Properties()));
     /***
      * 工具
      */
     public static final DeferredItem<Item>  MANA_DEBUG_TOOL = ITEMS.register("mana_debug_tool",() ->  new ManaDebugToolItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<Item>  BASIC_TECH_WAND = ITEMS.register("basic_tech_wand",() ->  new BasicTechWandItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<ManaPickaxeItem> MANA_PICKAXE = ITEMS.register("mana_pickaxe",
+            () -> new ManaPickaxeItem(ModToolTiers.MANA, new Item.Properties().stacksTo(1)));
 
     /**
      * 升級物品
