@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.1.6-2] - 2026-05-13
+
+### Player Changes / 玩家更新內容
+
+- EN: All 48 new aspects are now discoverable by scanning blocks, items, and entities — no longer limited to synthesis only.
+- EN: Fixed aspect palette scroll not working on the third page in both the Research Puzzle and Aspect Synthesis screens.
+- EN: Over 60 entity types now return meaningful aspects when scanned (e.g. zombie → Undead+Death, bee → Vitality+Harvest, villager → Humanity+Commerce, ender dragon → Void+Eldritch).
+- EN: Completed Research scroll now displays its custom item texture correctly.
+- ZH: 全部 48 種新本源現在可透過掃描方塊、物品、實體發現，不再只能靠合成取得。
+- ZH: 修正研究謎題與本源合成介面的本源板第三頁無法滾動的問題。
+- ZH: 超過 60 種實體現在掃描後會回傳對應本源（例如：殭屍→亡靈+死滅、蜜蜂→生機+豐收、村民→人性+交易、末影龍→虛空+異界）。
+- ZH: 完成研究卷軸現在能正確顯示自訂貼圖。
+
+### Developer Notes / 開發者備註
+
+- EN: `BaseMaterialRegistry`: ~80 new `atom()` entries for all 48 new aspects; `getLogicalPool()` extended with inference chains across all tiers.
+- EN: `BlockAspectResolver`: added tag/keyword matching for frost, soul, death, undead, machine, void, poison categories.
+- EN: `EntityAspectResolver`: full rewrite with 60+ specific entity mappings via switch statement; specific mapping takes priority over tag-based fallback; boss capacity scales to 6 (dragon/wither), 5 (elder_guardian/warden), 4 (evoker/witch/allay).
+- EN: `AspectSynthesisScreen` and `ResearchScreen`: `isOverPaletteArea()` now uses fixed `PALETTE_ROWS` height instead of current-page row count — fixes scroll deadzone on last page.
+- EN: `ModItemModelProvider`: added `item/generated` model entry for `completed_research` using `koniava:item/completed_research` texture.
+- ZH: `BaseMaterialRegistry`：新增 ~80 個 `atom()` 條目涵蓋全部 48 種新本源；`getLogicalPool()` 補齊各層本源的推導鏈。
+- ZH: `BlockAspectResolver`：新增冰寒、靈魂、死滅、亡靈、機器、虛空、毒素等 tag/keyword 匹配。
+- ZH: `EntityAspectResolver`：以 switch 語句全面重寫，60+ 種精確實體映射；精確映射優先於標籤分類回退；Boss 容量縮放：龍/凋零=6、遠古守衛/監守者=5、喚魔者/女巫/愉靈=4。
+- ZH: `AspectSynthesisScreen` 與 `ResearchScreen`：`isOverPaletteArea()` 改用固定的 `PALETTE_ROWS` 高度，修正最後一頁滾輪失效的問題。
+- ZH: `ModItemModelProvider`：為 `completed_research` 新增 `item/generated` 模型，對應 `koniava:item/completed_research` 貼圖。
+
 ## [0.0.1.6-1] - 2026-05-13
 
 ### Player Changes / 玩家更新內容
