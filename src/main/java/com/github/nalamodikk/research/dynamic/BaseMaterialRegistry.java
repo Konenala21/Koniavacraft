@@ -109,6 +109,143 @@ public class BaseMaterialRegistry {
         atom(ModBlocks.MANA_GRASS_BLOCK.get().asItem(), ModAspects.MANA, ModAspects.EARTH, ModAspects.WOOD);
         atom(ModBlocks.MANA_BLOOM.get().asItem(), ModAspects.MANA, ModAspects.WOOD, ModAspects.VITALITY);
 
+        // --- Extended Aspect Seeds (48 new aspects) ---
+
+        // 暗影 Shadow
+        atom(Items.INK_SAC,                 ModAspects.SHADOW,      ModAspects.WU);
+        // 冰寒 Frost
+        atom(Items.PACKED_ICE,              ModAspects.FROST,       ModAspects.WATER);
+        atom(Items.BLUE_ICE,                ModAspects.FROST,       ModAspects.WATER);
+        // 知識 Cognition
+        atom(Items.BOOK,                    ModAspects.COGNITION,   ModAspects.ANIMA);
+        atom(Items.EXPERIENCE_BOTTLE,       ModAspects.COGNITION,   ModAspects.MANA);
+        // 毒素 Venom
+        atom(Items.SPIDER_EYE,              ModAspects.VENOM,       ModAspects.VITALITY);
+        atom(Items.POISONOUS_POTATO,        ModAspects.VENOM,       ModAspects.GROWTH);
+        // 亡靈 Undead
+        atom(Items.BONE,                    ModAspects.UNDEAD,      ModAspects.EARTH);
+        atom(Items.ROTTEN_FLESH,            ModAspects.UNDEAD,      ModAspects.VITALITY);
+        // 療癒 Mending
+        atom(Items.HONEY_BOTTLE,            ModAspects.MENDING,     ModAspects.VITALITY);
+        atom(Items.GLISTERING_MELON_SLICE,  ModAspects.MENDING,     ModAspects.VITALITY);
+        // 污染 Taint
+        atom(Items.WITHER_ROSE,             ModAspects.TAINT,       ModAspects.WU);
+        atom(Items.SUSPICIOUS_STEW,         ModAspects.TAINT,       ModAspects.VITALITY);
+        // 束縛 Binding
+        atom(Items.LEAD,                    ModAspects.BINDING,     ModAspects.METAL);
+        atom(Items.STRING,                  ModAspects.BINDING,     ModAspects.WOOD);
+        // 飛翔 Flight
+        atom(Items.PHANTOM_MEMBRANE,        ModAspects.FLIGHT,      ModAspects.VITALITY);
+        atom(Items.ELYTRA,                  ModAspects.FLIGHT,      ModAspects.ENERGY);
+        // 豐收 Harvest
+        atom(Items.WHEAT,                   ModAspects.HARVEST,     ModAspects.GROWTH);
+        atom(Items.BREAD,                   ModAspects.HARVEST,     ModAspects.NOURISH);
+        // 器具 Instrument
+        atom(Items.STICK,                   ModAspects.INSTRUMENT,  ModAspects.WOOD);
+        atom(Items.FLINT,                   ModAspects.INSTRUMENT,  ModAspects.EARTH);
+        // 異界 Eldritch
+        atom(Items.ENDER_PEARL,             ModAspects.ELDRITCH,    ModAspects.WU);
+        atom(Items.ENDER_EYE,               ModAspects.ELDRITCH,    ModAspects.WU);
+        // 財富 Wealth
+        atom(Items.GOLD_NUGGET,             ModAspects.WEALTH,      ModAspects.METAL);
+        // 奧術 Arcana
+        atom(Items.BLAZE_ROD,               ModAspects.ARCANA,      ModAspects.FIRE);
+        // 飢渴 Famine
+        atom(Items.DRIED_KELP,              ModAspects.FAMINE,      ModAspects.WATER);
+        atom(Items.BOWL,                    ModAspects.FAMINE,      ModAspects.WOOD);
+        // 虛空 Void
+        atom(Items.CHORUS_FRUIT,            ModAspects.VOID_ASPECT, ModAspects.WU);
+        atom(Items.CHORUS_FLOWER,           ModAspects.VOID_ASPECT, ModAspects.WU);
+        // 死滅 Death
+        atom(Items.DEAD_BUSH,               ModAspects.DEATH,       ModAspects.EARTH);
+        atom(Items.SKELETON_SKULL,          ModAspects.DEATH,       ModAspects.WU);
+        // 肉身 Corpus
+        atom(Items.LEATHER,                 ModAspects.CORPUS,      ModAspects.VITALITY);
+        atom(Items.PORKCHOP,                ModAspects.CORPUS,      ModAspects.VITALITY);
+        // 原質 Primordial
+        atom(Items.MUD,                     ModAspects.PRIMORDIAL,  ModAspects.WATER);
+        atom(Items.CLAY_BALL,               ModAspects.PRIMORDIAL,  ModAspects.WATER);
+        // 繁衍 Propagation
+        atom(Items.EGG,                     ModAspects.PROPAGATION, ModAspects.VITALITY);
+        atom(Items.TURTLE_EGG,              ModAspects.PROPAGATION, ModAspects.VITALITY);
+        // 血氣 Vitae
+        atom(Items.DRAGON_BREATH,           ModAspects.VITAE,       ModAspects.WU);
+        atom(Items.NETHER_WART,             ModAspects.VITAE,       ModAspects.FIRE);
+        // 蒸汽 Steam
+        atom(Items.CAULDRON,                ModAspects.STEAM,       ModAspects.VAPOR);
+        atom(Items.BREWING_STAND,           ModAspects.STEAM,       ModAspects.FIRE);
+        // 感知 Sensus
+        atom(Items.CLOCK,                   ModAspects.SENSUS,      ModAspects.METAL);
+        atom(Items.COMPASS,                 ModAspects.SENSUS,      ModAspects.METAL);
+        // 鋒刃 Blade
+        atom(Items.IRON_SWORD,              ModAspects.BLADE,       ModAspects.METAL);
+        atom(Items.FLINT_AND_STEEL,         ModAspects.BLADE,       ModAspects.FIRE);
+        // 防護 Warding
+        atom(Items.SHIELD,                  ModAspects.WARDING,     ModAspects.METAL);
+        atom(Items.TURTLE_SCUTE,            ModAspects.WARDING,     ModAspects.VITALITY);
+        // 掘進 Excavation
+        atom(Items.IRON_PICKAXE,            ModAspects.EXCAVATION,  ModAspects.METAL);
+        atom(Items.DIAMOND_PICKAXE,         ModAspects.EXCAVATION,  ModAspects.CRYSTAL);
+        // 機械 Machine
+        atom(Items.PISTON,                  ModAspects.MACHINE,     ModAspects.MECHANISM);
+        atom(Items.DISPENSER,               ModAspects.MACHINE,     ModAspects.MECHANISM);
+        // 爐火 Furnace
+        atom(Items.FURNACE,                 ModAspects.FURNACE,     ModAspects.FIRE);
+        atom(Items.BLAST_FURNACE,           ModAspects.FURNACE,     ModAspects.FIRE);
+        // 煉化 Alchemy
+        atom(Items.POTION,                  ModAspects.ALCHEMY,     ModAspects.ARCANA);
+        atom(Items.SPLASH_POTION,           ModAspects.ALCHEMY,     ModAspects.FIRE);
+        // 光暈 Aura
+        atom(Items.SHROOMLIGHT,             ModAspects.AURA,        ModAspects.RADIANCE);
+        atom(Items.SEA_LANTERN,             ModAspects.AURA,        ModAspects.WATER);
+        // 靈魂 Spiritus
+        atom(Items.SOUL_TORCH,              ModAspects.SPIRITUS,    ModAspects.WU);
+        atom(Items.SOUL_CAMPFIRE,           ModAspects.SPIRITUS,    ModAspects.WU);
+        // 獸性 Bestia
+        atom(Items.BEEF,                    ModAspects.BESTIA,      ModAspects.VITALITY);
+        atom(Items.MUTTON,                  ModAspects.BESTIA,      ModAspects.VITALITY);
+        // 慾望 Desire
+        atom(Items.GOLDEN_CARROT,           ModAspects.DESIRE,      ModAspects.VITALITY);
+        atom(Items.COOKIE,                  ModAspects.DESIRE,      ModAspects.GROWTH);
+        // 風暴 Storm
+        atom(Items.TRIDENT,                 ModAspects.STORM,       ModAspects.WATER);
+        // 人性 Humanity
+        atom(Items.PAPER,                   ModAspects.HUMANITY,    ModAspects.WOOD);
+        atom(Items.WRITTEN_BOOK,            ModAspects.HUMANITY,    ModAspects.ANIMA);
+        // 本能 Instinct
+        atom(Items.RABBIT_FOOT,             ModAspects.INSTINCT,    ModAspects.VITALITY);
+        atom(Items.RABBIT_HIDE,             ModAspects.INSTINCT,    ModAspects.VITALITY);
+        // 強化 Fortify
+        atom(Items.IRON_CHESTPLATE,         ModAspects.FORTIFY,     ModAspects.METAL);
+        // 齒輪 Gear
+        atom(Items.HOPPER,                  ModAspects.GEAR,        ModAspects.MECHANISM);
+        atom(Items.COMPARATOR,              ModAspects.GEAR,        ModAspects.RESONANCE);
+        // 管道 Pipeline
+        atom(Items.IRON_BARS,               ModAspects.PIPELINE,    ModAspects.METAL);
+        // 電弧 Arc
+        atom(Items.COPPER_INGOT,            ModAspects.ARC,         ModAspects.ENERGY);
+        // 信仰 Faith
+        atom(Items.CANDLE,                  ModAspects.FAITH,       ModAspects.RADIANCE);
+        // 知慧 Wisdom
+        atom(Items.ENCHANTED_BOOK,          ModAspects.WISDOM,      ModAspects.MANA);
+        // 語言 Language
+        atom(Items.MAP,                     ModAspects.LANGUAGE,    ModAspects.WOOD);
+        atom(Items.NAME_TAG,                ModAspects.LANGUAGE,    ModAspects.ANIMA);
+        // 秩序 Order
+        atom(Items.BRICK,                   ModAspects.ORDER,       ModAspects.EARTH);
+        atom(Items.NETHER_BRICK,            ModAspects.ORDER,       ModAspects.FIRE);
+        // 交易 Commerce
+        atom(Items.BUNDLE,                  ModAspects.COMMERCE,    ModAspects.WEALTH);
+        atom(Items.GOLD_BLOCK,              ModAspects.COMMERCE,    ModAspects.WEALTH);
+        // 律法 Law
+        atom(Items.CHISELED_STONE_BRICKS,   ModAspects.LAW,         ModAspects.EARTH);
+        atom(Items.TRIPWIRE_HOOK,           ModAspects.LAW,         ModAspects.METAL);
+        // 自動 Automation
+        atom(Items.OBSERVER,                ModAspects.AUTOMATION,  ModAspects.RESONANCE);
+        atom(Items.REPEATER,                ModAspects.AUTOMATION,  ModAspects.MECHANISM);
+        // 文明 Civilization
+        atom(Items.BELL,                    ModAspects.CIVILIZATION, ModAspects.METAL);
+
         // --- Tags (Broad categories) ---
         tag(ItemTags.LOGS, ModAspects.WOOD);
         tag(ItemTags.PLANKS, ModAspects.WOOD);
@@ -311,17 +448,35 @@ public class BaseMaterialRegistry {
     }
 
     private static List<Aspect> getLogicalPool(List<Aspect> base) {
-        // Simple logic: if it has Water, it might have Life; if it has Metal, it might have Corrosion
         Set<Aspect> pool = new HashSet<>();
         for (Aspect a : base) {
-            if (a == ModAspects.WATER) pool.add(ModAspects.VITALITY);
-            if (a == ModAspects.METAL) { pool.add(ModAspects.CORROSION); pool.add(ModAspects.RESONANCE); }
-            if (a == ModAspects.FIRE) { pool.add(ModAspects.ENERGY); pool.add(ModAspects.VAPOR); }
-            if (a == ModAspects.EARTH) { pool.add(ModAspects.GRAVITY); pool.add(ModAspects.GROWTH); }
-            if (a == ModAspects.WOOD) { pool.add(ModAspects.GROWTH); pool.add(ModAspects.ANIMA); }
-            if (a == ModAspects.MANA) { pool.add(ModAspects.RESONANCE); pool.add(ModAspects.RADIANCE); pool.add(ModAspects.LIFEFLOW); }
-            if (a == ModAspects.CRYSTAL) { pool.add(ModAspects.RADIANCE); pool.add(ModAspects.GRAVITY); }
-            if (a == ModAspects.VITALITY) { pool.add(ModAspects.NOURISH); pool.add(ModAspects.GROWTH); pool.add(ModAspects.LIFEFLOW); }
+            // Primary chains
+            if (a == ModAspects.WATER)     { pool.add(ModAspects.VITALITY); pool.add(ModAspects.FROST); }
+            if (a == ModAspects.METAL)     { pool.add(ModAspects.CORROSION); pool.add(ModAspects.RESONANCE); pool.add(ModAspects.INSTRUMENT); }
+            if (a == ModAspects.FIRE)      { pool.add(ModAspects.ENERGY); pool.add(ModAspects.VAPOR); pool.add(ModAspects.FURNACE); }
+            if (a == ModAspects.EARTH)     { pool.add(ModAspects.GRAVITY); pool.add(ModAspects.GROWTH); pool.add(ModAspects.CORPUS); }
+            if (a == ModAspects.WOOD)      { pool.add(ModAspects.GROWTH); pool.add(ModAspects.ANIMA); pool.add(ModAspects.HARVEST); }
+            if (a == ModAspects.WU)        { pool.add(ModAspects.SHADOW); pool.add(ModAspects.ELDRITCH); pool.add(ModAspects.VOID_ASPECT); }
+            // First-order chains
+            if (a == ModAspects.MANA)      { pool.add(ModAspects.RESONANCE); pool.add(ModAspects.RADIANCE); pool.add(ModAspects.LIFEFLOW); pool.add(ModAspects.ARCANA); pool.add(ModAspects.TAINT); }
+            if (a == ModAspects.CRYSTAL)   { pool.add(ModAspects.RADIANCE); pool.add(ModAspects.GRAVITY); pool.add(ModAspects.FROST); }
+            if (a == ModAspects.VITALITY)  { pool.add(ModAspects.NOURISH); pool.add(ModAspects.GROWTH); pool.add(ModAspects.LIFEFLOW); pool.add(ModAspects.VITAE); pool.add(ModAspects.CORPUS); pool.add(ModAspects.BESTIA); }
+            if (a == ModAspects.ANIMA)     { pool.add(ModAspects.COGNITION); pool.add(ModAspects.SPIRITUS); pool.add(ModAspects.UNDEAD); pool.add(ModAspects.DEATH); }
+            if (a == ModAspects.ENERGY)    { pool.add(ModAspects.FLIGHT); pool.add(ModAspects.ARC); pool.add(ModAspects.STEAM); }
+            if (a == ModAspects.CORROSION) { pool.add(ModAspects.VENOM); pool.add(ModAspects.TAINT); pool.add(ModAspects.FAMINE); }
+            if (a == ModAspects.GRAVITY)   { pool.add(ModAspects.VOID_ASPECT); pool.add(ModAspects.DEATH); }
+            if (a == ModAspects.RESONANCE) { pool.add(ModAspects.ARCANA); pool.add(ModAspects.ELDRITCH); }
+            if (a == ModAspects.MECHANISM) { pool.add(ModAspects.MACHINE); pool.add(ModAspects.INSTRUMENT); pool.add(ModAspects.GEAR); }
+            if (a == ModAspects.RADIANCE)  { pool.add(ModAspects.SHADOW); pool.add(ModAspects.COGNITION); pool.add(ModAspects.WEALTH); pool.add(ModAspects.AURA); }
+            // Extended chains
+            if (a == ModAspects.ARCANA)    { pool.add(ModAspects.ALCHEMY); pool.add(ModAspects.SPIRITUS); pool.add(ModAspects.AURA); pool.add(ModAspects.FAITH); }
+            if (a == ModAspects.COGNITION) { pool.add(ModAspects.SENSUS); pool.add(ModAspects.WISDOM); pool.add(ModAspects.LANGUAGE); pool.add(ModAspects.DESIRE); }
+            if (a == ModAspects.INSTRUMENT){ pool.add(ModAspects.BLADE); pool.add(ModAspects.WARDING); pool.add(ModAspects.MACHINE); pool.add(ModAspects.EXCAVATION); }
+            if (a == ModAspects.MACHINE)   { pool.add(ModAspects.GEAR); pool.add(ModAspects.PIPELINE); pool.add(ModAspects.AUTOMATION); }
+            if (a == ModAspects.SENSUS)    { pool.add(ModAspects.HUMANITY); pool.add(ModAspects.INSTINCT); pool.add(ModAspects.LANGUAGE); }
+            if (a == ModAspects.HUMANITY)  { pool.add(ModAspects.ORDER); pool.add(ModAspects.COMMERCE); }
+            if (a == ModAspects.WEALTH)    { pool.add(ModAspects.COMMERCE); }
+            if (a == ModAspects.ORDER)     { pool.add(ModAspects.LAW); pool.add(ModAspects.AUTOMATION); pool.add(ModAspects.CIVILIZATION); }
         }
         return new ArrayList<>(pool);
     }

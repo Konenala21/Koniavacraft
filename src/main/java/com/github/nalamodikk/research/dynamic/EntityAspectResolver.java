@@ -75,32 +75,44 @@ public class EntityAspectResolver {
             aspects.add(ModAspects.WU);
             candidates.add(ModAspects.CORROSION);
             candidates.add(ModAspects.EARTH);
+            candidates.add(ModAspects.UNDEAD);
+            candidates.add(ModAspects.DEATH);
         } else if (entity.getType().is(EntityTypeTags.ARTHROPOD)) {
             aspects.add(ModAspects.VITALITY);
             aspects.add(ModAspects.CORROSION);
             candidates.add(ModAspects.WOOD);
             candidates.add(ModAspects.EARTH);
+            candidates.add(ModAspects.VENOM);
+            candidates.add(ModAspects.INSTINCT);
         } else if (entity.getType().is(EntityTypeTags.AQUATIC)) {
             aspects.add(ModAspects.WATER);
             aspects.add(ModAspects.VITALITY);
             candidates.add(ModAspects.GROWTH);
+            candidates.add(ModAspects.PRIMORDIAL);
         } else if (entity.getType().is(EntityTypeTags.ILLAGER)) {
             aspects.add(ModAspects.ANIMA);
             candidates.add(ModAspects.ENERGY);
             candidates.add(ModAspects.WU);
+            candidates.add(ModAspects.COGNITION);
+            candidates.add(ModAspects.DESIRE);
         } else if (entity instanceof Creeper) {
             aspects.add(ModAspects.ENERGY);
             aspects.add(ModAspects.PHLOGISTON);
             candidates.add(ModAspects.RESONANCE);
+            candidates.add(ModAspects.STORM);
         } else if (entity instanceof EnderMan) {
             aspects.add(ModAspects.WU);
             aspects.add(ModAspects.GRAVITY);
             candidates.add(ModAspects.ANIMA);
+            candidates.add(ModAspects.ELDRITCH);
+            candidates.add(ModAspects.VOID_ASPECT);
         } else {
             aspects.add(ModAspects.VITALITY);
             aspects.add(ModAspects.EARTH);
             candidates.add(ModAspects.WOOD);
             candidates.add(ModAspects.GROWTH);
+            candidates.add(ModAspects.BESTIA);
+            candidates.add(ModAspects.CORPUS);
         }
     }
 
@@ -109,22 +121,44 @@ public class EntityAspectResolver {
         if (path.contains("blaze") || path.contains("magma")) {
             AspectExpression.addUnique(aspects, ModAspects.FIRE);
             AspectExpression.addUnique(candidates, ModAspects.ENERGY);
+            AspectExpression.addUnique(candidates, ModAspects.ARCANA);
         }
         if (path.contains("slime")) {
             AspectExpression.addUnique(candidates, ModAspects.WATER);
             AspectExpression.addUnique(candidates, ModAspects.VITALITY);
+            AspectExpression.addUnique(candidates, ModAspects.PRIMORDIAL);
         }
         if (path.contains("warden") || path.contains("sculk")) {
             AspectExpression.addUnique(aspects, ModAspects.WU);
             AspectExpression.addUnique(candidates, ModAspects.RESONANCE);
+            AspectExpression.addUnique(candidates, ModAspects.BINDING);
         }
         if (path.contains("dragon") || path.contains("ender")) {
             AspectExpression.addUnique(aspects, ModAspects.WU);
             AspectExpression.addUnique(candidates, ModAspects.GRAVITY);
+            AspectExpression.addUnique(candidates, ModAspects.ELDRITCH);
+            AspectExpression.addUnique(candidates, ModAspects.VOID_ASPECT);
         }
         if (path.contains("golem")) {
             AspectExpression.addUnique(aspects, ModAspects.METAL);
             AspectExpression.addUnique(candidates, ModAspects.MECHANISM);
+            AspectExpression.addUnique(candidates, ModAspects.FORTIFY);
+        }
+        if (path.contains("witch")) {
+            AspectExpression.addUnique(candidates, ModAspects.ALCHEMY);
+            AspectExpression.addUnique(candidates, ModAspects.VENOM);
+        }
+        if (path.contains("villager") || path.contains("trader")) {
+            AspectExpression.addUnique(candidates, ModAspects.HUMANITY);
+            AspectExpression.addUnique(candidates, ModAspects.COMMERCE);
+        }
+        if (path.contains("phantom")) {
+            AspectExpression.addUnique(candidates, ModAspects.FLIGHT);
+            AspectExpression.addUnique(candidates, ModAspects.SHADOW);
+        }
+        if (path.contains("ghast") || path.contains("shulker")) {
+            AspectExpression.addUnique(candidates, ModAspects.FLIGHT);
+            AspectExpression.addUnique(candidates, ModAspects.BINDING);
         }
     }
 

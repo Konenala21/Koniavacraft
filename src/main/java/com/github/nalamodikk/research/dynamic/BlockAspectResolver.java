@@ -139,13 +139,23 @@ public final class BlockAspectResolver {
         if (state.is(BlockTags.ICE) || state.is(BlockTags.SNOW)) {
             AspectExpression.addUnique(base, ModAspects.WATER);
             AspectExpression.addUnique(candidates, ModAspects.CRYSTAL);
+            AspectExpression.addUnique(candidates, ModAspects.FROST);
         }
         if (state.is(BlockTags.PORTALS) || state.is(BlockTags.ENDERMAN_HOLDABLE)) {
             AspectExpression.addUnique(candidates, ModAspects.WU);
+            AspectExpression.addUnique(candidates, ModAspects.ELDRITCH);
         }
         if (state.is(BlockTags.SCULK_REPLACEABLE) || state.is(BlockTags.VIBRATION_RESONATORS)) {
             AspectExpression.addUnique(candidates, ModAspects.WU);
             AspectExpression.addUnique(candidates, ModAspects.RESONANCE);
+        }
+        if (state.is(BlockTags.WITHER_SUMMON_BASE_BLOCKS) || state.is(BlockTags.SOUL_FIRE_BASE_BLOCKS)) {
+            AspectExpression.addUnique(candidates, ModAspects.DEATH);
+            AspectExpression.addUnique(candidates, ModAspects.SPIRITUS);
+        }
+        if (state.is(BlockTags.CROPS) || state.is(BlockTags.BEE_GROWABLES)) {
+            AspectExpression.addUnique(candidates, ModAspects.HARVEST);
+            AspectExpression.addUnique(candidates, ModAspects.PROPAGATION);
         }
     }
 
@@ -170,9 +180,31 @@ public final class BlockAspectResolver {
         if (path.contains("soul") || path.contains("end") || path.contains("portal")) {
             AspectExpression.addUnique(candidates, ModAspects.WU);
             AspectExpression.addUnique(candidates, ModAspects.ANIMA);
+            AspectExpression.addUnique(candidates, ModAspects.SPIRITUS);
         }
         if (path.contains("mana") || path.contains("magic") || path.contains("arcane")) {
             AspectExpression.addUnique(base, ModAspects.MANA);
+            AspectExpression.addUnique(candidates, ModAspects.ARCANA);
+        }
+        if (path.contains("frost") || path.contains("frozen") || path.contains("ice") || path.contains("snow")) {
+            AspectExpression.addUnique(candidates, ModAspects.FROST);
+        }
+        if (path.contains("furnace") || path.contains("forge") || path.contains("smelter")) {
+            AspectExpression.addUnique(candidates, ModAspects.FURNACE);
+        }
+        if (path.contains("machine") || path.contains("factory") || path.contains("piston") || path.contains("dispenser")) {
+            AspectExpression.addUnique(candidates, ModAspects.MACHINE);
+        }
+        if (path.contains("void") || path.contains("chorus") || path.contains("ender")) {
+            AspectExpression.addUnique(candidates, ModAspects.VOID_ASPECT);
+            AspectExpression.addUnique(candidates, ModAspects.ELDRITCH);
+        }
+        if (path.contains("wither") || path.contains("skull") || path.contains("dead")) {
+            AspectExpression.addUnique(candidates, ModAspects.DEATH);
+            AspectExpression.addUnique(candidates, ModAspects.UNDEAD);
+        }
+        if (path.contains("poison") || path.contains("venom") || path.contains("toxic") || path.contains("spider")) {
+            AspectExpression.addUnique(candidates, ModAspects.VENOM);
         }
     }
 
