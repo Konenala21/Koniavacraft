@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.1.6-1] - 2026-05-13
+
+### Player Changes / 玩家更新內容
+
+- EN: The aspect system has been greatly expanded — 48 new aspects added across 7 categories: Natural Phenomena, Knowledge & Mind, Magic, Life & Biology, Economy, Machines & Industry, and Society & Civilization. Total aspects now: 80.
+- EN: Completed Research scroll now has a proper item texture.
+- EN: Fixed an issue where resetting research could leave the client in an out-of-sync state.
+- EN: Fixed research puzzle progress and aspect counts not syncing correctly after reconnect.
+- EN: Fixed JEI aspect synthesis display not refreshing after research unlock.
+- ZH: 本源系統大幅擴充——新增 48 種本源，分為七大類別：自然現象、知識心靈、魔法、生命生物、經濟資源、機器工業、社會文明。本源總數現為 80 種。
+- ZH: 完成研究卷軸現在擁有正確的物品貼圖。
+- ZH: 修正重置研究後客戶端狀態可能不同步的問題。
+- ZH: 修正重新連線後研究謎題進度與本源計數無法正確同步的問題。
+- ZH: 修正 JEI 本源合成顯示在研究解鎖後未重新整理的問題。
+
+### Developer Notes / 開發者備註
+
+- EN: `ModAspects` expanded from 32 to 80 aspects. New aspects added in dependency tiers (A→E) to preserve static initialisation order. `void` is registered as `VOID_ASPECT` field due to Java keyword conflict.
+- EN: New aspect IDs: shadow, frost, cognition, venom, undead, mending, taint, binding, flight, harvest, instrument, eldritch, wealth, arcana, famine, void, death, corpus, primordial, propagation, vitae, steam, sensus, blade, warding, excavation, machine, furnace, alchemy, aura, spiritus, bestia, desire, storm, humanity, instinct, fortify, gear, pipeline, arc, faith, wisdom, language, order, commerce, law, automation, civilization.
+- EN: `AspectScanner` mappings for the 48 new aspects are not yet added — aspects are registered and visible in the research UI but cannot be discovered by scanning yet.
+- EN: Full bilingual lang keys added to `en_us.json` and `zh_tw.json`.
+- EN: Aspect wiki written to `AI-context/aspect-wiki.md`.
+- EN: `PlayerKnowledge` and sync packets require no changes — the aspect storage is generic.
+- EN: Fixed `ResearchCommand` reset logic and client-side `ClientResearchCache` staleness.
+- EN: Fixed `ResearchScreen` puzzle count desync on reconnect via `KnowledgeSyncPacket`.
+- EN: Fixed `AspectSynthesisJEIPlugin` not triggering a refresh after research state changes.
+- ZH: `ModAspects` 從 32 種擴充至 80 種。新本源依賴層次（A→E）依序插入以保持靜態初始化順序正確。`void` 因為 Java 關鍵字衝突，欄位名稱為 `VOID_ASPECT`。
+- ZH: `AspectScanner` 尚未為新增的 48 種本源添加掃描對應——本源已在研究 UI 中顯示，但目前無法透過掃描發現。
+- ZH: 修正 `ResearchCommand` 重置邏輯與 `ClientResearchCache` 過期問題。
+- ZH: 修正重新連線時 `ResearchScreen` 謎題計數透過 `KnowledgeSyncPacket` 不同步的問題。
+- ZH: 修正 `AspectSynthesisJEIPlugin` 在研究狀態變更後未觸發重新整理的問題。
+
 ## [0.0.1.6] - 2026-05-11
 
 ### Player Changes / 玩家更新內容
