@@ -18,6 +18,7 @@ public final class ClientResearchCache {
     private static Map<ResourceLocation, Integer> discoveredAspects = new HashMap<>();
     private static Set<ResourceLocation> completedResearch = new HashSet<>();
     private static Set<ResourceLocation> availableResearchOverrides = new HashSet<>();
+    private static Set<ResourceLocation> lockedResearch = new HashSet<>();
     private static int currentTier = 1;
 
     /** Called by networking handlers on the client thread. */
@@ -31,18 +32,29 @@ public final class ClientResearchCache {
 
     public static void update(Collection<ResourceLocation> aspects, Collection<ResourceLocation> research,
                               Collection<ResourceLocation> availableOverrides, int tier) {
+        update(aspects, research, availableOverrides, Collections.emptySet(), tier);
+    }
+
+    public static void update(Collection<ResourceLocation> aspects, Collection<ResourceLocation> research,
+                              Collection<ResourceLocation> availableOverrides, Collection<ResourceLocation> locked, int tier) {
         Map<ResourceLocation, Integer> mappedAspects = new HashMap<>();
         for (ResourceLocation aspect : aspects) {
             mappedAspects.put(aspect, 1);
         }
-        update(mappedAspects, research, availableOverrides, tier);
+        update(mappedAspects, research, availableOverrides, locked, tier);
     }
 
     public static void update(Map<ResourceLocation, Integer> aspects, Collection<ResourceLocation> research,
                               Collection<ResourceLocation> availableOverrides, int tier) {
+        update(aspects, research, availableOverrides, Collections.emptySet(), tier);
+    }
+
+    public static void update(Map<ResourceLocation, Integer> aspects, Collection<ResourceLocation> research,
+                              Collection<ResourceLocation> availableOverrides, Collection<ResourceLocation> locked, int tier) {
         discoveredAspects = new HashMap<>(aspects);
         completedResearch = new HashSet<>(research);
         availableResearchOverrides = new HashSet<>(availableOverrides);
+        lockedResearch = new HashSet<>(locked);
         currentTier = tier;
     }
 
@@ -86,8 +98,16 @@ public final class ClientResearchCache {
         return availableResearchOverrides.contains(researchId);
     }
 
+    public static boolean isLocked(ResourceLocation researchId) {
+        return lockedResearch.contains(researchId);
+    }
+
     public static Set<ResourceLocation> getAvailableResearchOverrides() {
         return Collections.unmodifiableSet(availableResearchOverrides);
+    }
+
+    public static Set<ResourceLocation> getLockedResearch() {
+        return Collections.unmodifiableSet(lockedResearch);
     }
 
     public static int getCurrentTier() {

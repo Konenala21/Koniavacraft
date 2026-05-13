@@ -94,9 +94,9 @@ public class ResearchCommand {
                                                 .executes(context -> addAllAspects(context, 1))
                                                 .then(Commands.argument("amount", IntegerArgumentType.integer(1))
                                                         .executes(context -> addAllAspects(context, IntegerArgumentType.getInteger(context, "amount"))))))
-                                .then(Commands.literal("lock_non_primary_aspects")
+                                .then(Commands.literal("reset_non_primary_aspects")
                                         .then(Commands.argument("targets", EntityArgument.players())
-                                                .executes(ResearchCommand::lockNonPrimaryAspects)))
+                                                .executes(ResearchCommand::resetNonPrimaryAspects)))
                                 .then(Commands.literal("list_aspects")
                                         .then(Commands.argument("target", EntityArgument.player())
                                                 .executes(ResearchCommand::listAspects)))
@@ -260,33 +260,38 @@ public class ResearchCommand {
         return playerCount * aspectCount;
     }
 
-    private static int lockNonPrimaryAspects(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    private static int resetNonPrimaryAspects(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         Collection<ServerPlayer> players = EntityArgument.getPlayers(context, "targets");
-        int lockedCount = 0;
-
-        for (Aspect aspect : ModAspects.all()) {
-            if (!aspect.isPrimary()) {
-                lockedCount++;
-            }
-        }
+        int resetCount = 0;
 
         for (ServerPlayer player : players) {
             PlayerKnowledge knowledge = ResearchSavedData.get(player.serverLevel()).getOrCreate(player.getUUID());
-            for (Aspect aspect : ModAspects.all()) {
-                if (!aspect.isPrimary()) {
-                    knowledge.setResearchState(aspect.getId(), PlayerKnowledge.ResearchState.LOCKED);
-                }
-            }
+            resetCount += knowledge.clearNonPrimaryAspects();
+            restorePrimaryAspectAmounts(knowledge);
             syncKnowledge(player);
         }
 
-        final int lockedAspectCount = lockedCount;
+        final int resetAspectCount = resetCount;
         final int playerCount = players.size();
         context.getSource().sendSuccess(
-                () -> Component.translatable("commands.koniava.research.lock_non_primary_aspects.success",
-                        lockedAspectCount, playerCount),
+                () -> Component.translatable("commands.koniava.research.reset_non_primary_aspects.success",
+                        resetAspectCount, playerCount),
                 true);
-        return playerCount * lockedAspectCount;
+        return resetAspectCount;
+    }
+
+    private static void restorePrimaryAspectAmounts(PlayerKnowledge knowledge) {
+        for (Aspect aspect : ModAspects.all()) {
+            if (!aspect.isPrimary()) {
+                continue;
+            }
+
+            int currentAmount = knowledge.getAspectCount(aspect.getId());
+            int delta = 5 - currentAmount;
+            if (delta != 0) {
+                knowledge.discoverAspect(aspect, delta);
+            }
+        }
     }
 
     private static int listAspects(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {

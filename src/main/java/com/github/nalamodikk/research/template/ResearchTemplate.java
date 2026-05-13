@@ -57,6 +57,9 @@ public final class ResearchTemplate {
      *   - player has discovered all required aspects
      */
     public boolean isAvailableTo(PlayerKnowledge knowledge) {
+        if (knowledge.isResearchLocked(id)) {
+            return false;
+        }
         if (knowledge.isResearchForcedAvailable(id)) {
             return true;
         }

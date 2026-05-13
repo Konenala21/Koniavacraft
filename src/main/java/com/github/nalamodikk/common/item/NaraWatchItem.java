@@ -127,7 +127,8 @@ public class NaraWatchItem extends Item {
         if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
             PlayerKnowledge knowledge = ResearchSavedData.get(serverPlayer.serverLevel())
                     .getOrCreate(serverPlayer.getUUID());
-            WatchSyncPacket.sendTo(serverPlayer, knowledge.getCompletedResearch(), knowledge.getAvailableResearchOverrides(), knowledge.getCurrentTier(),
+            WatchSyncPacket.sendTo(serverPlayer, knowledge.getCompletedResearch(), knowledge.getAvailableResearchOverrides(),
+                    knowledge.getLockedResearch(), knowledge.getCurrentTier(),
                     knowledge.getDiscoveredAspectsMap());
         }
     }

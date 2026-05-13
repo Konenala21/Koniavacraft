@@ -1,7 +1,6 @@
 package com.github.nalamodikk.research.network;
 
 import com.github.nalamodikk.KoniavacraftMod;
-import com.github.nalamodikk.research.client.ClientResearchCache;
 import com.github.nalamodikk.research.client.ResearchClientPayloadHandler;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -18,10 +17,11 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Server → client: sends a snapshot of the player's research knowledge so the
+ * Server -> client: sends a snapshot of the player's research knowledge so the
  * client can open {@link com.github.nalamodikk.research.client.NaraWatchScreen} without a round-trip for every query.
  */
-public record WatchSyncPacket(List<ResourceLocation> completed, List<ResourceLocation> availableOverrides, int tier,
+public record WatchSyncPacket(List<ResourceLocation> completed, List<ResourceLocation> availableOverrides,
+                              List<ResourceLocation> lockedResearch, int tier,
                               Map<ResourceLocation, Integer> discovered)
         implements CustomPacketPayload {
 
@@ -32,6 +32,7 @@ public record WatchSyncPacket(List<ResourceLocation> completed, List<ResourceLoc
             StreamCodec.composite(
                     ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), WatchSyncPacket::completed,
                     ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), WatchSyncPacket::availableOverrides,
+                    ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), WatchSyncPacket::lockedResearch,
                     ByteBufCodecs.VAR_INT,                                      WatchSyncPacket::tier,
                     ByteBufCodecs.map(HashMap::new, ResourceLocation.STREAM_CODEC, ByteBufCodecs.VAR_INT), WatchSyncPacket::discovered,
                     WatchSyncPacket::new
@@ -40,10 +41,11 @@ public record WatchSyncPacket(List<ResourceLocation> completed, List<ResourceLoc
     @Override
     public Type<? extends CustomPacketPayload> type() { return TYPE; }
 
-    public static void sendTo(ServerPlayer player, Set<ResourceLocation> completed, Set<ResourceLocation> availableOverrides, int tier,
-                              Map<ResourceLocation, Integer> discovered) {
+    public static void sendTo(ServerPlayer player, Set<ResourceLocation> completed, Set<ResourceLocation> availableOverrides,
+                              Set<ResourceLocation> lockedResearch, int tier, Map<ResourceLocation, Integer> discovered) {
         PacketDistributor.sendToPlayer(player,
-                new WatchSyncPacket(List.copyOf(completed), List.copyOf(availableOverrides), tier, new HashMap<>(discovered)));
+                new WatchSyncPacket(List.copyOf(completed), List.copyOf(availableOverrides), List.copyOf(lockedResearch),
+                        tier, new HashMap<>(discovered)));
     }
 
     public static void handle(WatchSyncPacket packet, IPayloadContext context) {

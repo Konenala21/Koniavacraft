@@ -1,7 +1,6 @@
 package com.github.nalamodikk.research.network;
 
 import com.github.nalamodikk.KoniavacraftMod;
-import com.github.nalamodikk.research.client.ClientResearchCache;
 import com.github.nalamodikk.research.client.ResearchClientPayloadHandler;
 import com.github.nalamodikk.research.knowledge.PlayerKnowledge;
 import com.github.nalamodikk.research.knowledge.ResearchSavedData;
@@ -19,10 +18,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Server → client: syncs the player's full research knowledge (aspects + research + tier).
+ * Server -> client: syncs the player's full research knowledge (aspects + research + locked research + tier).
  */
 public record KnowledgeSyncPacket(Map<ResourceLocation, Integer> discovered, List<ResourceLocation> completed,
-                                  List<ResourceLocation> availableOverrides, int tier)
+                                  List<ResourceLocation> availableOverrides, List<ResourceLocation> lockedResearch,
+                                  int tier)
         implements CustomPacketPayload {
 
     public static final Type<KnowledgeSyncPacket> TYPE =
@@ -33,6 +33,7 @@ public record KnowledgeSyncPacket(Map<ResourceLocation, Integer> discovered, Lis
                     ByteBufCodecs.map(HashMap::new, ResourceLocation.STREAM_CODEC, ByteBufCodecs.VAR_INT), KnowledgeSyncPacket::discovered,
                     ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), KnowledgeSyncPacket::completed,
                     ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), KnowledgeSyncPacket::availableOverrides,
+                    ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), KnowledgeSyncPacket::lockedResearch,
                     ByteBufCodecs.VAR_INT, KnowledgeSyncPacket::tier,
                     KnowledgeSyncPacket::new
             );
@@ -46,6 +47,7 @@ public record KnowledgeSyncPacket(Map<ResourceLocation, Integer> discovered, Lis
                 new HashMap<>(knowledge.getDiscoveredAspectsMap()),
                 List.copyOf(knowledge.getCompletedResearch()),
                 List.copyOf(knowledge.getAvailableResearchOverrides()),
+                List.copyOf(knowledge.getLockedResearch()),
                 knowledge.getCurrentTier()
         ));
     }

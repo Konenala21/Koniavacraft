@@ -307,7 +307,7 @@
   "message.koniava.synthesis.invalid_table": "研究台狀態無效。",
   "message.koniava.research.not_enough_aspect": "你的 %s 不夠了。",
   "commands.koniava.research.add_all_aspects.success": "已為 %3$s 名玩家新增全部 %2$s 種本源，各增加 %1$s。",
-  "commands.koniava.research.lock_non_primary_aspects.success": "已為 %2$s 名玩家鎖定全部 %1$s 種非基礎本源。",
+  "commands.koniava.research.reset_non_primary_aspects.success": "已為 %2$s 名玩家重製全部 %1$s 種非基礎本源。",
   "//10": "=== 導管訊息 ===",
   "message.koniava.conduit.hold_shift_to_place": "按住 Shift + 右鍵 來放置方塊",
   "message.koniava.conduit.gentle_hint": "想放置 %s 嗎？點擊導管邊緣或按住Shift！",

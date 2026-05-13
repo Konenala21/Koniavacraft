@@ -14,7 +14,7 @@ public class ResearchClientPayloadHandler {
     public static void handleKnowledgeSync(KnowledgeSyncPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             ClientResearchCache.update(packet.discovered(), packet.completed(),
-                    packet.availableOverrides(), packet.tier());
+                    packet.availableOverrides(), packet.lockedResearch(), packet.tier());
             AspectSynthesisJEIPlugin.refreshAspectIngredients();
         });
     }
@@ -28,7 +28,8 @@ public class ResearchClientPayloadHandler {
 
     public static void handleWatchSync(WatchSyncPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            ClientResearchCache.update(packet.discovered(), packet.completed(), packet.availableOverrides(), packet.tier());
+            ClientResearchCache.update(packet.discovered(), packet.completed(), packet.availableOverrides(),
+                    packet.lockedResearch(), packet.tier());
             AspectSynthesisJEIPlugin.refreshAspectIngredients();
             Minecraft.getInstance().setScreen(
                     new NaraWatchScreen(new HashSet<>(packet.completed()), packet.tier()));

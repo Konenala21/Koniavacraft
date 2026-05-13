@@ -16,7 +16,7 @@ All notable changes to this project will be documented in this file.
 ### Developer Notes / 開發者備註
 
 - EN: Implemented `ResearchLockWidget` using the `ModularScreen` framework for universal GUI research gating.
-- EN: Added batch research commands: `add_all_aspects` grants every aspect in one call, and `lock_non_primary_aspects` locks every non-primary aspect in one call.
+- EN: Added batch research commands: `add_all_aspects` grants every aspect in one call, and `reset_non_primary_aspects` clears every non-primary aspect while restoring primary aspect amounts to their initial value in one call.
 - EN: Added `KnowledgeSyncPacket` to handle full player research state synchronization during login and completion events.
 - EN: Enhanced `BlockSelectorUtils` with entity ray-tracing support (`getTargetEntity`).
 - EN: Added `ResearchGameTests` suite for verifying multi-player research isolation and dynamic unlocking logic.
@@ -408,3 +408,5 @@ All notable changes to this project will be documented in this file.
 - Removed RPG command registration and class.
 - Prefixed test and UI commands with `koniava`.
 - Fixed mana generator GUI mode sync index to reflect actual mode state.
+
+- Added `reset_non_primary_aspects` to clear all non-primary aspects and restore primary aspect amounts to their initial value.

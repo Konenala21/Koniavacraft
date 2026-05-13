@@ -521,6 +521,7 @@ public class NaraWatchScreen extends Screen {
 
     private NodeState stateOf(ResearchTemplate t) {
         if (completed.contains(t.getId())) return NodeState.COMPLETED;
+        if (ClientResearchCache.isLocked(t.getId())) return NodeState.LOCKED;
         if (ClientResearchCache.isForcedAvailable(t.getId())) return NodeState.AVAILABLE;
         if (tier < t.getTier()) return NodeState.LOCKED;
         for (ResourceLocation prereq : t.getPrerequisites())

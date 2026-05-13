@@ -422,6 +422,13 @@ public class ResearchScreen extends Screen {
         // Grid click — also starts a drag
         HexCoord coord = getCellAt(mouseX, mouseY);
         if (coord != null) {
+            if (button == 0 && selectedAspect != null
+                    && ClientResearchCache.getAspectCount(selectedAspect.getId()) <= 0) {
+                showStatusMessage(Component.translatable(
+                        "message.koniava.research.not_enough_aspect",
+                        selectedAspect.getName()));
+                return true;
+            }
             isDragging = true;
             dragButton = button;
             draggedCells.clear();
@@ -483,6 +490,12 @@ public class ResearchScreen extends Screen {
         if (cell == null || cell.isHole() || cell.isFixed()) return;
 
         if (button == 0 && selectedAspect != null && cell.isEmpty()) {
+            if (ClientResearchCache.getAspectCount(selectedAspect.getId()) <= 0) {
+                showStatusMessage(Component.translatable(
+                        "message.koniava.research.not_enough_aspect",
+                        selectedAspect.getName()));
+                return;
+            }
             grid = grid.placeAspect(coord, selectedAspect);
             draggedCells.add(coord);
             ResearchAspectPlacePacket.sendToServer(
@@ -493,6 +506,12 @@ public class ResearchScreen extends Screen {
             draggedCells.add(coord);
             ResearchAspectPlacePacket.sendToServer(
                     tablePos, template.getId(), coord.q(), coord.r(), null);
+        }
+    }
+
+    private void showStatusMessage(Component message) {
+        if (minecraft != null && minecraft.player != null) {
+            minecraft.player.displayClientMessage(message, true);
         }
     }
 

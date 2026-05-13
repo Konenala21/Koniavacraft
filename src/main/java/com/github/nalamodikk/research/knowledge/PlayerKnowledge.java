@@ -23,6 +23,7 @@ public class PlayerKnowledge {
     private final Map<ResourceLocation, Integer> discoveredAspects = new HashMap<>();
     private final Set<ResourceLocation> completedResearch = new HashSet<>();
     private final Set<ResourceLocation> availableResearchOverrides = new HashSet<>();
+    private final Set<ResourceLocation> lockedResearch = new HashSet<>();
     private final Set<ResourceLocation> scannedItems = new HashSet<>();
     private int currentTier = MIN_TIER;
 
@@ -88,6 +89,7 @@ public class PlayerKnowledge {
 
     public boolean completeResearch(ResourceLocation researchId) {
         availableResearchOverrides.remove(researchId);
+        lockedResearch.remove(researchId);
         return completedResearch.add(researchId);
     }
 
@@ -98,16 +100,19 @@ public class PlayerKnowledge {
     public void setResearchState(ResourceLocation id, ResearchState state) {
         completedResearch.remove(id);
         availableResearchOverrides.remove(id);
+        lockedResearch.remove(id);
 
         switch (state) {
             case COMPLETED -> completedResearch.add(id);
             case FORCED_AVAILABLE -> availableResearchOverrides.add(id);
-            case LOCKED -> {
-            }
+            case LOCKED -> lockedResearch.add(id);
         }
     }
 
     public ResearchState getResearchState(ResourceLocation id) {
+        if (lockedResearch.contains(id)) {
+            return ResearchState.LOCKED;
+        }
         if (completedResearch.contains(id)) {
             return ResearchState.COMPLETED;
         }
@@ -121,12 +126,35 @@ public class PlayerKnowledge {
         return availableResearchOverrides.contains(id);
     }
 
+    public boolean isResearchLocked(ResourceLocation id) {
+        return lockedResearch.contains(id);
+    }
+
+    public int clearNonPrimaryAspects() {
+        int removed = 0;
+        var iterator = discoveredAspects.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<ResourceLocation, Integer> entry = iterator.next();
+            Aspect aspect = ModAspects.get(entry.getKey());
+            if (aspect == null || !aspect.isPrimary()) {
+                iterator.remove();
+                removed++;
+            }
+        }
+        addPrimaryAspects();
+        return removed;
+    }
+
     public Set<ResourceLocation> getCompletedResearch() {
         return Collections.unmodifiableSet(completedResearch);
     }
 
     public Set<ResourceLocation> getAvailableResearchOverrides() {
         return Collections.unmodifiableSet(availableResearchOverrides);
+    }
+
+    public Set<ResourceLocation> getLockedResearch() {
+        return Collections.unmodifiableSet(lockedResearch);
     }
 
     public int getCurrentTier() {
@@ -145,6 +173,7 @@ public class PlayerKnowledge {
         discoveredAspects.clear();
         completedResearch.clear();
         availableResearchOverrides.clear();
+        lockedResearch.clear();
         scannedItems.clear();
         currentTier = MIN_TIER;
         addPrimaryAspects();
@@ -171,6 +200,12 @@ public class PlayerKnowledge {
         }
         tag.put("AvailableResearchOverrides", availableOverrideList);
 
+        ListTag lockedList = new ListTag();
+        for (ResourceLocation id : lockedResearch) {
+            lockedList.add(StringTag.valueOf(id.toString()));
+        }
+        tag.put("LockedResearch", lockedList);
+
         ListTag scannedList = new ListTag();
         for (ResourceLocation id : scannedItems) {
             scannedList.add(StringTag.valueOf(id.toString()));
@@ -193,6 +228,7 @@ public class PlayerKnowledge {
 
         loadResearch(tag.getList("CompletedResearch", Tag.TAG_STRING), knowledge);
         loadAvailableResearchOverrides(tag, knowledge);
+        loadLockedResearch(tag, knowledge);
         loadScannedItems(tag.getList("ScannedItems", Tag.TAG_STRING), knowledge);
         knowledge.addPrimaryAspects();
         knowledge.currentTier = clampTier(tag.getInt("Tier"));
@@ -235,6 +271,19 @@ public class PlayerKnowledge {
             ResourceLocation id = ResourceLocation.tryParse(availableList.getString(i));
             if (id != null && !knowledge.completedResearch.contains(id)) {
                 knowledge.availableResearchOverrides.add(id);
+            }
+        }
+    }
+
+    private static void loadLockedResearch(CompoundTag tag, PlayerKnowledge knowledge) {
+        ListTag lockedList = tag.contains("LockedResearch", Tag.TAG_LIST)
+                ? tag.getList("LockedResearch", Tag.TAG_STRING)
+                : tag.getList("LockedResearchIds", Tag.TAG_STRING);
+
+        for (int i = 0; i < lockedList.size(); i++) {
+            ResourceLocation id = ResourceLocation.tryParse(lockedList.getString(i));
+            if (id != null && !knowledge.completedResearch.contains(id)) {
+                knowledge.lockedResearch.add(id);
             }
         }
     }
