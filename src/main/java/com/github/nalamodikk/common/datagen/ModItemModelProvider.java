@@ -31,6 +31,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         // 娜拉全息手錶：貼圖未完成前借用 vanilla compass
         withExistingParent(ModItems.NARA_WATCH.getId().getPath(),
                 ResourceLocation.withDefaultNamespace("item/compass"));
+        // 完成研究卷軸：使用自訂貼圖
+        withExistingParent(ModItems.COMPLETED_RESEARCH.getId().getPath(),
+                ResourceLocation.parse("item/generated"))
+                .texture("layer0", modLoc("item/completed_research"));
 
         ModItems.ITEMS.getEntries().forEach(item -> {
             Item instance = item.get();
