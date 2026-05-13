@@ -571,9 +571,7 @@ public class ResearchScreen extends Screen {
 
     private boolean isOverPaletteArea(double mouseX, double mouseY) {
         int widthPixels = PALETTE_COLUMNS * PALETTE_CELL;
-        int rows = Math.min(PALETTE_ROWS, Math.max(1,
-                (getVisiblePaletteAspects().size() + PALETTE_COLUMNS - 1) / PALETTE_COLUMNS));
-        int heightPixels = rows * PALETTE_CELL;
+        int heightPixels = PALETTE_ROWS * PALETTE_CELL;
         return mouseX >= paletteStartX && mouseX < paletteStartX + widthPixels
                 && mouseY >= paletteY && mouseY < paletteY + heightPixels;
     }

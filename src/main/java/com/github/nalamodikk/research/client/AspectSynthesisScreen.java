@@ -197,9 +197,7 @@ public class AspectSynthesisScreen extends AbstractContainerScreen<ResearchTable
 
     private boolean isOverPaletteArea(double mouseX, double mouseY) {
         int widthPixels = PALETTE_COLUMNS * PALETTE_STEP;
-        int rows = Math.min(PALETTE_ROWS, Math.max(1,
-                (getVisiblePaletteAspects().size() + PALETTE_COLUMNS - 1) / PALETTE_COLUMNS));
-        int heightPixels = paletteRowY(rows - 1) + PALETTE_CELL_SIZE;
+        int heightPixels = paletteRowY(PALETTE_ROWS - 1) + PALETTE_CELL_SIZE;
         return mouseX >= guiLeft + PALETTE_X && mouseX < guiLeft + PALETTE_X + widthPixels
                 && mouseY >= guiTop + PALETTE_Y && mouseY < guiTop + PALETTE_Y + heightPixels;
     }
