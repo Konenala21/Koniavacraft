@@ -39,9 +39,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent(ModItems.MANA_CRYSTAL.getId().getPath(),
                 ResourceLocation.parse("item/generated"))
                 .texture("layer0", modLoc("item/mana_crystal"));
-        // 魔力鎬：手持工具（貼圖待製作，暫用鑽石鎬佔位）
-        withExistingParent(ModItems.MANA_PICKAXE.getId().getPath(),
-                ResourceLocation.withDefaultNamespace("item/diamond_pickaxe"));
         // 研究台：BlockItem 但需要手動指定（createManaModel 不生成物品模型）
         withExistingParent("research_table", modLoc("block/research_table"));
 
@@ -57,7 +54,7 @@ public class ModItemModelProvider extends ItemModelProvider {
             // ❌ 跳過已在上方明確處理的物品
             if (name.equals("research_note") || name.equals("ink_quill")
                     || name.equals("nara_watch") || name.equals("completed_research")
-                    || name.equals("mana_crystal") || name.equals("mana_pickaxe")) {
+                    || name.equals("mana_crystal")) {
                 return;
             }
 

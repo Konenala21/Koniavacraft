@@ -33,7 +33,7 @@ public class AspectPedestalRenderer implements BlockEntityRenderer<AspectPedesta
         poseStack.pushPose();
         poseStack.translate(0.5, 1.45 + bob, 0.5);
         poseStack.mulPose(new Quaternionf().rotationY((float) Math.toRadians(rot)));
-        poseStack.scale(0.5f, 0.5f, 0.5f);
+        poseStack.scale(1.0f, 1.0f, 1.0f);
 
         ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
         BakedModel model = itemRenderer.getModel(item, level, null, 0);

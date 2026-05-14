@@ -307,6 +307,7 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
 
     public boolean isActive() { return active; }
     public float getProgress() { return progress; }
+    public ManaStorage getManaStorage() { return manaStorage; }
     public int getManaStored() { return manaStorage.getManaStored(); }
     public int getMaxMana() { return MAX_MANA; }
 

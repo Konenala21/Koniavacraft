@@ -76,6 +76,10 @@ public class ModCapabilities {
                     }
                     return blockEntity.getInventory(); // 🔧 修正：使用 getInventory()
                 });
+        // 本源聚陣：只接收魔力（INPUT）
+        event.registerBlockEntity(ModCapabilities.MANA, ModBlockEntities.ASPECT_ALTAR_BE.get(),
+                (blockEntity, side) -> new RestrictedManaHandler(blockEntity.getManaStorage(), true, false));
+
         // 導管能力
         event.registerBlockEntity(ModCapabilities.MANA, ModBlockEntities.ARCANE_CONDUIT_BE.get(), (blockEntity, side) -> blockEntity);
         // 物品欄能力：ManaCraftingTableBlockEntity;
