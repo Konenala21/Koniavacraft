@@ -76,7 +76,7 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
     private static final int CHECK_INTERVAL = 40;
     private static final int MAX_MANA = 50000;
     private static final int MANA_TRANSFER_RATE = 200;
-    private static final int PEDESTAL_SCAN_RADIUS = 2;
+    private static final int PEDESTAL_SCAN_RADIUS = 6;
 
     private int ticker = 0;
     private int tickCounter = 0;
@@ -273,7 +273,6 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
         BlockPos basePos = worldPosition.below(2);
         for (int x = -PEDESTAL_SCAN_RADIUS; x <= PEDESTAL_SCAN_RADIUS; x++) {
             for (int z = -PEDESTAL_SCAN_RADIUS; z <= PEDESTAL_SCAN_RADIUS; z++) {
-                if (Math.abs(x) == 1 && Math.abs(z) == 1) continue;
 
                 BlockPos scanPos = basePos.offset(x, 0, z);
                 if (level.getBlockEntity(scanPos) instanceof AspectPedestalBlockEntity ped) {
