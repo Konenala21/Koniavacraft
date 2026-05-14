@@ -3,6 +3,7 @@ package com.github.nalamodikk.common.block.blockentity.altar;
 import com.github.nalamodikk.common.capability.ManaStorage;
 import com.github.nalamodikk.common.capability.mana.ManaAction;
 import com.github.nalamodikk.common.multiblock.AbstractMultiblockControllerBlockEntity;
+import com.github.nalamodikk.common.multiblock.api.IWandActivatable;
 import com.github.nalamodikk.common.multiblock.api.MultiblockPattern;
 import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
 import com.github.nalamodikk.register.ModBlockEntities;
@@ -33,7 +34,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEntity {
+public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEntity implements IWandActivatable {
 
     //   結構三層（核心在 y=0）：
     //
@@ -309,6 +310,14 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
     public ManaStorage getManaStorage() { return manaStorage; }
     public int getManaStored() { return manaStorage.getManaStored(); }
     public int getMaxMana() { return MAX_MANA; }
+
+    @Override
+    public net.minecraft.network.chat.Component onWandActivate(net.minecraft.world.entity.player.Player player) {
+        checkStructure();
+        return isFormed()
+                ? net.minecraft.network.chat.Component.translatable("message.koniava.altar.formed")
+                : net.minecraft.network.chat.Component.translatable("message.koniava.altar.not_formed");
+    }
 
     private void syncToClient() {
         if (level != null && !level.isClientSide())

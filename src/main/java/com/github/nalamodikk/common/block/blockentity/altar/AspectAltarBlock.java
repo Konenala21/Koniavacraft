@@ -70,12 +70,4 @@ public class AspectAltarBlock extends BaseEntityBlock {
         return InteractionResult.SUCCESS;
     }
 
-    @Override
-    public void neighborChanged(BlockState state, Level level, BlockPos pos,
-                                Block block, BlockPos fromPos, boolean isMoving) {
-        super.neighborChanged(state, level, pos, block, fromPos, isMoving);
-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof AspectAltarBlockEntity altar) {
-            altar.checkStructure();
-        }
-    }
 }

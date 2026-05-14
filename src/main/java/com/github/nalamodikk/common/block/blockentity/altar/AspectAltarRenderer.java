@@ -123,58 +123,55 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
         if (level == null || !altar.isFormed() || !modelLoaded) return;
 
         float time = level.getGameTime() + partialTick;
-        renderFormedCore(poseStack, bufferSource, packedLight, packedOverlay, time);
+        boolean active = altar.isActive();
+        renderFormedCore(poseStack, bufferSource, packedLight, packedOverlay, time, active);
 
-        if (altar.isActive()) {
+        if (active) {
             renderOrbitals(altar, poseStack, bufferSource, packedLight, packedOverlay, level, time);
         }
     }
 
     private void renderFormedCore(PoseStack poseStack, MultiBufferSource bufferSource,
-                                   int packedLight, int packedOverlay, float time) {
+                                   int packedLight, int packedOverlay, float time, boolean ritualActive) {
         float bob   = (float) Math.sin(time * BOB_SPEED) * BOB_AMPLITUDE;
         float spinY = (time * SPIN_SPEED) % 360f;
-
-        // 目前 Rubik's phase：前 TURN_FRACTION 時間 smoothstep 轉 90°，之後靜止
-        int phase         = (int)(time / PHASE_TICKS) % PHASES.length;
-        float phaseTime   = time % PHASE_TICKS;
-        float turnEnd     = PHASE_TICKS * TURN_FRACTION;
-        float angle;
-        if (phaseTime < turnEnd) {
-            float t = phaseTime / turnEnd;
-            float smooth = t * t * (3f - 2f * t);  // smoothstep easing
-            angle = 90f * smooth;
-        } else {
-            angle = 90f;
-        }
-        PhaseConfig cfg = PHASES[phase];
-
-        // 動態分組：active = 這個 phase 要旋轉的 9 格；passive = 其餘 18 格靜止
-        List<ModelElement> active  = new ArrayList<>(9);
-        List<ModelElement> passive = new ArrayList<>(18);
-        for (ModelElement e : allElements) {
-            (cfg.selector().test(e) ? active : passive).add(e);
-        }
 
         VertexConsumer consumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(TEXTURE));
 
         poseStack.pushPose();
-        // 整體動畫：移到中心 → 浮動 → 地軸傾斜 → Y 自轉 → 回原點
         poseStack.translate(0.5, 0.5 + bob, 0.5);
         poseStack.mulPose(new Quaternionf().rotationZ((float) Math.toRadians(TILT_DEGREES)));
         poseStack.mulPose(new Quaternionf().rotationY((float) Math.toRadians(spinY)));
         poseStack.translate(-0.5, -0.5, -0.5);
 
-        // 靜止格子
-        BlockbenchModelRenderUtils.renderElementList(poseStack, consumer, packedLight, packedOverlay, passive);
+        if (ritualActive) {
+            // 儀式進行中：魔術方塊分層旋轉
+            int phase       = (int)(time / PHASE_TICKS) % PHASES.length;
+            float phaseTime = time % PHASE_TICKS;
+            float turnEnd   = PHASE_TICKS * TURN_FRACTION;
+            float angle     = phaseTime < turnEnd
+                    ? 90f * (float)(Math.pow(phaseTime / turnEnd, 2) * (3 - 2 * phaseTime / turnEnd))
+                    : 90f;
+            PhaseConfig cfg = PHASES[phase];
 
-        // 旋轉格子（這個 phase 的那一面）
-        poseStack.pushPose();
-        poseStack.translate(cfg.px(), cfg.py(), cfg.pz());
-        poseStack.mulPose(cfg.axis().rotationDegrees(angle));
-        poseStack.translate(-cfg.px(), -cfg.py(), -cfg.pz());
-        BlockbenchModelRenderUtils.renderElementList(poseStack, consumer, packedLight, packedOverlay, active);
-        poseStack.popPose();
+            List<ModelElement> rotating  = new ArrayList<>(9);
+            List<ModelElement> still = new ArrayList<>(18);
+            for (ModelElement e : allElements) {
+                (cfg.selector().test(e) ? rotating : still).add(e);
+            }
+
+            BlockbenchModelRenderUtils.renderElementList(poseStack, consumer, packedLight, packedOverlay, still);
+
+            poseStack.pushPose();
+            poseStack.translate(cfg.px(), cfg.py(), cfg.pz());
+            poseStack.mulPose(cfg.axis().rotationDegrees(angle));
+            poseStack.translate(-cfg.px(), -cfg.py(), -cfg.pz());
+            BlockbenchModelRenderUtils.renderElementList(poseStack, consumer, packedLight, packedOverlay, rotating);
+            poseStack.popPose();
+        } else {
+            // 閒置：整體靜止，只靠外層自轉
+            BlockbenchModelRenderUtils.renderElementList(poseStack, consumer, packedLight, packedOverlay, allElements);
+        }
 
         poseStack.popPose();
     }
