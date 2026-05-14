@@ -47,11 +47,11 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
             state -> state.is(ModBlocks.MANA_BLOCK.get()) || state.is(ModBlocks.ALTAR_PILLAR.get());
 
     // y=-2 = 底段（top=false），y=-1 = 頂段（top=true）
-    private static final List<Vec3i> PILLAR_BOTTOM = List.of(
+    public static final List<Vec3i> PILLAR_BOTTOM = List.of(
             new Vec3i(-1, -2, -1), new Vec3i(-1, -2, 1),
             new Vec3i( 1, -2, -1), new Vec3i( 1, -2, 1)
     );
-    private static final List<Vec3i> PILLAR_TOP = List.of(
+    public static final List<Vec3i> PILLAR_TOP = List.of(
             new Vec3i(-1, -1, -1), new Vec3i(-1, -1, 1),
             new Vec3i( 1, -1, -1), new Vec3i( 1, -1, 1)
     );
@@ -79,12 +79,44 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
     private static final int MANA_TRANSFER_RATE = 200;
     private static final int PEDESTAL_SCAN_RADIUS = 6;
 
+    // ── 升級環位置（以祭壇核心為原點）────────────────────────────────────────
+    // 使用 Minecraft 16 點近似圓（半徑 3），三個平面各一條
+    // T1：水平赤道環（XZ 平面，y=0）
+    public static final List<Vec3i> RING_T1 = List.of(
+            new Vec3i( 3, 0,  0), new Vec3i( 3, 0,  1), new Vec3i( 3, 0, -1),
+            new Vec3i(-3, 0,  0), new Vec3i(-3, 0,  1), new Vec3i(-3, 0, -1),
+            new Vec3i( 0, 0,  3), new Vec3i( 1, 0,  3), new Vec3i(-1, 0,  3),
+            new Vec3i( 0, 0, -3), new Vec3i( 1, 0, -3), new Vec3i(-1, 0, -3),
+            new Vec3i( 2, 0,  2), new Vec3i(-2, 0,  2),
+            new Vec3i( 2, 0, -2), new Vec3i(-2, 0, -2)
+    );
+    // T2：垂直環（XY 平面，z=0）
+    public static final List<Vec3i> RING_T2 = List.of(
+            new Vec3i( 3, 0,  0), new Vec3i( 3,  1, 0), new Vec3i( 3, -1, 0),
+            new Vec3i(-3, 0,  0), new Vec3i(-3,  1, 0), new Vec3i(-3, -1, 0),
+            new Vec3i( 0, 3,  0), new Vec3i( 1,  3, 0), new Vec3i(-1,  3, 0),
+            new Vec3i( 0,-3,  0), new Vec3i( 1, -3, 0), new Vec3i(-1, -3, 0),
+            new Vec3i( 2, 2,  0), new Vec3i(-2,  2, 0),
+            new Vec3i( 2,-2,  0), new Vec3i(-2, -2, 0)
+    );
+    // T3：垂直環（YZ 平面，x=0）
+    public static final List<Vec3i> RING_T3 = List.of(
+            new Vec3i(0,  3,  0), new Vec3i(0,  3,  1), new Vec3i(0,  3, -1),
+            new Vec3i(0, -3,  0), new Vec3i(0, -3,  1), new Vec3i(0, -3, -1),
+            new Vec3i(0,  0,  3), new Vec3i(0,  1,  3), new Vec3i(0, -1,  3),
+            new Vec3i(0,  0, -3), new Vec3i(0,  1, -3), new Vec3i(0, -1, -3),
+            new Vec3i(0,  2,  2), new Vec3i(0, -2,  2),
+            new Vec3i(0,  2, -2), new Vec3i(0, -2, -2)
+    );
+    public static final List<List<Vec3i>> ALL_RINGS = List.of(RING_T1, RING_T2, RING_T3);
+
     private int ticker = 0;
     private int tickCounter = 0;
     private boolean active = false;
     private float progress = 0f;
     private int ritualTick = 0;
     private int ritualMaxTick = 0;
+    private int upgradeTier = 0;
 
     private final ManaStorage manaStorage = new ManaStorage(MAX_MANA, this::onManaChanged);
     private final EnumMap<Direction, IOHandlerUtils.IOType> directionConfig = new EnumMap<>(Direction.class);
@@ -111,8 +143,11 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
 
         if (++ticker >= CHECK_INTERVAL) {
             ticker = 0;
-            checkStructure();
-            if (isFormed()) scanForPedestals();
+            // 只掃底座，不自動成形（成形需要法杖觸發）
+            if (isFormed()) {
+                scanForPedestals();
+                refreshUpgradeTier();
+            }
         }
 
         if (tickCounter % 20 == 0) extractManaFromNeighbors();
@@ -235,6 +270,14 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
         // 核心切換成 formed 模型
         level.setBlock(worldPosition, getBlockState().setValue(AspectAltarBlock.FORMED, true), 2);
         scanForPedestals();
+        refreshUpgradeTier();
+        // 成形音效：音符盒 harp 音色，上揚音階
+        level.playSound(null, worldPosition, net.minecraft.sounds.SoundEvents.NOTE_BLOCK_HARP.value(),
+                net.minecraft.sounds.SoundSource.BLOCKS, 1.0f, 0.8f);
+        level.playSound(null, worldPosition, net.minecraft.sounds.SoundEvents.NOTE_BLOCK_HARP.value(),
+                net.minecraft.sounds.SoundSource.BLOCKS, 0.8f, 1.0f);
+        level.playSound(null, worldPosition, net.minecraft.sounds.SoundEvents.NOTE_BLOCK_HARP.value(),
+                net.minecraft.sounds.SoundSource.BLOCKS, 0.6f, 1.26f);
         syncToClient();
     }
 
@@ -255,6 +298,7 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
         }
         clearPedestals();
         if (active) cancelRitual();
+        upgradeTier = 0;
         syncToClient();
     }
 
@@ -355,6 +399,31 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
         pillar.setRotation(rot);
     }
 
+    // ── 升級 Tier ────────────────────────────────────────────────────────────
+
+    public int getUpgradeTier() { return upgradeTier; }
+
+    public void refreshUpgradeTier() {
+        if (level == null || !isFormed()) return;
+        int newTier = 0;
+        for (List<Vec3i> ring : ALL_RINGS) {
+            if (checkRingComplete(ring)) newTier++;
+            else break;
+        }
+        if (newTier != upgradeTier) {
+            upgradeTier = newTier;
+            setChanged();
+        }
+    }
+
+    private boolean checkRingComplete(List<Vec3i> ring) {
+        if (level == null) return false;
+        for (Vec3i offset : ring) {
+            if (!level.getBlockState(worldPosition.offset(offset)).is(ModBlocks.MANA_BLOCK.get())) return false;
+        }
+        return true;
+    }
+
     // ── Pattern ───────────────────────────────────────────────────────────────
 
     @Override
@@ -369,6 +438,7 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
         tag.putInt("RitualTick", ritualTick);
         tag.putInt("RitualMaxTick", ritualMaxTick);
         tag.putInt("Mana", manaStorage.getManaStored());
+        tag.putInt("UpgradeTier", upgradeTier);
     }
 
     @Override
@@ -379,6 +449,7 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
         ritualMaxTick = tag.getInt("RitualMaxTick");
         progress = ritualMaxTick > 0 ? (float) ritualTick / ritualMaxTick : 0f;
         manaStorage.setMana(tag.getInt("Mana"));
+        upgradeTier = tag.getInt("UpgradeTier");
     }
 
     @Override

@@ -12,16 +12,22 @@ import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.neoforged.neoforge.client.model.data.ModelData;
 import org.joml.Quaternionf;
 import org.slf4j.Logger;
 
@@ -42,9 +48,20 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
     private static final float BOB_AMPLITUDE = 0.07f;
 
     // Rubik's cube 動畫節奏
-    // 每個 phase：前 TURN_FRACTION 時間平滑轉 90°，剩下時間靜止等下一個 phase
-    private static final float PHASE_TICKS    = 40f;   // 整個 phase 長度（ticks）：15 轉 + 25 停
-    private static final float TURN_FRACTION  = 0.375f; // 前 37.5% 轉（≈15 ticks），其餘 25 ticks 靜止
+    private static final float PHASE_TICKS   = 40f;
+    private static final float TURN_FRACTION = 0.375f;
+
+    // 共鳴環動畫
+    // OBJ 模型在 YZ 平面，中心在 (0,0,0)，半徑 ~3 方塊單位，不需要額外縮放
+    // T1：Z 軸傾斜 90° → 變水平（XZ 平面），繞 Y 軸自轉
+    // T2：Y 軸傾斜 90° → 變 XY 垂直面，繞 Z 軸自轉
+    // T3：不傾斜（本來就是 YZ 平面），繞 X 軸自轉
+    private static final float RING_SPIN_1 = 0.5f;
+    private static final float RING_SPIN_2 = 0.7f;
+    private static final float RING_SPIN_3 = 0.6f;
+    private static final ModelResourceLocation RING_MODEL_LOC = new ModelResourceLocation(
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "block/resonance_ring"),
+            "standalone");
 
     // 元素位置分界線（Blockbench 座標 / 16 → 方塊單位 0~1）
     // Y 軸（水平層）
@@ -125,6 +142,7 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
         float time = level.getGameTime() + partialTick;
         boolean active = altar.isActive();
         renderFormedCore(poseStack, bufferSource, packedLight, packedOverlay, time, active);
+        renderRings(altar, poseStack, bufferSource, packedLight, packedOverlay, time);
 
         if (active) {
             renderOrbitals(altar, poseStack, bufferSource, packedLight, packedOverlay, level, time);
@@ -173,6 +191,59 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
             BlockbenchModelRenderUtils.renderElementList(poseStack, consumer, packedLight, packedOverlay, allElements);
         }
 
+        poseStack.popPose();
+    }
+
+    private void renderRings(AspectAltarBlockEntity altar, PoseStack poseStack,
+                              MultiBufferSource bufferSource, int packedLight, int packedOverlay,
+                              float time) {
+        int tier = altar.getUpgradeTier();
+        if (tier == 0) return;
+
+        // Lazy-load ring BakedModel（bake 完成後才能取得）
+        BakedModel ringModel = Minecraft.getInstance().getModelManager().getModel(RING_MODEL_LOC);
+        if (ringModel == null) return;
+
+        RandomSource rand = RandomSource.create(42L);
+        List<BakedQuad> quads = new ArrayList<>(ringModel.getQuads(null, null, rand, ModelData.EMPTY, null));
+        for (Direction dir : Direction.values()) {
+            quads.addAll(ringModel.getQuads(null, dir, rand, ModelData.EMPTY, null));
+        }
+        if (quads.isEmpty()) return;
+
+        var consumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(TextureAtlas.LOCATION_BLOCKS));
+
+        // T1：Z+90° 傾斜讓 YZ 環躺平（→XZ 水平），繞 Y 自轉
+        if (tier >= 1) {
+            renderOneRing(poseStack, consumer, packedLight, packedOverlay, quads,
+                    Axis.ZP, 90f, Axis.YP, time * RING_SPIN_1);
+        }
+        // T2：Y+90° 傾斜讓環轉到 XY 平面（垂直），繞 Z 自轉
+        if (tier >= 2) {
+            renderOneRing(poseStack, consumer, packedLight, packedOverlay, quads,
+                    Axis.YP, 90f, Axis.ZP, time * RING_SPIN_2);
+        }
+        // T3：不傾斜（原本就是 YZ 平面，垂直），繞 X 自轉
+        if (tier >= 3) {
+            renderOneRing(poseStack, consumer, packedLight, packedOverlay, quads,
+                    Axis.YP, 0f, Axis.XP, time * RING_SPIN_3);
+        }
+    }
+
+    private void renderOneRing(PoseStack poseStack, VertexConsumer consumer,
+                                int packedLight, int packedOverlay, List<BakedQuad> quads,
+                                Axis tiltAxis, float tiltDegrees, Axis spinAxis, float spinAngle) {
+        poseStack.pushPose();
+        // OBJ 環心在 (0,0,0)，translate 到祭壇方塊中心
+        poseStack.translate(0.5, 0.5, 0.5);
+        if (tiltDegrees != 0f) poseStack.mulPose(tiltAxis.rotationDegrees(tiltDegrees));
+        poseStack.mulPose(spinAxis.rotationDegrees(spinAngle % 360f));
+        // 不需要 scale，不需要 translate-back（環已對齊原點）
+
+        PoseStack.Pose pose = poseStack.last();
+        for (BakedQuad quad : quads) {
+            consumer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, packedOverlay);
+        }
         poseStack.popPose();
     }
 

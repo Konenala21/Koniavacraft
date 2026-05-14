@@ -9,10 +9,13 @@ import com.github.nalamodikk.common.block.blockentity.collector.solarmana.SolarC
 import com.github.nalamodikk.common.block.blockentity.mana_generator.render.ManaGeneratorRenderer;
 import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderRenderer;
 import com.github.nalamodikk.register.ModBlockEntities;
+import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.resources.ResourceLocation;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.ModelEvent;
 
 @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID, value = Dist.CLIENT)
 
@@ -30,6 +33,10 @@ public class ModRenderLayers {
 //        event.registerBlockEntityRenderer(ModBlockEntities.ARCANE_CONDUIT_BE.get(), ArcaneConduitBlockEntityRenderer::new);
     }
 
-
-
+    @SubscribeEvent
+    public static void registerAdditionalModels(ModelEvent.RegisterAdditional event) {
+        event.register(new ModelResourceLocation(
+                ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "block/resonance_ring"),
+                "standalone"));
+    }
 }

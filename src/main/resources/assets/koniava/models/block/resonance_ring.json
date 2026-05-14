@@ -1,0 +1,10 @@
+{
+  "loader": "neoforge:obj",
+  "model": "koniava:models/obj/block/resonance_ring.obj",
+  "flip_v": true,
+  "automatic_culling": false,
+  "textures": {
+    "texture0": "koniava:block/resonance_ring_texture",
+    "particle": "koniava:block/resonance_ring_texture"
+  }
+}

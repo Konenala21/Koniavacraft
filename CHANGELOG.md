@@ -42,13 +42,27 @@ All notable changes to this project will be documented in this file.
 - 矩陣柱現在使用自訂 OBJ 模型與專屬貼圖。
 - Aspect Pedestal now uses a custom model with a dedicated texture; displayed items are better positioned and sized.
 - 本源底座現在使用自訂模型與專屬貼圖；物品顯示位置與大小已優化。
+- Aspect Convergence Array Rubik's cube animation is now ritual-only: during a ritual all 9 face slices rotate; otherwise the core just slowly spins in place.
+- 本源聚陣魔術方塊動畫改為僅儀式進行時才切面輪動，平時只做緩慢自轉。
+- Aspect Convergence Array structure formation now requires using the Advanced Tech Wand — it no longer forms automatically. A short ascending chime plays on successful formation.
+- 本源聚陣結構成形現在需要使用進階科技法杖觸發，不再自動成形，觸發成功時播放上揚音符盒音效。
+- Added Advanced Tech Wand and Structure Build Wand items.
+- 新增進階科技法杖與結構建造法杖物品。
+- Aspect Convergence Array now supports Dyson Ring upgrades (T1/T2/T3): surround the altar with Resonance Rings to gain upgrade tiers. Each tier adds a glowing ring that rotates around the altar.
+- 本源聚陣現在支援戴森環升級（T1/T2/T3）：在祭壇周圍放置共鳴環即可獲得升級階級，每個階級都會增加一個繞祭壇旋轉的發光環。
+- Pedestal scan radius increased from 4 to 6 blocks.
+- 底座偵測半徑從 4 增加到 6 格。
 
 ### Developer Notes / 開發者備註
 
 - `AspectAltarRenderer`: complete rewrite — loads JSON elements as a flat list (no groups needed), partitions all 27 cubies dynamically per phase using XYZ centre-position bounds; 9 phases: top/right/front/bottom/left/back outer slices + E/M/S middle slices; each phase smoothsteps to 90° then holds; global earth-tilt + Y-spin overlay preserved.
 - `BlockbenchModelRenderUtils.renderCube`: fixed normal transformation — face normals now transformed by `poseStack.last().normal()` (normal matrix) so lighting is correct after arbitrary axis rotations. Also added `renderElementList(List<ModelElement>)` public method for direct-list rendering.
 - `ModBlockStateProvider`: altar and pedestal blockstates now reference hand-built models via `UncheckedModelFile`; deleted conflicting stone-placeholder models from `src/generated/resources`; added `aspect_altar_formed.json` (particle-only, no geometry) for `ENTITYBLOCK_ANIMATED` state.
-- New textures: `aspect_altar_texture.png`, `aspect_pedestal_texture.png`, `altar_pillar_texture.png`.
+- New textures: `aspect_altar_texture.png`, `aspect_pedestal_texture.png`, `altar_pillar_texture.png`, `resonance_ring_texture.png`, `advanced_tech_wand.png`, `structure_build_wand.png`.
+- `AspectAltarBlockEntity`: added `upgradeTier` (0–3) persisted to NBT; `refreshUpgradeTier()` checks 16-point ring positions (RING_T1/T2/T3) each CHECK_INTERVAL; removed `checkStructure()` from tick loop (wand-only); formation sound: 3 NOTE_BLOCK_HARP pitches 0.8/1.0/1.26f; `PILLAR_BOTTOM`/`PILLAR_TOP` changed to public.
+- `IWandActivatable` interface added (`common/multiblock/api`); `AdvancedTechWandItem` and `StructureBuildWandItem` new items.
+- `AspectAltarRenderer`: added `renderRings()` / `renderOneRing()` using BakedModel quads from OBJ `resonance_ring`; T1 tilt Z+90°→Y spin, T2 tilt Y+90°→Z spin, T3 no tilt→X spin; `ModelEvent.RegisterAdditional` registers `block/resonance_ring` as standalone model.
+- `ModCapabilities`: registered `MANA` capability for `ASPECT_ALTAR_BE` as input-only (`RestrictedManaHandler(storage, true, false)`).
 - `ManaInfuserRecipeProvider`: added `refined_mana_dust_to_crystal_fragment` recipe (3×refined → 1×fragment, 4200 mana, 80t).
 - `ModRecipeProvider`: added shaped recipes for `accelerated_processing_upgrade`, `expanded_fuel_chamber_upgrade`, `catalytic_converter_upgrade`, `diagnostic_display_upgrade`.
 - `ManaGrinderBlockEntity`, `ManaInfuserBlockEntity`, `ManaCraftingTableBlockEntity`: implemented `IUpgradeableMachine`; added 4-slot `UpgradeInventory`; SPEED scales `progressStep`, EFFICIENCY divides mana cost by multiplier (max 5x); NBT save/load added. `OpenUpgradeGuiPacket` now supports all three machines automatically via `instanceof IUpgradeableMachine`.
