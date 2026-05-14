@@ -1,6 +1,7 @@
 package com.github.nalamodikk.register;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.block.blockentity.altar.AltarRecipe;
 import com.github.nalamodikk.common.block.blockentity.mana_crafting.ManaCraftingTableRecipe;
 import com.github.nalamodikk.common.block.blockentity.mana_generator.recipe.ManaGenFuelRecipe;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserRecipe;
@@ -67,6 +68,14 @@ public class ModRecipes {
     // ✅ 給 Minecraft 用的 RecipeSerializer（讀 json 用這個）
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<ManaGenFuelRecipe>> MANA_FUEL_SERIALIZER =
             SERIALIZERS.register("mana_fuel", () -> ManaGenFuelRecipe.FuelRecipeSerializer.INSTANCE);
+
+    // === 🔮 本源聚陣配方 ===
+    public static final Supplier<RecipeType<AltarRecipe>> ALTAR_TYPE =
+            TYPES.register("altar_crafting", () -> RecipeType.simple(
+                    ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "altar_crafting")));
+
+    public static final Supplier<RecipeSerializer<AltarRecipe>> ALTAR_SERIALIZER =
+            SERIALIZERS.register("altar_crafting", AltarRecipe.Serializer::new);
 
     // === ⚙️ 通用加工配方系統 ===
     public static final Supplier<RecipeType<ProcessingRecipe>> PROCESSING_TYPE =

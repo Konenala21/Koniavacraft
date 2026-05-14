@@ -10,6 +10,9 @@ import com.github.nalamodikk.common.config.ModCommonConfig;
 import com.github.nalamodikk.common.coreapi.block.IConfigurableBlock;
 import com.github.nalamodikk.common.coreapi.block.mana.IManaCraftingMachine;
 import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
+import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
+import com.github.nalamodikk.common.utils.upgrade.UpgradeType;
+import com.github.nalamodikk.common.utils.upgrade.api.IUpgradeableMachine;
 import com.github.nalamodikk.register.ModBlockEntities;
 import com.github.nalamodikk.register.ModRecipes;
 import net.minecraft.Util;
@@ -36,7 +39,7 @@ import javax.annotation.Nullable;
 import java.util.EnumMap;
 import java.util.Optional;
 
-public class ManaCraftingTableBlockEntity extends BlockEntity implements MenuProvider, IManaCraftingMachine , IConfigurableBlock {
+public class ManaCraftingTableBlockEntity extends BlockEntity implements MenuProvider, IManaCraftingMachine, IConfigurableBlock, IUpgradeableMachine {
     public static final int MAX_MANA = 1000000;
     public static final int INPUT_SLOT_COUNT = 9;
     public static final int OUTPUT_SLOT = 9;
@@ -81,6 +84,7 @@ public class ManaCraftingTableBlockEntity extends BlockEntity implements MenuPro
 
     private final ItemStackHandler itemHandler = new ItemStackHandler(TOTAL_SLOTS);
     private final ManaStorage manaStorage = new ManaStorage(MAX_MANA, this::markStorageChanged);
+    private final UpgradeInventory upgradeInventory = new UpgradeInventory(4);
 
     public ManaCraftingTableBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MANA_CRAFTING_TABLE_BLOCK_BE.get(), pos, state);
@@ -149,7 +153,7 @@ public class ManaCraftingTableBlockEntity extends BlockEntity implements MenuPro
 
         // 檢查是否有魔力足夠
         // 若新的配方合法，結果變動才標記 dirty
-        if (recipe.isPresent() && hasSufficientMana(recipe.get().value().getManaCost())) {
+        if (recipe.isPresent() && hasSufficientMana(getEffectiveManaCost(recipe.get().value().getManaCost()))) {
             ItemStack newResult = recipe.get().value().assemble(input, level.registryAccess());
             ItemStack currentOutput = itemHandler.getStackInSlot(OUTPUT_SLOT);
 
@@ -181,7 +185,7 @@ public class ManaCraftingTableBlockEntity extends BlockEntity implements MenuPro
         if (recipeOpt.isEmpty()) return;
 
         ManaCraftingTableRecipe recipe = recipeOpt.get();
-        int manaCost = recipe.getManaCost();
+        int manaCost = getEffectiveManaCost(recipe.getManaCost());
 
         // 檢查是否有足夠魔力
         if (!hasSufficientMana(manaCost)) return;
@@ -269,6 +273,9 @@ public class ManaCraftingTableBlockEntity extends BlockEntity implements MenuPro
         if (tag.contains("IOConfig")) {
             deserializeIOMap(tag.getCompound("IOConfig"));
         }
+        if (tag.contains("UpgradeInventory")) {
+            upgradeInventory.deserializeNBT(registries, tag.getCompound("UpgradeInventory"));
+        }
     }
 
     @Override
@@ -277,6 +284,7 @@ public class ManaCraftingTableBlockEntity extends BlockEntity implements MenuPro
         tag.put("Items", itemHandler.serializeNBT(registries));
         tag.putInt("Mana", manaStorage.getManaStored());
         tag.put("IOConfig", serializeIOMap());
+        tag.put("UpgradeInventory", upgradeInventory.serializeNBT(registries));
     }
 
 
@@ -352,6 +360,27 @@ public class ManaCraftingTableBlockEntity extends BlockEntity implements MenuPro
     }
 
 
+
+    // === ⚡ IUpgradeableMachine 實作 ===
+
+    @Override
+    public UpgradeInventory getUpgradeInventory() {
+        return upgradeInventory;
+    }
+
+    @Override
+    public boolean supportsUpgradeType(UpgradeType type) {
+        return type == UpgradeType.EFFICIENCY;
+    }
+
+    @Override
+    public net.minecraft.world.level.block.entity.BlockEntity getBlockEntity() {
+        return this;
+    }
+
+    private int getEffectiveManaCost(int base) {
+        return Math.max(1, base / getEfficiencyMultiplier());
+    }
 
     @Override
     public void setIOConfig(Direction direction, IOHandlerUtils.IOType type) {

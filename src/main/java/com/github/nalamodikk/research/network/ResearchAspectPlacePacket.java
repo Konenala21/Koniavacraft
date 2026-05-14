@@ -3,6 +3,7 @@ package com.github.nalamodikk.research.network;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.block.blockentity.research.ResearchTableBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.research.ResearchTableMenu;
+import com.github.nalamodikk.common.item.research.InkQuillItem;
 import com.github.nalamodikk.research.aspect.Aspect;
 import com.github.nalamodikk.research.knowledge.PlayerKnowledge;
 import com.github.nalamodikk.research.knowledge.ResearchSavedData;
@@ -100,19 +101,19 @@ public record ResearchAspectPlacePacket(
 
             // Every click on the hex puzzle consumes quill durability, including cancel/removal.
             ItemStack quill = table.getInventory().getStackInSlot(ResearchTableBlockEntity.QUILL_SLOT);
-            if (!quill.isEmpty()) {
+            if (!quill.isEmpty() && quill.getItem() instanceof InkQuillItem) {
+                if (InkQuillItem.isOutOfInk(quill)) {
+                    player.sendSystemMessage(Component.translatable("item.koniava.ink_quill.out_of_ink_prompt"));
+                    return;
+                }
                 int damage = 1 + RandomGenerator.getDefault().nextInt(5);
-                int nextDamage = quill.getDamageValue() + damage;
-                if (nextDamage >= quill.getMaxDamage()) {
-                    KoniavacraftMod.LOGGER.debug("Ink quill broke at {}", packet.tablePos());
-                    table.getInventory().setStackInSlot(ResearchTableBlockEntity.QUILL_SLOT, ItemStack.EMPTY);
-                } else {
-                    ItemStack updated = quill.copy();
-                    updated.setDamageValue(nextDamage);
-                    table.getInventory().setStackInSlot(ResearchTableBlockEntity.QUILL_SLOT, updated);
+                ItemStack updated = quill.copy();
+                boolean justLocked = InkQuillItem.applyDamage(updated, damage);
+                table.getInventory().setStackInSlot(ResearchTableBlockEntity.QUILL_SLOT, updated);
+                if (justLocked) {
+                    player.sendSystemMessage(Component.translatable("item.koniava.ink_quill.just_locked"));
                 }
                 table.setChanged();
-                // Sync quill damage to client immediately after hurting
                 player.serverLevel().sendBlockUpdated(packet.tablePos(),
                         player.serverLevel().getBlockState(packet.tablePos()),
                         player.serverLevel().getBlockState(packet.tablePos()), 3);

@@ -5,6 +5,7 @@ import com.github.nalamodikk.register.ModBlocks;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.tags.BlockTags;
+import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.common.data.BlockTagsProvider;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import org.jetbrains.annotations.Nullable;
@@ -32,7 +33,10 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(ModBlocks.SOLAR_MANA_COLLECTOR.get())
                 .add(ModBlocks.MANA_CRAFTING_TABLE_BLOCK.get())
                 .add(ModBlocks.MANA_INFUSER.get())
-                .add(ModBlocks.MANA_GRINDER.get());
+                .add(ModBlocks.MANA_GRINDER.get())
+                .add(ModBlocks.ASPECT_ALTAR.get())
+                .add(ModBlocks.ALTAR_PILLAR.get())
+                .add(ModBlocks.ASPECT_PEDESTAL.get());
 
 
 
@@ -42,6 +46,12 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(ModBlocks.MANA_CRAFTING_TABLE_BLOCK.get());
 
         tag(BlockTags.NEEDS_IRON_TOOL)
+                .add(ModBlocks.DEEPSLATE_MAGIC_ORE.get());
+
+        tag(Tags.Blocks.ORES_IN_GROUND_STONE)
+                .add(ModBlocks.MAGIC_ORE.get());
+
+        tag(Tags.Blocks.ORES_IN_GROUND_DEEPSLATE)
                 .add(ModBlocks.DEEPSLATE_MAGIC_ORE.get());
 
         this.tag(BlockTags.MINEABLE_WITH_SHOVEL)

@@ -77,6 +77,14 @@ public final class BlockbenchModelRenderUtils {
         return parsedElements;
     }
 
+    public static void renderElementList(PoseStack poseStack, VertexConsumer vertexConsumer,
+                                         int packedLight, int packedOverlay,
+                                         List<ModelElement> elements) {
+        for (ModelElement element : elements) {
+            renderElement(poseStack, vertexConsumer, packedLight, packedOverlay, element);
+        }
+    }
+
     public static void renderGroup(PoseStack poseStack, VertexConsumer vertexConsumer,
                                    int packedLight, int packedOverlay,
                                    Map<String, List<ModelElement>> groupedElements,
@@ -230,54 +238,51 @@ public final class BlockbenchModelRenderUtils {
     private static void renderCube(PoseStack poseStack, VertexConsumer vertexConsumer,
                                    int packedLight, int packedOverlay, ModelElement element) {
         Matrix4f matrix = poseStack.last().pose();
+        org.joml.Matrix3f nm = poseStack.last().normal();
 
-        float x1 = element.x1;
-        float y1 = element.y1;
-        float z1 = element.z1;
-        float x2 = element.x2;
-        float y2 = element.y2;
-        float z2 = element.z2;
+        float x1 = element.x1, y1 = element.y1, z1 = element.z1;
+        float x2 = element.x2, y2 = element.y2, z2 = element.z2;
 
         FaceUV up = element.faceUVs.get("up");
         if (up != null) {
+            Vector3f n = nm.transform(new Vector3f(0f, 1f, 0f));
             addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
-                    x1, y2, z1, x1, y2, z2, x2, y2, z2, x2, y2, z1,
-                    0.0F, 1.0F, 0.0F, up);
+                    x1, y2, z1, x1, y2, z2, x2, y2, z2, x2, y2, z1, n.x(), n.y(), n.z(), up);
         }
 
         FaceUV down = element.faceUVs.get("down");
         if (down != null) {
+            Vector3f n = nm.transform(new Vector3f(0f, -1f, 0f));
             addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
-                    x1, y1, z1, x2, y1, z1, x2, y1, z2, x1, y1, z2,
-                    0.0F, -1.0F, 0.0F, down);
+                    x1, y1, z1, x2, y1, z1, x2, y1, z2, x1, y1, z2, n.x(), n.y(), n.z(), down);
         }
 
         FaceUV north = element.faceUVs.get("north");
         if (north != null) {
+            Vector3f n = nm.transform(new Vector3f(0f, 0f, -1f));
             addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
-                    x1, y1, z1, x1, y2, z1, x2, y2, z1, x2, y1, z1,
-                    0.0F, 0.0F, -1.0F, north);
+                    x1, y1, z1, x1, y2, z1, x2, y2, z1, x2, y1, z1, n.x(), n.y(), n.z(), north);
         }
 
         FaceUV south = element.faceUVs.get("south");
         if (south != null) {
+            Vector3f n = nm.transform(new Vector3f(0f, 0f, 1f));
             addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
-                    x1, y1, z2, x2, y1, z2, x2, y2, z2, x1, y2, z2,
-                    0.0F, 0.0F, 1.0F, south);
+                    x1, y1, z2, x2, y1, z2, x2, y2, z2, x1, y2, z2, n.x(), n.y(), n.z(), south);
         }
 
         FaceUV west = element.faceUVs.get("west");
         if (west != null) {
+            Vector3f n = nm.transform(new Vector3f(-1f, 0f, 0f));
             addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
-                    x1, y1, z1, x1, y1, z2, x1, y2, z2, x1, y2, z1,
-                    -1.0F, 0.0F, 0.0F, west);
+                    x1, y1, z1, x1, y1, z2, x1, y2, z2, x1, y2, z1, n.x(), n.y(), n.z(), west);
         }
 
         FaceUV east = element.faceUVs.get("east");
         if (east != null) {
+            Vector3f n = nm.transform(new Vector3f(1f, 0f, 0f));
             addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
-                    x2, y1, z1, x2, y2, z1, x2, y2, z2, x2, y1, z2,
-                    1.0F, 0.0F, 0.0F, east);
+                    x2, y1, z1, x2, y2, z1, x2, y2, z2, x2, y1, z2, n.x(), n.y(), n.z(), east);
         }
     }
 

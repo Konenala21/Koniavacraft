@@ -74,6 +74,20 @@ public final class ResearchRegistry {
                     .build()
     );
 
+    /**
+     * Tools: player learns to forge mana-infused tools and the basic tech wand.
+     * Blade↔Mechanism (both involve shaping metal), Crystal provides the mana conduit.
+     */
+    public static final ResearchTemplate MANA_TOOLS = register(
+            ResearchTemplate.builder(id("mana_tools"))
+                    .tier(1)
+                    .aspects(ModAspects.BLADE, ModAspects.MECHANISM, ModAspects.CRYSTAL)
+                    .holeRatio(0.30)
+                    .prerequisites(id("mana_crystallisation"))
+                    .unlocks(id("basic_tech_wand"), id("mana_pickaxe"))
+                    .build()
+    );
+
     // ── Tier 1 continued — 魔法期完整 ────────────────────────────────────────
 
     /**

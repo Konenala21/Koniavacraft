@@ -1,6 +1,9 @@
 package com.github.nalamodikk.register;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.block.blockentity.altar.AltarPillarBlockEntity;
+import com.github.nalamodikk.common.block.blockentity.altar.AspectAltarBlockEntity;
+import com.github.nalamodikk.common.block.blockentity.altar.AspectPedestalBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.collector.solarmana.SolarManaCollectorBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_crafting.ManaCraftingTableBlockEntity;
@@ -59,6 +62,21 @@ public class ModBlockEntities {
 //                    BlockEntityType.Builder.of(ModularMachineBlockEntity::new,
 //                            ModBlocks.MODULAR_MACHINE_BLOCK.get()).build());
 
+
+    public static final Supplier<BlockEntityType<AspectAltarBlockEntity>> ASPECT_ALTAR_BE =
+            BLOCK_ENTITY_TYPES.register("aspect_altar", () ->
+                    BlockEntityType.Builder.of(AspectAltarBlockEntity::new,
+                            ModBlocks.ASPECT_ALTAR.get()).build(null));
+
+    public static final Supplier<BlockEntityType<AltarPillarBlockEntity>> ALTAR_PILLAR_BE =
+            BLOCK_ENTITY_TYPES.register("altar_pillar", () ->
+                    BlockEntityType.Builder.of(AltarPillarBlockEntity::new,
+                            ModBlocks.ALTAR_PILLAR.get()).build(null));
+
+    public static final Supplier<BlockEntityType<AspectPedestalBlockEntity>> ASPECT_PEDESTAL_BE =
+            BLOCK_ENTITY_TYPES.register("aspect_pedestal", () ->
+                    BlockEntityType.Builder.of(AspectPedestalBlockEntity::new,
+                            ModBlocks.ASPECT_PEDESTAL.get()).build(null));
 
     public static final Supplier<BlockEntityType<ResearchTableBlockEntity>> RESEARCH_TABLE_BE =
             BLOCK_ENTITY_TYPES.register("research_table", () ->

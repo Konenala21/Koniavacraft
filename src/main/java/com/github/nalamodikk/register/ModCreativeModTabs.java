@@ -46,7 +46,8 @@ public class ModCreativeModTabs {
 
                                 ModItems.ITEMS.getEntries().forEach(item -> {
                                     if (item.get() instanceof BlockItem blockItem) {
-                                        if ("arcane_conduit".equals(blockItem.getBlock().builtInRegistryHolder().key().location().getPath())) {
+                                        String path = blockItem.getBlock().builtInRegistryHolder().key().location().getPath();
+                                        if ("arcane_conduit".equals(path) || "altar_pillar".equals(path)) {
                                             return;
                                         }
 

@@ -9,6 +9,9 @@ import com.github.nalamodikk.common.block.ResearchTableBlock;
 import com.github.nalamodikk.common.block.blockentity.mana_crafting.ManaCraftingTableBlock;
 import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorBlock;
 import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderBlock;
+import com.github.nalamodikk.common.block.blockentity.altar.AltarPillarBlock;
+import com.github.nalamodikk.common.block.blockentity.altar.AspectAltarBlock;
+import com.github.nalamodikk.common.block.blockentity.altar.AspectPedestalBlock;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserBlock;
 import com.github.nalamodikk.common.block.normal.DeepManaSoilBlock;
 import com.github.nalamodikk.common.block.normal.ManaBloomBlock;
@@ -43,7 +46,7 @@ public class ModBlocks {
 
     public static final DeferredBlock<Block> RESEARCH_TABLE =
             registerBlock("research_table", () -> new ResearchTableBlock(
-                    BlockBehaviour.Properties.ofFullCopy(Blocks.BIRCH_WOOD).strength(2.5f)));
+                    BlockBehaviour.Properties.ofFullCopy(Blocks.BIRCH_WOOD).strength(2.5f).noOcclusion()));
 
 
     public static final DeferredBlock<Block> MANA_GENERATOR =
@@ -131,6 +134,25 @@ public class ModBlocks {
             () -> new ManaGrinderBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL)
                     .strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().lightLevel(state ->
                             state.getValue(ManaGrinderBlock.WORKING) ? 6 : 0))); // 工作時發光
+
+    // === 🔮 多方塊：本源聚陣 ===
+    // 核心（controller，放在底座上方）
+    public static final DeferredBlock<AspectAltarBlock> ASPECT_ALTAR = registerBlock("aspect_altar",
+            () -> new AspectAltarBlock(BlockBehaviour.Properties.of().mapColor(MapColor.STONE)
+                    .strength(3.5f).sound(SoundType.STONE).requiresCorrectToolForDrops()
+                    .lightLevel(state -> 6).noOcclusion()));
+
+    // 祭壇柱（成形後替換角落魔力方塊的視覺方塊，挖掉掉落 mana_block）
+    public static final DeferredBlock<AltarPillarBlock> ALTAR_PILLAR = registerBlock("altar_pillar",
+            () -> new AltarPillarBlock(BlockBehaviour.Properties.of().mapColor(MapColor.STONE)
+                    .strength(3.5f).sound(SoundType.STONE).requiresCorrectToolForDrops()
+                    .noOcclusion()));
+
+    // 底座柱（放材料用，中心與周圍皆可放）
+    public static final DeferredBlock<AspectPedestalBlock> ASPECT_PEDESTAL = registerBlock("aspect_pedestal",
+            () -> new AspectPedestalBlock(BlockBehaviour.Properties.of().mapColor(MapColor.STONE)
+                    .strength(2.0f).sound(SoundType.STONE).requiresCorrectToolForDrops()
+                    .noOcclusion()));
 
 
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> block) {

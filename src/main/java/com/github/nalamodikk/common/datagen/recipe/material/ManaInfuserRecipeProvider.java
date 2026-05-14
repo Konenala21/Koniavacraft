@@ -84,6 +84,15 @@ public class ManaInfuserRecipeProvider {
                 1
         );
 
+        // 精煉魔力粉 → 魔力水晶碎片
+        createManaInfuserRecipe(output,
+                "refined_mana_dust_to_crystal_fragment",
+                Ingredient.of(ModItems.REFINED_MANA_DUST.get()),
+                new ItemStack(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
+                4200,  // 魔力消耗
+                80,  // 注入時間 (4秒)
+                3    // 需要3個精煉魔力粉
+        );
 
     }
 

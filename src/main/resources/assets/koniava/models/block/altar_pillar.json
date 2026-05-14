@@ -1,0 +1,10 @@
+{
+  "loader": "neoforge:obj",
+  "model": "koniava:models/obj/block/altar_pillar.obj",
+  "flip_v": true,
+  "automatic_culling": false,
+  "textures": {
+    "texture0": "koniava:block/altar_pillar_texture",
+    "particle": "koniava:block/altar_pillar_texture"
+  }
+}

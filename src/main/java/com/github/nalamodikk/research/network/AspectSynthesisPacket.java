@@ -118,15 +118,17 @@ public record AspectSynthesisPacket(BlockPos tablePos, ResourceLocation aspect1,
         if (quill.isEmpty() || !(quill.getItem() instanceof InkQuillItem)) {
             return false;
         }
+        if (InkQuillItem.isOutOfInk(quill)) {
+            player.sendSystemMessage(Component.translatable("item.koniava.ink_quill.out_of_ink_prompt"));
+            return false;
+        }
 
         int damage = 1 + RandomGenerator.getDefault().nextInt(5);
-        int nextDamage = quill.getDamageValue() + damage;
-        if (nextDamage >= quill.getMaxDamage()) {
-            table.getInventory().setStackInSlot(ResearchTableBlockEntity.QUILL_SLOT, ItemStack.EMPTY);
-        } else {
-            ItemStack updated = quill.copy();
-            updated.setDamageValue(nextDamage);
-            table.getInventory().setStackInSlot(ResearchTableBlockEntity.QUILL_SLOT, updated);
+        ItemStack updated = quill.copy();
+        boolean justLocked = InkQuillItem.applyDamage(updated, damage);
+        table.getInventory().setStackInSlot(ResearchTableBlockEntity.QUILL_SLOT, updated);
+        if (justLocked) {
+            player.sendSystemMessage(Component.translatable("item.koniava.ink_quill.just_locked"));
         }
         table.setChanged();
         if (table.getLevel() != null && !table.getLevel().isClientSide()) {

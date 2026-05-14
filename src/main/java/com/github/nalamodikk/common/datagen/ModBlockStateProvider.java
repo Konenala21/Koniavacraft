@@ -1,6 +1,8 @@
 package com.github.nalamodikk.common.datagen;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.block.blockentity.altar.AltarPillarBlock;
+import com.github.nalamodikk.common.block.blockentity.altar.AspectAltarBlock;
 import com.github.nalamodikk.register.ModBlocks;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -38,6 +40,31 @@ public class ModBlockStateProvider extends BlockStateProvider {
         createBasicConduitModel();
         createAdvancedConduitModel();
         createEliteConduitModel();
+
+        // 核心：formed=false 用手建的 Rubik's cube 模型；formed=true 交給 BER，只需 particle 佔位
+        ModelFile altarUnformed = new ModelFile.UncheckedModelFile(modLoc("block/aspect_altar"));
+        ModelFile altarFormed   = new ModelFile.UncheckedModelFile(modLoc("block/aspect_altar_formed"));
+        getVariantBuilder(ModBlocks.ASPECT_ALTAR.get())
+                .partialState().with(AspectAltarBlock.FORMED, false)
+                    .modelForState().modelFile(altarUnformed).addModel()
+                .partialState().with(AspectAltarBlock.FORMED, true)
+                    .modelForState().modelFile(altarFormed).addModel();
+        itemModels().withExistingParent("aspect_altar", modLoc("block/aspect_altar"));
+
+        // altar_pillar：ENTITYBLOCK_ANIMATED，BER 負責視覺
+        // blockstate 指向使用者自建的模型（UncheckedModelFile 不驗證檔案是否存在）
+        ModelFile pillarModel = new ModelFile.UncheckedModelFile(modLoc("block/altar_pillar"));
+        getVariantBuilder(ModBlocks.ALTAR_PILLAR.get())
+                .partialState().with(AltarPillarBlock.TOP, false)
+                    .modelForState().modelFile(pillarModel).addModel()
+                .partialState().with(AltarPillarBlock.TOP, true)
+                    .modelForState().modelFile(pillarModel).addModel();
+        itemModels().getBuilder("altar_pillar")
+                .parent(new ModelFile.UncheckedModelFile(modLoc("block/altar_pillar")));
+
+        ModelFile pedestalModel = new ModelFile.UncheckedModelFile(modLoc("block/aspect_pedestal"));
+        simpleBlock(ModBlocks.ASPECT_PEDESTAL.get(), pedestalModel);
+        itemModels().withExistingParent("aspect_pedestal", modLoc("block/aspect_pedestal"));
 
         // 🧪 特殊方塊 (自定義模型)
         createManaModel(ModBlocks.MANA_CRAFTING_TABLE_BLOCK);

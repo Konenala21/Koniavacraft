@@ -32,11 +32,15 @@ import java.util.EnumMap;
 import java.util.List;
 
 import com.github.nalamodikk.common.block.blockentity.mana_grinder.sync.ManaGrinderSyncHelper;
+import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
+import com.github.nalamodikk.common.utils.upgrade.UpgradeType;
+import com.github.nalamodikk.common.utils.upgrade.api.IUpgradeableMachine;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
  * ⚙️ 魔力粉碎機 BlockEntity
  */
-public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock {
+public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock implements IUpgradeableMachine {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ManaGrinderBlockEntity.class);
 
@@ -57,6 +61,9 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock {
 
     // === 📊 同步助手 ===
     private final ManaGrinderSyncHelper syncHelper = new ManaGrinderSyncHelper();
+
+    // === ⚡ 升級系統 ===
+    private final UpgradeInventory upgradeInventory = new UpgradeInventory(4);
 
     // === 📊 狀態變量 ===
     private final EnumMap<Direction, IOHandlerUtils.IOType> directionConfig = new EnumMap<>(Direction.class);
@@ -165,8 +172,8 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock {
         // 3. 嘗試進行研磨
         boolean progressedThisTick = false;
         if (currentRecipe != null && progress < maxProgress) {
-            int progressStep = scaleProgressByOwner(1);
-            int totalManaCost = currentRecipe.getManaCost();
+            int progressStep = scaleProgressByOwner(1) * getSpeedMultiplier();
+            int totalManaCost = currentRecipe.getManaCost() / getEfficiencyMultiplier();
             int newProgress = Math.min(progress + progressStep, maxProgress);
             int targetSpent = maxProgress > 0
                     ? (int) Math.floor((newProgress / (double) maxProgress) * totalManaCost)
@@ -337,6 +344,23 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock {
         return false; // 粉碎機不生成魔力
     }
 
+    // === ⚡ IUpgradeableMachine 實作 ===
+
+    @Override
+    public UpgradeInventory getUpgradeInventory() {
+        return upgradeInventory;
+    }
+
+    @Override
+    public boolean supportsUpgradeType(UpgradeType type) {
+        return type == UpgradeType.SPEED || type == UpgradeType.EFFICIENCY;
+    }
+
+    @Override
+    public BlockEntity getBlockEntity() {
+        return this;
+    }
+
     // === 🔧 IConfigurableBlock 實作 ===
 
     @Override
@@ -393,6 +417,7 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock {
 
         tag.put("DirectionConfig", serializeIOMap());
         tag.putInt("ManaSpent", manaSpent);
+        tag.put("UpgradeInventory", upgradeInventory.serializeNBT(registries));
     }
 
     @Override
@@ -409,6 +434,9 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock {
         }
 
         manaSpent = tag.getInt("ManaSpent");
+        if (tag.contains("UpgradeInventory")) {
+            upgradeInventory.deserializeNBT(registries, tag.getCompound("UpgradeInventory"));
+        }
 
         hasInputChanged = true;
     }

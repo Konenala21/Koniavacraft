@@ -2,6 +2,57 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Player Changes / 玩家更新內容
+
+- Mana Infuser now processes Refined Mana Dust into Mana Crystal Fragments (3 dust → 1 fragment, 4200 mana).
+- 魔力注入機現在可將精煉魔力粉轉化為魔力水晶碎片（3粉→1碎片，消耗 4200 魔力）。
+- Added crafting recipes for all four Mana Generator upgrade modules: Accelerated Processing, Expanded Fuel Chamber, Catalytic Converter, and Diagnostic Display.
+- 新增四種魔力發電機升級模組的合成配方：加速處理、擴充燃料室、催化轉換器、診斷顯示。
+- Mana Grinder, Mana Infuser, and Mana Crafting Table now support upgrade modules. Use the Basic Tech Wand on any of these machines to open the upgrade GUI.
+- 魔力研磨機、魔力注入機、魔力合成台現在支援升級模組，使用基礎科技魔杖對機器按右鍵即可開啟升級介面。
+- Mana Grinder and Mana Infuser support Speed upgrades (faster processing) and Efficiency upgrades (lower mana cost). Mana Crafting Table supports Efficiency upgrades only.
+- 魔力研磨機與魔力注入機支援速度升級（加快處理）與效率升級（降低魔力消耗）；魔力合成台僅支援效率升級。
+- Mana Grinder recipes overhauled: Raw Mana Dust now grinds into Mana Dust ×2 (more efficient than smelting); Corrupted Mana Dust ×2 purifies into Mana Dust ×1; added cobblestone→gravel, gravel→sand, bone→bone meal ×4, blaze rod→blaze powder ×4.
+- 魔力研磨機配方大幅調整：原魔塵現在可研磨出魔力粉 ×2（比熔爐更有效率）；汙穢魔力粉 ×2 可淨化成魔力粉 ×1；新增圓石→碎石、碎石→沙子、骨頭→骨粉 ×4、烈焰棒→烈焰粉 ×4。
+- Added new T1 research: Mana-Forged Tools — unlocks the concept of mana crystal tools and the Basic Tech Wand. Requires Mana Crystallisation.
+- 新增 T1 研究節點「魔力鍛造工具」，解鎖魔力水晶工具與基礎科技魔杖的使用概念，前置條件為魔力晶化。
+- Mana Pickaxe now chain mines up to 32 connected ore blocks. Hold Shift to mine single blocks.
+- 魔力鎬現在可連鎖挖掘最多 32 個相鄰礦石方塊。按住 Shift 可單格挖掘。
+- Ink Quill no longer breaks when durability runs out — it locks instead (glows, durability bar fully depleted). Locked quills cannot be used and must be refilled.
+- 墨水羽毛筆耗盡時不再消失，改為鎖定狀態（閃光、耐久條全紅）。鎖定狀態無法使用，需補充墨水。
+- Added Ink Quill refill recipe: combine any Ink Quill (any durability) with an Ink Sac in the crafting grid.
+- 新增墨水羽毛筆補充配方：任意耐久的墨水羽毛筆 + 墨囊 = 全新羽毛筆。
+- Added Aspect Convergence Array (multiblock altar) ritual crafting system. Place catalyst on altar, items on 4 diagonal pedestals, right-click to start ritual. Result drops above the altar when complete.
+- 新增本源聚陣儀式合成系統。將催化物品放在祭壇上，材料放在四個底座，空手右鍵觸發儀式，完成後結果掉落於祭壇上方。
+- Added Jade support for Aspect Convergence Array: shows structure status, catalyst, and pedestal fill count in the overlay.
+- 新增本源聚陣的 Jade 支援：準星對著祭壇會顯示結構狀態、催化物品及底座填充數。
+- Research Table now uses BlockEntityRenderer (BER) instead of a standard block model, fixing glass transparency and z-fighting issues.
+- 研究台改用 BlockEntityRenderer 渲染，修正玻璃透視與 Z-fighting 問題。
+- Nara Holographic Watch now has a crafting recipe (4 gold ingots + 4 copper ingots + 1 mana dust). This is the entry point to the entire research system.
+- 娜拉全息手錶現在有合成配方（4金錠 + 4銅錠 + 1魔力粉），這是整個研究系統的起點。
+- Added multiblock framework (IMultiblockController / IMultiblockPart / MultiblockPattern) as the foundation for all future multi-block machines.
+- 新增多方塊框架（IMultiblockController / IMultiblockPart / MultiblockPattern），作為所有未來多方塊機器的基礎。
+- Added Mana Altar (multiblock controller) and Mana Pedestal (part). Place 4 pedestals 2 blocks away in N/S/E/W directions to form the structure. Right-click the altar to check structure status or trigger rituals.
+- 新增魔力祭壇（多方塊 controller）與魔力底座（part）。在東西南北各距離 2 格放置 4 個底座即可成立結構。右鍵祭壇可確認結構狀態或觸發儀式。
+- Aspect Altar core now animates as a floating Rubik's cube when formed: 9 face slices cycle one at a time (top, bottom, left, right, front, back, and 3 middle slices), each rotating 90° and pausing before the next, while the whole structure floats and tilts slowly.
+- 本源聚陣核心成形後呈現懸浮魔術方塊動畫：9個切面依序輪流旋轉90°並暫停（上下左右前後6個外面 + E/M/S 3個中間切片），同時整體緩慢浮動傾斜自轉。
+- Altar Pillar block now uses a custom OBJ model with a dedicated texture.
+- 矩陣柱現在使用自訂 OBJ 模型與專屬貼圖。
+- Aspect Pedestal now uses a custom model with a dedicated texture; displayed items are better positioned and sized.
+- 本源底座現在使用自訂模型與專屬貼圖；物品顯示位置與大小已優化。
+
+### Developer Notes / 開發者備註
+
+- `AspectAltarRenderer`: complete rewrite — loads JSON elements as a flat list (no groups needed), partitions all 27 cubies dynamically per phase using XYZ centre-position bounds; 9 phases: top/right/front/bottom/left/back outer slices + E/M/S middle slices; each phase smoothsteps to 90° then holds; global earth-tilt + Y-spin overlay preserved.
+- `BlockbenchModelRenderUtils.renderCube`: fixed normal transformation — face normals now transformed by `poseStack.last().normal()` (normal matrix) so lighting is correct after arbitrary axis rotations. Also added `renderElementList(List<ModelElement>)` public method for direct-list rendering.
+- `ModBlockStateProvider`: altar and pedestal blockstates now reference hand-built models via `UncheckedModelFile`; deleted conflicting stone-placeholder models from `src/generated/resources`; added `aspect_altar_formed.json` (particle-only, no geometry) for `ENTITYBLOCK_ANIMATED` state.
+- New textures: `aspect_altar_texture.png`, `aspect_pedestal_texture.png`, `altar_pillar_texture.png`.
+- `ManaInfuserRecipeProvider`: added `refined_mana_dust_to_crystal_fragment` recipe (3×refined → 1×fragment, 4200 mana, 80t).
+- `ModRecipeProvider`: added shaped recipes for `accelerated_processing_upgrade`, `expanded_fuel_chamber_upgrade`, `catalytic_converter_upgrade`, `diagnostic_display_upgrade`.
+- `ManaGrinderBlockEntity`, `ManaInfuserBlockEntity`, `ManaCraftingTableBlockEntity`: implemented `IUpgradeableMachine`; added 4-slot `UpgradeInventory`; SPEED scales `progressStep`, EFFICIENCY divides mana cost by multiplier (max 5x); NBT save/load added. `OpenUpgradeGuiPacket` now supports all three machines automatically via `instanceof IUpgradeableMachine`.
+
 ## [0.0.1.6-2] - 2026-05-13
 
 ### Player Changes / 玩家更新內容

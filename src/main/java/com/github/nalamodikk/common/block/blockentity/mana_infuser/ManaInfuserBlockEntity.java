@@ -2,6 +2,9 @@ package com.github.nalamodikk.common.block.blockentity.mana_infuser;
 
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.sync.ManaInfuserSyncHelper;
 import com.github.nalamodikk.common.block.blockentity.manabase.AbstractManaMachineEntityBlock;
+import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
+import com.github.nalamodikk.common.utils.upgrade.UpgradeType;
+import com.github.nalamodikk.common.utils.upgrade.api.IUpgradeableMachine;
 import com.github.nalamodikk.common.capability.mana.ManaAction;
 import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
 import com.github.nalamodikk.research.ResearchGate;
@@ -28,7 +31,7 @@ import javax.annotation.Nullable;
 import java.util.EnumMap;
 import java.util.Optional;
 
-public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock {
+public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock implements IUpgradeableMachine {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -44,6 +47,7 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock {
     private static final int STATE_SYNC_INTERVAL_TICKS = 100; // 5 秒（20 tick/s）
 
     private final ManaInfuserSyncHelper syncHelper = new ManaInfuserSyncHelper();
+    private final UpgradeInventory upgradeInventory = new UpgradeInventory(4);
     private final EnumMap<Direction, IOHandlerUtils.IOType> directionConfig = new EnumMap<>(Direction.class);
     private ManaInfuserRecipe currentRecipe = null;
     private boolean hasInputChanged = false;
@@ -145,7 +149,7 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock {
     @Override
     protected boolean canGenerate() {
         if (currentRecipe == null) return false;
-        if (manaStorage != null && manaStorage.getManaStored() < currentRecipe.getManaCost()) return false;
+        if (manaStorage != null && manaStorage.getManaStored() < currentRecipe.getManaCost() / getEfficiencyMultiplier()) return false;
 
         ItemStack input = itemHandler != null ? itemHandler.getStackInSlot(INPUT_SLOT) : ItemStack.EMPTY;
         if (input.getCount() < currentRecipe.getInputCount()) return false;
@@ -170,7 +174,7 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock {
             return;
         }
 
-        progress += scaleProgressByOwner(1);
+        progress += scaleProgressByOwner(1) * getSpeedMultiplier();
         setChanged();
         if (progress >= maxProgress) {
             completeInfusion();
@@ -204,7 +208,7 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock {
 
     private void completeInfusion() {
         if (currentRecipe == null) return;
-        manaStorage.extractMana(currentRecipe.getManaCost(), ManaAction.EXECUTE);
+        manaStorage.extractMana(currentRecipe.getManaCost() / getEfficiencyMultiplier(), ManaAction.EXECUTE);
         itemHandler.extractItem(INPUT_SLOT, currentRecipe.getInputCount(), false);
 
         ItemStack result = currentRecipe.getResult().copy();
@@ -267,6 +271,23 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock {
 
     @Override
     protected void onGenerate(int amount) {
+    }
+
+    // === ⚡ IUpgradeableMachine 實作 ===
+
+    @Override
+    public UpgradeInventory getUpgradeInventory() {
+        return upgradeInventory;
+    }
+
+    @Override
+    public boolean supportsUpgradeType(UpgradeType type) {
+        return type == UpgradeType.SPEED || type == UpgradeType.EFFICIENCY;
+    }
+
+    @Override
+    public net.minecraft.world.level.block.entity.BlockEntity getBlockEntity() {
+        return this;
     }
 
     @Override
@@ -356,6 +377,7 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock {
         }
         tag.put("IOConfig", ioTag);
         tag.putBoolean("HasRecipe", currentRecipe != null);
+        tag.put("UpgradeInventory", upgradeInventory.serializeNBT(registries));
     }
 
     @Override
@@ -375,6 +397,9 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock {
             }
         }
         if (tag.getBoolean("HasRecipe")) hasInputChanged = true;
+        if (tag.contains("UpgradeInventory")) {
+            upgradeInventory.deserializeNBT(registries, tag.getCompound("UpgradeInventory"));
+        }
     }
 
     @Override

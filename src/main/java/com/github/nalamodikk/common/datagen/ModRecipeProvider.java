@@ -5,6 +5,7 @@ import com.github.nalamodikk.common.datagen.recipe.MaterialProcessingRecipeProvi
 import com.github.nalamodikk.common.datagen.recipe.material.ManaCraftingRecipeProvider;
 import com.github.nalamodikk.common.datagen.recipe.material.ManaFuelRecipeProvider;
 import com.github.nalamodikk.common.datagen.recipe.material.ManaInfuserRecipeProvider;
+import com.github.nalamodikk.common.datagen.recipe.altar.AltarRecipeProvider;
 import com.github.nalamodikk.common.datagen.recipe.processing.ManaGrinderRecipeProvider;
 import com.github.nalamodikk.register.ModBlocks;
 import com.github.nalamodikk.register.ModItems;
@@ -38,6 +39,7 @@ public class ModRecipeProvider extends RecipeProvider {
         ManaCraftingRecipeProvider.generate(recipeOutput);
         ManaInfuserRecipeProvider.generate(recipeOutput, provider);
         ManaGrinderRecipeProvider.generate(recipeOutput);
+        AltarRecipeProvider.generate(recipeOutput);
         // ⚙️ 加工配方（粉碎機、清洗機、富集機）
         ProcessingRecipeProvider.generate(recipeOutput);
 
@@ -200,6 +202,50 @@ public class ModRecipeProvider extends RecipeProvider {
                 .define('I', ModItems.MANA_INGOT.get())
                 .unlockedBy("has_mana_ingot", has(ModItems.MANA_INGOT.get()))
                 .save(output, "efficiency_upgrade");
+
+        // ⚡ 加速處理升級
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.ACCELERATED_PROCESSING_UPGRADE.get())
+                .pattern("RIR")
+                .pattern("ICI")
+                .pattern("RIR")
+                .define('R', Items.REDSTONE)
+                .define('I', ModItems.MANA_INGOT.get())
+                .define('C', ModItems.CONDENSED_MANA_DUST.get())
+                .unlockedBy("has_mana_ingot", has(ModItems.MANA_INGOT.get()))
+                .save(output, "accelerated_processing_upgrade");
+
+        // 🪣 擴充燃料室升級
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.EXPANDED_FUEL_CHAMBER_UPGRADE.get())
+                .pattern("IMI")
+                .pattern("MCM")
+                .pattern("IMI")
+                .define('I', Items.IRON_INGOT)
+                .define('M', ModItems.MANA_DUST.get())
+                .define('C', Items.COPPER_INGOT)
+                .unlockedBy("has_mana_dust", has(ModItems.MANA_DUST.get()))
+                .save(output, "expanded_fuel_chamber_upgrade");
+
+        // 🧪 催化轉換升級
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.CATALYTIC_CONVERTER_UPGRADE.get())
+                .pattern("GRG")
+                .pattern("RNR")
+                .pattern("GRG")
+                .define('G', Items.GOLD_INGOT)
+                .define('R', ModItems.REFINED_MANA_DUST.get())
+                .define('N', ModItems.MANA_INGOT.get())
+                .unlockedBy("has_refined_mana_dust", has(ModItems.REFINED_MANA_DUST.get()))
+                .save(output, "catalytic_converter_upgrade");
+
+        // 🔍 診斷顯示升級
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.DIAGNOSTIC_DISPLAY_UPGRADE.get())
+                .pattern("GQG")
+                .pattern("QMQ")
+                .pattern("GQG")
+                .define('G', Items.GLASS)
+                .define('Q', Items.QUARTZ)
+                .define('M', ModItems.MANA_DUST.get())
+                .unlockedBy("has_mana_dust", has(ModItems.MANA_DUST.get()))
+                .save(output, "diagnostic_display_upgrade");
     }
 
 
@@ -246,6 +292,24 @@ public class ModRecipeProvider extends RecipeProvider {
                 .define('S', Items.STICK)
                 .unlockedBy("has_feather", has(Items.FEATHER))
                 .save(output, "ink_quill");
+
+        // 🖊️ 墨水羽毛筆補充（無序：墨水羽毛筆 + 墨囊 → 全新墨水羽毛筆）
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.INK_QUILL.get())
+                .requires(ModItems.INK_QUILL.get())
+                .requires(Items.INK_SAC)
+                .unlockedBy("has_ink_quill", has(ModItems.INK_QUILL.get()))
+                .save(output, "ink_quill_refill");
+
+        // 🔭 娜拉全息手錶（研究系統入口）
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.NARA_WATCH.get())
+                .pattern("GCG")
+                .pattern("CMC")
+                .pattern("GCG")
+                .define('G', Items.GOLD_INGOT)
+                .define('C', Items.COPPER_INGOT)
+                .define('M', ModItems.MANA_DUST.get())
+                .unlockedBy("has_mana_dust", has(ModItems.MANA_DUST.get()))
+                .save(output, "nara_watch");
     }
 
     // === 📦 儲存和轉換配方 ===
