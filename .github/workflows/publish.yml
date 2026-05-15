@@ -66,6 +66,7 @@ jobs:
         shell: bash
         run: |
           version="${GITHUB_REF_NAME#v}"
+          # 接受兩種標頭格式：舊式「玩家版變更」和新式「Player Changes」
           awk -v version="$version" '
             BEGIN { in_version = 0; capture = 0 }
             $0 ~ "^## \\[" {
@@ -76,7 +77,7 @@ jobs:
               next
             }
             !in_version { next }
-            $0 == "### 玩家版變更 / Player-facing Changelog" {
+            /^### (Player Changes|玩家版變更)/ {
               capture = 1
               next
             }
@@ -95,7 +96,7 @@ jobs:
                 next
               }
               !in_version { next }
-              $0 == "### 玩家版變更 / Player-facing Changelog" {
+              /^### (Player Changes|玩家版變更)/ {
                 capture = 1
                 next
               }
@@ -115,7 +116,7 @@ jobs:
                 next
               }
               !in_version { next }
-              $0 == "### 開發者版變更 / Developer-facing Changelog" {
+              /^### (Developer Notes|開發者版變更)/ {
                 capture = 1
                 next
               }
