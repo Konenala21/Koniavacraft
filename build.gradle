@@ -346,10 +346,15 @@ def extractChangelog(String version) {
     ]
 
     def playerFacing = extractChangelogSectionByHeader(version, playerHeaders)
-    if (!playerFacing.trim().isEmpty()) return playerFacing.trim()
+    if (playerFacing.trim().isEmpty()) {
+        playerFacing = extractChangelogSectionByHeader("Unreleased", playerHeaders)
+    }
+    if (playerFacing.trim().isEmpty()) return ""
 
-    playerFacing = extractChangelogSectionByHeader("Unreleased", playerHeaders)
-    return playerFacing.trim()
+    // 取得 git commit hash（短）
+    def gitHash = "git rev-parse --short HEAD".execute().text.trim()
+    def header = "**v${version}**" + (gitHash ? " · commit \`${gitHash}\`" : "")
+    return "${header}\n\n${playerFacing.trim()}"
 }
 // ========== Modrinth ?澆? ==========
 modrinth {
