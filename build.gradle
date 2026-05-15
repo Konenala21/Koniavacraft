@@ -259,8 +259,79 @@ tasks.register("syncGameTestStructures", Copy) {
     into("run/gameteststructures")
 }
 
+// 生成 altar_area GameTest 模板（15×5×15 空白區域，石頭地板）
+// altar 核心位置 (7,3,7)，柱底 y=1，柱頂 y=2 皆在地板上方
+tasks.register("generateAltarTestStructure") {
+    def outFile = file("run/gameteststructures/koniava/altar_area.nbt")
+    outputs.file(outFile)
+    onlyIf { !outFile.exists() }
+
+    doLast {
+        outFile.parentFile.mkdirs()
+
+        def bos = new java.io.ByteArrayOutputStream()
+        def gzip = new java.util.zip.GZIPOutputStream(bos)
+        def dos = new java.io.DataOutputStream(gzip)
+
+        // NBT helpers
+        def writeString = { DataOutputStream s, String name, String val ->
+            s.writeByte(8)                          // TAG_String
+            s.writeShort(name.length()); s.writeBytes(name)
+            byte[] vb = val.getBytes("UTF-8")
+            s.writeShort(vb.length); s.write(vb)
+        }
+        def writeInt = { DataOutputStream s, String name, int val ->
+            s.writeByte(3); s.writeShort(name.length()); s.writeBytes(name); s.writeInt(val)
+        }
+
+        // Root TAG_Compound (name length = 0)
+        dos.writeByte(10); dos.writeShort(0)
+
+        // DataVersion
+        writeInt(dos, "DataVersion", 3953)
+
+        // size: [15, 5, 15]
+        dos.writeByte(9); dos.writeShort(4); dos.writeBytes("size")
+        dos.writeByte(3); dos.writeInt(3)
+        dos.writeInt(15); dos.writeInt(5); dos.writeInt(15)
+
+        // palette: [{Name:"minecraft:stone"}, {Name:"minecraft:air"}]
+        dos.writeByte(9); dos.writeShort(7); dos.writeBytes("palette")
+        dos.writeByte(10); dos.writeInt(2)   // 2 compound entries
+        // entry 0: stone
+        writeString(dos, "Name", "minecraft:stone"); dos.writeByte(0)
+        // entry 1: air
+        writeString(dos, "Name", "minecraft:air");   dos.writeByte(0)
+
+        // blocks: 225 stone blocks at y=0
+        dos.writeByte(9); dos.writeShort(6); dos.writeBytes("blocks")
+        dos.writeByte(10); dos.writeInt(225)
+        for (int x = 0; x < 15; x++) {
+            for (int z = 0; z < 15; z++) {
+                // pos: [x, 0, z]
+                dos.writeByte(9); dos.writeShort(3); dos.writeBytes("pos")
+                dos.writeByte(3); dos.writeInt(3)
+                dos.writeInt(x); dos.writeInt(0); dos.writeInt(z)
+                // state: 0 (stone)
+                writeInt(dos, "state", 0)
+                dos.writeByte(0) // TAG_End
+            }
+        }
+
+        // entities: []
+        dos.writeByte(9); dos.writeShort(8); dos.writeBytes("entities")
+        dos.writeByte(10); dos.writeInt(0)
+
+        dos.writeByte(0) // TAG_End (root)
+        dos.close()
+        outFile.bytes = bos.toByteArray()
+        println "Generated altar_area.nbt (15x5x15, stone floor)"
+    }
+}
+
 tasks.named("runGameTestServer").configure {
     dependsOn("syncGameTestStructures")
+    dependsOn("generateAltarTestStructure")
     dependsOn("testClasses")
 }
 
