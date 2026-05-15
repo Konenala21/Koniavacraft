@@ -35,7 +35,7 @@ public class AltarRecipeCategory implements IRecipeCategory<AltarRecipe> {
 
     // 環形佈局參數（像 TC4 聚合祭壇）
     // 催化物在圓心，材料繞一圈，箭頭往右，結果在右邊
-    private static final int CAT_CX   = 38;   // 圓心 X
+    private static final int CAT_CX   = 30;   // 圓心 X
     private static final int CAT_CY   = 33;   // 圓心 Y
     private static final int RING_R   = 22;   // 材料槽圓心到圓心距離（px）
     private static final int HALF     = 8;    // 16px slot 的一半

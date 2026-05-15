@@ -62,15 +62,16 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
     // tiltAxisCode/spinAxisCode: 0=YP 1=ZP 2=XP
     // spinSpeed 負數 = 反向
     private record RingConfig(float scale, Axis tiltAxis, float tiltDeg, Axis spinAxis, float spinSpeed) {}
+    // 所有環同速（0.60 / -0.60），t=0 全部在戴森球對齊位，每 15 秒回正一次
     private static final RingConfig[] RING_CONFIGS = {
-        // T1–T3：半徑 7，內層
-        new RingConfig(7f/OBJ_RADIUS,  Axis.ZP,  90f, Axis.YP,  0.50f),  // T1 水平 XZ
-        new RingConfig(7f/OBJ_RADIUS,  Axis.YP,  90f, Axis.ZP,  0.70f),  // T2 垂直 XY
-        new RingConfig(7f/OBJ_RADIUS,  Axis.YP,   0f, Axis.XP,  0.60f),  // T3 垂直 YZ，X 自轉
-        // T4–T6：半徑 9，外層，反向旋轉
-        new RingConfig(9f/OBJ_RADIUS,  Axis.ZP,  90f, Axis.YP, -0.40f),  // T4 水平 XZ
-        new RingConfig(9f/OBJ_RADIUS,  Axis.YP,  90f, Axis.ZP, -0.55f),  // T5 垂直 XY
-        new RingConfig(9f/OBJ_RADIUS,  Axis.YP,   0f, Axis.XP, -0.45f),  // T6 垂直 YZ，X 自轉
+        // T1–T3：半徑 7，內層，正轉
+        new RingConfig(7f/OBJ_RADIUS,  Axis.ZP,  90f, Axis.YP,  0.60f),  // T1 水平 XZ
+        new RingConfig(7f/OBJ_RADIUS,  Axis.YP,  90f, Axis.ZP,  0.60f),  // T2 垂直 XY
+        new RingConfig(7f/OBJ_RADIUS,  Axis.YP,   0f, Axis.ZP,  0.60f),  // T3 垂直 YZ
+        // T4–T6：半徑 9，外層，逆轉
+        new RingConfig(9f/OBJ_RADIUS,  Axis.ZP,  90f, Axis.YP, -0.60f),  // T4 水平 XZ
+        new RingConfig(9f/OBJ_RADIUS,  Axis.YP,  90f, Axis.ZP, -0.60f),  // T5 垂直 XY
+        new RingConfig(9f/OBJ_RADIUS,  Axis.YP,   0f, Axis.ZP, -0.60f),  // T6 垂直 YZ
     };
     private static final ModelResourceLocation RING_MODEL_LOC = new ModelResourceLocation(
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "block/resonance_ring"),
@@ -153,9 +154,10 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
         if (level == null || !altar.isFormed() || !modelLoaded) return;
 
         float time = level.getGameTime() + partialTick;
+        float ringTime = (level.getGameTime() - altar.getRingPhaseStart()) + partialTick;
         boolean active = altar.isActive();
         renderFormedCore(poseStack, bufferSource, packedLight, packedOverlay, time, active);
-        renderRings(altar, poseStack, bufferSource, packedLight, packedOverlay, time);
+        renderRings(altar, poseStack, bufferSource, packedLight, packedOverlay, ringTime);
 
         if (active) {
             renderOrbitals(altar, poseStack, bufferSource, packedLight, packedOverlay, level, time);

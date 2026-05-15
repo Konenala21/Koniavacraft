@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.level.block.Blocks;
 
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +38,29 @@ public class ManaCraftingRecipeProvider {
                 .manaCost(1500)
                 .save(output);
 
+
+        // 本源底座
+        ManaCraftingRecipeBuilder.create(ModBlocks.ASPECT_PEDESTAL.get(), 1)
+                .shaped(true)
+                .pattern(" F ")
+                .pattern("FMF")
+                .pattern("MMM")
+                .define('F', ModItems.MANA_CRYSTAL_FRAGMENT.get())
+                .define('M', ModBlocks.MANA_BLOCK.get())
+                .manaCost(1500)
+                .save(output, "aspect_pedestal");
+
+        // 本源矩陣核心
+        ManaCraftingRecipeBuilder.create(ModBlocks.ASPECT_ALTAR.get(), 1)
+                .shaped(true)
+                .pattern("FGF")
+                .pattern("GCG")
+                .pattern("FGF")
+                .define('F', ModItems.MANA_CRYSTAL_FRAGMENT.get())
+                .define('G', ModItems.MANA_INGOT.get())
+                .define('C', ModItems.MANA_CRYSTAL.get())
+                .manaCost(4000)
+                .save(output, "aspect_altar");
 
         ManaCraftingRecipeBuilder.create(ModBlocks.MANA_INFUSER.get(), 1)
                 .shaped(true)  // 明確設置為有序

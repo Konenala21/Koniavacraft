@@ -278,6 +278,7 @@ public static final List<Vec3i> RING_T1 = List.of(
     private int ritualTick = 0;
     private int ritualMaxTick = 0;
     private int upgradeTier = 0;
+    private long ringPhaseStart = 0;
 
     private final ManaStorage manaStorage = new ManaStorage(MAX_MANA, this::onManaChanged);
     private final EnumMap<Direction, IOHandlerUtils.IOType> directionConfig = new EnumMap<>(Direction.class);
@@ -432,6 +433,8 @@ public static final List<Vec3i> RING_T1 = List.of(
         level.setBlock(worldPosition, getBlockState().setValue(AspectAltarBlock.FORMED, true), 2);
         scanForPedestals();
         refreshUpgradeTier();
+        ringPhaseStart = level.getGameTime();
+        syncToClient();
         // 成形音效：音符盒 harp 音色，上揚音階
         level.playSound(null, worldPosition, net.minecraft.sounds.SoundEvents.NOTE_BLOCK_HARP.value(),
                 net.minecraft.sounds.SoundSource.BLOCKS, 1.0f, 0.8f);
@@ -566,6 +569,7 @@ public static final List<Vec3i> RING_T1 = List.of(
     // ── 升級 Tier ────────────────────────────────────────────────────────────
 
     public int getUpgradeTier() { return upgradeTier; }
+    public long getRingPhaseStart() { return ringPhaseStart; }
 
     public void refreshUpgradeTier() {
         if (level == null || !isFormed()) return;
@@ -633,6 +637,7 @@ public static final List<Vec3i> RING_T1 = List.of(
         tag.putInt("RitualMaxTick", ritualMaxTick);
         tag.putInt("Mana", manaStorage.getManaStored());
         tag.putInt("UpgradeTier", upgradeTier);
+        tag.putLong("RingPhaseStart", ringPhaseStart);
     }
 
     @Override
@@ -644,6 +649,7 @@ public static final List<Vec3i> RING_T1 = List.of(
         progress = ritualMaxTick > 0 ? (float) ritualTick / ritualMaxTick : 0f;
         manaStorage.setMana(tag.getInt("Mana"));
         upgradeTier = tag.getInt("UpgradeTier");
+        ringPhaseStart = tag.getLong("RingPhaseStart");
     }
 
     @Override
