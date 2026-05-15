@@ -23,11 +23,10 @@ This isn't a kitchen-sink mod trying to do everything. It's my personal creative
 
 ## License
 
-MIT License — see [`LICENSE`](./LICENSE)
+**[LGPL-3.0-only](./LICENSE)**
 
-Free to use, modify, and include in modpacks. Commercial or non-commercial, doesn't matter. Just keep the original license and credit my name.
-
-> Before v0.0.1.2 it was briefly mislabeled as CC BY-NC-ND 4.0 — that was my mistake. It's been MIT from the start.
+- Modpacks may include this mod freely, no permission required.
+- If you modify and redistribute the source code, derivative works must also be released under LGPL-3.0.
 
 ---
 
@@ -66,11 +65,3 @@ A like or comment on [Modrinth](https://modrinth.com/mod/magical-industry) goes 
 > **Note:** Stable builds are on the `master` branch.  
 > `dev/1.21.1` is my active dev branch — it might be broken at any given moment. Use at your own risk.
 
----
-
-## License
-
-This mod is licensed under [LGPL-3.0-only](./LICENSE).
-
-- Modpacks may include this mod freely, no permission required.
-- If you modify and redistribute the source code, derivative works must also be released under LGPL-3.0.
