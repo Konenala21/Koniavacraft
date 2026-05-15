@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- License changed from MIT to LGPL-3.0-only.
+- 授權條款由 MIT 更改為 LGPL-3.0-only。
+
+### Developer Notes / 開發者備註
+
+- Updated LICENSE file and gradle.properties mod_license field to LGPL-3.0-only.
+- Derivative works that modify and redistribute the mod source must also be LGPL-3.0. Modpack inclusion is unaffected.
+
+### Player Changes / 玩家更新內容
+
 - Mana Infuser now processes Refined Mana Dust into Mana Crystal Fragments (3 dust → 1 fragment, 4200 mana).
 - 魔力注入機現在可將精煉魔力粉轉化為魔力水晶碎片（3粉→1碎片，消耗 4200 魔力）。
 - Added crafting recipes for all four Mana Generator upgrade modules: Accelerated Processing, Expanded Fuel Chamber, Catalytic Converter, and Diagnostic Display.
