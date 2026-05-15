@@ -353,7 +353,7 @@ def extractChangelog(String version) {
 
     // 取得 git commit hash（短）
     def gitHash = "git rev-parse --short HEAD".execute().text.trim()
-    def header = "**v${version}**" + (gitHash ? " · commit \`${gitHash}\`" : "")
+    def header = "**v${version}**" + (gitHash ? " | commit `${gitHash}`" : "")
     return "${header}\n\n${playerFacing.trim()}"
 }
 // ========== Modrinth ?澆? ==========
