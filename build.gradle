@@ -349,14 +349,9 @@ def extractChangelog(String version) {
     if (playerFacing.trim().isEmpty()) {
         playerFacing = extractChangelogSectionByHeader("Unreleased", playerHeaders)
     }
-    if (playerFacing.trim().isEmpty()) return ""
-
-    // 取得 git commit hash（短）
-    def gitHash = "git rev-parse --short HEAD".execute().text.trim()
-    def header = "**v${version}**" + (gitHash ? " | commit `${gitHash}`" : "")
-    return "${header}\n\n${playerFacing.trim()}"
+    return playerFacing.trim()
 }
-// ========== Modrinth ?澆? ==========
+// ========== Modrinth ==========
 modrinth {
     token = System.getenv("MODRINTH_TOKEN") ?: ""
     projectId = "koniavacraft"
@@ -365,7 +360,18 @@ modrinth {
     uploadFile = jar
     gameVersions = [minecraft_version]
     loaders = ["neoforge"]
-    changelog = extractChangelog(mod_version)
+
+    // git hash 用 providers.exec()（execution time），避免 configuration-cache 禁止在
+    // configuration phase 啟動外部程序的限制
+    def playerContent = extractChangelog(mod_version)
+    def gitHashProvider = providers.exec {
+        commandLine 'git', 'rev-parse', '--short', 'HEAD'
+    }.standardOutput.asText.map { it.trim() }
+    changelog = gitHashProvider.map { hash ->
+        def header = "**v${mod_version}**" + (hash ? " | commit `${hash}`" : "")
+        playerContent ? "${header}\n\n${playerContent}" : header
+    }
+
     syncBodyFrom = file("README.md").exists() ? file("README.md").text : ""
 }
 
