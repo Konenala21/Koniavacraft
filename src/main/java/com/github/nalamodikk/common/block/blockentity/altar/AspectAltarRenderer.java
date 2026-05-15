@@ -54,7 +54,10 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
     // 共鳴環動畫 (T1–T12)
     // OBJ：YZ 平面，頂點幾何中心 (cx=0.0625, cy=0.0625, cz=-0.2125)，OBJ 中心線半徑 ~3.16 方塊
     // scale = 目標半徑 / 3.16f
-    private static final float OBJ_RADIUS  = 3.16f;
+    private static final float OBJ_RADIUS    = 3.16f;
+    // 動態速度：時間扭曲振幅（越大速度變化越劇烈）與頻率（越大速度改變越頻繁）
+    private static final float WARP_AMPLITUDE = 14f;
+    private static final float WARP_FREQ      = 0.06f;
     private static final float RING_CX     = 0.0625f;
     private static final float RING_CY     = 0.0625f;
     private static final float RING_CZ     = -0.2125f;
@@ -123,6 +126,7 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
 
     private final List<ModelElement> allElements = new ArrayList<>();
     private boolean modelLoaded = false;
+    private List<BakedQuad> cachedRingQuads = null;
 
     public AspectAltarRenderer(BlockEntityRendererProvider.Context ctx) {
         loadAndParseModel();
@@ -215,16 +219,17 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
         int tier = altar.getUpgradeTier();
         if (tier == 0) return;
 
-        // Lazy-load ring BakedModel（bake 完成後才能取得）
-        BakedModel ringModel = Minecraft.getInstance().getModelManager().getModel(RING_MODEL_LOC);
-        if (ringModel == null) return;
-
-        RandomSource rand = RandomSource.create(42L);
-        List<BakedQuad> quads = new ArrayList<>(ringModel.getQuads(null, null, rand, ModelData.EMPTY, null));
-        for (Direction dir : Direction.values()) {
-            quads.addAll(ringModel.getQuads(null, dir, rand, ModelData.EMPTY, null));
+        if (cachedRingQuads == null) {
+            BakedModel ringModel = Minecraft.getInstance().getModelManager().getModel(RING_MODEL_LOC);
+            if (ringModel == null) return;
+            RandomSource rand = RandomSource.create(42L);
+            cachedRingQuads = new ArrayList<>(ringModel.getQuads(null, null, rand, ModelData.EMPTY, null));
+            for (Direction dir : Direction.values()) {
+                cachedRingQuads.addAll(ringModel.getQuads(null, dir, rand, ModelData.EMPTY, null));
+            }
+            if (cachedRingQuads.isEmpty()) { cachedRingQuads = null; return; }
         }
-        if (quads.isEmpty()) return;
+        List<BakedQuad> quads = cachedRingQuads;
 
         var consumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(TextureAtlas.LOCATION_BLOCKS));
 
@@ -237,13 +242,15 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
     private void renderOneRing(PoseStack poseStack, VertexConsumer consumer,
                                 int packedLight, int packedOverlay, List<BakedQuad> quads,
                                 RingConfig cfg, float time) {
-        float spinAngle = time * cfg.spinSpeed();
+        // 時間扭曲：低頻 sin 讓速度忽快忽慢，全圈旋轉不擺盪
+        float warp  = WARP_AMPLITUDE * (float) Math.sin(Math.toRadians(time * WARP_FREQ));
+        float spinAngle = (time + warp) * cfg.spinSpeed();
         poseStack.pushPose();
         // 頂點套用順序（1→5）：1.偏心補正 2.自轉 3.傾斜 4.縮放 5.移到方塊中心
         poseStack.translate(0.5, 0.5, 0.5);                                                            // 5
         poseStack.scale(cfg.scale(), cfg.scale(), cfg.scale());                                         // 4
         if (cfg.tiltDeg() != 0f) poseStack.mulPose(cfg.tiltAxis().rotationDegrees(cfg.tiltDeg()));     // 3
-        poseStack.mulPose(cfg.spinAxis().rotationDegrees(spinAngle % 360f));                            // 2
+        poseStack.mulPose(cfg.spinAxis().rotationDegrees(spinAngle));                                   // 2
         poseStack.translate(-RING_CX, -RING_CY, -RING_CZ);                                             // 1
 
         PoseStack.Pose pose = poseStack.last();
