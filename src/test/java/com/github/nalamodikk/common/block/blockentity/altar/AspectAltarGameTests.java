@@ -8,6 +8,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.GameType;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -68,7 +69,7 @@ public class AspectAltarGameTests {
 
         helper.runAtTickTime(5, () -> {
             // 模擬進階法杖觸發（onWandActivate → checkStructure）
-            getAltar(helper).onWandActivate(helper.makeMockPlayer());
+            getAltar(helper).onWandActivate(helper.makeMockPlayer(GameType.SURVIVAL));
         });
 
         helper.runAtTickTime(10, () -> {
@@ -92,7 +93,7 @@ public class AspectAltarGameTests {
         }
 
         helper.runAtTickTime(5, () -> {
-            getAltar(helper).onWandActivate(helper.makeMockPlayer());
+            getAltar(helper).onWandActivate(helper.makeMockPlayer(GameType.SURVIVAL));
         });
 
         helper.runAtTickTime(10, () -> {
@@ -114,7 +115,7 @@ public class AspectAltarGameTests {
         // 故意省略 PILLAR_BOTTOM / PILLAR_TOP
 
         helper.runAtTickTime(5, () -> {
-            getAltar(helper).onWandActivate(helper.makeMockPlayer());
+            getAltar(helper).onWandActivate(helper.makeMockPlayer(GameType.SURVIVAL));
         });
 
         helper.runAtTickTime(10, () -> {
@@ -131,7 +132,7 @@ public class AspectAltarGameTests {
         placeFullStructure(helper);
 
         helper.runAtTickTime(5, () -> {
-            getAltar(helper).onWandActivate(helper.makeMockPlayer());
+            getAltar(helper).onWandActivate(helper.makeMockPlayer(GameType.SURVIVAL));
         });
 
         helper.runAtTickTime(12, () -> {
@@ -155,7 +156,7 @@ public class AspectAltarGameTests {
 
         // 成形
         helper.runAtTickTime(5, () -> {
-            getAltar(helper).onWandActivate(helper.makeMockPlayer());
+            getAltar(helper).onWandActivate(helper.makeMockPlayer(GameType.SURVIVAL));
         });
 
         helper.runAtTickTime(12, () -> {
@@ -163,9 +164,8 @@ public class AspectAltarGameTests {
 
             // 在中心底座放催化物（木棍作佔位）
             var centerPedPos = ALTAR.offset(0, -2, 0);
-            if (helper.getLevel().getBlockEntity(helper.absolutePos(centerPedPos))
-                    instanceof AspectPedestalBlockEntity ped) {
-                ped.setHeldItem(new ItemStack(Items.STICK));
+            if (helper.getBlockEntity(centerPedPos) instanceof AspectPedestalBlockEntity ped) {
+                ped.insertItem(new ItemStack(Items.STICK));
             }
         });
 
@@ -202,7 +202,7 @@ public class AspectAltarGameTests {
         placeFullStructure(helper);
 
         helper.runAtTickTime(5, () -> {
-            getAltar(helper).onWandActivate(helper.makeMockPlayer());
+            getAltar(helper).onWandActivate(helper.makeMockPlayer(GameType.SURVIVAL));
         });
 
         helper.runAtTickTime(12, () -> {
