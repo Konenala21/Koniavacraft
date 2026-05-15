@@ -2,7 +2,6 @@ package com.github.nalamodikk.common.block.blockentity.altar.jei;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.register.ModBlocks;
-import com.github.nalamodikk.register.ModItems;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
@@ -17,7 +16,6 @@ import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
@@ -27,24 +25,44 @@ public class AltarMultiblockCategory implements IRecipeCategory<AltarStructureIn
             RecipeType.create(KoniavacraftMod.MOD_ID, "altar_multiblock", AltarStructureInfo.class);
 
     private static final int WIDTH  = 168;
-    private static final int HEIGHT = 112;
+    private static final int HEIGHT = 128;
 
-    // Cell = 16px item + 2px gap = 18px; 3x3 grid = 52px wide
-    private static final int CELL   = 18;
-    private static final int GRID_W = 3 * CELL - 2;
-
-    // 3 layer columns: Y=-2 (left), Y=-1 (mid), Y=0 (right)
-    private static final int[] COL_X  = { 4, 60, 116 };
-    private static final int   GRID_Y = 18;
+    // Isometric projection constants (origin = altar at world 0,0,0)
+    // screenX = ISO_OX + (wx - wz) * ISO_H
+    // screenY = ISO_OY + (wx + wz) * ISO_V - wy * ISO_UP
+    private static final int ISO_OX = 84;
+    private static final int ISO_OY = 46;
+    private static final int ISO_H  = 9;   // horizontal spread per block
+    private static final int ISO_V  = 5;   // vertical contribution per x/z block
+    private static final int ISO_UP = 14;  // vertical pixels per y-block
 
     // Toggle button
-    private static final int BTN_X = 49;
-    private static final int BTN_Y = 93;
+    private static final int BTN_X = 48;
+    private static final int BTN_Y = 112;
     private static final int BTN_W = 72;
     private static final int BTN_H = 14;
 
-    private boolean showFormed = false;
+    // Block positions rendered in painter's-algorithm order:
+    // sorted by (wx+wz) ASC (farther first), then wy ASC (lower first)
+    // {wx, wy, wz}
+    private static final int[][] RENDER_ORDER = {
+        {-3,-2,-3},  // NW pillar bottom   depth=-6
+        {-3,-1,-3},  // NW pillar top      depth=-6
+        {-3,-2, 0},  // West pedestal      depth=-3
+        { 0,-2,-3},  // North pedestal     depth=-3
+        {-3,-2, 3},  // SW pillar bottom   depth= 0
+        { 3,-2,-3},  // NE pillar bottom   depth= 0
+        { 0,-2, 0},  // Center pedestal    depth= 0
+        {-3,-1, 3},  // SW pillar top      depth= 0
+        { 3,-1,-3},  // NE pillar top      depth= 0
+        { 0, 0, 0},  // Altar core         depth= 0  y=0
+        { 0,-2, 3},  // South pedestal     depth=+3
+        { 3,-2, 0},  // East pedestal      depth=+3
+        { 3,-2, 3},  // SE pillar bottom   depth=+6
+        { 3,-1, 3},  // SE pillar top      depth=+6
+    };
 
+    private boolean showFormed = false;
     private final IDrawable icon;
 
     public AltarMultiblockCategory(IGuiHelper guiHelper) {
@@ -62,9 +80,7 @@ public class AltarMultiblockCategory implements IRecipeCategory<AltarStructureIn
     @Override
     public void setRecipe(@NotNull IRecipeLayoutBuilder builder,
                           @NotNull AltarStructureInfo recipe,
-                          @NotNull IFocusGroup focuses) {
-        // Structure guide — no ingredient slots
-    }
+                          @NotNull IFocusGroup focuses) {}
 
     @Override
     public void createRecipeExtras(@NotNull IRecipeExtrasBuilder builder,
@@ -76,21 +92,11 @@ public class AltarMultiblockCategory implements IRecipeCategory<AltarStructureIn
     @Override
     public void draw(@NotNull AltarStructureInfo recipe, @NotNull IRecipeSlotsView slotsView,
                      @NotNull GuiGraphics gfx, double mouseX, double mouseY) {
-        var font = Minecraft.getInstance().font;
 
-        // Layer labels
-        String[] labels = { "Y-2", "Y-1", "Y+0" };
-        for (int i = 0; i < 3; i++) {
-            int lx = COL_X[i] + GRID_W / 2 - font.width(labels[i]) / 2;
-            gfx.drawString(font, labels[i], lx, 8, 0x888888, false);
-        }
-
-        // Layer grids
-        drawLayer(gfx, COL_X[0], GRID_Y, buildLayerMinus2(showFormed));
-        drawLayer(gfx, COL_X[1], GRID_Y, buildLayerMinus1(showFormed));
-        drawLayer(gfx, COL_X[2], GRID_Y, buildLayerZero());
+        drawIsometricStructure(gfx);
 
         // Toggle button
+        var font = Minecraft.getInstance().font;
         boolean hovered = mouseX >= BTN_X && mouseX < BTN_X + BTN_W
                        && mouseY >= BTN_Y && mouseY < BTN_Y + BTN_H;
         int bg = showFormed ? 0xFF2E6E42 : (hovered ? 0xFF4A4A6A : 0xFF333355);
@@ -106,44 +112,37 @@ public class AltarMultiblockCategory implements IRecipeCategory<AltarStructureIn
                 0xFFFFFF, false);
     }
 
-    private void drawLayer(GuiGraphics gfx, int ox, int oy, ItemStack[][] grid) {
-        for (int r = 0; r < 3; r++) {
-            for (int c = 0; c < 3; c++) {
-                int x = ox + c * CELL;
-                int y = oy + r * CELL;
-                gfx.fill(x, y, x + 16, y + 16, 0x55000000);
-                gfx.renderOutline(x, y, 16, 16, 0x33888888);
-                ItemStack stack = grid[r][c];
-                if (stack != null && !stack.isEmpty()) {
-                    gfx.renderItem(stack, x, y);
-                }
-            }
+    private void drawIsometricStructure(GuiGraphics gfx) {
+        ItemStack pillarStack = showFormed
+                ? new ItemStack(ModBlocks.ALTAR_PILLAR.get())
+                : new ItemStack(ModBlocks.MANA_BLOCK.get());
+        ItemStack pedStack   = new ItemStack(ModBlocks.ASPECT_PEDESTAL.get());
+        ItemStack altarStack = new ItemStack(ModBlocks.ASPECT_ALTAR.get());
+
+        for (int[] pos : RENDER_ORDER) {
+            int wx = pos[0], wy = pos[1], wz = pos[2];
+            ItemStack stack = resolveItem(wx, wy, wz, pillarStack, pedStack, altarStack);
+            if (stack.isEmpty()) continue;
+
+            int sx = isoScreenX(wx, wz);
+            int sy = isoScreenY(wx, wy, wz);
+            gfx.renderItem(stack, sx - 8, sy - 8);
         }
     }
 
-    private ItemStack[][] buildLayerZero() {
-        ItemStack[][] g = empty();
-        g[1][1] = new ItemStack(ModBlocks.ASPECT_ALTAR.get());
-        return g;
+    private ItemStack resolveItem(int wx, int wy, int wz,
+                                  ItemStack pillar, ItemStack ped, ItemStack altar) {
+        if (wx == 0 && wy == 0 && wz == 0) return altar.copy();
+        if (Math.abs(wx) == 3 && Math.abs(wz) == 3) return pillar.copy(); // corner pillars
+        return ped.copy(); // all other rendered positions are pedestals
     }
 
-    private ItemStack[][] buildLayerMinus1(boolean formed) {
-        ItemStack[][] g = empty();
-        ItemStack corner = formed
-                ? new ItemStack(ModBlocks.ALTAR_PILLAR.get())
-                : new ItemStack(ModBlocks.MANA_BLOCK.get());
-        g[0][0] = g[0][2] = g[2][0] = g[2][2] = corner.copy();
-        return g;
+    private static int isoScreenX(int wx, int wz) {
+        return ISO_OX + (wx - wz) * ISO_H;
     }
 
-    private ItemStack[][] buildLayerMinus2(boolean formed) {
-        ItemStack[][] g = buildLayerMinus1(formed);
-        g[1][1] = new ItemStack(ModBlocks.ASPECT_PEDESTAL.get());
-        return g;
-    }
-
-    private static ItemStack[][] empty() {
-        return new ItemStack[3][3];
+    private static int isoScreenY(int wx, int wy, int wz) {
+        return ISO_OY + (wx + wz) * ISO_V - wy * ISO_UP;
     }
 
     private class ToggleWidget implements IJeiGuiEventListener {

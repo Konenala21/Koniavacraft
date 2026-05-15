@@ -39,21 +39,33 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
     //   結構三層（核心在 y=0）：
     //
     //   y= 0：只有核心
-    //   y=-1：四斜角 MANA_BLOCK / ALTAR_PILLAR，中間空氣（中空層）
-    //   y=-2：四斜角 MANA_BLOCK / ALTAR_PILLAR，中間必要底座（催化物槽）
+    //   y=-1：四斜角(±3,±3) MANA_BLOCK / ALTAR_PILLAR，核心正下方空氣
+    //   y=-2：四斜角(±3,±3) MANA_BLOCK / ALTAR_PILLAR
+    //         + 核心正下(0,0)催化物底座
+    //         + 東西南北(±3,0)/(0,±3)各一底座
+    //         其餘 . 位置可選擇性放置底座（PEDESTAL_SCAN_RADIUS 內皆可）
     //
     //   成形時角落自動換成 ALTAR_PILLAR；解散時還原 MANA_BLOCK。
     private static final Predicate<BlockState> PILLAR_PRED =
             state -> state.is(ModBlocks.MANA_BLOCK.get()) || state.is(ModBlocks.ALTAR_PILLAR.get());
 
-    // y=-2 = 底段（top=false），y=-1 = 頂段（top=true）
+    // 必要底座位置（成形前需手動放置）
+    public static final List<Vec3i> PEDESTAL_OFFSETS = List.of(
+            new Vec3i( 0, -2,  0),  // 核心正下方（催化物）
+            new Vec3i( 0, -2, -3),  // North
+            new Vec3i( 0, -2,  3),  // South
+            new Vec3i(-3, -2,  0),  // West
+            new Vec3i( 3, -2,  0)   // East
+    );
+
+    // y=-2 = 底段（top=false），y=-1 = 頂段（top=true）；四斜角距中心 ±3
     public static final List<Vec3i> PILLAR_BOTTOM = List.of(
-            new Vec3i(-1, -2, -1), new Vec3i(-1, -2, 1),
-            new Vec3i( 1, -2, -1), new Vec3i( 1, -2, 1)
+            new Vec3i(-3, -2, -3), new Vec3i(-3, -2, 3),
+            new Vec3i( 3, -2, -3), new Vec3i( 3, -2, 3)
     );
     public static final List<Vec3i> PILLAR_TOP = List.of(
-            new Vec3i(-1, -1, -1), new Vec3i(-1, -1, 1),
-            new Vec3i( 1, -1, -1), new Vec3i( 1, -1, 1)
+            new Vec3i(-3, -1, -3), new Vec3i(-3, -1, 3),
+            new Vec3i( 3, -1, -3), new Vec3i( 3, -1, 3)
     );
     private static final List<Vec3i> PILLAR_OFFSETS;
     static {
@@ -63,15 +75,23 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
     }
 
     private static final MultiblockPattern PATTERN = MultiblockPattern.builder()
+            // 催化物底座（核心正下方 y=-2）
             .requireBlock(new Vec3i( 0, -2,  0), ModBlocks.ASPECT_PEDESTAL.get())
-            .require(new Vec3i(-1, -2, -1), PILLAR_PRED)
-            .require(new Vec3i(-1, -2,  1), PILLAR_PRED)
-            .require(new Vec3i( 1, -2, -1), PILLAR_PRED)
-            .require(new Vec3i( 1, -2,  1), PILLAR_PRED)
-            .require(new Vec3i(-1, -1, -1), PILLAR_PRED)
-            .require(new Vec3i(-1, -1,  1), PILLAR_PRED)
-            .require(new Vec3i( 1, -1, -1), PILLAR_PRED)
-            .require(new Vec3i( 1, -1,  1), PILLAR_PRED)
+            // 四方向底座 North/South/West/East
+            .requireBlock(new Vec3i( 0, -2, -3), ModBlocks.ASPECT_PEDESTAL.get())
+            .requireBlock(new Vec3i( 0, -2,  3), ModBlocks.ASPECT_PEDESTAL.get())
+            .requireBlock(new Vec3i(-3, -2,  0), ModBlocks.ASPECT_PEDESTAL.get())
+            .requireBlock(new Vec3i( 3, -2,  0), ModBlocks.ASPECT_PEDESTAL.get())
+            // 四斜角柱子底段
+            .require(new Vec3i(-3, -2, -3), PILLAR_PRED)
+            .require(new Vec3i(-3, -2,  3), PILLAR_PRED)
+            .require(new Vec3i( 3, -2, -3), PILLAR_PRED)
+            .require(new Vec3i( 3, -2,  3), PILLAR_PRED)
+            // 四斜角柱子頂段
+            .require(new Vec3i(-3, -1, -3), PILLAR_PRED)
+            .require(new Vec3i(-3, -1,  3), PILLAR_PRED)
+            .require(new Vec3i( 3, -1, -3), PILLAR_PRED)
+            .require(new Vec3i( 3, -1,  3), PILLAR_PRED)
             .build();
 
     private static final int CHECK_INTERVAL = 40;

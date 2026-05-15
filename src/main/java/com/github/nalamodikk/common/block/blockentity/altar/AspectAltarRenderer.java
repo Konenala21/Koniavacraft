@@ -5,6 +5,7 @@ import com.github.nalamodikk.common.utils.render.BlockbenchModelRenderUtils;
 import com.github.nalamodikk.common.utils.render.BlockbenchModelRenderUtils.ModelElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.github.nalamodikk.client.screenAPI.MIRenderTypes;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.logging.LogUtils;
@@ -19,6 +20,7 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
@@ -28,6 +30,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.client.model.data.ModelData;
+import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.slf4j.Logger;
 
@@ -40,6 +43,7 @@ import java.util.function.Predicate;
 
 public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlockEntity> {
     private static final Logger LOGGER = LogUtils.getLogger();
+
 
     // 整體閒置動畫（地球自轉風格）
     private static final float TILT_DEGREES  = 23.5f;
@@ -162,6 +166,8 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
         boolean active = altar.isActive();
         renderFormedCore(poseStack, bufferSource, packedLight, packedOverlay, time, active);
         renderRings(altar, poseStack, bufferSource, packedLight, packedOverlay, ringTime);
+        renderSolarCore(altar, poseStack, bufferSource, time);
+        renderSealSystem(altar, poseStack, bufferSource, packedLight, packedOverlay);
 
         if (active) {
             renderOrbitals(altar, poseStack, bufferSource, packedLight, packedOverlay, level, time);
@@ -295,6 +301,210 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
             poseStack.popPose();
             idx++;
         }
+    }
+
+    // ── 太陽核心 ─────────────────────────────────────────────────────────────
+    private static final float SOLAR_HEIGHT    = 2.8f;
+    private static final float SOLAR_FADE_NEAR = 5f;    // 5 格內全隱
+    private static final float SOLAR_FADE_FAR  = 12f;   // 12 格外全顯
+
+    // ── 封印鍊子 ─────────────────────────────────────────────────────────────────
+    // 光柱：儀式啟動時從各角落柱頂射向核心
+    // 符文：成形就顯示，4個角落各一張貼圖
+    private static final float   CHAIN_RADIUS = 0.04f;
+    private static final float[] CHAIN_END    = {0.5f, 0.3f, 0.5f};
+    private static final float[][] CHAIN_STARTS = {
+        {-2.5f, 0f, -2.5f},  // NW
+        { 3.5f, 0f, -2.5f},  // NE
+        {-2.5f, 0f,  3.5f},  // SW
+        { 3.5f, 0f,  3.5f},  // SE
+    };
+    // 符文：各角落柱頂方塊最小 X/Z，浮空距離
+    private static final int[][] SEAL_PX_PZ = {
+        {-3, -3}, { 3, -3}, {-3,  3}, { 3,  3}
+    };
+    private static final float SEAL_FLOAT = 0.25f;
+    private static final ResourceLocation[] SEAL_TEXTURES = {
+        ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/entity/altar/pillar_seal1.png"),
+        ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/entity/altar/pillar_seal2.png"),
+        ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/entity/altar/pillar_seal3.png"),
+        ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/entity/altar/pillar_seal4.png"),
+    };
+
+    // 預算圓形頂點（只計算一次，避免每幀 sin/cos）
+    private static final int   CIRCLE_SEGS = 32;
+    private static final float[] CIRCLE_COS = new float[CIRCLE_SEGS];
+    private static final float[] CIRCLE_SIN = new float[CIRCLE_SEGS];
+    static {
+        for (int i = 0; i < CIRCLE_SEGS; i++) {
+            double a = i * 2 * Math.PI / CIRCLE_SEGS;
+            CIRCLE_COS[i] = (float) Math.cos(a);
+            CIRCLE_SIN[i] = (float) Math.sin(a);
+        }
+    }
+
+    private void renderSolarCore(AspectAltarBlockEntity altar, PoseStack ps,
+                                  MultiBufferSource mbs, float time) {
+        if (altar.getUpgradeTier() < 3) return;   // T3 以上才觸發
+
+        var mc = Minecraft.getInstance();
+        var player = mc.player;
+        if (player == null) return;
+
+        // 水平距離淡入淡出（5 格內全隱，12 格外全顯，中間平滑過渡）
+        double cx = altar.getBlockPos().getX() + 0.5;
+        double cz = altar.getBlockPos().getZ() + 0.5;
+        double dx = player.getX() - cx, dz = player.getZ() - cz;
+        float dist = (float) Math.sqrt(dx*dx + dz*dz);
+        if (dist < SOLAR_FADE_NEAR) return;
+        float fade = Math.min(1f, (dist - SOLAR_FADE_NEAR) / (SOLAR_FADE_FAR - SOLAR_FADE_NEAR));
+
+        float bob   = (float) Math.sin(time * BOB_SPEED * 0.6f) * BOB_AMPLITUDE * 2f;
+        float pulse = 1f + 0.12f * (float) Math.sin(time * 0.10f);
+
+        VertexConsumer vc = mbs.getBuffer(MIRenderTypes.solarGlow());
+
+        // === 輝光（Billboard，用 Camera.rotation() 取正確朝向）===
+        ps.pushPose();
+        ps.translate(0.5, SOLAR_HEIGHT + bob, 0.5);
+        ps.mulPose(mc.gameRenderer.getMainCamera().rotation());
+
+        // alpha 乘上 fade 係數，5-12 格之間平滑出現
+        renderGlowCircle(ps, vc, 7.0f * pulse,  40,  12, 130, (int)( 80 * fade));
+        renderGlowCircle(ps, vc, 5.0f * pulse,  65, 130, 255, (int)(100 * fade));
+        renderGlowCircle(ps, vc, 3.3f * pulse, 140, 210, 255, (int)(120 * fade));
+        renderGlowCircle(ps, vc, 1.8f * pulse, 255, 205,  70, (int)(150 * fade));
+        renderGlowCircle(ps, vc, 0.8f * pulse, 255, 248, 195, (int)(200 * fade));
+        renderGlowCircle(ps, vc, 0.28f,        255, 255, 255, (int)(220 * fade));
+
+        ps.popPose();
+    }
+
+    // 同心環堆疊出平滑圓形輝光，使用預算靜態 cos/sin，無每幀三角函數開銷
+    private void renderGlowCircle(PoseStack ps, VertexConsumer vc,
+                                   float radius, int r, int g, int b, int maxAlpha) {
+        if (maxAlpha <= 0) return;
+        Matrix4f mat = ps.last().pose();
+        int rings = 6;
+        for (int ring = 0; ring < rings; ring++) {
+            float t0 = (float) ring       / rings;
+            float t1 = (float)(ring + 1f) / rings;
+            float r0 = radius * t0;
+            float r1 = radius * t1;
+            int a0 = (int)(maxAlpha * (1f - t0) * (1f - t0));
+            int a1 = (int)(maxAlpha * (1f - t1) * (1f - t1));
+            for (int i = 0; i < CIRCLE_SEGS; i++) {
+                int j = (i + 1) % CIRCLE_SEGS;
+                float c1 = CIRCLE_COS[i], s1 = CIRCLE_SIN[i];
+                float c2 = CIRCLE_COS[j], s2 = CIRCLE_SIN[j];
+                vc.addVertex(mat, r0*c1, r0*s1, 0).setColor(r, g, b, a0);
+                vc.addVertex(mat, r1*c1, r1*s1, 0).setColor(r, g, b, a1);
+                vc.addVertex(mat, r1*c2, r1*s2, 0).setColor(r, g, b, a1);
+                vc.addVertex(mat, r0*c2, r0*s2, 0).setColor(r, g, b, a0);
+            }
+        }
+    }
+
+    private void renderEnergyRing(PoseStack ps, VertexConsumer vc,
+                                    float radius, float thickness,
+                                    int r, int g, int b, int a) {
+        Matrix4f mat = ps.last().pose();
+        int segments = 24;
+        float outerR = radius + thickness;
+        float innerR = radius - thickness;
+        for (int i = 0; i < segments; i++) {
+            float a1 = (float)(i     * 2 * Math.PI / segments);
+            float a2 = (float)((i+1) * 2 * Math.PI / segments);
+            float cos1 = (float)Math.cos(a1), sin1 = (float)Math.sin(a1);
+            float cos2 = (float)Math.cos(a2), sin2 = (float)Math.sin(a2);
+            vc.addVertex(mat, innerR*cos1, 0, innerR*sin1).setColor(r, g, b, a);
+            vc.addVertex(mat, outerR*cos1, 0, outerR*sin1).setColor(r, g, b, a);
+            vc.addVertex(mat, outerR*cos2, 0, outerR*sin2).setColor(r, g, b, a);
+            vc.addVertex(mat, innerR*cos2, 0, innerR*sin2).setColor(r, g, b, a);
+        }
+    }
+
+    // ── 封印系統（鍊子 + 符文） ───────────────────────────────────────────────────
+
+    private void renderSealSystem(AspectAltarBlockEntity altar, PoseStack ps,
+                                   MultiBufferSource mbs, int packedLight, int packedOverlay) {
+        // 符文：成形就顯示，先全部畫完（避免與光柱的 render type 交錯）
+        for (int i = 0; i < 4; i++) {
+            renderPillarSeal(ps, mbs, i, SEAL_PX_PZ[i][0], SEAL_PX_PZ[i][1], packedLight, packedOverlay);
+        }
+
+        // 光柱：只有儀式進行中才顯示
+        if (!altar.isActive()) return;
+        VertexConsumer vc = mbs.getBuffer(MIRenderTypes.sealChain());
+        for (int i = 0; i < 4; i++) {
+            renderChainTube(ps, vc, CHAIN_STARTS[i], CHAIN_END);
+        }
+    }
+
+    // 細管鍊子：4面 prism，從 start 到 end
+    private void renderChainTube(PoseStack ps, VertexConsumer vc, float[] start, float[] end) {
+        float dx = end[0]-start[0], dy = end[1]-start[1], dz = end[2]-start[2];
+        float len = (float) Math.sqrt(dx*dx + dy*dy + dz*dz);
+        if (len < 0.01f) return;
+        float nx = dx/len, ny = dy/len, nz = dz/len;
+
+        // 兩個垂直於鍊子方向的正交向量
+        float[] tmp = (Math.abs(ny) < 0.9f) ? new float[]{0,1,0} : new float[]{1,0,0};
+        float rx = ny*tmp[2]-nz*tmp[1], ry = nz*tmp[0]-nx*tmp[2], rz = nx*tmp[1]-ny*tmp[0];
+        float rlen = (float) Math.sqrt(rx*rx + ry*ry + rz*rz);
+        rx/=rlen; ry/=rlen; rz/=rlen;
+        float ux = ry*nz-rz*ny, uy = rz*nx-rx*nz, uz = rx*ny-ry*nx;
+
+        float r = CHAIN_RADIUS;
+        float[][] sv = {
+            {start[0]+rx*r+ux*r, start[1]+ry*r+uy*r, start[2]+rz*r+uz*r},
+            {start[0]-rx*r+ux*r, start[1]-ry*r+uy*r, start[2]-rz*r+uz*r},
+            {start[0]-rx*r-ux*r, start[1]-ry*r-uy*r, start[2]-rz*r-uz*r},
+            {start[0]+rx*r-ux*r, start[1]+ry*r-uy*r, start[2]+rz*r-uz*r},
+        };
+        float[][] ev = {
+            {end[0]+rx*r+ux*r, end[1]+ry*r+uy*r, end[2]+rz*r+uz*r},
+            {end[0]-rx*r+ux*r, end[1]-ry*r+uy*r, end[2]-rz*r+uz*r},
+            {end[0]-rx*r-ux*r, end[1]-ry*r-uy*r, end[2]-rz*r-uz*r},
+            {end[0]+rx*r-ux*r, end[1]+ry*r-uy*r, end[2]+rz*r-uz*r},
+        };
+
+        Matrix4f mat = ps.last().pose();
+        int cr=75, cg=55, cb=140, ca=230;  // 深紫色鍊子
+        for (int i = 0; i < 4; i++) {
+            int j = (i+1) % 4;
+            vc.addVertex(mat, sv[i][0], sv[i][1], sv[i][2]).setColor(cr,cg,cb,ca);
+            vc.addVertex(mat, sv[j][0], sv[j][1], sv[j][2]).setColor(cr,cg,cb,ca);
+            vc.addVertex(mat, ev[j][0], ev[j][1], ev[j][2]).setColor(cr,cg,cb,ca);
+            vc.addVertex(mat, ev[i][0], ev[i][1], ev[i][2]).setColor(cr,cg,cb,ca);
+        }
+    }
+
+
+    // 符文：浮空 SEAL_FLOAT 格，4個面用同一張貼圖
+    private void renderPillarSeal(PoseStack ps, MultiBufferSource mbs,
+                                   int chainIdx, int px, int pz, int packedLight, int packedOverlay) {
+        float x0 = px, x1 = px + 1f;
+        float y0 = -1f, y1 = 0f;
+        float z0 = pz, z1 = pz + 1f;
+        float f = SEAL_FLOAT;
+        Matrix4f mat = ps.last().pose();
+        VertexConsumer vc = mbs.getBuffer(RenderType.entityCutoutNoCull(SEAL_TEXTURES[chainIdx]));
+
+        sealQuad(vc, mat, x1,y1,z0-f, x0,y1,z0-f, x0,y0,z0-f, x1,y0,z0-f, 0,0,-1, packedLight, packedOverlay);
+        sealQuad(vc, mat, x0,y1,z1+f, x1,y1,z1+f, x1,y0,z1+f, x0,y0,z1+f, 0,0,1, packedLight, packedOverlay);
+        sealQuad(vc, mat, x0-f,y1,z1, x0-f,y1,z0, x0-f,y0,z0, x0-f,y0,z1, -1,0,0, packedLight, packedOverlay);
+        sealQuad(vc, mat, x1+f,y1,z0, x1+f,y1,z1, x1+f,y0,z1, x1+f,y0,z0, 1,0,0, packedLight, packedOverlay);
+    }
+
+    private void sealQuad(VertexConsumer vc, Matrix4f mat,
+                           float x0, float y0, float z0, float x1, float y1, float z1,
+                           float x2, float y2, float z2, float x3, float y3, float z3,
+                           float nx, float ny, float nz, int packedLight, int packedOverlay) {
+        vc.addVertex(mat,x0,y0,z0).setColor(255,255,255,255).setUv(0f,0f).setOverlay(packedOverlay).setLight(packedLight).setNormal(nx,ny,nz);
+        vc.addVertex(mat,x1,y1,z1).setColor(255,255,255,255).setUv(1f,0f).setOverlay(packedOverlay).setLight(packedLight).setNormal(nx,ny,nz);
+        vc.addVertex(mat,x2,y2,z2).setColor(255,255,255,255).setUv(1f,1f).setOverlay(packedOverlay).setLight(packedLight).setNormal(nx,ny,nz);
+        vc.addVertex(mat,x3,y3,z3).setColor(255,255,255,255).setUv(0f,1f).setOverlay(packedOverlay).setLight(packedLight).setNormal(nx,ny,nz);
     }
 
     @Override

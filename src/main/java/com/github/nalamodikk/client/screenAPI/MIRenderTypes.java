@@ -45,6 +45,25 @@ public class MIRenderTypes {
         return SOLID_HIGHLIGHT;
     }
 
+    private static RenderType SOLAR_GLOW;
+
+    public static RenderType solarGlow() {
+        if (SOLAR_GLOW == null) {
+            SOLAR_GLOW = Factory.makeSolarGlow();
+        }
+        return SOLAR_GLOW;
+    }
+
+    private static RenderType SEAL_CHAIN;
+
+    // 封印鍊子：半透明、寫深度、無貼圖、POSITION_COLOR
+    public static RenderType sealChain() {
+        if (SEAL_CHAIN == null) {
+            SEAL_CHAIN = Factory.makeSealChain();
+        }
+        return SEAL_CHAIN;
+    }
+
     // This is a subclass to get access to a bunch of fields and classes.
     // TODO: PR more transitive access wideners to fabric
     private static class Factory extends RenderType {
@@ -70,6 +89,28 @@ public class MIRenderTypes {
                             .setTextureState(NO_TEXTURE)
                             .setLightmapState(NO_LIGHTMAP)
                             .setShaderState(POSITION_COLOR_SHADER)
+                            .createCompositeState(false));
+        }
+
+        // 封印鍊子：與 solarGlow 相同設定（LIGHTNING + COLOR_WRITE），保證 BER context 可用
+        private static RenderType makeSealChain() {
+            return create("koniava_seal_chain", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 4096, false, false,
+                    CompositeState.builder()
+                            .setShaderState(POSITION_COLOR_SHADER)
+                            .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                            .setWriteMaskState(COLOR_WRITE)
+                            .setTextureState(NO_TEXTURE)
+                            .createCompositeState(false));
+        }
+
+        // Additive glow：不寫深度緩衝，解決黑色閃爍
+        private static RenderType makeSolarGlow() {
+            return create("koniava_solar_glow", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 2048, false, false,
+                    CompositeState.builder()
+                            .setShaderState(POSITION_COLOR_SHADER)
+                            .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                            .setWriteMaskState(COLOR_WRITE)
+                            .setTextureState(NO_TEXTURE)
                             .createCompositeState(false));
         }
     }

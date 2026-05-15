@@ -32,32 +32,30 @@ public class StructureBuildWandItem extends Item {
         if (player == null || level.isClientSide()) return InteractionResult.PASS;
         if (!(level.getBlockEntity(altarPos) instanceof AspectAltarBlockEntity altar)) return InteractionResult.PASS;
 
-        List<BlockPos> missing  = new ArrayList<>();
-        List<BlockPos> blocked  = new ArrayList<>();
-        collectPositions(level, altarPos, altar, missing, blocked);
+        List<BlockPos> missingPillar    = new ArrayList<>();
+        List<BlockPos> missingPedestal  = new ArrayList<>();
+        List<BlockPos> blocked          = new ArrayList<>();
+        collectPositions(level, altarPos, altar, missingPillar, missingPedestal, blocked);
 
-        // 有被其他方塊佔用的位置：橘色邊框高亮 + 取消建造
+        // 被其他方塊佔用 → 橘色高亮，停止建造
         if (!blocked.isEmpty()) {
-            if (player instanceof ServerPlayer sp) {
-                BlockHighlightPacket.sendToPlayer(sp, blocked, 1); // 1 = 橘色
-            }
+            if (player instanceof ServerPlayer sp)
+                BlockHighlightPacket.sendToPlayer(sp, blocked, 1);
             player.displayClientMessage(
                     Component.translatable("message.koniava.build_wand.blocked", blocked.size()), true);
             return InteractionResult.SUCCESS;
         }
 
-        if (missing.isEmpty()) {
+        // 全部就位
+        if (missingPillar.isEmpty() && missingPedestal.isEmpty()) {
             altar.refreshUpgradeTier();
             Component msg;
             if (!altar.isFormed()) {
-                // 柱子已就位但結構尚未成形
                 msg = Component.translatable("message.koniava.build_wand.ready_to_form");
             } else if (altar.getUpgradeTier() >= AspectAltarBlockEntity.ALL_RINGS.size()) {
-                // 全部環完成（動態傳入最大 tier 數）
                 msg = Component.translatable("message.koniava.build_wand.all_rings_done",
                         AspectAltarBlockEntity.ALL_RINGS.size());
             } else {
-                // 當前 tier 的環已全部就位，環偵測將在下一個 tick 更新
                 msg = Component.translatable("message.koniava.build_wand.ring_ready",
                         altar.getUpgradeTier() + 1);
             }
@@ -67,12 +65,14 @@ public class StructureBuildWandItem extends Item {
 
         int placed = 0;
         List<BlockPos> stillMissing = new ArrayList<>();
-        for (BlockPos pos : missing) {
+
+        // 放置魔力方塊（柱子）
+        for (BlockPos pos : missingPillar) {
             if (player.isCreative()) {
                 level.setBlock(pos, ModBlocks.MANA_BLOCK.get().defaultBlockState(), 3);
                 placed++;
             } else {
-                int slot = findManaBlockInInventory(player);
+                int slot = findInInventory(player, ModBlocks.MANA_BLOCK.get().asItem());
                 if (slot >= 0) {
                     level.setBlock(pos, ModBlocks.MANA_BLOCK.get().defaultBlockState(), 3);
                     player.getInventory().getItem(slot).shrink(1);
@@ -83,62 +83,89 @@ public class StructureBuildWandItem extends Item {
             }
         }
 
-        // 材料不足的位置：紅色邊框提示
-        if (!stillMissing.isEmpty() && player instanceof ServerPlayer sp) {
-            BlockHighlightPacket.sendToPlayer(sp, stillMissing, 0); // 0 = 紅色
+        // 放置底座（AspectPedestal）
+        for (BlockPos pos : missingPedestal) {
+            if (player.isCreative()) {
+                level.setBlock(pos, ModBlocks.ASPECT_PEDESTAL.get().defaultBlockState(), 3);
+                placed++;
+            } else {
+                int slot = findInInventory(player, ModBlocks.ASPECT_PEDESTAL.get().asItem());
+                if (slot >= 0) {
+                    level.setBlock(pos, ModBlocks.ASPECT_PEDESTAL.get().defaultBlockState(), 3);
+                    player.getInventory().getItem(slot).shrink(1);
+                    placed++;
+                } else {
+                    stillMissing.add(pos);
+                }
+            }
         }
+
+        if (!stillMissing.isEmpty() && player instanceof ServerPlayer sp)
+            BlockHighlightPacket.sendToPlayer(sp, stillMissing, 0); // 紅色
 
         if (placed > 0) altar.refreshUpgradeTier();
 
         player.displayClientMessage(
                 Component.translatable("message.koniava.build_wand.placed",
-                        placed, placed + stillMissing.size()),
-                true);
+                        placed, placed + stillMissing.size()), true);
         return InteractionResult.SUCCESS;
     }
 
     private void collectPositions(Level level, BlockPos altarPos, AspectAltarBlockEntity altar,
-                                   List<BlockPos> missing, List<BlockPos> blocked) {
+                                   List<BlockPos> missingPillar, List<BlockPos> missingPedestal,
+                                   List<BlockPos> blocked) {
         if (!altar.isFormed()) {
-            // 尚未成形：只顯示基礎柱位置
-            checkPositions(level, altarPos, AspectAltarBlockEntity.PILLAR_BOTTOM, missing, blocked, true);
-            checkPositions(level, altarPos, AspectAltarBlockEntity.PILLAR_TOP,   missing, blocked, true);
+            // 未成形：檢查柱子 + 底座
+            checkPillarPositions(level, altarPos, AspectAltarBlockEntity.PILLAR_BOTTOM, missingPillar, blocked);
+            checkPillarPositions(level, altarPos, AspectAltarBlockEntity.PILLAR_TOP,   missingPillar, blocked);
+            checkPedestalPositions(level, altarPos, AspectAltarBlockEntity.PEDESTAL_OFFSETS, missingPedestal, blocked);
         } else {
-            // 已成形：顯示下一個升級環的位置（T1 → T2 → T3）
+            // 已成形：檢查下一個升級環
             int nextTier = altar.getUpgradeTier() + 1;
             if (nextTier <= AspectAltarBlockEntity.ALL_RINGS.size()) {
-                checkPositions(level, altarPos, AspectAltarBlockEntity.ALL_RINGS.get(nextTier - 1),
-                        missing, blocked, false);
+                checkRingPositions(level, altarPos, AspectAltarBlockEntity.ALL_RINGS.get(nextTier - 1),
+                        missingPillar, blocked);
             }
         }
     }
 
-    /** isPillar=true 時接受 ALTAR_PILLAR 為已完成，false 時接受 RESONANCE_RING */
-    private void checkPositions(Level level, BlockPos altarPos, List<Vec3i> offsets,
-                                  List<BlockPos> missing, List<BlockPos> blocked, boolean isPillar) {
+    private void checkPillarPositions(Level level, BlockPos altarPos, List<Vec3i> offsets,
+                                       List<BlockPos> missing, List<BlockPos> blocked) {
         for (Vec3i offset : offsets) {
             BlockPos p = altarPos.offset(offset);
             BlockState s = level.getBlockState(p);
-
-            // 已經是正確的結構方塊 → 跳過
-            if (s.is(ModBlocks.MANA_BLOCK.get())) continue;
-            if (isPillar && s.is(ModBlocks.ALTAR_PILLAR.get())) continue;
-            if (!isPillar && s.is(ModBlocks.RESONANCE_RING.get())) continue;
-
-            // 空氣或可替換方塊 → 待建造
-            if (s.isAir() || s.canBeReplaced()) {
-                missing.add(p);
-            } else {
-                // 有其他方塊佔用 → 阻擋
-                blocked.add(p);
-            }
+            if (s.is(ModBlocks.MANA_BLOCK.get()) || s.is(ModBlocks.ALTAR_PILLAR.get())) continue;
+            if (s.isAir() || s.canBeReplaced()) missing.add(p);
+            else blocked.add(p);
         }
     }
 
-    private int findManaBlockInInventory(Player player) {
+    private void checkPedestalPositions(Level level, BlockPos altarPos, List<Vec3i> offsets,
+                                         List<BlockPos> missing, List<BlockPos> blocked) {
+        for (Vec3i offset : offsets) {
+            BlockPos p = altarPos.offset(offset);
+            BlockState s = level.getBlockState(p);
+            if (s.is(ModBlocks.ASPECT_PEDESTAL.get())) continue;
+            if (s.isAir() || s.canBeReplaced()) missing.add(p);
+            else blocked.add(p);
+        }
+    }
+
+    private void checkRingPositions(Level level, BlockPos altarPos, List<Vec3i> offsets,
+                                     List<BlockPos> missing, List<BlockPos> blocked) {
+        for (Vec3i offset : offsets) {
+            BlockPos p = altarPos.offset(offset);
+            BlockState s = level.getBlockState(p);
+            if (s.is(ModBlocks.MANA_BLOCK.get()) || s.is(ModBlocks.RESONANCE_RING.get())) continue;
+            if (s.isAir() || s.canBeReplaced()) missing.add(p);
+            else blocked.add(p);
+        }
+    }
+
+    private int findInInventory(Player player, net.minecraft.world.item.Item item) {
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
             ItemStack stack = player.getInventory().getItem(i);
-            if (!stack.isEmpty() && stack.is(ModBlocks.MANA_BLOCK.get().asItem())) return i;
+            if (!stack.isEmpty() && stack.is(item)) return i;
         }
         return -1;
     }

@@ -4,18 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.1.6-3] - 2026-05-15
+
 ### Player Changes / 玩家更新內容
 
 - License changed from MIT to LGPL-3.0-only.
 - 授權條款由 MIT 更改為 LGPL-3.0-only。
-
-### Developer Notes / 開發者備註
-
-- Updated LICENSE file and gradle.properties mod_license field to LGPL-3.0-only.
-- Derivative works that modify and redistribute the mod source must also be LGPL-3.0. Modpack inclusion is unaffected.
-
-### Player Changes / 玩家更新內容
-
+- Aspect Convergence Array structure redesigned: corner pillars now placed at 6-block diagonal distance (±3, ±3) instead of ±1. Structure now requires 5 Aspect Pedestals: one directly below the altar core (catalyst slot), and one each to the north, south, east, and west.
+- 本源聚陣結構重新設計：角落柱子移至對角 ±3 距離。現在需要 5 個本源底座：核心正下方（催化物槽）+ 東西南北各一。
+- Structure Build Wand now also places Aspect Pedestals at the required positions. It can pull pedestals directly from your inventory — no need to place them one by one manually.
+- 結構建造法杖現在也可以在必要位置自動放置本源底座，直接從背包取用，不需要逐一手動放置。
+- Seal rune symbols float near each corner pillar whenever the altar is formed, visible from all four sides of the pillar.
+- 本源聚陣成形後，四個角落柱子旁會顯示浮空封印符文，每個柱子的四個側面都可看到。
+- Energy beams connect the corner pillars to the altar core during an active ritual.
+- 儀式進行中，角落柱子與核心矩陣之間會出現能量光柱。
+- Solar core glow effect now renders above the altar when Dyson Ring tier reaches T3 or higher. The glow fades in as you step back and disappears when you get close.
+- 戴森環升級達到 T3 以上時，祭壇核心上方會出現太陽核心輝光效果，靠近時淡出，退後時漸顯。
+- JEI multiblock structure guide now shows an isometric 3D preview of the full altar layout instead of flat per-layer diagrams.
+- JEI 多方塊結構指南改為等角 3D 預覽，直接呈現整體祭壇擺放樣貌，不再是分層平面圖。
 - Mana Infuser now processes Refined Mana Dust into Mana Crystal Fragments (3 dust → 1 fragment, 4200 mana).
 - 魔力注入機現在可將精煉魔力粉轉化為魔力水晶碎片（3粉→1碎片，消耗 4200 魔力）。
 - Added crafting recipes for all four Mana Generator upgrade modules: Accelerated Processing, Expanded Fuel Chamber, Catalytic Converter, and Diagnostic Display.
@@ -44,10 +50,8 @@ All notable changes to this project will be documented in this file.
 - 娜拉全息手錶現在有合成配方（4金錠 + 4銅錠 + 1魔力粉），這是整個研究系統的起點。
 - Added multiblock framework (IMultiblockController / IMultiblockPart / MultiblockPattern) as the foundation for all future multi-block machines.
 - 新增多方塊框架（IMultiblockController / IMultiblockPart / MultiblockPattern），作為所有未來多方塊機器的基礎。
-- Added Mana Altar (multiblock controller) and Mana Pedestal (part). Place 4 pedestals 2 blocks away in N/S/E/W directions to form the structure. Right-click the altar to check structure status or trigger rituals.
-- 新增魔力祭壇（多方塊 controller）與魔力底座（part）。在東西南北各距離 2 格放置 4 個底座即可成立結構。右鍵祭壇可確認結構狀態或觸發儀式。
-- Aspect Altar core now animates as a floating Rubik's cube when formed: 9 face slices cycle one at a time (top, bottom, left, right, front, back, and 3 middle slices), each rotating 90° and pausing before the next, while the whole structure floats and tilts slowly.
-- 本源聚陣核心成形後呈現懸浮魔術方塊動畫：9個切面依序輪流旋轉90°並暫停（上下左右前後6個外面 + E/M/S 3個中間切片），同時整體緩慢浮動傾斜自轉。
+- Aspect Altar core now animates as a floating Rubik's cube when formed: 9 face slices cycle one at a time, each rotating 90° and pausing before the next, while the whole structure floats and tilts slowly.
+- 本源聚陣核心成形後呈現懸浮魔術方塊動畫：9個切面依序輪流旋轉90°並暫停，同時整體緩慢浮動傾斜自轉。
 - Altar Pillar block now uses a custom OBJ model with a dedicated texture.
 - 矩陣柱現在使用自訂 OBJ 模型與專屬貼圖。
 - Aspect Pedestal now uses a custom model with a dedicated texture; displayed items are better positioned and sized.
@@ -58,24 +62,28 @@ All notable changes to this project will be documented in this file.
 - 本源聚陣結構成形現在需要使用進階科技法杖觸發，不再自動成形，觸發成功時播放上揚音符盒音效。
 - Added Advanced Tech Wand and Structure Build Wand items.
 - 新增進階科技法杖與結構建造法杖物品。
-- Aspect Convergence Array now supports Dyson Ring upgrades (T1/T2/T3): surround the altar with Resonance Rings to gain upgrade tiers. Each tier adds a glowing ring that rotates around the altar.
-- 本源聚陣現在支援戴森環升級（T1/T2/T3）：在祭壇周圍放置共鳴環即可獲得升級階級，每個階級都會增加一個繞祭壇旋轉的發光環。
+- Aspect Convergence Array now supports Dyson Ring upgrades (T1–T6, up to T12 planned): surround the altar with Resonance Rings to gain upgrade tiers. Each tier adds a glowing ring that rotates around the altar core.
+- 本源聚陣現在支援戴森環升級（T1–T6，最高 T12 規劃中）：在祭壇周圍放置共鳴環即可獲得升級階級，每個階級都會增加一個繞核心旋轉的發光環。
 - Pedestal scan radius increased from 4 to 6 blocks.
 - 底座偵測半徑從 4 增加到 6 格。
 
 ### Developer Notes / 開發者備註
 
-- `AspectAltarRenderer`: complete rewrite — loads JSON elements as a flat list (no groups needed), partitions all 27 cubies dynamically per phase using XYZ centre-position bounds; 9 phases: top/right/front/bottom/left/back outer slices + E/M/S middle slices; each phase smoothsteps to 90° then holds; global earth-tilt + Y-spin overlay preserved.
-- `BlockbenchModelRenderUtils.renderCube`: fixed normal transformation — face normals now transformed by `poseStack.last().normal()` (normal matrix) so lighting is correct after arbitrary axis rotations. Also added `renderElementList(List<ModelElement>)` public method for direct-list rendering.
-- `ModBlockStateProvider`: altar and pedestal blockstates now reference hand-built models via `UncheckedModelFile`; deleted conflicting stone-placeholder models from `src/generated/resources`; added `aspect_altar_formed.json` (particle-only, no geometry) for `ENTITYBLOCK_ANIMATED` state.
-- New textures: `aspect_altar_texture.png`, `aspect_pedestal_texture.png`, `altar_pillar_texture.png`, `resonance_ring_texture.png`, `advanced_tech_wand.png`, `structure_build_wand.png`.
-- `AspectAltarBlockEntity`: added `upgradeTier` (0–3) persisted to NBT; `refreshUpgradeTier()` checks 16-point ring positions (RING_T1/T2/T3) each CHECK_INTERVAL; removed `checkStructure()` from tick loop (wand-only); formation sound: 3 NOTE_BLOCK_HARP pitches 0.8/1.0/1.26f; `PILLAR_BOTTOM`/`PILLAR_TOP` changed to public.
-- `IWandActivatable` interface added (`common/multiblock/api`); `AdvancedTechWandItem` and `StructureBuildWandItem` new items.
-- `AspectAltarRenderer`: added `renderRings()` / `renderOneRing()` using BakedModel quads from OBJ `resonance_ring`; T1 tilt Z+90°→Y spin, T2 tilt Y+90°→Z spin, T3 no tilt→X spin; `ModelEvent.RegisterAdditional` registers `block/resonance_ring` as standalone model.
-- `ModCapabilities`: registered `MANA` capability for `ASPECT_ALTAR_BE` as input-only (`RestrictedManaHandler(storage, true, false)`).
-- `ManaInfuserRecipeProvider`: added `refined_mana_dust_to_crystal_fragment` recipe (3×refined → 1×fragment, 4200 mana, 80t).
-- `ModRecipeProvider`: added shaped recipes for `accelerated_processing_upgrade`, `expanded_fuel_chamber_upgrade`, `catalytic_converter_upgrade`, `diagnostic_display_upgrade`.
-- `ManaGrinderBlockEntity`, `ManaInfuserBlockEntity`, `ManaCraftingTableBlockEntity`: implemented `IUpgradeableMachine`; added 4-slot `UpgradeInventory`; SPEED scales `progressStep`, EFFICIENCY divides mana cost by multiplier (max 5x); NBT save/load added. `OpenUpgradeGuiPacket` now supports all three machines automatically via `instanceof IUpgradeableMachine`.
+- `AspectAltarBlockEntity`: `PILLAR_BOTTOM`/`PILLAR_TOP` moved to ±3 diagonal; `PEDESTAL_OFFSETS` (5 positions) added as public list; `PATTERN` now requires 5 pedestals + 8 pillar positions; `ringPhaseStart` added for ring animation sync.
+- `AspectAltarRenderer`: `renderSealSystem()` — seal runes use `entityCutoutNoCull` (4 directional textures, float 0.25 blocks); energy beams use `MIRenderTypes.sealChain()` (LIGHTNING_TRANSPARENCY tube geometry) only when `isActive()`; two-pass rendering (seals first, beams second) to prevent `MultiBufferSource.BufferSource` switching crash ("Not building").
+- `MIRenderTypes`: added `sealChain()` (`POSITION_COLOR`, `LIGHTNING_TRANSPARENCY`, `COLOR_WRITE`); added `solarGlow()` (`POSITION_COLOR`, additive no-depth-write) for solar core billboard.
+- `AspectAltarRenderer.renderSolarCore()`: 6-layer concentric billboard glow (pre-computed `CIRCLE_COS`/`CIRCLE_SIN`), horizontal distance fade 5–12 blocks, pulse animation, activates at tier ≥ 3.
+- `AltarMultiblockCategory` (JEI): replaced flat 3-layer 3×3 grid with isometric 3D projection (14 block positions, painter's-algorithm depth sort).
+- `StructureBuildWandItem`: split into `missingPillar` + `missingPedestal` lists; pedestal auto-placement from inventory added; `findInInventory()` generalised helper replaces `findManaBlockInInventory()`.
+- `AspectAltarRenderer`: complete rewrite — loads JSON elements as a flat list, partitions 27 cubies dynamically per phase using XYZ bounds; 9 phases smoothstep to 90° then hold; earth-tilt + Y-spin overlay preserved.
+- `BlockbenchModelRenderUtils.renderCube`: fixed normal transformation via `poseStack.last().normal()`; added `renderElementList(List<ModelElement>)`.
+- New textures: `aspect_altar_texture.png`, `aspect_pedestal_texture.png`, `altar_pillar_texture.png`, `resonance_ring_texture.png`, `advanced_tech_wand.png`, `structure_build_wand.png`, `entity/altar/pillar_seal1–4.png`.
+- `ManaInfuserRecipeProvider`: added `refined_mana_dust_to_crystal_fragment` (3×refined → 1×fragment, 4200 mana, 80t).
+- `ModRecipeProvider`: added shaped recipes for all four Mana Generator upgrade modules.
+- `ManaGrinderBlockEntity`, `ManaInfuserBlockEntity`, `ManaCraftingTableBlockEntity`: implemented `IUpgradeableMachine`; 4-slot `UpgradeInventory`; SPEED/EFFICIENCY scaling; NBT save/load.
+- `IWandActivatable` interface added; `AdvancedTechWandItem` and `StructureBuildWandItem` new items.
+- `ModCapabilities`: `MANA` capability registered for `ASPECT_ALTAR_BE` as input-only.
+- Updated LICENSE and `gradle.properties` `mod_license` to LGPL-3.0-only.
 
 ## [0.0.1.6-2] - 2026-05-13
 
