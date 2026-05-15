@@ -65,3 +65,12 @@ A like or comment on [Modrinth](https://modrinth.com/mod/magical-industry) goes 
 
 > **Note:** Stable builds are on the `master` branch.  
 > `dev/1.21.1` is my active dev branch — it might be broken at any given moment. Use at your own risk.
+
+---
+
+## License
+
+This mod is licensed under [LGPL-3.0-only](./LICENSE).
+
+- Modpacks may include this mod freely, no permission required.
+- If you modify and redistribute the source code, derivative works must also be released under LGPL-3.0.
