@@ -51,14 +51,27 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
     private static final float PHASE_TICKS   = 40f;
     private static final float TURN_FRACTION = 0.375f;
 
-    // 共鳴環動畫
-    // OBJ 模型在 YZ 平面，中心在 (0,0,0)，半徑 ~3 方塊單位，不需要額外縮放
-    // T1：Z 軸傾斜 90° → 變水平（XZ 平面），繞 Y 軸自轉
-    // T2：Y 軸傾斜 90° → 變 XY 垂直面，繞 Z 軸自轉
-    // T3：不傾斜（本來就是 YZ 平面），繞 X 軸自轉
-    private static final float RING_SPIN_1 = 0.5f;
-    private static final float RING_SPIN_2 = 0.7f;
-    private static final float RING_SPIN_3 = 0.6f;
+    // 共鳴環動畫 (T1–T12)
+    // OBJ：YZ 平面，頂點幾何中心 (cx=0.0625, cy=0.0625, cz=-0.2125)，OBJ 中心線半徑 ~3.16 方塊
+    // scale = 目標半徑 / 3.16f
+    private static final float OBJ_RADIUS  = 3.16f;
+    private static final float RING_CX     = 0.0625f;
+    private static final float RING_CY     = 0.0625f;
+    private static final float RING_CZ     = -0.2125f;
+    // 12 tier 渲染參數：{ scale, tiltAxisCode, tiltDeg, spinAxisCode, spinSpeed }
+    // tiltAxisCode/spinAxisCode: 0=YP 1=ZP 2=XP
+    // spinSpeed 負數 = 反向
+    private record RingConfig(float scale, Axis tiltAxis, float tiltDeg, Axis spinAxis, float spinSpeed) {}
+    private static final RingConfig[] RING_CONFIGS = {
+        // T1–T3：半徑 7，內層
+        new RingConfig(7f/OBJ_RADIUS,  Axis.ZP,  90f, Axis.YP,  0.50f),  // T1 水平 XZ
+        new RingConfig(7f/OBJ_RADIUS,  Axis.YP,  90f, Axis.ZP,  0.70f),  // T2 垂直 XY
+        new RingConfig(7f/OBJ_RADIUS,  Axis.YP,   0f, Axis.XP,  0.60f),  // T3 垂直 YZ，X 自轉
+        // T4–T6：半徑 9，外層，反向旋轉
+        new RingConfig(9f/OBJ_RADIUS,  Axis.ZP,  90f, Axis.YP, -0.40f),  // T4 水平 XZ
+        new RingConfig(9f/OBJ_RADIUS,  Axis.YP,  90f, Axis.ZP, -0.55f),  // T5 垂直 XY
+        new RingConfig(9f/OBJ_RADIUS,  Axis.YP,   0f, Axis.XP, -0.45f),  // T6 垂直 YZ，X 自轉
+    };
     private static final ModelResourceLocation RING_MODEL_LOC = new ModelResourceLocation(
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "block/resonance_ring"),
             "standalone");
@@ -213,32 +226,23 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
 
         var consumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(TextureAtlas.LOCATION_BLOCKS));
 
-        // T1：Z+90° 傾斜讓 YZ 環躺平（→XZ 水平），繞 Y 自轉
-        if (tier >= 1) {
-            renderOneRing(poseStack, consumer, packedLight, packedOverlay, quads,
-                    Axis.ZP, 90f, Axis.YP, time * RING_SPIN_1);
-        }
-        // T2：Y+90° 傾斜讓環轉到 XY 平面（垂直），繞 Z 自轉
-        if (tier >= 2) {
-            renderOneRing(poseStack, consumer, packedLight, packedOverlay, quads,
-                    Axis.YP, 90f, Axis.ZP, time * RING_SPIN_2);
-        }
-        // T3：不傾斜（原本就是 YZ 平面，垂直），繞 X 自轉
-        if (tier >= 3) {
-            renderOneRing(poseStack, consumer, packedLight, packedOverlay, quads,
-                    Axis.YP, 0f, Axis.XP, time * RING_SPIN_3);
+        for (int t = 0; t < tier && t < RING_CONFIGS.length; t++) {
+            RingConfig cfg = RING_CONFIGS[t];
+            renderOneRing(poseStack, consumer, packedLight, packedOverlay, quads, cfg, time);
         }
     }
 
     private void renderOneRing(PoseStack poseStack, VertexConsumer consumer,
                                 int packedLight, int packedOverlay, List<BakedQuad> quads,
-                                Axis tiltAxis, float tiltDegrees, Axis spinAxis, float spinAngle) {
+                                RingConfig cfg, float time) {
+        float spinAngle = time * cfg.spinSpeed();
         poseStack.pushPose();
-        // OBJ 環心在 (0,0,0)，translate 到祭壇方塊中心
-        poseStack.translate(0.5, 0.5, 0.5);
-        if (tiltDegrees != 0f) poseStack.mulPose(tiltAxis.rotationDegrees(tiltDegrees));
-        poseStack.mulPose(spinAxis.rotationDegrees(spinAngle % 360f));
-        // 不需要 scale，不需要 translate-back（環已對齊原點）
+        // 頂點套用順序（1→5）：1.偏心補正 2.自轉 3.傾斜 4.縮放 5.移到方塊中心
+        poseStack.translate(0.5, 0.5, 0.5);                                                            // 5
+        poseStack.scale(cfg.scale(), cfg.scale(), cfg.scale());                                         // 4
+        if (cfg.tiltDeg() != 0f) poseStack.mulPose(cfg.tiltAxis().rotationDegrees(cfg.tiltDeg()));     // 3
+        poseStack.mulPose(cfg.spinAxis().rotationDegrees(spinAngle % 360f));                            // 2
+        poseStack.translate(-RING_CX, -RING_CY, -RING_CZ);                                             // 1
 
         PoseStack.Pose pose = poseStack.last();
         for (BakedQuad quad : quads) {
@@ -286,13 +290,10 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
 
     @Override
     public AABB getRenderBoundingBox(AspectAltarBlockEntity altar) {
-        return new AABB(
-                altar.getBlockPos().getX() - 1.5,
-                altar.getBlockPos().getY() - 0.2,
-                altar.getBlockPos().getZ() - 1.5,
-                altar.getBlockPos().getX() + 2.5,
-                altar.getBlockPos().getY() + 2.5,
-                altar.getBlockPos().getZ() + 2.5
-        );
+        // T12 最大半徑 13，垂直方向也到 ±13；加 2 作為 margin
+        double x = altar.getBlockPos().getX();
+        double y = altar.getBlockPos().getY();
+        double z = altar.getBlockPos().getZ();
+        return new AABB(x - 15, y - 15, z - 15, x + 16, y + 16, z + 16);
     }
 }

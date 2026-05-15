@@ -83,6 +83,7 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(ResearchTableBlockEntity::new,
                             ModBlocks.RESEARCH_TABLE.get()).build(null));
 
+
     public static void register(IEventBus modEventBus) {
         BLOCK_ENTITY_TYPES.register(modEventBus);
     }

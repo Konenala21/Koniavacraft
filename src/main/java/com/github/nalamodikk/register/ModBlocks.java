@@ -12,6 +12,7 @@ import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderBl
 import com.github.nalamodikk.common.block.blockentity.altar.AltarPillarBlock;
 import com.github.nalamodikk.common.block.blockentity.altar.AspectAltarBlock;
 import com.github.nalamodikk.common.block.blockentity.altar.AspectPedestalBlock;
+import com.github.nalamodikk.common.block.blockentity.altar.ResonanceRingBlock;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserBlock;
 import com.github.nalamodikk.common.block.normal.DeepManaSoilBlock;
 import com.github.nalamodikk.common.block.normal.ManaBloomBlock;
@@ -153,6 +154,12 @@ public class ModBlocks {
             () -> new AspectPedestalBlock(BlockBehaviour.Properties.of().mapColor(MapColor.STONE)
                     .strength(2.0f).sound(SoundType.STONE).requiresCorrectToolForDrops()
                     .noOcclusion()));
+
+    // 共鳴環（戴森環升級結構方塊，放在環狀位置觸發祭壇升級）
+    public static final DeferredBlock<ResonanceRingBlock> RESONANCE_RING = registerBlock("resonance_ring",
+            () -> new ResonanceRingBlock(BlockBehaviour.Properties.of().mapColor(MapColor.STONE)
+                    .strength(3.0f).sound(SoundType.STONE).requiresCorrectToolForDrops()
+                    .lightLevel(state -> 8).noOcclusion()));
 
 
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> block) {

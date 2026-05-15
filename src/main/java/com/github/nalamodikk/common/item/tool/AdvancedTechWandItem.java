@@ -4,6 +4,7 @@ import com.github.nalamodikk.common.multiblock.api.IWandActivatable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 
@@ -14,15 +15,29 @@ public class AdvancedTechWandItem extends BasicTechWandItem {
     }
 
     @Override
+    public TechWandMode[] getSupportedModes() {
+        return new TechWandMode[]{
+                TechWandMode.CONFIGURE_IO,
+                TechWandMode.DIRECTION_CONFIG,
+                TechWandMode.ROTATE,
+                TechWandMode.MULTIBLOCK
+        };
+    }
+
+    @Override
     public InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
         BlockPos pos = context.getClickedPos();
         Player player = context.getPlayer();
+        ItemStack stack = context.getItemInHand();
 
-        // 任何實作 IWandActivatable 的多方塊結構都能用法杖觸發
-        if (!level.isClientSide() && player != null
-                && level.getBlockEntity(pos) instanceof IWandActivatable activatable) {
-            player.displayClientMessage(activatable.onWandActivate(player), true);
+        // MULTIBLOCK 模式 + 蹲下：觸發結構驗證
+        if (level.getBlockEntity(pos) instanceof IWandActivatable activatable
+                && player != null && player.isCrouching()
+                && getMode(stack) == TechWandMode.MULTIBLOCK) {
+            if (!level.isClientSide()) {
+                player.displayClientMessage(activatable.onWandActivate(player), true);
+            }
             return InteractionResult.SUCCESS;
         }
 

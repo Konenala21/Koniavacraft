@@ -33,7 +33,7 @@ public class MouseScrollEvent {
         }
 
         if (heldItem.getItem() instanceof BasicTechWandItem wand) {
-            BasicTechWandItem.TechWandMode next = wand.getMode(heldItem).cycle(forward);
+            BasicTechWandItem.TechWandMode next = wand.cycleMode(heldItem, forward);
             heldItem.set(ModDataComponents.TECH_WAND_MODE, next);
             TechWandModePacket.sendToServer(next);
             event.setCanceled(true);

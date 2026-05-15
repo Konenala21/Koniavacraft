@@ -1,16 +1,3 @@
-// 撌脤?瑽?BasicTechWandItem嚗蝙??NeoForge DataComponent API + Packet + 皛曇憚?? + ?脣??孵??內
-/**
- * ? BasicTechWandItem
- *
- * ?祇??航閮?蝘?擳??拙?嚗匱?輯 Minecraft ??Item 憿??
- * ?園?頛舫? `useOn()` ?寞??函摰嗅?菜憛??芸?閫貊嚗?
- * ?⊿?鈭辣閮嚗??雿輻 @SubscribeEvent ??EventBus嚗?
- *
- * 甇斤??剝? TechWandMode ?脰?璅∪?????嚗?
- * 憒?頛詨頛詨?蔭??身摰頧??箇???
- *
- * ??甇日??閮餃???ModItems嚗??隤?摰銝?????
- */
 
 package com.github.nalamodikk.common.item.tool;
 
@@ -103,7 +90,6 @@ public class BasicTechWandItem extends Item {
             try {
                 TechDataComponents.saveConfigDirections(stack, target, configBlock);
 
-                // ? ?靽桀儔嚗??函? Component ?萄遣
                 Component positionText = Component.literal(String.format("(%d, %d, %d)",
                         target.getX(), target.getY(), target.getZ()));
 
@@ -115,7 +101,6 @@ public class BasicTechWandItem extends Item {
                 event.setCanceled(true);
 
             } catch (Exception e) {
-                // ?儭??航炊??嚗?援瞏?
                 LOGGER.error("Failed to save block configuration: {}", e.getMessage());
                 player.displayClientMessage(
                         Component.translatable("message.koniava.config_save_failed"),
@@ -130,7 +115,7 @@ public class BasicTechWandItem extends Item {
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Player player = context.getPlayer();
-        if (player == null) return InteractionResult.PASS;  // ??蝘駁 !player.isCrouching() 瑼Ｘ
+        if (player == null) return InteractionResult.PASS;
 
         Level level = context.getLevel();
         BlockPos pos = context.getClickedPos();
@@ -149,20 +134,16 @@ public class BasicTechWandItem extends Item {
                     IOHandlerUtils.IOType next = IOHandlerUtils.nextIOType(current);
 
                     if (level.isClientSide) {
-                        // ??摰Ｘ蝡荔??芰??Packet嚗??湔靽格?蔭
                         PacketDistributor.sendToServer(new ConfigDirectionUpdatePacket(pos, face, next));
 
-                        // 摰Ｘ蝡舫＊蝷箄????
                         player.displayClientMessage(Component.translatable(
                                 "message.koniava.config_changed",
                                 face.getName(),
                                 Component.translatable("mode.koniava." + next.name().toLowerCase())
                         ), true);
                     } else {
-                        // ?????函垢嚗靽格?蔭嚗??潮?Packet
                         configBlock.setIOConfig(face, next);
 
-                        // ???函垢???荔??舫嚗?
                         player.displayClientMessage(Component.translatable(
                                 "message.koniava.config_changed",
                                 face.getName(),
@@ -222,12 +203,13 @@ public class BasicTechWandItem extends Item {
                         return InteractionResult.SUCCESS;
                     } else {
                         player.displayClientMessage(Component.translatable("message.koniava.block_cannot_rotate"), true);
+                        return InteractionResult.CONSUME;
                     }
                 }
 
             }
         }
-        return InteractionResult.PASS;
+        return InteractionResult.CONSUME;
     }
 
 
@@ -240,13 +222,12 @@ public class BasicTechWandItem extends Item {
 //        MagicalIndustryMod.LOGGER.info("[Tooltip] Stack: {}, HasConfig = {}", stack.getItem(), config != null);
 
         if (config != null && !config.isEmpty()) {
-            // ??Map<Boolean, List<Direction>> 靘?憿?
             Map<Boolean, List<Direction>> groupedDirections = new HashMap<>();
             groupedDirections.put(true, new ArrayList<>());
             groupedDirections.put(false, new ArrayList<>());
 
             for (Direction dir : Direction.values()) {
-                boolean isOutput = config.getOrDefault(dir, false); // ?身?箄撓??
+                boolean isOutput = config.getOrDefault(dir, false);
                 groupedDirections.get(isOutput).add(dir);
             }
 
@@ -270,10 +251,27 @@ public class BasicTechWandItem extends Item {
 
     }
 
+    /** 這把法杖支援哪些模式（子類可 override 擴充） */
+    public TechWandMode[] getSupportedModes() {
+        return new TechWandMode[]{TechWandMode.CONFIGURE_IO, TechWandMode.DIRECTION_CONFIG, TechWandMode.ROTATE};
+    }
+
+    /** 在 getSupportedModes() 範圍內循環，回傳下一個模式 */
+    public TechWandMode cycleMode(ItemStack stack, boolean forward) {
+        TechWandMode[] modes = getSupportedModes();
+        TechWandMode current = getMode(stack);
+        int idx = 0;
+        for (int i = 0; i < modes.length; i++) {
+            if (modes[i] == current) { idx = i; break; }
+        }
+        return modes[(idx + (forward ? 1 : -1) + modes.length) % modes.length];
+    }
+
     public enum TechWandMode implements StringRepresentable {
         CONFIGURE_IO,
         DIRECTION_CONFIG,
-        ROTATE; // ?? ?啣??芸?蝝?蝵格芋撘?
+        ROTATE,
+        MULTIBLOCK; //
 
         public TechWandMode next() {
             return values()[(this.ordinal() + 1) % values().length];
