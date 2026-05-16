@@ -7,6 +7,7 @@ import com.github.nalamodikk.common.block.blockentity.altar.AspectPedestalRender
 import com.github.nalamodikk.common.block.blockentity.research.ResearchTableRenderer;
 import com.github.nalamodikk.common.block.blockentity.collector.solarmana.SolarCollectorRenderer;
 import com.github.nalamodikk.common.block.blockentity.mana_generator.render.ManaGeneratorRenderer;
+import com.github.nalamodikk.client.renderer.deployer.ManaDeployerRenderer;
 import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderRenderer;
 import com.github.nalamodikk.register.ModBlockEntities;
 import net.minecraft.client.resources.model.ModelResourceLocation;
@@ -26,6 +27,7 @@ public class ModRenderLayers {
         event.registerBlockEntityRenderer(ModBlockEntities.MANA_GENERATOR_BE.get(), ManaGeneratorRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.SOLAR_MANA_COLLECTOR_BE.get(), SolarCollectorRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.MANA_GRINDER_BE.get(), ManaGrinderRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.MANA_DEPLOYER_BE.get(), ManaDeployerRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ASPECT_ALTAR_BE.get(), AspectAltarRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ASPECT_PEDESTAL_BE.get(), AspectPedestalRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ALTAR_PILLAR_BE.get(), AltarPillarRenderer::new);

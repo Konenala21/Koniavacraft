@@ -48,6 +48,8 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
 
     private Mode mode      = Mode.RIGHT_CLICK;
     private int  tickTimer = 0;
+    /** Client-side animation time in seconds (wraps at animation length). */
+    private float animTimeSec = 0f;
 
     private final EnumMap<Direction, IOHandlerUtils.IOType> directionConfig = new EnumMap<>(Direction.class);
 
@@ -70,7 +72,11 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
     // ── Tick ──────────────────────────────────────────────────────────────────
 
     public static void tick(Level level, BlockPos pos, BlockState state, ManaDeployerBlockEntity be) {
-        if (level.isClientSide) return;
+        // Client: advance animation time (6.75 s loop)
+        if (level.isClientSide) {
+            be.animTimeSec = (be.animTimeSec + 1f / 20f) % 6.75f;
+            return;
+        }
         be.tickTimer++;
         if (be.tickTimer < be.intervalTick) return;
         be.tickTimer = 0;
@@ -124,6 +130,11 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
     }
 
     // ── Accessors ─────────────────────────────────────────────────────────────
+
+    /** Called by BER with partialTick for smooth animation. */
+    public float getAnimTime(float partialTick) {
+        return (animTimeSec + partialTick / 20f) % 6.75f;
+    }
 
     public Mode    getMode()               { return mode; }
     public void    toggleMode()            { mode = (mode == Mode.RIGHT_CLICK) ? Mode.LEFT_CLICK : Mode.RIGHT_CLICK; setChanged(); }

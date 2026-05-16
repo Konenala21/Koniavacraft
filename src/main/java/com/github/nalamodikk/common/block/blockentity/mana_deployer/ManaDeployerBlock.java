@@ -11,6 +11,7 @@ import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -29,6 +30,11 @@ public class ManaDeployerBlock extends BaseMachineBlock {
 
     @Override
     protected MapCodec<ManaDeployerBlock> codec() { return CODEC; }
+
+    @Override
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.ENTITYBLOCK_ANIMATED; // BER handles rendering
+    }
 
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
