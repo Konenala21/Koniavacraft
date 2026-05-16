@@ -4,17 +4,6 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-### Player Changes / 玩家更新內容
-
-- Ghost structure projection now highlights blocked positions with red outlines and prevents locking when any block is in the way — move to a clear area first.
-- 幽靈結構投影遇到被方塊佔據的位置時會顯示紅色輪廓，並阻止在有衝突時鎖定位置，需移動到空地才能固定。
-- Ghost projection controls finalized: hold Shift to pull closer (6 blocks), press G (configurable in Controls) to lock/unlock position, click PRJ in JEI to close. All mouse buttons and other keys pass through normally — sneaking, breaking, and placing blocks all work as usual.
-- 幽靈投影操作定案：按住 Shift 拉近投影（6 格），按 G 鍵（可在控制設定更改）固定/解除固定，在 JEI 點擊 PRJ 按鈕關閉。所有滑鼠鍵和其他按鍵完全穿透，蹲下、破壞、放置方塊均正常運作。
-
-### Developer Notes / 開發者備註
-
-- GhostProjectionHandler: added CF_R/G/B conflict color constants; outline loop now checks canBeReplaced() per block and uses red for conflicts; onMouseButton guards lockPosition() with a conflict scan. Added REACH_CLOSE=6.0; onLevelTick uses short reach when player.isShiftKeyDown(). Removed onKey ESC handler entirely.
-
 ## [0.0.1.6-4] - 2026-05-16
 
 ### Player Changes / 玩家更新內容
@@ -31,6 +20,10 @@ All notable changes to this project will be documented in this file.
 - JEI 祭壇指南的材料物品現在可點擊，左鍵查用途，右鍵查配方。
 - Deep Mana Soil now generates correctly in Mana Plains biomes. Previously it never appeared due to a surface rule configuration error.
 - 深層魔力土壤現在可在魔力草原生物群系中正確生成，先前因地表規則設定錯誤導致完全不生成。
+- JEI structure guide now shows a ghost overlay of the altar structure directly in the world. Blocked positions show red outlines; correctly placed blocks fade out; the overlay auto-closes when the altar finishes forming.
+- JEI 結構指引現在可在世界中直接顯示幽靈結構投影。被方塊佔據的位置顯示紅色輪廓；已正確放置的方塊自動淡出；祭壇成形後投影自動關閉。
+- Key bindings category renamed to "Koniavacraft-娜拉工藝" in Controls settings.
+- 控制設定中的按鍵分類更名為「Koniavacraft-娜拉工藝」。
 
 ### Developer Notes / 開發者備註
 
@@ -40,6 +33,8 @@ All notable changes to this project will be documented in this file.
 - AspectPedestalBlockEntity.getItemHandler(): returns an IItemHandler wrapping the single heldItem slot (accepts 1 item, ejects on extract). Registered as Capabilities.ItemHandler.BLOCK in ModCapabilities.
 - AltarMultiblockCategory: full rewrite — replaced 7-tab system with SliderWidget (0–6 snap positions), cumulative render map (base + rings 0..tier-1), InventoryButtonWidget (one-shot inventory scan → cachedCounts[], countColor()), addTooltipCallback on each JEI slot for need/have/missing lines, auto-scale on tier change.
 - Surface rule fix: shallow mana soil uses UNDER_FLOOR (stoneDepthCheck default 0–5 blocks), deep mana soil uses not(UNDER_FLOOR) within stoneDepthCheck(0, true, 4, FLOOR). BiomeTerrainRegistration deepSoilThreshold changed from 20 → 4.
+- GhostProjectionHandler: PLACING/PLACED mode distinction for conflict detection; REACH_CLOSE=6.0 (Shift); G key (ModKeyMappings.GHOST_LOCK) to toggle lock/unlock; auto-deactivate via isFormed() check in onLevelTick; removed all mouse/key interception. GhostProjectionState: added unlock(), deactivate() now resets origin to ZERO.
+- GhostProjectionStateTest: replaced Blocks.* with raw Map + Object placeholders (MC bootstrap unavailable in pure JUnit); added deactivateResetsOrigin() test.
 
 ## [0.0.1.6-3] - 2026-05-15
 
