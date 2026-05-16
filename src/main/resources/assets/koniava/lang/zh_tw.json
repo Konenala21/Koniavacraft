@@ -276,7 +276,7 @@
   "equipment.koniava.reactor": "能量反應爐",
   "equipment.koniava.exoskeleton": "外骨骼系統",
   "key.koniava.open_floating_gui": "[實驗性] 開啟浮空面板",
-  "key.categories.koniava": "魔法工業",
+  "key.categories.koniava": "Koniavacraft-娜拉工藝",
   "//6": "=== 工具提示 ===",
   "tooltip.koniava.refined_mana_dust": "§7經過高溫精煉的魔力粉，§b純度更高§7，適合製作進階材料。",
   "tooltip.koniava.saved_direction_config": "%s: %s",
