@@ -1,8 +1,0 @@
-{
-  "track_id": "coo_particles_api_20260111",
-  "type": "feature",
-  "status": "new",
-  "created_at": "2026-01-11T05:00:00Z",
-  "updated_at": "2026-01-11T05:00:00Z",
-  "description": "實作 CooParticlesAPI：一個基於 NeoForge 1.21.1 的高階粒子渲染系統，支援代理控制、自定義 3D 渲染與動態效能優化。"
-}
