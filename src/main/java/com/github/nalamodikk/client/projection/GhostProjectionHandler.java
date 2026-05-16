@@ -1,6 +1,7 @@
 package com.github.nalamodikk.client.projection;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.block.blockentity.altar.AspectAltarBlockEntity;
 import com.github.nalamodikk.register.client.ModKeyMappings;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -103,7 +104,15 @@ public final class GhostProjectionHandler {
             }
         }
 
-        if (GhostProjectionState.getMode() != GhostProjectionState.Mode.PLACING) return;
+        // PLACED 模式：altar 已成形 → 自動關閉投影
+        if (GhostProjectionState.getMode() == GhostProjectionState.Mode.PLACED) {
+            if (mc.level.getBlockEntity(GhostProjectionState.getOrigin())
+                    instanceof AspectAltarBlockEntity altar && altar.isFormed()) {
+                GhostProjectionState.deactivate();
+                return;
+            }
+            return;
+        }
 
         double reach = mc.player.isShiftKeyDown() ? REACH_CLOSE : REACH;
         HitResult hit = mc.player.pick(reach, 1.0f, false);
