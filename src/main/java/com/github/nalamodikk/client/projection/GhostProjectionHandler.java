@@ -22,11 +22,9 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.model.data.ModelData;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.Map;
 
@@ -38,12 +36,9 @@ import java.util.Map;
  * PLACED   Ghost frozen at locked position (no tint = natural); player free.
  *
  * ─── Controls ────────────────────────────────────────────────────────────────
- *   Shift + RMB             → PLACING→PLACED  (click consumed, blocked if conflicts)
- *   Shift + LMB             → deactivate      (click consumed)
- *   LMB / RMB (no Shift)   → pass through    (normal world interaction)
  *   Shift held (PLACING)    → short reach (REACH_CLOSE) — ghost snaps to 6 blocks
- *   PRJ button (JEI)        → deactivate
- *   E (inventory/JEI)       → NOT intercepted; player can re-click PRJ to close
+ *   PRJ button (JEI)        → activate / deactivate (only way to close)
+ *   All mouse / keyboard    → NOT intercepted; player interacts normally
  *
  * ─── Render ──────────────────────────────────────────────────────────────────
  * Uses a dedicated ByteBufferBuilder (GHOST_BB) + MultiBufferSource.immediate()
@@ -103,45 +98,6 @@ public final class GhostProjectionHandler {
     }
 
     // ── Input ─────────────────────────────────────────────────────────────────
-
-    @SubscribeEvent
-    public static void onMouseButton(InputEvent.MouseButton.Pre event) {
-        if (!GhostProjectionState.isActive()) return;
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.screen != null) return;
-        if (mc.player == null) return;
-
-        boolean sneaking = mc.player.isShiftKeyDown();
-        int btn = event.getButton();
-        boolean isRight = btn == GLFW.GLFW_MOUSE_BUTTON_RIGHT;
-        boolean isLeft  = btn == GLFW.GLFW_MOUSE_BUTTON_LEFT;
-
-        if (isLeft && sneaking) {
-            // Shift + LMB → 關閉（對應 MC 左鍵=破壞/取消語義）
-            GhostProjectionState.deactivate();
-            event.setCanceled(true);
-            return;
-        }
-
-        if (isRight && sneaking && GhostProjectionState.getMode() == GhostProjectionState.Mode.PLACING) {
-            // Shift + RMB → 固定位置（對應 MC 右鍵=放置/確認語義；有衝突時阻止）
-            boolean anyBlocked = false;
-            if (mc.level != null) {
-                BlockPos org = GhostProjectionState.getOrigin();
-                for (BlockPos local : GhostProjectionState.getBlocks().keySet()) {
-                    if (!mc.level.getBlockState(org.offset(local)).canBeReplaced()) {
-                        anyBlocked = true;
-                        break;
-                    }
-                }
-            }
-            if (!anyBlocked) {
-                GhostProjectionState.lockPosition();
-            }
-            event.setCanceled(true);
-        }
-        // 其他所有點擊直接穿透，玩家可正常與世界互動
-    }
 
     // ── World rendering ────────────────────────────────────────────────────────
 
