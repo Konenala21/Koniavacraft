@@ -42,6 +42,11 @@ public final class GhostProjectionState {
         if (active) mode = Mode.PLACED;
     }
 
+    /** Return to PLACING mode — ghost follows cursor again. */
+    public static void unlock() {
+        if (active) mode = Mode.PLACING;
+    }
+
     public static void deactivate() {
         active = false;
         mode   = Mode.PLACING;

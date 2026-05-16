@@ -6,7 +6,9 @@ import net.minecraft.client.KeyMapping;
 import org.lwjgl.glfw.GLFW;
 
 public final class ModKeyMappings {
-    public static final String CATEGORY = "key.categories.misc";
+    public static final String CATEGORY     = "key.categories.misc";
+    public static final String CATEGORY_MOD = "key.categories.koniava";
+
     public static final KeyMapping DEBUG_DETAILS = new KeyMapping(
         "key.koniava.debug_details",
         InputConstants.Type.KEYSYM,
@@ -14,9 +16,17 @@ public final class ModKeyMappings {
         CATEGORY
     );
 
+    public static final KeyMapping GHOST_LOCK = new KeyMapping(
+        "key.koniava.ghost_lock",
+        InputConstants.Type.KEYSYM,
+        GLFW.GLFW_KEY_G,
+        CATEGORY_MOD
+    );
+
     private ModKeyMappings() {}
 
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         event.register(DEBUG_DETAILS);
+        event.register(GHOST_LOCK);
     }
 }

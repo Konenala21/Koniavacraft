@@ -1,6 +1,7 @@
 package com.github.nalamodikk.client.projection;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.register.client.ModKeyMappings;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -79,10 +80,28 @@ public final class GhostProjectionHandler {
     @SubscribeEvent
     public static void onLevelTick(LevelTickEvent.Pre event) {
         if (!GhostProjectionState.isActive()) return;
-        if (GhostProjectionState.getMode() != GhostProjectionState.Mode.PLACING) return;
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) return;
+        if (mc.screen != null) return;
+
+        // G 鍵切換 PLACING ↔ PLACED
+        if (ModKeyMappings.GHOST_LOCK.consumeClick()) {
+            if (GhostProjectionState.getMode() == GhostProjectionState.Mode.PLACING) {
+                boolean anyBlocked = false;
+                for (BlockPos local : GhostProjectionState.getBlocks().keySet()) {
+                    if (!mc.level.getBlockState(GhostProjectionState.getOrigin().offset(local)).canBeReplaced()) {
+                        anyBlocked = true;
+                        break;
+                    }
+                }
+                if (!anyBlocked) GhostProjectionState.lockPosition();
+            } else {
+                GhostProjectionState.unlock();
+            }
+        }
+
+        if (GhostProjectionState.getMode() != GhostProjectionState.Mode.PLACING) return;
 
         double reach = mc.player.isShiftKeyDown() ? REACH_CLOSE : REACH;
         HitResult hit = mc.player.pick(reach, 1.0f, false);

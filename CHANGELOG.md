@@ -8,8 +8,8 @@ All notable changes to this project will be documented in this file.
 
 - Ghost structure projection now highlights blocked positions with red outlines and prevents locking when any block is in the way — move to a clear area first.
 - 幽靈結構投影遇到被方塊佔據的位置時會顯示紅色輪廓，並阻止在有衝突時鎖定位置，需移動到空地才能固定。
-- Ghost projection no longer intercepts any mouse buttons or keyboard keys — all input passes through normally. Hold Shift to pull the ghost closer (within 6 blocks). To close the projection, click the PRJ button in JEI.
-- 幽靈投影不再攔截任何滑鼠或鍵盤輸入，所有操作正常穿透。按住 Shift 可將投影拉近（6 格內）。關閉投影請在 JEI 點擊 PRJ 按鈕。
+- Ghost projection controls finalized: hold Shift to pull closer (6 blocks), press G (configurable in Controls) to lock/unlock position, click PRJ in JEI to close. All mouse buttons and other keys pass through normally — sneaking, breaking, and placing blocks all work as usual.
+- 幽靈投影操作定案：按住 Shift 拉近投影（6 格），按 G 鍵（可在控制設定更改）固定/解除固定，在 JEI 點擊 PRJ 按鈕關閉。所有滑鼠鍵和其他按鍵完全穿透，蹲下、破壞、放置方塊均正常運作。
 
 ### Developer Notes / 開發者備註
 
