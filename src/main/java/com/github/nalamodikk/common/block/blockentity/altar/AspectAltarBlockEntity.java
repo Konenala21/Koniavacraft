@@ -27,6 +27,9 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.items.ItemHandlerHelper;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -366,10 +369,15 @@ public static final List<Vec3i> RING_T1 = List.of(
         }
 
         ItemStack result = recipe.getResult().copy();
-        Vec3 drop = Vec3.atCenterOf(worldPosition).add(0, 1.2, 0);
-        ItemEntity entity = new ItemEntity(level, drop.x, drop.y, drop.z, result);
-        entity.setDefaultPickUpDelay();
-        level.addFreshEntity(entity);
+
+        // 優先嘗試放入六面相鄰的容器，放不完的才掉落
+        result = tryOutputToAdjacentContainer(result);
+        if (!result.isEmpty()) {
+            Vec3 drop = Vec3.atCenterOf(worldPosition).add(0, 1.2, 0);
+            ItemEntity entity = new ItemEntity(level, drop.x, drop.y, drop.z, result);
+            entity.setDefaultPickUpDelay();
+            level.addFreshEntity(entity);
+        }
 
         active = false;
         progress = 0f;
@@ -377,6 +385,17 @@ public static final List<Vec3i> RING_T1 = List.of(
         ritualMaxTick = 0;
         setChanged();
         syncToClient();
+    }
+
+    private ItemStack tryOutputToAdjacentContainer(ItemStack stack) {
+        for (Direction dir : Direction.values()) {
+            if (stack.isEmpty()) break;
+            IItemHandler handler = level.getCapability(
+                    Capabilities.ItemHandler.BLOCK, worldPosition.relative(dir), dir.getOpposite());
+            if (handler == null) continue;
+            stack = ItemHandlerHelper.insertItem(handler, stack, false);
+        }
+        return stack;
     }
 
     private void cancelRitual() {
