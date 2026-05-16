@@ -95,9 +95,10 @@ public final class GhostProjectionHandler {
         if (!GhostProjectionState.isActive()) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.screen != null) return;
-        if (event.getKey() == GLFW.GLFW_KEY_ESCAPE || event.getKey() == GLFW.GLFW_KEY_E) {
+        // Only Escape closes the projection; E (inventory) is intentionally NOT intercepted
+        // so the player can open JEI/inventory while the ghost is visible and re-click PRJ to dismiss.
+        if (event.getKey() == GLFW.GLFW_KEY_ESCAPE) {
             GhostProjectionState.deactivate();
-            // Key event NOT cancelled — Escape/E keep their normal effects.
         }
     }
 
