@@ -152,8 +152,8 @@ public final class GhostProjectionHandler {
             BlockState state = entry.getValue();
             BlockPos world   = origin.offset(local);
 
-            // 正確方塊已在世界中 → 跳過 ghost 渲染（此格已完成）
-            if (mc.level != null && mc.level.getBlockState(world).is(state.getBlock())) continue;
+            // PLACED 模式才判斷「已完成」；PLACING 模式位置未鎖定，不跳過
+            if (!placing && mc.level != null && mc.level.getBlockState(world).is(state.getBlock())) continue;
 
             double dx = world.getX() - cam.x;
             double dy = world.getY() - cam.y;
@@ -201,10 +201,8 @@ public final class GhostProjectionHandler {
             BlockState needed = entry.getValue();
             BlockPos world    = origin.offset(local);
 
-            if (mc.level != null) {
-                BlockState existing = mc.level.getBlockState(world);
-                if (existing.is(needed.getBlock())) continue; // 已正確放置，不顯示輪廓
-            }
+            // PLACED 模式才消除已完成格的輪廓；PLACING 模式全部顯示（位置未鎖定）
+            if (!placing && mc.level != null && mc.level.getBlockState(world).is(needed.getBlock())) continue;
 
             boolean blocked = mc.level != null && !mc.level.getBlockState(world).canBeReplaced();
             float lr = blocked ? CF_R : placing ? PL_R : FX_R;
