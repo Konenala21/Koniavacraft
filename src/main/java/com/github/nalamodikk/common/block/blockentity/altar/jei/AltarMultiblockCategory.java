@@ -270,7 +270,9 @@ public class AltarMultiblockCategory implements IRecipeCategory<AltarStructureIn
                        && mouseY >= pjY        && mouseY < pjY + PRJ_BTN_H;
         boolean prjActive = GhostProjectionState.isActive();
         String prjLabel = Component.translatable("jei.koniava.altar_multiblock.prj.label").getString()
-                + (prjActive ? "✓" : "");
+                + (!prjActive ? ""
+                 : GhostProjectionState.getMode() == com.github.nalamodikk.client.projection.GhostProjectionState.Mode.PLACING ? "▶"
+                 : "■");
         gfx.fill(PRJ_BTN_X, pjY, PRJ_BTN_X + PRJ_BTN_W, pjY + PRJ_BTN_H,
                 prjActive ? 0xFF2E5E7A : (hovPrj ? 0xFF3A5A7A : 0xFF253045));
         gfx.renderOutline(PRJ_BTN_X, pjY, PRJ_BTN_W, PRJ_BTN_H,
