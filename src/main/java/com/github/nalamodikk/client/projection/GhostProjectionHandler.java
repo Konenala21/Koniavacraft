@@ -89,8 +89,10 @@ public final class GhostProjectionHandler {
         if (ModKeyMappings.GHOST_LOCK.consumeClick()) {
             if (GhostProjectionState.getMode() == GhostProjectionState.Mode.PLACING) {
                 boolean anyBlocked = false;
-                for (BlockPos local : GhostProjectionState.getBlocks().keySet()) {
-                    if (!mc.level.getBlockState(GhostProjectionState.getOrigin().offset(local)).canBeReplaced()) {
+                BlockPos org = GhostProjectionState.getOrigin();
+                for (Map.Entry<BlockPos, BlockState> e : GhostProjectionState.getBlocks().entrySet()) {
+                    BlockState existing = mc.level.getBlockState(org.offset(e.getKey()));
+                    if (!existing.canBeReplaced() && !existing.is(e.getValue().getBlock())) {
                         anyBlocked = true;
                         break;
                     }
@@ -150,6 +152,9 @@ public final class GhostProjectionHandler {
             BlockState state = entry.getValue();
             BlockPos world   = origin.offset(local);
 
+            // 正確方塊已在世界中 → 跳過 ghost 渲染（此格已完成）
+            if (mc.level != null && mc.level.getBlockState(world).is(state.getBlock())) continue;
+
             double dx = world.getX() - cam.x;
             double dy = world.getY() - cam.y;
             double dz = world.getZ() - cam.z;
@@ -191,8 +196,15 @@ public final class GhostProjectionHandler {
         MultiBufferSource.BufferSource mainBuf = mc.renderBuffers().bufferSource();
         VertexConsumer lines = mainBuf.getBuffer(RenderType.lines());
 
-        for (BlockPos local : blocks.keySet()) {
-            BlockPos world = origin.offset(local);
+        for (Map.Entry<BlockPos, BlockState> entry : blocks.entrySet()) {
+            BlockPos local    = entry.getKey();
+            BlockState needed = entry.getValue();
+            BlockPos world    = origin.offset(local);
+
+            if (mc.level != null) {
+                BlockState existing = mc.level.getBlockState(world);
+                if (existing.is(needed.getBlock())) continue; // 已正確放置，不顯示輪廓
+            }
 
             boolean blocked = mc.level != null && !mc.level.getBlockState(world).canBeReplaced();
             float lr = blocked ? CF_R : placing ? PL_R : FX_R;
