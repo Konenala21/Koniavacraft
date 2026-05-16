@@ -75,13 +75,13 @@ public class AltarMultiblockCategory implements IRecipeCategory<AltarStructureIn
     private static final int MAT_X1     = 34;
     private static final int MAT_X2     = 80;
     private static final int MAT_X3     = 126;
-    // Inventory-check button (right side of material row)
-    private static final int INV_BTN_X  = 154;
-    private static final int INV_BTN_W  = 22;
+    // Inventory-check button (right side of material row) — wide enough for "背包✓"
+    private static final int INV_BTN_X  = 146;
+    private static final int INV_BTN_W  = 30;
     private static final int INV_BTN_H  = 12;
-    // Project-to-world button (left side of material row)
+    // Project-to-world button (left side of material row) — wide enough for "投影✓"
     private static final int PRJ_BTN_X  = 4;
-    private static final int PRJ_BTN_W  = 26;
+    private static final int PRJ_BTN_W  = 30;
     private static final int PRJ_BTN_H  = 12;
 
     // Base structure block positions
@@ -170,6 +170,56 @@ public class AltarMultiblockCategory implements IRecipeCategory<AltarStructureIn
         builder.addGuiEventListener(new ProjectButtonWidget());
     }
 
+    // ── Hover tooltips ─────────────────────────────────────────────────────────
+
+    @Override
+    public @NotNull List<Component> getTooltipStrings(@NotNull AltarStructureInfo recipe,
+                                                       @NotNull IRecipeSlotsView slotsView,
+                                                       double mouseX, double mouseY) {
+        int btnY = MAT_Y + 2;
+
+        // PRJ button
+        if (mouseX >= PRJ_BTN_X && mouseX < PRJ_BTN_X + PRJ_BTN_W
+         && mouseY >= btnY && mouseY < btnY + PRJ_BTN_H) {
+            return List.of(
+                Component.translatable("jei.koniava.altar_multiblock.prj.tip1"),
+                Component.translatable("jei.koniava.altar_multiblock.prj.tip2")
+                        .withStyle(ChatFormatting.GRAY)
+            );
+        }
+
+        // Inv button
+        if (mouseX >= INV_BTN_X && mouseX < INV_BTN_X + INV_BTN_W
+         && mouseY >= btnY && mouseY < btnY + INV_BTN_H) {
+            return List.of(
+                Component.translatable("jei.koniava.altar_multiblock.inv.btn.tip1"),
+                Component.translatable("jei.koniava.altar_multiblock.inv.btn.tip2")
+                        .withStyle(ChatFormatting.GRAY)
+            );
+        }
+
+        // Slider — show snap label on hover
+        if (mouseY >= 0 && mouseY < SLIDER_H) {
+            String label = sliderTier == 0
+                    ? Component.translatable("jei.koniava.altar_multiblock.base_only").getString()
+                    : "T" + sliderTier + " — +"
+                      + cumulativeManaCount() + " "
+                      + Component.translatable("jei.koniava.altar_multiblock.tip.mana_blocks").getString();
+            return List.of(Component.literal(label));
+        }
+
+        // Toggle button
+        if (mouseX >= TOGGLE_X && mouseX < TOGGLE_X + TOGGLE_W
+         && mouseY >= CTRL_Y && mouseY < CTRL_Y + CTRL_H) {
+            return List.of(Component.translatable(
+                    showFormed ? "jei.koniava.altar_multiblock.toggle.tip_unformed"
+                               : "jei.koniava.altar_multiblock.toggle.tip_formed")
+                    .withStyle(ChatFormatting.GRAY));
+        }
+
+        return List.of();
+    }
+
     // ── Draw ───────────────────────────────────────────────────────────────────
 
     @Override
@@ -219,7 +269,8 @@ public class AltarMultiblockCategory implements IRecipeCategory<AltarStructureIn
         boolean hovPrj  = mouseX >= PRJ_BTN_X && mouseX < PRJ_BTN_X + PRJ_BTN_W
                        && mouseY >= pjY        && mouseY < pjY + PRJ_BTN_H;
         boolean prjActive = GhostProjectionState.isActive();
-        String prjLabel = prjActive ? "PRJ✓" : "PRJ";
+        String prjLabel = Component.translatable("jei.koniava.altar_multiblock.prj.label").getString()
+                + (prjActive ? "✓" : "");
         gfx.fill(PRJ_BTN_X, pjY, PRJ_BTN_X + PRJ_BTN_W, pjY + PRJ_BTN_H,
                 prjActive ? 0xFF2E5E7A : (hovPrj ? 0xFF3A5A7A : 0xFF253045));
         gfx.renderOutline(PRJ_BTN_X, pjY, PRJ_BTN_W, PRJ_BTN_H,
@@ -233,7 +284,8 @@ public class AltarMultiblockCategory implements IRecipeCategory<AltarStructureIn
         int ibY = MAT_Y + 2;
         boolean hovInv = mouseX >= INV_BTN_X && mouseX < INV_BTN_X + INV_BTN_W
                       && mouseY >= ibY        && mouseY < ibY + INV_BTN_H;
-        String invLabel = showInventoryStatus ? "Inv✓" : "Inv";
+        String invLabel = Component.translatable("jei.koniava.altar_multiblock.inv.label").getString()
+                + (showInventoryStatus ? "✓" : "");
         gfx.fill(INV_BTN_X, ibY, INV_BTN_X + INV_BTN_W, ibY + INV_BTN_H,
                 showInventoryStatus ? 0xFF2E5E2E : (hovInv ? 0xFF4A4A6A : 0xFF333355));
         gfx.renderOutline(INV_BTN_X, ibY, INV_BTN_W, INV_BTN_H,
@@ -487,7 +539,7 @@ public class AltarMultiblockCategory implements IRecipeCategory<AltarStructureIn
         }
     }
 
-    /** Press to scan inventory once; press again to hide the inventory overlay. */
+    /** 按一次掃描背包材料數量 / Press once to scan inventory material counts. */
     private class InventoryButtonWidget implements IJeiGuiEventListener {
         @Override
         public ScreenRectangle getArea() {
