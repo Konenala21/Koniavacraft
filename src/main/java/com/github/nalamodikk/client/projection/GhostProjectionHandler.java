@@ -15,7 +15,6 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
@@ -28,9 +27,7 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.model.data.ModelData;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Ghost projection overlay — input & render handler.
@@ -220,37 +217,6 @@ public final class GhostProjectionHandler {
             ps.translate(dx, dy, dz);
             LevelRenderer.renderLineBox(ps, lines, new AABB(0, 0, 0, 1, 1, 1), lr, lg, lb, LINE_A);
             ps.popPose();
-        }
-
-        // ── PLACED 模式：掃描 ghost 鄰格，多放的結構方塊也標紅 ─────────────────
-        if (!placing && mc.level != null) {
-            Set<Block> requiredTypes = new HashSet<>();
-            for (BlockState s : blocks.values()) requiredTypes.add(s.getBlock());
-
-            Set<BlockPos> ghostSet = blocks.keySet();
-            Set<BlockPos> scanned  = new HashSet<>();
-
-            for (BlockPos local : ghostSet) {
-                for (Direction dir : Direction.values()) {
-                    BlockPos neighbor = local.relative(dir);
-                    if (ghostSet.contains(neighbor)) continue;   // ghost 已覆蓋此格
-                    if (!scanned.add(neighbor)) continue;        // 重複跳過
-
-                    BlockPos worldN = origin.offset(neighbor);
-                    BlockState ws   = mc.level.getBlockState(worldN);
-                    if (!requiredTypes.contains(ws.getBlock())) continue;
-
-                    // 此格不在 ghost 內，但有結構所需方塊 → 多放了，標紅
-                    double dx = worldN.getX() - cam.x;
-                    double dy = worldN.getY() - cam.y;
-                    double dz = worldN.getZ() - cam.z;
-                    ps.pushPose();
-                    ps.translate(dx, dy, dz);
-                    LevelRenderer.renderLineBox(ps, lines, new AABB(0, 0, 0, 1, 1, 1),
-                            CF_R, CF_G, CF_B, LINE_A);
-                    ps.popPose();
-                }
-            }
         }
 
         mainBuf.endBatch(RenderType.lines());
