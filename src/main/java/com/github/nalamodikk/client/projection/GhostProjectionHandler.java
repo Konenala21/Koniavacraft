@@ -38,8 +38,8 @@ import java.util.Map;
  * PLACED   Ghost frozen at locked position (no tint = natural); player free.
  *
  * ─── Controls ────────────────────────────────────────────────────────────────
- *   Shift + LMB             → PLACING→PLACED  (click consumed, blocked if conflicts)
- *   Shift + RMB             → deactivate      (click consumed)
+ *   Shift + RMB             → PLACING→PLACED  (click consumed, blocked if conflicts)
+ *   Shift + LMB             → deactivate      (click consumed)
  *   LMB / RMB (no Shift)   → pass through    (normal world interaction)
  *   Shift held (PLACING)    → short reach (REACH_CLOSE) — ghost snaps to 6 blocks
  *   PRJ button (JEI)        → deactivate
@@ -116,15 +116,15 @@ public final class GhostProjectionHandler {
         boolean isRight = btn == GLFW.GLFW_MOUSE_BUTTON_RIGHT;
         boolean isLeft  = btn == GLFW.GLFW_MOUSE_BUTTON_LEFT;
 
-        if (isRight && sneaking) {
-            // Shift + RMB → 關閉
+        if (isLeft && sneaking) {
+            // Shift + LMB → 關閉（對應 MC 左鍵=破壞/取消語義）
             GhostProjectionState.deactivate();
             event.setCanceled(true);
             return;
         }
 
-        if (isLeft && sneaking && GhostProjectionState.getMode() == GhostProjectionState.Mode.PLACING) {
-            // Shift + LMB → 固定位置（有衝突時阻止）
+        if (isRight && sneaking && GhostProjectionState.getMode() == GhostProjectionState.Mode.PLACING) {
+            // Shift + RMB → 固定位置（對應 MC 右鍵=放置/確認語義；有衝突時阻止）
             boolean anyBlocked = false;
             if (mc.level != null) {
                 BlockPos org = GhostProjectionState.getOrigin();
