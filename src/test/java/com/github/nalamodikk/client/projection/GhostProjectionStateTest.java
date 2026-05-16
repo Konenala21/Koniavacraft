@@ -1,25 +1,26 @@
 package com.github.nalamodikk.client.projection;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * GhostProjectionState 純 JUnit 單元測試。
- * 不需要遊戲世界或 GPU，只測狀態邏輯。
+ * 不依賴 BlockState / Blocks — 用 Object 佔位符 + raw Map 繞過 MC registry 初始化。
+ * Java 泛型在 runtime 型別擦除，GhostProjectionState 只存 Map 引用，不呼叫 BlockState 方法，
+ * 因此 raw Map 完全合法且行為與型別安全版本相同。
  */
+@SuppressWarnings({"unchecked", "rawtypes"})
 class GhostProjectionStateTest {
 
     @BeforeEach
     void resetState() {
-        // 每個測試前確保狀態乾淨
         GhostProjectionState.deactivate();
     }
 
@@ -50,25 +51,25 @@ class GhostProjectionStateTest {
 
     @Test
     void activateStoresBlocks() {
-        BlockState stone = Blocks.STONE.defaultBlockState();
-        Map<BlockPos, BlockState> input = Map.of(BlockPos.ZERO, stone);
+        Object fakeState = new Object();
+        Map input = new HashMap();
+        input.put(BlockPos.ZERO, fakeState);
 
         GhostProjectionState.activate(input);
 
-        Map<BlockPos, BlockState> stored = GhostProjectionState.getBlocks();
+        Map stored = GhostProjectionState.getBlocks();
         assertEquals(1, stored.size(), "應存儲 1 個 block");
-        assertEquals(stone, stored.get(BlockPos.ZERO), "BlockPos.ZERO 應對應石頭方塊");
+        assertSame(fakeState, stored.get(BlockPos.ZERO), "BlockPos.ZERO 應對應傳入的 state 物件");
     }
 
     @Test
     void activateDefensiveCopiesInput() {
-        // 確保外部修改不影響 State 內部
-        java.util.Map<BlockPos, BlockState> mutable = new java.util.HashMap<>();
-        mutable.put(BlockPos.ZERO, Blocks.DIRT.defaultBlockState());
+        Map mutable = new HashMap();
+        Object stateA = new Object();
+        mutable.put(BlockPos.ZERO, stateA);
         GhostProjectionState.activate(mutable);
 
-        // 外部修改
-        mutable.put(new BlockPos(1, 0, 0), Blocks.GRASS_BLOCK.defaultBlockState());
+        mutable.put(new BlockPos(1, 0, 0), new Object());
 
         assertEquals(1, GhostProjectionState.getBlocks().size(),
             "外部修改 input Map 不應影響 State 內部的 blocks");
@@ -85,15 +86,22 @@ class GhostProjectionStateTest {
 
     @Test
     void deactivateClearsBlocks() {
-        GhostProjectionState.activate(Map.of(BlockPos.ZERO, Blocks.STONE.defaultBlockState()));
+        Map blocks = new HashMap();
+        blocks.put(BlockPos.ZERO, new Object());
+        GhostProjectionState.activate(blocks);
         GhostProjectionState.deactivate();
-        assertTrue(GhostProjectionState.getBlocks().isEmpty(),
-            "deactivate() 後 blocks 應清空");
+        assertTrue(GhostProjectionState.getBlocks().isEmpty(), "deactivate() 後 blocks 應清空");
+    }
+
+    @Test
+    void deactivateResetsOrigin() {
+        GhostProjectionState.setOrigin(new BlockPos(5, 10, 15));
+        GhostProjectionState.deactivate();
+        assertEquals(BlockPos.ZERO, GhostProjectionState.getOrigin(), "deactivate() 後 origin 應重置為 ZERO");
     }
 
     @Test
     void deactivateWhenAlreadyInactiveIsSafe() {
-        // 雙重 deactivate 不應拋出例外
         assertDoesNotThrow(() -> {
             GhostProjectionState.deactivate();
             GhostProjectionState.deactivate();
@@ -104,18 +112,18 @@ class GhostProjectionStateTest {
 
     @Test
     void getBlocksReturnsEmptyWhenInactive() {
-        GhostProjectionState.activate(Map.of(BlockPos.ZERO, Blocks.STONE.defaultBlockState()));
+        Map blocks = new HashMap();
+        blocks.put(BlockPos.ZERO, new Object());
+        GhostProjectionState.activate(blocks);
         GhostProjectionState.deactivate();
-        assertTrue(GhostProjectionState.getBlocks().isEmpty(),
-            "未激活時 getBlocks() 應回傳空 Map");
+        assertTrue(GhostProjectionState.getBlocks().isEmpty(), "未激活時 getBlocks() 應回傳空 Map");
     }
 
     // ── setOrigin / getOrigin ─────────────────────────────────────────────────
 
     @Test
     void originDefaultsToZero() {
-        assertEquals(BlockPos.ZERO, GhostProjectionState.getOrigin(),
-            "初始 origin 應為 BlockPos.ZERO");
+        assertEquals(BlockPos.ZERO, GhostProjectionState.getOrigin(), "初始 origin 應為 BlockPos.ZERO");
     }
 
     @Test
@@ -134,12 +142,17 @@ class GhostProjectionStateTest {
 
     @Test
     void reactivateReplacesBlocks() {
-        GhostProjectionState.activate(Map.of(BlockPos.ZERO, Blocks.STONE.defaultBlockState()));
-        GhostProjectionState.activate(Map.of(new BlockPos(5, 0, 5), Blocks.DIRT.defaultBlockState()));
+        Map first = new HashMap();
+        first.put(BlockPos.ZERO, new Object());
+        GhostProjectionState.activate(first);
 
-        Map<BlockPos, BlockState> blocks = GhostProjectionState.getBlocks();
-        assertEquals(1, blocks.size(), "重新 activate 應替換 blocks（不累加）");
-        assertNull(blocks.get(BlockPos.ZERO), "舊的 BlockPos.ZERO 不應存在");
-        assertNotNull(blocks.get(new BlockPos(5, 0, 5)), "新的 (5,0,5) 應存在");
+        Map second = new HashMap();
+        second.put(new BlockPos(5, 0, 5), new Object());
+        GhostProjectionState.activate(second);
+
+        Map stored = GhostProjectionState.getBlocks();
+        assertEquals(1, stored.size(), "重新 activate 應替換 blocks（不累加）");
+        assertNull(stored.get(BlockPos.ZERO), "舊的 BlockPos.ZERO 不應存在");
+        assertNotNull(stored.get(new BlockPos(5, 0, 5)), "新的 (5,0,5) 應存在");
     }
 }

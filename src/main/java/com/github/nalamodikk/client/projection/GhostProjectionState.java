@@ -51,6 +51,7 @@ public final class GhostProjectionState {
         active = false;
         mode   = Mode.PLACING;
         blocks = Collections.emptyMap();
+        origin = BlockPos.ZERO;
     }
 
     public static boolean isActive()                       { return active; }
