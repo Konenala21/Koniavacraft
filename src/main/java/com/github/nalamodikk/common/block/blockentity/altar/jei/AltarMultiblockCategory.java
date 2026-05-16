@@ -10,6 +10,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
+import mezz.jei.api.gui.builder.ITooltipBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.gui.inputs.IJeiGuiEventListener;
@@ -131,19 +132,18 @@ public class AltarMultiblockCategory implements IRecipeCategory<AltarStructureIn
                           @NotNull IFocusGroup focuses) {
         builder.addSlot(RecipeIngredientRole.CATALYST, MAT_X1, MAT_Y)
                 .addItemStack(new ItemStack(ModBlocks.ASPECT_ALTAR.get()))
-                .addTooltipCallback((sv, tip) -> appendInvTooltip(tip, 0, 1));
+                .addRichTooltipCallback((sv, tip) -> appendInvTooltip(tip, 0, 1));
 
         builder.addSlot(RecipeIngredientRole.INPUT, MAT_X2, MAT_Y)
                 .addItemStack(new ItemStack(ModBlocks.MANA_BLOCK.get()))
-                .addTooltipCallback((sv, tip) -> appendInvTooltip(tip, 1, cumulativeManaCount()));
+                .addRichTooltipCallback((sv, tip) -> appendInvTooltip(tip, 1, cumulativeManaCount()));
 
         builder.addSlot(RecipeIngredientRole.INPUT, MAT_X3, MAT_Y)
                 .addItemStack(new ItemStack(ModBlocks.ASPECT_PEDESTAL.get()))
-                .addTooltipCallback((sv, tip) -> appendInvTooltip(tip, 2, 5));
+                .addRichTooltipCallback((sv, tip) -> appendInvTooltip(tip, 2, 5));
     }
 
-    /** Append need/have/missing lines to a JEI slot tooltip when inventory mode is active. */
-    private void appendInvTooltip(List<Component> tip, int idx, int needed) {
+    private void appendInvTooltip(ITooltipBuilder tip, int idx, int needed) {
         if (!showInventoryStatus) return;
         int have = cachedCounts[idx];
         tip.add(Component.translatable("jei.koniava.altar_multiblock.inv.need", needed)
@@ -173,51 +173,47 @@ public class AltarMultiblockCategory implements IRecipeCategory<AltarStructureIn
     // ── Hover tooltips ─────────────────────────────────────────────────────────
 
     @Override
-    public @NotNull List<Component> getTooltipStrings(@NotNull AltarStructureInfo recipe,
-                                                       @NotNull IRecipeSlotsView slotsView,
-                                                       double mouseX, double mouseY) {
+    public void getTooltip(@NotNull ITooltipBuilder tooltip, @NotNull AltarStructureInfo recipe,
+                           @NotNull IRecipeSlotsView slotsView, double mouseX, double mouseY) {
         int btnY = MAT_Y + 2;
 
         // PRJ button
         if (mouseX >= PRJ_BTN_X && mouseX < PRJ_BTN_X + PRJ_BTN_W
          && mouseY >= btnY && mouseY < btnY + PRJ_BTN_H) {
-            return List.of(
-                Component.translatable("jei.koniava.altar_multiblock.prj.tip1"),
-                Component.translatable("jei.koniava.altar_multiblock.prj.tip2")
-                        .withStyle(ChatFormatting.GRAY)
-            );
+            tooltip.add(Component.translatable("jei.koniava.altar_multiblock.prj.tip1"));
+            tooltip.add(Component.translatable("jei.koniava.altar_multiblock.prj.tip2")
+                    .withStyle(ChatFormatting.GRAY));
+            return;
         }
 
         // Inv button
         if (mouseX >= INV_BTN_X && mouseX < INV_BTN_X + INV_BTN_W
          && mouseY >= btnY && mouseY < btnY + INV_BTN_H) {
-            return List.of(
-                Component.translatable("jei.koniava.altar_multiblock.inv.btn.tip1"),
-                Component.translatable("jei.koniava.altar_multiblock.inv.btn.tip2")
-                        .withStyle(ChatFormatting.GRAY)
-            );
+            tooltip.add(Component.translatable("jei.koniava.altar_multiblock.inv.btn.tip1"));
+            tooltip.add(Component.translatable("jei.koniava.altar_multiblock.inv.btn.tip2")
+                    .withStyle(ChatFormatting.GRAY));
+            return;
         }
 
-        // Slider — show snap label on hover
+        // Slider: show snap label on hover
         if (mouseY >= 0 && mouseY < SLIDER_H) {
             String label = sliderTier == 0
                     ? Component.translatable("jei.koniava.altar_multiblock.base_only").getString()
-                    : "T" + sliderTier + " — +"
+                    : "T" + sliderTier + ": +"
                       + cumulativeManaCount() + " "
                       + Component.translatable("jei.koniava.altar_multiblock.tip.mana_blocks").getString();
-            return List.of(Component.literal(label));
+            tooltip.add(Component.literal(label));
+            return;
         }
 
         // Toggle button
         if (mouseX >= TOGGLE_X && mouseX < TOGGLE_X + TOGGLE_W
          && mouseY >= CTRL_Y && mouseY < CTRL_Y + CTRL_H) {
-            return List.of(Component.translatable(
+            tooltip.add(Component.translatable(
                     showFormed ? "jei.koniava.altar_multiblock.toggle.tip_unformed"
                                : "jei.koniava.altar_multiblock.toggle.tip_formed")
                     .withStyle(ChatFormatting.GRAY));
         }
-
-        return List.of();
     }
 
     // ── Draw ───────────────────────────────────────────────────────────────────

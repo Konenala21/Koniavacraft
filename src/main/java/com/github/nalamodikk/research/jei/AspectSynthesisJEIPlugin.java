@@ -19,6 +19,7 @@ import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.registration.ISubtypeRegistration;
+import mezz.jei.api.ingredients.subtypes.ISubtypeInterpreter;
 import mezz.jei.api.ingredients.subtypes.UidContext;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -63,9 +64,16 @@ public class AspectSynthesisJEIPlugin implements IModPlugin {
 
     @Override
     public void registerItemSubtypes(ISubtypeRegistration registration) {
-        registration.registerSubtypeInterpreter(ModItems.ASPECT_TOKEN.get(), (ItemStack stack, UidContext context) -> {
-            ResourceLocation aspectId = AspectTokenItem.getAspectId(stack);
-            return aspectId != null ? aspectId.toString() : "";
+        registration.registerSubtypeInterpreter(ModItems.ASPECT_TOKEN.get(), new ISubtypeInterpreter<>() {
+            @Override
+            public Object getSubtypeData(ItemStack stack, UidContext context) {
+                return AspectTokenItem.getAspectId(stack);
+            }
+            @Override
+            public String getLegacyStringSubtypeInfo(ItemStack stack, UidContext context) {
+                ResourceLocation id = AspectTokenItem.getAspectId(stack);
+                return id != null ? id.toString() : "";
+            }
         });
     }
 

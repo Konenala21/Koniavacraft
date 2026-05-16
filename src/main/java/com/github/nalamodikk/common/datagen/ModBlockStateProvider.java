@@ -75,7 +75,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         createSolarCollectorModel();
         createManaModel(ModBlocks.RESEARCH_TABLE);
 
-        ModelFile deployerModel = new ModelFile.UncheckedModelFile(modLoc("block/mana_deployer.model"));
+        // BER handles visual; this model only provides the particle texture for break/step effects
+        ModelFile deployerModel = models().withExistingParent("mana_deployer", mcLoc("block/block"))
+                .texture("particle", modLoc("block/mana_deployer_texture"));
         createHorizontalFacingVariants(ModBlocks.MANA_DEPLOYER.get(), deployerModel);
         itemModels().getBuilder("mana_deployer")
                 .parent(new ModelFile.UncheckedModelFile("builtin/entity"))

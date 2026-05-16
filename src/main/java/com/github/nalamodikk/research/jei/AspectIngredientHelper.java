@@ -21,6 +21,12 @@ public class AspectIngredientHelper implements IIngredientHelper<Aspect> {
     }
 
     @Override
+    public Object getUid(Aspect aspect, UidContext context) {
+        return aspect.getId();
+    }
+
+    @Override
+    @SuppressWarnings("removal")
     public String getUniqueId(Aspect aspect, UidContext context) {
         return aspect.getId().toString();
     }

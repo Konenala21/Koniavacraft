@@ -51,7 +51,7 @@ import java.util.Map;
  *   the translucent BufferBuilder is building=false → "Not building!" crash.
  *   Creating our own BufferSource from a fresh ByteBufferBuilder avoids this.
  */
-@EventBusSubscriber(modid = KoniavacraftMod.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+@EventBusSubscriber(modid = KoniavacraftMod.MOD_ID, value = Dist.CLIENT)
 public final class GhostProjectionHandler {
 
     // PLACING outline: blue; PLACED outline: green; conflict outline: red
