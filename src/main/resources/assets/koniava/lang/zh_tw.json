@@ -422,6 +422,7 @@
   "message.koniava.synthesis.invalid_aspect": "要素資料無效。",
   "message.koniava.synthesis.invalid_table": "研究台狀態無效。",
   "message.koniava.research.not_enough_aspect": "你的 %s 不夠了。",
+  "commands.koniava.research.unlock_all.success": "已為 %2$s 名玩家解鎖全部 %1$s 項研究。",
   "commands.koniava.research.add_all_aspects.success": "已為 %3$s 名玩家新增全部 %2$s 種本源，各增加 %1$s。",
   "commands.koniava.research.reset_non_primary_aspects.success": "已為 %2$s 名玩家重製全部 %1$s 種非基礎本源。",
   "//10": "=== 導管訊息 ===",
@@ -640,5 +641,39 @@
   "koniava.config.biome.maxMemory.tooltip": "生物群系處理的最大記憶體使用量（MB）。會根據伺服器記憶體自動調整。",
   "koniava.config.biome.snapshotDepth.tooltip": "地表快照深度（方塊層數）。較低值使用較少記憶體但可能遺漏深層替換。",
   "koniava.config.biome.adaptivePerformance.tooltip": "啟用自適應性能調整。系統會根據負載自動調整處理參數。",
-  "koniava.config.biome.autoSkipMinor.tooltip": "高負載時自動跳過次要生物群系。緊急模式下會跳過優先級較低的生物群系處理。"
+  "koniava.config.biome.autoSkipMinor.tooltip": "高負載時自動跳過次要生物群系。緊急模式下會跳過優先級較低的生物群系處理。",
+
+  "nara.dialogue.first_login.honorific.sir": "先生",
+  "nara.dialogue.first_login.honorific.miss": "小姐",
+  "nara.dialogue.first_login.line1": "欸欸欸嘿嘿⋯⋯呼呼呼（喘氣）我應該沒來遲吧？那位%s。",
+  "nara.dialogue.first_login.choice1a": "欸斗。其實有欸。你遲到了！",
+  "nara.dialogue.first_login.choice1b": "沒有！算算時間應該只是誤差了幾秒而已。還不錯！",
+  "nara.dialogue.first_login.line2": "咳咳，那如果我沒遲到的話，就讓我們來談正事吧！",
+  "nara.dialogue.first_login.line3": "⋯⋯好，說正事了。",
+  "nara.dialogue.first_login.line4": "你的第一格快捷欄位有一個叫做「娜拉全息手錶」的物品，這就是你探索這個世界的第一個工具。",
+  "nara.dialogue.first_login.choice4a": "所以你到底是誰？！你到現在還沒給我說你是誰啊喂！",
+  "nara.dialogue.first_login.line5": "喔對！我是誰！好問題！我叫娜拉，職業⋯⋯嗯⋯⋯存在？反正我在這裡，這樣算數嗎！",
+  "nara.dialogue.first_login.line6": "這隻手錶能掃描這個世界的一切，方塊、生物、物品都行。每掃一樣東西，你就會得到它的本源。",
+  "nara.dialogue.first_login.choice6a": "蛤？怎麼突然這麼嚴肅⋯⋯",
+  "nara.dialogue.first_login.line7": "本源是什麼？是這個世界最底層的東西。你以後會懂的。",
+  "nara.dialogue.first_login.line8": "欸嘿！！我還有事情要忙！所以我要先走了！！！掰掰~~~~",
+
+  "advancement.koniava.welcome.title": "歡迎來到 Koniavacraft",
+  "advancement.koniava.welcome.description": "與娜拉完成初次綁定",
+  "advancement.koniava.nara_ignored.title": "第一次不理娜拉！",
+  "advancement.koniava.nara_ignored.description": "你知道你在做什麼嗎⋯⋯",
+  "nara.dialogue.punishment.line1": "可惡你這個壞人！",
+  "nara.dialogue.punishment.line2": "哼！你打算怎麼解釋？",
+  "nara.dialogue.punishment.choice_sorry": "對不起⋯⋯我不是故意的",
+  "nara.dialogue.punishment.forgiven": "⋯⋯算了。去用那個手錶吧。別讓我說第二次。",
+  "nara.dialogue.angry.line1": "哼！我不理你了！再見！",
+  "advancement.koniava.nara_angry.title": "哇！你惹娜拉生氣了！",
+  "advancement.koniava.nara_angry.description": "看起來你不需要娜拉引導了？",
+
+  "nara.hud.hint.continue": "[F] 繼續",
+  "nara.hud.hint.skip": "[F] 跳過",
+  "nara.hud.hint.choose": "↕ 滾輪選擇  [F] 確認  [1][2] 直接選",
+
+  "nara.hud.name": "娜拉",
+  "nara.hud.name.unknown": "???"
 }

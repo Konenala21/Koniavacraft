@@ -422,6 +422,7 @@
   "message.koniava.synthesis.invalid_aspect": "Invalid aspect data.",
   "message.koniava.synthesis.invalid_table": "Invalid research table state.",
   "message.koniava.research.not_enough_aspect": "You do not have enough %s.",
+  "commands.koniava.research.unlock_all.success": "Unlocked all %1$s research entries for %2$s player(s).",
   "commands.koniava.research.add_all_aspects.success": "Added %1$s of all %2$s aspects for %3$s player(s).",
   "commands.koniava.research.reset_non_primary_aspects.success": "Reset %1$s non-primary aspects for %2$s player(s).",
   "//10": "=== CONDUIT MESSAGES ===",
@@ -640,5 +641,39 @@
   "koniava.config.biome.maxMemory.tooltip": "Maximum memory usage for biome processing (MB). Auto-adjusted based on server memory.",
   "koniava.config.biome.snapshotDepth.tooltip": "Surface snapshot depth in block layers. Lower values use less memory but may miss deep replacements.",
   "koniava.config.biome.adaptivePerformance.tooltip": "Enable adaptive performance adjustment. System will automatically adjust processing parameters based on load.",
-  "koniava.config.biome.autoSkipMinor.tooltip": "Automatically skip minor biomes under high load. Skip lower priority biomes during emergency mode."
+  "koniava.config.biome.autoSkipMinor.tooltip": "Automatically skip minor biomes under high load. Skip lower priority biomes during emergency mode.",
+
+  "nara.dialogue.first_login.honorific.sir": "sir",
+  "nara.dialogue.first_login.honorific.miss": "miss",
+  "nara.dialogue.first_login.line1": "Hey hey hey... huff huff (panting) I'm not late, am I? Hey there, %s.",
+  "nara.dialogue.first_login.choice1a": "Uh, actually yeah. You're late!",
+  "nara.dialogue.first_login.choice1b": "No! A few seconds off at most. Pretty good!",
+  "nara.dialogue.first_login.line2": "Ahem, now that I'm not late, let's get down to business!",
+  "nara.dialogue.first_login.line3": "...Okay. Serious mode.",
+  "nara.dialogue.first_login.line4": "In your first hotbar slot there's an item called the \"Nara Holographic Watch\", that's your first tool for exploring this world.",
+  "nara.dialogue.first_login.choice4a": "So who ARE you?! You still haven't told me your name!",
+  "nara.dialogue.first_login.line5": "Oh right! Who am I! Great question! I'm Nara, occupation... um... existing? Anyway I'm here, does that count!",
+  "nara.dialogue.first_login.line6": "This watch can scan anything in the world: blocks, creatures, items. Every scan gives you its Source.",
+  "nara.dialogue.first_login.choice6a": "Wait, why are you suddenly so serious...",
+  "nara.dialogue.first_login.line7": "What's Source? The most fundamental thing in this world. You'll understand eventually.",
+  "nara.dialogue.first_login.line8": "Okay hey!! I've got things to do! Gotta go!!! Byebye~~~~",
+
+  "advancement.koniava.welcome.title": "Welcome to Koniavacraft",
+  "advancement.koniava.welcome.description": "Complete the first binding with Nara",
+  "advancement.koniava.nara_ignored.title": "First Time Ignoring Nara!",
+  "advancement.koniava.nara_ignored.description": "Do you know what you just did...",
+  "nara.dialogue.punishment.line1": "You meanie!!",
+  "nara.dialogue.punishment.line2": "Hmph! How are you going to explain yourself?",
+  "nara.dialogue.punishment.choice_sorry": "Sorry... I didn't mean to.",
+  "nara.dialogue.punishment.forgiven": "...Fine. Go use that watch. Don't make me say it twice.",
+  "nara.dialogue.angry.line1": "Hmph! I'm done with you! Goodbye!",
+  "advancement.koniava.nara_angry.title": "Wow! You made Nara angry!",
+  "advancement.koniava.nara_angry.description": "Looks like you don't need Nara's guidance?",
+
+  "nara.hud.hint.continue": "[F] Continue",
+  "nara.hud.hint.skip": "[F] Skip",
+  "nara.hud.hint.choose": "↕ Scroll  [F] Confirm  [1][2] Select",
+
+  "nara.hud.name": "Nara",
+  "nara.hud.name.unknown": "???"
 }

@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Player Changes / 玩家更新內容
+
+- Altar now outputs crafted results to adjacent containers (hoppers, chests, etc.) before dropping on the ground.
+- 祭壇儀式完成後，結果物品現在會優先輸出至相鄰容器（漏斗、箱子等），無法輸出時才掉落在地。
+- Added Mana Deployer block: point it at another block and it will automatically left- or right-click that block on your behalf using a FakePlayer. Supports redstone automation.
+- 新增魔力部署器方塊：對準目標方塊，自動以 FakePlayer 執行左鍵或右鍵操作，支援紅石自動化。
+- Added `/koniava research unlock_all <targets>` command to instantly unlock all research entries for target players.
+- 新增指令 `/koniava research unlock_all <目標>`，可一次解鎖目標玩家的所有研究。
+- Resonance Ring no longer appears in the creative mode block tab (it is an internal structure component placed via the Structure Build Wand).
+- 共鳴環不再出現在創意模式方塊欄（屬於內部結構零件，請使用結構建造法杖放置）。
+
+### Developer Notes / 開發者備註
+
+- `AspectAltarBlockEntity`: ritual completion now checks adjacent block entities for `Capabilities.ItemHandler.BLOCK` and inserts result before falling back to dropping above altar.
+- `ManaDeployerBlock` + `ManaDeployerBlockEntity`: FakePlayer automation — left/right-click mode configurable via wand; BER loads Bedrock `.model.json` geometry + frame-interpolated animation system (no GeckoLib); fixed coordinate axes (X/Z negation for Bedrock→Java, UV winding correction).
+- `ResearchCommand`: added `unlock_all` subcommand — iterates `ResearchRegistry.all()`, calls `completeResearch()` on each; lang keys added to `en_us.json` and `zh_tw.json`.
+- `ModCreativeModTabs`: `resonance_ring` added to path exclusion list in `koniava_blocks_tab`.
+
 ## [0.0.1.6-4] - 2026-05-16
 
 ### Player Changes / 玩家更新內容
@@ -132,16 +150,11 @@ All notable changes to this project will be documented in this file.
 
 ### Developer Notes / 開發者備註
 
-- EN: `BaseMaterialRegistry`: ~80 new `atom()` entries for all 48 new aspects; `getLogicalPool()` extended with inference chains across all tiers.
-- EN: `BlockAspectResolver`: added tag/keyword matching for frost, soul, death, undead, machine, void, poison categories.
-- EN: `EntityAspectResolver`: full rewrite with 60+ specific entity mappings via switch statement; specific mapping takes priority over tag-based fallback; boss capacity scales to 6 (dragon/wither), 5 (elder_guardian/warden), 4 (evoker/witch/allay).
-- EN: `AspectSynthesisScreen` and `ResearchScreen`: `isOverPaletteArea()` now uses fixed `PALETTE_ROWS` height instead of current-page row count — fixes scroll deadzone on last page.
-- EN: `ModItemModelProvider`: added `item/generated` model entry for `completed_research` using `koniava:item/completed_research` texture.
-- ZH: `BaseMaterialRegistry`：新增 ~80 個 `atom()` 條目涵蓋全部 48 種新本源；`getLogicalPool()` 補齊各層本源的推導鏈。
-- ZH: `BlockAspectResolver`：新增冰寒、靈魂、死滅、亡靈、機器、虛空、毒素等 tag/keyword 匹配。
-- ZH: `EntityAspectResolver`：以 switch 語句全面重寫，60+ 種精確實體映射；精確映射優先於標籤分類回退；Boss 容量縮放：龍/凋零=6、遠古守衛/監守者=5、喚魔者/女巫/愉靈=4。
-- ZH: `AspectSynthesisScreen` 與 `ResearchScreen`：`isOverPaletteArea()` 改用固定的 `PALETTE_ROWS` 高度，修正最後一頁滾輪失效的問題。
-- ZH: `ModItemModelProvider`：為 `completed_research` 新增 `item/generated` 模型，對應 `koniava:item/completed_research` 貼圖。
+- `BaseMaterialRegistry`: ~80 new `atom()` entries for all 48 new aspects; `getLogicalPool()` extended with inference chains across all tiers.
+- `BlockAspectResolver`: added tag/keyword matching for frost, soul, death, undead, machine, void, poison categories.
+- `EntityAspectResolver`: full rewrite with 60+ specific entity mappings via switch statement; specific mapping takes priority over tag-based fallback; boss capacity scales to 6 (dragon/wither), 5 (elder_guardian/warden), 4 (evoker/witch/allay).
+- `AspectSynthesisScreen` and `ResearchScreen`: `isOverPaletteArea()` now uses fixed `PALETTE_ROWS` height instead of current-page row count — fixes scroll deadzone on last page.
+- `ModItemModelProvider`: added `item/generated` model entry for `completed_research` using `koniava:item/completed_research` texture.
 
 ## [0.0.1.6-1] - 2026-05-13
 

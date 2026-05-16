@@ -100,6 +100,9 @@ public class ResearchCommand {
                                 .then(Commands.literal("list_aspects")
                                         .then(Commands.argument("target", EntityArgument.player())
                                                 .executes(ResearchCommand::listAspects)))
+                                .then(Commands.literal("unlock_all")
+                                        .then(Commands.argument("targets", EntityArgument.players())
+                                                .executes(ResearchCommand::unlockAllResearch)))
                                 .then(Commands.literal("clear")
                                         .then(Commands.argument("targets", EntityArgument.players())
                                                 .executes(ResearchCommand::clearResearch)))));
@@ -315,6 +318,27 @@ public class ResearchCommand {
         }
 
         return aspects.size();
+    }
+
+    private static int unlockAllResearch(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Collection<ServerPlayer> players = EntityArgument.getPlayers(context, "targets");
+        int total = 0;
+
+        for (ServerPlayer player : players) {
+            PlayerKnowledge knowledge = ResearchSavedData.get(player.serverLevel()).getOrCreate(player.getUUID());
+            for (var research : ResearchRegistry.all()) {
+                knowledge.completeResearch(research.getId());
+                total++;
+            }
+            syncKnowledge(player);
+        }
+
+        int researchCount = ResearchRegistry.all().size();
+        int playerCount = players.size();
+        context.getSource().sendSuccess(
+                () -> Component.translatable("commands.koniava.research.unlock_all.success", researchCount, playerCount),
+                true);
+        return total;
     }
 
     private static int clearResearch(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
