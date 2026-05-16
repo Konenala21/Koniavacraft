@@ -1,6 +1,7 @@
 package com.github.nalamodikk.common.block.blockentity.altar.jei;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.client.projection.GhostProjectionState;
 import com.github.nalamodikk.common.block.blockentity.altar.AltarPillarBlock;
 import com.github.nalamodikk.common.block.blockentity.altar.AspectAltarBlockEntity;
 import com.github.nalamodikk.register.ModBlocks;
@@ -78,6 +79,10 @@ public class AltarMultiblockCategory implements IRecipeCategory<AltarStructureIn
     private static final int INV_BTN_X  = 154;
     private static final int INV_BTN_W  = 22;
     private static final int INV_BTN_H  = 12;
+    // Project-to-world button (left side of material row)
+    private static final int PRJ_BTN_X  = 4;
+    private static final int PRJ_BTN_W  = 26;
+    private static final int PRJ_BTN_H  = 12;
 
     // Base structure block positions
     private static final int[][] ALL_POSITIONS = {
@@ -162,6 +167,7 @@ public class AltarMultiblockCategory implements IRecipeCategory<AltarStructureIn
         builder.addGuiEventListener(new PreviewWidget());
         builder.addGuiEventListener(new ToggleWidget());
         builder.addGuiEventListener(new InventoryButtonWidget());
+        builder.addGuiEventListener(new ProjectButtonWidget());
     }
 
     // ── Draw ───────────────────────────────────────────────────────────────────
@@ -207,6 +213,21 @@ public class AltarMultiblockCategory implements IRecipeCategory<AltarStructureIn
         drawCount(gfx, font, "×1",            MAT_X1, MAT_Y, countColor(0, 1));
         drawCount(gfx, font, "×" + totalMana, MAT_X2, MAT_Y, countColor(1, totalMana));
         drawCount(gfx, font, "×5",            MAT_X3, MAT_Y, countColor(2, 5));
+
+        // ── Project button (left of material row) ─────────────────────────────
+        int pjY = MAT_Y + 2;
+        boolean hovPrj  = mouseX >= PRJ_BTN_X && mouseX < PRJ_BTN_X + PRJ_BTN_W
+                       && mouseY >= pjY        && mouseY < pjY + PRJ_BTN_H;
+        boolean prjActive = GhostProjectionState.isActive();
+        String prjLabel = prjActive ? "PRJ✓" : "PRJ";
+        gfx.fill(PRJ_BTN_X, pjY, PRJ_BTN_X + PRJ_BTN_W, pjY + PRJ_BTN_H,
+                prjActive ? 0xFF2E5E7A : (hovPrj ? 0xFF3A5A7A : 0xFF253045));
+        gfx.renderOutline(PRJ_BTN_X, pjY, PRJ_BTN_W, PRJ_BTN_H,
+                prjActive ? 0xFF55AAFF : 0xFF6688AA);
+        gfx.drawString(font, prjLabel,
+                PRJ_BTN_X + PRJ_BTN_W / 2 - font.width(prjLabel) / 2,
+                pjY + (PRJ_BTN_H - font.lineHeight) / 2 + 1,
+                prjActive ? 0xFF88CCFF : 0xFF8899BB, false);
 
         // ── Inventory button ──────────────────────────────────────────────────
         int ibY = MAT_Y + 2;
@@ -478,6 +499,33 @@ public class AltarMultiblockCategory implements IRecipeCategory<AltarStructureIn
             if (btn != 0) return false;
             showInventoryStatus = !showInventoryStatus;
             if (showInventoryStatus) scanInventory();
+            return true;
+        }
+    }
+
+    /**
+     * Projects the current structure (base + rings up to sliderTier) as translucent
+     * ghost blocks in the world.  Press again to hide, or right-click in the world.
+     */
+    private class ProjectButtonWidget implements IJeiGuiEventListener {
+        @Override
+        public ScreenRectangle getArea() {
+            return new ScreenRectangle(PRJ_BTN_X, MAT_Y + 2, PRJ_BTN_W, PRJ_BTN_H);
+        }
+
+        @Override
+        public boolean mouseClicked(double mx, double my, int btn) {
+            if (btn != 0) return false;
+            if (GhostProjectionState.isActive()) {
+                GhostProjectionState.deactivate();
+            } else {
+                Map<BlockPos, BlockState> projBlocks = buildStructureMap();
+                for (int i = 0; i < sliderTier; i++)
+                    projBlocks.putAll(buildRingMap(i));
+                GhostProjectionState.activate(projBlocks);
+                // Close JEI so the player can see the world projection
+                Minecraft.getInstance().setScreen(null);
+            }
             return true;
         }
     }
