@@ -8,6 +8,7 @@ import com.github.nalamodikk.common.block.blockentity.conduit.ConduitTier;
 import com.github.nalamodikk.common.block.ResearchTableBlock;
 import com.github.nalamodikk.common.block.blockentity.mana_crafting.ManaCraftingTableBlock;
 import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorBlock;
+import com.github.nalamodikk.common.block.blockentity.mana_deployer.ManaDeployerBlock;
 import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderBlock;
 import com.github.nalamodikk.common.block.blockentity.altar.AltarPillarBlock;
 import com.github.nalamodikk.common.block.blockentity.altar.AspectAltarBlock;
@@ -156,6 +157,10 @@ public class ModBlocks {
                     .noOcclusion()));
 
     // 共鳴環（戴森環升級結構方塊，放在環狀位置觸發祭壇升級）
+    public static final DeferredBlock<ManaDeployerBlock> MANA_DEPLOYER = registerBlock("mana_deployer",
+            () -> new ManaDeployerBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL)
+                    .strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion()));
+
     public static final DeferredBlock<ResonanceRingBlock> RESONANCE_RING = registerBlock("resonance_ring",
             () -> new ResonanceRingBlock(BlockBehaviour.Properties.of().mapColor(MapColor.STONE)
                     .strength(3.0f).sound(SoundType.STONE).requiresCorrectToolForDrops()

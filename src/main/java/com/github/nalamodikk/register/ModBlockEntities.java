@@ -8,6 +8,7 @@ import com.github.nalamodikk.common.block.blockentity.collector.solarmana.SolarM
 import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_crafting.ManaCraftingTableBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorBlockEntity;
+import com.github.nalamodikk.common.block.blockentity.mana_deployer.ManaDeployerBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.research.ResearchTableBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserBlockEntity;
@@ -50,6 +51,11 @@ public class ModBlockEntities {
             BLOCK_ENTITY_TYPES.register("mana_infuser", () ->
                     BlockEntityType.Builder.of(ManaInfuserBlockEntity::new,
                             ModBlocks.MANA_INFUSER.get()).build(null));
+
+    public static final Supplier<BlockEntityType<ManaDeployerBlockEntity>> MANA_DEPLOYER_BE =
+            BLOCK_ENTITY_TYPES.register("mana_deployer", () ->
+                    BlockEntityType.Builder.of(ManaDeployerBlockEntity::new,
+                            ModBlocks.MANA_DEPLOYER.get()).build(null));
 
     // === ⚙️ 新增：魔力粉碎機 ===
     public static final Supplier<BlockEntityType<ManaGrinderBlockEntity>> MANA_GRINDER_BE =
