@@ -28,6 +28,7 @@ public class NaraDialogueManager {
     private static int choiceTimerTicks = 0;
     private static int revealTicks = 0;
     private static int selectedChoiceIndex = 0;
+    private static boolean charAddedThisTick = false;
 
     public static void startDialogue(List<NaraDialogueLine> lines) {
         lineQueue.clear();
@@ -37,6 +38,7 @@ public class NaraDialogueManager {
     }
 
     public static void tick() {
+        charAddedThisTick = false;
         if (portraitState == PortraitState.REVEALING) {
             revealTicks++;
             if (revealTicks >= REVEAL_DURATION_TICKS) {
@@ -52,6 +54,7 @@ public class NaraDialogueManager {
                 String full = currentLine.text().getString();
                 if (charIndex < full.length()) {
                     charIndex = Math.min(charIndex + CHARS_PER_TICK, full.length());
+                    charAddedThisTick = true;
                 } else {
                     dialogueState = currentLine.choices().isEmpty()
                             ? DialogueState.WAITING
@@ -118,6 +121,8 @@ public class NaraDialogueManager {
         selectedChoiceIndex = 0;
         dialogueState = DialogueState.TYPING;
 
+        if (currentLine.onStart() != null) currentLine.onStart().run();
+
         if (currentLine.revealPortrait()) {
             portraitState = PortraitState.REVEALING;
             revealTicks = 0;
@@ -161,4 +166,5 @@ public class NaraDialogueManager {
     public static void setPortraitShown() { portraitState = PortraitState.SHOWN; displayName = Component.translatable("nara.hud.name"); }
     public static void setPortraitMad() { portraitState = PortraitState.SHOWN; displayName = Component.translatable("nara.hud.name"); portraitMad = true; }
     public static boolean isPortraitMad() { return portraitMad; }
+    public static boolean wasCharAddedThisTick() { return charAddedThisTick; }
 }

@@ -50,7 +50,7 @@ public class NaraFirstLoginFlow {
                 List.of(new NaraChoice(Component.translatable("nara.dialogue.first_login.choice6a"), () -> {})),
                 currentTimeout(),
                 () -> {}
-        );
+        ).withOnStart(NaraWatchHighlight::show);
 
         var line7 = NaraDialogueLine.simple(Component.translatable("nara.dialogue.first_login.line7"));
         var line8 = NaraDialogueLine.simple(Component.translatable("nara.dialogue.first_login.line8"));

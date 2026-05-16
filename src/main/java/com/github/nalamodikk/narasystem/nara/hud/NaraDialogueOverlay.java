@@ -1,6 +1,7 @@
 package com.github.nalamodikk.narasystem.nara.hud;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.register.ModItems;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
@@ -10,6 +11,10 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
+import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.sounds.SoundEvents;
 import org.lwjgl.glfw.GLFW;
 import net.minecraft.network.chat.Component;
 
@@ -18,11 +23,12 @@ import java.util.List;
 @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID, value = Dist.CLIENT)
 public class NaraDialogueOverlay {
 
-    // 立繪路徑（等使用者提供圖片）
     private static final ResourceLocation PORTRAIT = ResourceLocation.fromNamespaceAndPath(
             KoniavacraftMod.MOD_ID, "textures/gui/nara/konenala21.png");
     private static final ResourceLocation PORTRAIT_MAD = ResourceLocation.fromNamespaceAndPath(
             KoniavacraftMod.MOD_ID, "textures/gui/nara/konenala21_mad.png");
+    private static final ResourceLocation WATCH_HIGHLIGHT = ResourceLocation.fromNamespaceAndPath(
+            KoniavacraftMod.MOD_ID, "textures/gui/nara/watch_highlight.png");
 
     // 顏色常數
     private static final int COLOR_BLUE_ARROW = 0xFF5599FF;
@@ -96,8 +102,24 @@ public class NaraDialogueOverlay {
         // 玩家死亡時暫停對話，等重生後由 server 重新觸發
         if (mc.player != null && mc.player.isDeadOrDying()) return;
         NaraDialogueManager.tick();
+        NaraWatchHighlight.tick();
+        if (NaraDialogueManager.wasCharAddedThisTick()) {
+            float pitch = 1.8f + (mc.level.random.nextFloat() - 0.5f) * 0.2f;
+            mc.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), pitch, 0.2f));
+        }
         cursorTick++;
         if (cursorTick >= 10) { cursorTick = 0; cursorVisible = !cursorVisible; }
+    }
+
+    @SubscribeEvent
+    public static void onRenderHotbarLayer(RenderGuiLayerEvent.Post event) {
+        if (!event.getName().equals(VanillaGuiLayers.HOTBAR)) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.screen != null) return;
+        GuiGraphics g = event.getGuiGraphics();
+        renderWatchHighlight(g, mc,
+                mc.getWindow().getGuiScaledWidth(),
+                mc.getWindow().getGuiScaledHeight());
     }
 
     @SubscribeEvent
@@ -242,6 +264,39 @@ public class NaraDialogueOverlay {
                     x + PADDING + (isSelected ? 10 : 0), y + 3, COLOR_WHITE, false);
             y += btnH + 2;
         }
+    }
+
+    private static void renderWatchHighlight(GuiGraphics g, Minecraft mc, int sw, int sh) {
+        if (!NaraWatchHighlight.isActive()) return;
+        if (mc.player == null) return;
+
+        int slot = -1;
+        for (int i = 0; i < 9; i++) {
+            if (mc.player.getInventory().getItem(i).is(ModItems.NARA_WATCH.get())) {
+                slot = i;
+                break;
+            }
+        }
+        if (slot < 0) return;
+
+        // 格子中心（item 在 slot 內的實際中心）
+        float centerX = sw / 2f - 91 + slot * 20 + 10;
+        float centerY = sh - 22 + 11;
+        int size = 40;
+
+        float pulse = NaraWatchHighlight.getPulse();
+        float scale = NaraWatchHighlight.getScale();
+
+        g.pose().pushPose();
+        g.pose().translate(centerX, centerY, 0);
+        g.pose().scale(scale, scale, 1f);
+        g.pose().translate(-size / 2f, -size / 2f, 0);
+
+        g.setColor(1f, 0.2f, 0.2f, pulse);
+        g.blit(WATCH_HIGHLIGHT, 0, 0, 0, 0, size, size, size, size);
+        g.setColor(1f, 1f, 1f, 1f);
+
+        g.pose().popPose();
     }
 
     private static void drawBorder(GuiGraphics g, int x, int y, int w, int h, int color) {
