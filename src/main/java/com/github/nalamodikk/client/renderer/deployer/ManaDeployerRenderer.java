@@ -79,9 +79,10 @@ public class ManaDeployerRenderer implements BlockEntityRenderer<ManaDeployerBlo
         // Centre model at block middle, apply facing rotation
         ps.translate(0.5, 0.0, 0.5);
         ps.mulPose(Axis.YP.rotationDegrees(facingYRot(facing)));
-        // Offset so model origin aligns with block: arm extends toward -Z (= SOUTH before rotation)
-        // The model was built facing SOUTH (arm at +Z), but we want it facing the block FACING direction.
-        // After applying facingYRot, SOUTH(0°) arm is at +Z, which after rotation lands in FACING direction.
+        // Bedrock entity X axis is mirrored relative to Java block rendering.
+        // Scale -1 on X to correct the mirror; quad() emits vertices in reverse order
+        // to restore CCW winding after the reflection.
+        ps.scale(-1f, 1f, 1f);
 
         for (BedrockGeoData.Bone root : model.roots) {
             renderBone(root, ps, vc, light, overlay, animSec, model.texW, model.texH);
@@ -213,10 +214,11 @@ public class ManaDeployerRenderer implements BlockEntityRenderer<ManaDeployerBlo
                              float u2,float v2, float u3,float v3,
                              float nx,float ny,float nz,
                              int light, int overlay) {
-        vc.addVertex(pose,x0,y0,z0).setColor(255,255,255,255).setUv(u0,v0).setOverlay(overlay).setLight(light).setNormal(pose,nx,ny,nz);
-        vc.addVertex(pose,x1,y1,z1).setColor(255,255,255,255).setUv(u1,v1).setOverlay(overlay).setLight(light).setNormal(pose,nx,ny,nz);
-        vc.addVertex(pose,x2,y2,z2).setColor(255,255,255,255).setUv(u2,v2).setOverlay(overlay).setLight(light).setNormal(pose,nx,ny,nz);
+        // Reversed vertex order restores CCW winding after the ps.scale(-1,1,1) X-mirror.
         vc.addVertex(pose,x3,y3,z3).setColor(255,255,255,255).setUv(u3,v3).setOverlay(overlay).setLight(light).setNormal(pose,nx,ny,nz);
+        vc.addVertex(pose,x2,y2,z2).setColor(255,255,255,255).setUv(u2,v2).setOverlay(overlay).setLight(light).setNormal(pose,nx,ny,nz);
+        vc.addVertex(pose,x1,y1,z1).setColor(255,255,255,255).setUv(u1,v1).setOverlay(overlay).setLight(light).setNormal(pose,nx,ny,nz);
+        vc.addVertex(pose,x0,y0,z0).setColor(255,255,255,255).setUv(u0,v0).setOverlay(overlay).setLight(light).setNormal(pose,nx,ny,nz);
     }
 
     // ── Facing rotation ───────────────────────────────────────────────────────
