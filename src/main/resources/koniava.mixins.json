@@ -11,7 +11,8 @@
     "OverworldBiomeBuilderMixin"
   ],
   "client": [
-    "client.MinecraftAccessor"
+    "client.MinecraftAccessor",
+    "client.LanguageSelectScreenMixin"
   ],
   "server": [],
   "injectors": {
