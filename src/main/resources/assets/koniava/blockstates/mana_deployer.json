@@ -1,8 +1,0 @@
-{
-  "variants": {
-    "facing=north": { "model": "koniava:block/mana_deployer" },
-    "facing=south": { "model": "koniava:block/mana_deployer", "y": 180 },
-    "facing=west":  { "model": "koniava:block/mana_deployer", "y": 270 },
-    "facing=east":  { "model": "koniava:block/mana_deployer", "y": 90 }
-  }
-}

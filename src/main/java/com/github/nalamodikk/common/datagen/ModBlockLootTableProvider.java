@@ -96,6 +96,7 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         dropSelf(ModBlocks.MANA_INFUSER.get());
         dropSelf(ModBlocks.MANA_GRINDER.get());
         dropSelf(ModBlocks.RESEARCH_TABLE.get());
+        dropSelf(ModBlocks.MANA_DEPLOYER.get());
         dropSelf(ModBlocks.ASPECT_ALTAR.get());
         dropSelf(ModBlocks.ASPECT_PEDESTAL.get());
         // altar_pillar 挖掉還給玩家 mana_block，不掉自己

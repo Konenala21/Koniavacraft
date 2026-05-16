@@ -60,20 +60,20 @@ public class ManaDeployerRenderer implements BlockEntityRenderer<ManaDeployerBlo
         ps.mulPose(Axis.YP.rotationDegrees(facingYRot(facing)));
 
         for (BedrockGeoData.Bone root : model.roots) {
-            renderBone(root, ps, vc, light, overlay, animSec, model.texW, model.texH);
+            renderBone(root, ps, vc, light, overlay, animSec, model.texW, model.texH, anim);
         }
 
         ps.popPose();
     }
 
-    private void renderBone(BedrockGeoData.Bone bone, PoseStack ps,
-                            VertexConsumer vc, int light, int overlay,
-                            float animSec, float tw, float th) {
+    static void renderBone(BedrockGeoData.Bone bone, PoseStack ps,
+                           VertexConsumer vc, int light, int overlay,
+                           float animSec, float tw, float th, BedrockAnimData anim) {
         ps.pushPose();
 
-        float px = bone.pivot[0] / 16f;
-        float py = bone.pivot[1] / 16f;
-        float pz = bone.pivot[2] / 16f;
+        float px = -bone.pivot[0] / 16f;
+        float py =  bone.pivot[1] / 16f;
+        float pz =  bone.pivot[2] / 16f;
 
         ps.translate(px, py, pz);
 
@@ -82,9 +82,9 @@ public class ManaDeployerRenderer implements BlockEntityRenderer<ManaDeployerBlo
             if (ba != null) {
                 float[] pos = ba.position(animSec);
                 float[] rot = ba.rotation(animSec);
-                ps.translate(pos[0] / 16f, pos[1] / 16f, pos[2] / 16f);
-                // Bedrock XYZ intrinsic order, all axes negated vs Java right-hand rule
-                ps.mulPose(Axis.ZP.rotationDegrees(-rot[2]));
+                ps.translate(-pos[0] / 16f, pos[1] / 16f, pos[2] / 16f);
+                // Geckolib convention: ZYX code, negate X+Y, Z unchanged
+                ps.mulPose(Axis.ZP.rotationDegrees( rot[2]));
                 ps.mulPose(Axis.YP.rotationDegrees(-rot[1]));
                 ps.mulPose(Axis.XP.rotationDegrees(-rot[0]));
             }
@@ -97,31 +97,32 @@ public class ManaDeployerRenderer implements BlockEntityRenderer<ManaDeployerBlo
         }
 
         for (BedrockGeoData.Bone child : bone.children) {
-            renderBone(child, ps, vc, light, overlay, animSec, tw, th);
+            renderBone(child, ps, vc, light, overlay, animSec, tw, th, anim);
         }
 
         ps.popPose();
     }
 
-    private void renderCube(BedrockGeoData.Cube cube, PoseStack ps,
+    static void renderCube(BedrockGeoData.Cube cube, PoseStack ps,
                             VertexConsumer vc, int light, int overlay,
                             float tw, float th) {
         ps.pushPose();
 
-        float cpx = cube.pivot[0] / 16f;
-        float cpy = cube.pivot[1] / 16f;
-        float cpz = cube.pivot[2] / 16f;
+        float cpx = -cube.pivot[0] / 16f;
+        float cpy =  cube.pivot[1] / 16f;
+        float cpz =  cube.pivot[2] / 16f;
         ps.translate(cpx, cpy, cpz);
-        // Bedrock ZYX intrinsic: all axes negated vs Java right-hand rule
-        ps.mulPose(Axis.XP.rotationDegrees(-cube.rotation[0]));
+        // Geckolib convention: ZYX code, negate X+Y, Z unchanged
+        ps.mulPose(Axis.ZP.rotationDegrees( cube.rotation[2]));
         ps.mulPose(Axis.YP.rotationDegrees(-cube.rotation[1]));
-        ps.mulPose(Axis.ZP.rotationDegrees(-cube.rotation[2]));
+        ps.mulPose(Axis.XP.rotationDegrees(-cube.rotation[0]));
         ps.translate(-cpx, -cpy, -cpz);
 
-        float x0 = cube.origin[0] / 16f;
+        // X-mirror: -(origin+size) → x0, -origin → x1 (matches Geckolib vertex layout)
+        float x0 = -(cube.origin[0] + cube.size[0]) / 16f;
+        float x1 = -cube.origin[0] / 16f;
         float y0 = cube.origin[1] / 16f;
         float z0 = cube.origin[2] / 16f;
-        float x1 = x0 + cube.size[0] / 16f;
         float y1 = y0 + cube.size[1] / 16f;
         float z1 = z0 + cube.size[2] / 16f;
 
@@ -161,7 +162,7 @@ public class ManaDeployerRenderer implements BlockEntityRenderer<ManaDeployerBlo
         ps.popPose();
     }
 
-    private static void quad(VertexConsumer vc, PoseStack.Pose pose,
+    static void quad(VertexConsumer vc, PoseStack.Pose pose,
                              float x0,float y0,float z0,
                              float x1,float y1,float z1,
                              float x2,float y2,float z2,

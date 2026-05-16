@@ -8,6 +8,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -73,6 +74,25 @@ public class ModBlockStateProvider extends BlockStateProvider {
         createManaGeneratorModel();
         createSolarCollectorModel();
         createManaModel(ModBlocks.RESEARCH_TABLE);
+
+        ModelFile deployerModel = new ModelFile.UncheckedModelFile(modLoc("block/mana_deployer.model"));
+        createHorizontalFacingVariants(ModBlocks.MANA_DEPLOYER.get(), deployerModel);
+        itemModels().getBuilder("mana_deployer")
+                .parent(new ModelFile.UncheckedModelFile("builtin/entity"))
+                .transforms()
+                    .transform(ItemDisplayContext.GUI)
+                        .rotation(30, 225, 0).scale(0.625f, 0.625f, 0.625f).end()
+                    .transform(ItemDisplayContext.GROUND)
+                        .translation(0, 3, 0).scale(0.25f, 0.25f, 0.25f).end()
+                    .transform(ItemDisplayContext.FIXED)
+                        .rotation(0, 90, 0).scale(0.5f, 0.5f, 0.5f).end()
+                    .transform(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
+                        .rotation(75, 45, 0).translation(0, 2.5f, 0).scale(0.375f, 0.375f, 0.375f).end()
+                    .transform(ItemDisplayContext.FIRST_PERSON_RIGHT_HAND)
+                        .rotation(0, 45, 0).scale(0.4f, 0.4f, 0.4f).end()
+                    .transform(ItemDisplayContext.FIRST_PERSON_LEFT_HAND)
+                        .rotation(0, 225, 0).scale(0.4f, 0.4f, 0.4f).end()
+                .end();
     }
 
     // ===========================================
@@ -135,6 +155,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .partialState().with(HorizontalDirectionalBlock.FACING, Direction.SOUTH).modelForState().modelFile(model).addModel()
                 .partialState().with(HorizontalDirectionalBlock.FACING, Direction.WEST).modelForState().modelFile(model).rotationY(90).addModel()
                 .partialState().with(HorizontalDirectionalBlock.FACING, Direction.EAST).modelForState().modelFile(model).rotationY(270).addModel();
+    }
+
+    private void createHorizontalFacingVariants(Block block, ModelFile model) {
+        var builder = getVariantBuilder(block);
+        for (Direction dir : Direction.Plane.HORIZONTAL) {
+            int y = switch (dir) { case SOUTH -> 180; case WEST -> 270; case EAST -> 90; default -> 0; };
+            builder.partialState()
+                    .with(HorizontalDirectionalBlock.FACING, dir)
+                    .modelForState().modelFile(model).rotationY(y).addModel();
+        }
     }
 
     /**
@@ -473,4 +503,5 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(deferredBlock.get(),
                 new ModelFile.UncheckedModelFile(KoniavacraftMod.MOD_ID + ":block/" + deferredBlock.getId().getPath() + appendix));
     }
+
 }
