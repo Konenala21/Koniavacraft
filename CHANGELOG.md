@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Player Changes / 玩家更新內容
+
+- Ghost structure projection now highlights blocked positions with red outlines and prevents locking when any block is in the way — move to a clear area first.
+- 幽靈結構投影遇到被方塊佔據的位置時會顯示紅色輪廓，並阻止在有衝突時鎖定位置，需移動到空地才能固定。
+- Ghost projection controls redesigned: hold Shift to pull the ghost closer (within 6 blocks); Shift+Left Click to lock position; Shift+Right Click to close. Clicking without Shift now passes through normally so you can interact with the world freely.
+- 幽靈投影操作重新設計：按住 Shift 拉近投影（6 格內）；Shift+左鍵固定位置；Shift+右鍵關閉。不按 Shift 的點擊直接穿透，可正常與世界互動。
+- Pressing Escape no longer closes the ghost projection; close it with Shift+RMB or by clicking the PRJ button again in JEI.
+- 按下 Esc 不再關閉幽靈投影；改用 Shift+右鍵或在 JEI 再按一次 PRJ 按鈕關閉。
+
+### Developer Notes / 開發者備註
+
+- GhostProjectionHandler: added CF_R/G/B conflict color constants; outline loop now checks canBeReplaced() per block and uses red for conflicts; onMouseButton guards lockPosition() with a conflict scan. Added REACH_CLOSE=6.0; onLevelTick uses short reach when player.isShiftKeyDown(). Removed onKey ESC handler entirely.
+
 ## [0.0.1.6-4] - 2026-05-16
 
 ### Player Changes / 玩家更新內容

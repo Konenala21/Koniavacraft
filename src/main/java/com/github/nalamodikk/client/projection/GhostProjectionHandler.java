@@ -1,21 +1,20 @@
 package com.github.nalamodikk.client.projection;
 
 import com.github.nalamodikk.KoniavacraftMod;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.MeshData;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -25,8 +24,8 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.model.data.ModelData;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
-import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.Map;
@@ -35,34 +34,48 @@ import java.util.Map;
  * Ghost projection overlay — input & render handler.
  *
  * ─── Modes ───────────────────────────────────────────────────────────────────
- * PLACING  Ghost follows player look every tick (blue).
- * PLACED   Ghost frozen at locked position (green); player can freely interact.
+ * PLACING  Ghost follows player look every tick (blue tint).
+ * PLACED   Ghost frozen at locked position (no tint = natural); player free.
  *
  * ─── Controls ────────────────────────────────────────────────────────────────
- *   Left-click  or Right-click (no sneak)  → PLACING→PLACED (click consumed)
- *   Sneak + Right-click                    → deactivate (click consumed)
- *   E  or  Escape                          → deactivate
+ *   Shift + LMB             → PLACING→PLACED  (click consumed, blocked if conflicts)
+ *   Shift + RMB             → deactivate      (click consumed)
+ *   LMB / RMB (no Shift)   → pass through    (normal world interaction)
+ *   Shift held (PLACING)    → short reach (REACH_CLOSE) — ghost snaps to 6 blocks
+ *   PRJ button (JEI)        → deactivate
+ *   E (inventory/JEI)       → NOT intercepted; player can re-click PRJ to close
  *
  * ─── Render ──────────────────────────────────────────────────────────────────
- * Fill uses a private Tesselator (own ByteBufferBuilder) + POSITION_COLOR to
- * avoid the "Not building!" crash that occurs when re-acquiring
- * RenderType.translucent() from the shared entity bufferSource at
- * AFTER_TRANSLUCENT_BLOCKS.
+ * Uses a dedicated ByteBufferBuilder (GHOST_BB) + MultiBufferSource.immediate()
+ * to render real block textures semi-transparently via RenderType.translucent().
+ *
+ * Why not mc.renderBuffers().bufferSource().getBuffer(translucent):
+ *   At AFTER_TRANSLUCENT_BLOCKS the entity BufferSource has already flushed;
+ *   the translucent BufferBuilder is building=false → "Not building!" crash.
+ *   Creating our own BufferSource from a fresh ByteBufferBuilder avoids this.
  */
 @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
 public final class GhostProjectionHandler {
 
-    // PLACING colours (blue)
-    private static final float P_R = 0.5f, P_G = 0.7f, P_B = 1.0f;
-    // PLACED colours (green)
-    private static final float D_R = 0.3f, D_G = 1.0f, D_B = 0.4f;
+    // PLACING outline: blue; PLACED outline: green; conflict outline: red
+    private static final float PL_R = 0.3f, PL_G = 0.6f, PL_B = 1.0f;
+    private static final float FX_R = 0.2f, FX_G = 0.9f, FX_B = 0.3f;
+    private static final float CF_R = 1.0f, CF_G = 0.2f, CF_B = 0.2f;
+    private static final float LINE_A = 0.9f;
 
-    private static final float FILL_A = 0.30f;
-    private static final float LINE_A = 0.85f;
-    private static final double REACH = 32.0;
+    // Ghost alpha and PLACING colour tint (PLACED = no tint)
+    private static final float GHOST_ALPHA   = 0.45f;
+    private static final float PLACING_TINT  = 0.75f; // RGB multiplier for PLACING mode
 
-    /** Private tesselator — never shared with game systems. */
-    private static final Tesselator GHOST_TESS = new Tesselator(65536);
+    private static final double REACH       = 32.0;
+    private static final double REACH_CLOSE =  6.0; // Shift held → pull ghost closer
+
+    /**
+     * Dedicated byte buffer for ghost block rendering.
+     * 2 MB is enough for ~2600 blocks (24 verts × 32 bytes × 2600 ≈ 2 MB).
+     * Reused each frame — cleared after endBatch().
+     */
+    private static final ByteBufferBuilder GHOST_BB = new ByteBufferBuilder(2 * 1024 * 1024);
 
     private GhostProjectionHandler() {}
 
@@ -76,31 +89,20 @@ public final class GhostProjectionHandler {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) return;
 
-        HitResult hit = mc.player.pick(REACH, 1.0f, false);
+        double reach = mc.player.isShiftKeyDown() ? REACH_CLOSE : REACH;
+        HitResult hit = mc.player.pick(reach, 1.0f, false);
         BlockPos newOrigin;
         if (hit instanceof BlockHitResult blockHit) {
             newOrigin = blockHit.getBlockPos().relative(blockHit.getDirection());
         } else {
             Vec3 eye  = mc.player.getEyePosition();
-            Vec3 look = mc.player.getLookAngle().scale(10.0);
+            Vec3 look = mc.player.getLookAngle().scale(reach);
             newOrigin = BlockPos.containing(eye.add(look));
         }
         GhostProjectionState.setOrigin(newOrigin);
     }
 
     // ── Input ─────────────────────────────────────────────────────────────────
-
-    @SubscribeEvent
-    public static void onKey(InputEvent.Key event) {
-        if (!GhostProjectionState.isActive()) return;
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.screen != null) return;
-        // Only Escape closes the projection; E (inventory) is intentionally NOT intercepted
-        // so the player can open JEI/inventory while the ghost is visible and re-click PRJ to dismiss.
-        if (event.getKey() == GLFW.GLFW_KEY_ESCAPE) {
-            GhostProjectionState.deactivate();
-        }
-    }
 
     @SubscribeEvent
     public static void onMouseButton(InputEvent.MouseButton.Pre event) {
@@ -115,21 +117,33 @@ public final class GhostProjectionHandler {
         boolean isLeft  = btn == GLFW.GLFW_MOUSE_BUTTON_LEFT;
 
         if (isRight && sneaking) {
-            // ── 蹲下 + 右鍵 → 關閉 ──────────────────────────────────────────
+            // Shift + RMB → 關閉
             GhostProjectionState.deactivate();
             event.setCanceled(true);
             return;
         }
 
-        if ((isLeft || isRight) && GhostProjectionState.getMode() == GhostProjectionState.Mode.PLACING) {
-            // ── 左鍵 / 右鍵 → 固定位置 (PLACING → PLACED) ─────────────────
-            GhostProjectionState.lockPosition();
-            event.setCanceled(true); // prevent block break / place during planning
+        if (isLeft && sneaking && GhostProjectionState.getMode() == GhostProjectionState.Mode.PLACING) {
+            // Shift + LMB → 固定位置（有衝突時阻止）
+            boolean anyBlocked = false;
+            if (mc.level != null) {
+                BlockPos org = GhostProjectionState.getOrigin();
+                for (BlockPos local : GhostProjectionState.getBlocks().keySet()) {
+                    if (!mc.level.getBlockState(org.offset(local)).canBeReplaced()) {
+                        anyBlocked = true;
+                        break;
+                    }
+                }
+            }
+            if (!anyBlocked) {
+                GhostProjectionState.lockPosition();
+            }
+            event.setCanceled(true);
         }
-        // PLACED mode: all non-sneak clicks pass through normally.
+        // 其他所有點擊直接穿透，玩家可正常與世界互動
     }
 
-    // ── Rendering ─────────────────────────────────────────────────────────────
+    // ── World rendering ────────────────────────────────────────────────────────
 
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {
@@ -137,86 +151,89 @@ public final class GhostProjectionHandler {
         if (!GhostProjectionState.isActive()) return;
 
         Minecraft mc = Minecraft.getInstance();
-        Map<BlockPos, net.minecraft.world.level.block.state.BlockState> blocks =
-                GhostProjectionState.getBlocks();
+        Map<BlockPos, BlockState> blocks = GhostProjectionState.getBlocks();
         if (blocks.isEmpty()) return;
 
-        boolean placed = GhostProjectionState.getMode() == GhostProjectionState.Mode.PLACED;
-        float fr = placed ? D_R : P_R;
-        float fg = placed ? D_G : P_G;
-        float fb = placed ? D_B : P_B;
+        boolean placing = GhostProjectionState.getMode() == GhostProjectionState.Mode.PLACING;
 
-        BlockPos origin = GhostProjectionState.getOrigin();
-        Vec3      cam   = event.getCamera().getPosition();
-        PoseStack ps    = event.getPoseStack();
+        // Colour tint: slight blue in PLACING, neutral (1,1,1) when PLACED
+        float tr = placing ? PLACING_TINT : 1.0f;
+        float tg = placing ? PLACING_TINT : 1.0f;
+        float tb = placing ? 1.0f : 1.0f;   // blue channel always full for PLACING tint
 
-        // ── Translucent fill ──────────────────────────────────────────────────
-        BufferBuilder fill = GHOST_TESS.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
+        BlockPos origin  = GhostProjectionState.getOrigin();
+        Vec3 cam         = event.getCamera().getPosition();
+        PoseStack ps     = event.getPoseStack();
+        var dispatcher   = mc.getBlockRenderer();
+        RandomSource rng = RandomSource.create(42L);
 
-        for (BlockPos local : blocks.keySet()) {
-            BlockPos world = origin.offset(local);
-            float tx = (float)(world.getX() - cam.x);
-            float ty = (float)(world.getY() - cam.y);
-            float tz = (float)(world.getZ() - cam.z);
+        // Fresh BufferSource — no "Not building!" crash (separate from entity bufferSource)
+        MultiBufferSource.BufferSource ghostSrc = MultiBufferSource.immediate(GHOST_BB);
 
-            ps.pushPose();
-            ps.translate(tx, ty, tz);
-            addBox(fill, ps.last().pose(), 0, 0, 0, 1, 1, 1, fr, fg, fb, FILL_A);
-            ps.popPose();
-        }
+        for (Map.Entry<BlockPos, BlockState> entry : blocks.entrySet()) {
+            BlockPos local   = entry.getKey();
+            BlockState state = entry.getValue();
+            BlockPos world   = origin.offset(local);
 
-        MeshData mesh = fill.build();
-        if (mesh != null) {
-            RenderSystem.enableBlend();
-            RenderSystem.defaultBlendFunc();
-            RenderSystem.setShader(GameRenderer::getPositionColorShader);
-            BufferUploader.drawWithShader(mesh);
-            RenderSystem.disableBlend();
-        }
-        GHOST_TESS.clear();
-
-        // ── Outlines ──────────────────────────────────────────────────────────
-        MultiBufferSource.BufferSource buf = mc.renderBuffers().bufferSource();
-        VertexConsumer lines = buf.getBuffer(RenderType.lines());
-
-        for (BlockPos local : blocks.keySet()) {
-            BlockPos world = origin.offset(local);
             double dx = world.getX() - cam.x;
             double dy = world.getY() - cam.y;
             double dz = world.getZ() - cam.z;
 
             ps.pushPose();
             ps.translate(dx, dy, dz);
-            LevelRenderer.renderLineBox(ps, lines, new AABB(0, 0, 0, 1, 1, 1),
-                    fr, fg, fb, LINE_A);
+
+            try {
+                VertexConsumer consumer = ghostSrc.getBuffer(RenderType.translucent());
+                var model = dispatcher.getBlockModel(state);
+                var pose  = ps.last();
+
+                // Render all quads with semi-transparency and optional colour tint
+                for (BakedQuad q : model.getQuads(state, null, rng, ModelData.EMPTY, null))
+                    consumer.putBulkData(pose, q, tr, tg, tb, GHOST_ALPHA,
+                            LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+
+                for (Direction dir : Direction.values())
+                    for (BakedQuad q : model.getQuads(state, dir, rng, ModelData.EMPTY, null))
+                        consumer.putBulkData(pose, q, tr, tg, tb, GHOST_ALPHA,
+                                LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+
+            } catch (Exception e) {
+                KoniavacraftMod.LOGGER.warn("[GhostProjection] block render failed for {}: {}",
+                        state, e.getMessage());
+            }
+
             ps.popPose();
         }
 
-        buf.endBatch(RenderType.lines());
-    }
+        // Draw all ghost blocks, then reset the buffer for next frame
+        try {
+            ghostSrc.endBatch(RenderType.translucent());
+        } finally {
+            GHOST_BB.clear();
+        }
 
-    /** 24 vertices (6 faces × 4) for an axis-aligned box, POSITION_COLOR format. */
-    private static void addBox(BufferBuilder b, Matrix4f m,
-                               float x1, float y1, float z1,
-                               float x2, float y2, float z2,
-                               float r, float g, float bl, float a) {
-        // Bottom
-        b.addVertex(m,x1,y1,z1).setColor(r,g,bl,a); b.addVertex(m,x2,y1,z1).setColor(r,g,bl,a);
-        b.addVertex(m,x2,y1,z2).setColor(r,g,bl,a); b.addVertex(m,x1,y1,z2).setColor(r,g,bl,a);
-        // Top
-        b.addVertex(m,x1,y2,z1).setColor(r,g,bl,a); b.addVertex(m,x1,y2,z2).setColor(r,g,bl,a);
-        b.addVertex(m,x2,y2,z2).setColor(r,g,bl,a); b.addVertex(m,x2,y2,z1).setColor(r,g,bl,a);
-        // North
-        b.addVertex(m,x1,y1,z1).setColor(r,g,bl,a); b.addVertex(m,x1,y2,z1).setColor(r,g,bl,a);
-        b.addVertex(m,x2,y2,z1).setColor(r,g,bl,a); b.addVertex(m,x2,y1,z1).setColor(r,g,bl,a);
-        // South
-        b.addVertex(m,x1,y1,z2).setColor(r,g,bl,a); b.addVertex(m,x2,y1,z2).setColor(r,g,bl,a);
-        b.addVertex(m,x2,y2,z2).setColor(r,g,bl,a); b.addVertex(m,x1,y2,z2).setColor(r,g,bl,a);
-        // West
-        b.addVertex(m,x1,y1,z1).setColor(r,g,bl,a); b.addVertex(m,x1,y1,z2).setColor(r,g,bl,a);
-        b.addVertex(m,x1,y2,z2).setColor(r,g,bl,a); b.addVertex(m,x1,y2,z1).setColor(r,g,bl,a);
-        // East
-        b.addVertex(m,x2,y1,z1).setColor(r,g,bl,a); b.addVertex(m,x2,y2,z1).setColor(r,g,bl,a);
-        b.addVertex(m,x2,y2,z2).setColor(r,g,bl,a); b.addVertex(m,x2,y1,z2).setColor(r,g,bl,a);
+        // ── Outline boxes — per-block colour: conflict=red, placing=blue, placed=green ───────────────────────────────
+        MultiBufferSource.BufferSource mainBuf = mc.renderBuffers().bufferSource();
+        VertexConsumer lines = mainBuf.getBuffer(RenderType.lines());
+
+        for (BlockPos local : blocks.keySet()) {
+            BlockPos world = origin.offset(local);
+
+            boolean blocked = mc.level != null && !mc.level.getBlockState(world).canBeReplaced();
+            float lr = blocked ? CF_R : placing ? PL_R : FX_R;
+            float lg = blocked ? CF_G : placing ? PL_G : FX_G;
+            float lb = blocked ? CF_B : placing ? PL_B : FX_B;
+
+            double dx = world.getX() - cam.x;
+            double dy = world.getY() - cam.y;
+            double dz = world.getZ() - cam.z;
+
+            ps.pushPose();
+            ps.translate(dx, dy, dz);
+            LevelRenderer.renderLineBox(ps, lines, new AABB(0, 0, 0, 1, 1, 1), lr, lg, lb, LINE_A);
+            ps.popPose();
+        }
+
+        mainBuf.endBatch(RenderType.lines());
     }
 }
