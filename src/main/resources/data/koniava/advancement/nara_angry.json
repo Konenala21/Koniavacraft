@@ -1,0 +1,18 @@
+{
+  "display": {
+    "icon": { "id": "minecraft:tnt" },
+    "title": { "translate": "advancement.koniava.nara_angry.title" },
+    "description": { "translate": "advancement.koniava.nara_angry.description" },
+    "frame": "challenge",
+    "hidden": true,
+    "show_toast": true,
+    "announce_to_chat": true
+  },
+  "parent": "koniava:nara_ignored",
+  "criteria": {
+    "obtained": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [["obtained"]]
+}

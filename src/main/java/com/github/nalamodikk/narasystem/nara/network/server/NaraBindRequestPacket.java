@@ -2,9 +2,17 @@ package com.github.nalamodikk.narasystem.nara.network.server;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.item.NaraWatchItem;
+import com.github.nalamodikk.narasystem.nara.event.NaraServerEvents;
+import com.github.nalamodikk.narasystem.nara.network.client.NaraStartDialoguePacket;
 import com.github.nalamodikk.narasystem.nara.util.NaraHelper;
 import com.github.nalamodikk.register.ModItems;
 import com.mojang.logging.LogUtils;
+import it.unimi.dsi.fastutil.ints.IntList;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.entity.projectile.FireworkRocketEntity;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.FireworkExplosion;
+import net.minecraft.world.item.component.Fireworks;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -53,8 +61,37 @@ public record NaraBindRequestPacket(boolean bind) implements CustomPacketPayload
 
             if (packet.bind()) {
                 giveWatchIfMissing(serverPlayer);
+                // 成就
+                NaraServerEvents.grantWelcomeAdvancement(serverPlayer);
+                // 煙火三發
+                spawnWelcomeFireworks(serverPlayer);
+                // 皮膚 model 由 client 端自己讀
+                PacketDistributor.sendToPlayer(serverPlayer, new NaraStartDialoguePacket());
             }
         });
+    }
+
+    public static void spawnWelcomeFireworksPublic(ServerPlayer player) { spawnWelcomeFireworks(player); }
+
+    private static void spawnWelcomeFireworks(ServerPlayer player) {
+        var level = player.serverLevel();
+        // 青色 + 粉紅爆炸
+        FireworkExplosion explosion = new FireworkExplosion(
+                FireworkExplosion.Shape.BURST,
+                IntList.of(0x00FFCC, 0xFF69B4),
+                IntList.of(),
+                false, false
+        );
+        ItemStack fireworkStack = new ItemStack(Items.FIREWORK_ROCKET);
+        fireworkStack.set(DataComponents.FIREWORKS, new Fireworks(1, java.util.List.of(explosion)));
+
+        for (int i = 0; i < 3; i++) {
+            double ox = (i - 1) * 2.0;
+            FireworkRocketEntity rocket = new FireworkRocketEntity(
+                    level, player.getX() + ox, player.getY() + 2, player.getZ(),
+                    fireworkStack.copy());
+            level.addFreshEntity(rocket);
+        }
     }
 
     private static void giveWatchIfMissing(ServerPlayer serverPlayer) {

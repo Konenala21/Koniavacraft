@@ -10,7 +10,11 @@ import com.github.nalamodikk.common.network.packet.server.manatool.ModeChangePac
 import com.github.nalamodikk.common.network.packet.server.manatool.TechWandModePacket;
 import com.github.nalamodikk.common.network.packet.server.manatool.ToggleModePacket;
 import com.github.nalamodikk.common.network.packet.server.player.gui.OpenExtraEquipmentPacket;
+import com.github.nalamodikk.narasystem.nara.network.client.NaraAngryPacket;
+import com.github.nalamodikk.narasystem.nara.network.client.NaraCreeperPunishPacket;
+import com.github.nalamodikk.narasystem.nara.network.client.NaraStartDialoguePacket;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraBindRequestPacket;
+import com.github.nalamodikk.narasystem.nara.network.server.NaraCloseDialoguePacket;
 import com.github.nalamodikk.research.network.AspectSynthesisPacket;
 import com.github.nalamodikk.research.network.ResearchAspectPlacePacket;
 import com.github.nalamodikk.research.network.ResearchCompletePacket;
@@ -38,6 +42,10 @@ public class ModNetworking {
         PriorityUpdatePacket.registerTo(registrar);
         ResetPrioritiesPacket.registerTo(registrar);
         NaraBindRequestPacket.registerTo(registrar);
+        NaraStartDialoguePacket.registerTo(registrar);  // 含 Punishment inner record
+        NaraCloseDialoguePacket.registerTo(registrar);
+        NaraCreeperPunishPacket.registerTo(registrar);
+        NaraAngryPacket.registerTo(registrar);
 
         ResearchCompletePacket.registerTo(registrar);
         ResearchAspectPlacePacket.registerTo(registrar);

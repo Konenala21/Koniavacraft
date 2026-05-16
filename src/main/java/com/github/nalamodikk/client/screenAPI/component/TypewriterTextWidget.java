@@ -60,31 +60,30 @@ public class TypewriterTextWidget extends AbstractWidget {
         return completed;
     }
 
+    /** 每個遊戲刻呼叫一次，推進打字進度。 */
+    public void tick() {
+        if (completed) return;
+        String rawString = fullText.getString();
+        tickCounter++;
+        if (tickCounter >= charDelay) {
+            tickCounter = 0;
+            charIndex++;
+            if (charIndex % 2 == 0) {
+                Minecraft.getInstance().getSoundManager().play(
+                    SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), 1.5F, 0.3F)
+                );
+            }
+            if (charIndex >= rawString.length()) {
+                charIndex = rawString.length();
+                completed = true;
+            }
+        }
+    }
+
     @Override
     protected void renderWidget(GuiGraphics graphics, int localMouseX, int localMouseY, int screenMouseX, int screenMouseY) {
         Font font = Minecraft.getInstance().font;
         String rawString = fullText.getString();
-        
-        // 更新打字進度
-        if (!completed) {
-            tickCounter++;
-            if (tickCounter >= charDelay) {
-                tickCounter = 0;
-                charIndex++;
-                
-                // 播放音效 (每 2 個字播放一次，避免太吵)
-                if (charIndex % 2 == 0) {
-                    Minecraft.getInstance().getSoundManager().play(
-                        SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), 1.5F, 0.3F)
-                    );
-                }
-
-                if (charIndex >= rawString.length()) {
-                    charIndex = rawString.length();
-                    completed = true;
-                }
-            }
-        }
 
         String toDraw = rawString.substring(0, charIndex);
         int drawX = 0;

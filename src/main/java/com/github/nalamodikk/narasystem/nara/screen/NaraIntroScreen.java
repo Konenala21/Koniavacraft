@@ -48,6 +48,7 @@ public class NaraIntroScreen extends Screen {
     @Override
     public void tick() {
         ticksElapsed++;
+        if (textWidget != null) textWidget.tick();
         if (ticksElapsed >= INTRO_DURATION) {
             minecraft.setScreen(new NaraInitScreen());
         }

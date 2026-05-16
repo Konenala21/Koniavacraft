@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- First-time login now triggers a visual novel-style dialogue with Nara (the mod's guide character). She introduces herself and explains the Holographic Watch.
+- 首次登入會觸發娜拉（模組引導角色）的視覺小說風格對話，介紹自己並說明全息手錶的用途。
+- Ignoring Nara's dialogue repeatedly will summon a Warden that instantly attacks. After dying and respawning, Nara will demand an apology before letting you go.
+- 反覆無視娜拉的對話會召喚監守者瞬間攻擊。死亡重生後娜拉會要求道歉才肯放人。
+- Completing the first watch binding now triggers welcome fireworks.
+- 完成首次手錶綁定後會觸發歡迎煙火。
+- Added three hidden advancements related to Nara's introduction: completing the binding, ignoring her, and making her angry.
+- 新增三個與娜拉介紹相關的隱藏成就：完成綁定、無視娜拉、讓娜拉生氣。
+- Added `/koniava nara replay` command to replay the Nara introduction dialogue.
+- 新增 `/koniava nara replay` 指令，可重新播放娜拉介紹對話。
 - Altar now outputs crafted results to adjacent containers (hoppers, chests, etc.) before dropping on the ground.
 - 祭壇儀式完成後，結果物品現在會優先輸出至相鄰容器（漏斗、箱子等），無法輸出時才掉落在地。
 - Added Mana Deployer block: point it at another block and it will automatically left- or right-click that block on your behalf using a FakePlayer. Supports redstone automation.
@@ -17,6 +27,13 @@ All notable changes to this project will be documented in this file.
 
 ### Developer Notes / 開發者備註
 
+- Nara dialogue system: `NaraDialogueManager` (state machine: INACTIVE/TYPING/WAITING/CHOOSING), `NaraDialogueOverlay` (HUD with portrait reveal animation, typewriter text, scrollable choices, timeout progress bar), `NaraFirstLoginFlow` (dialogue script with escalating timeouts 200→40 ticks over 10 ignores).
+- Network packets: `NaraStartDialoguePacket` + inner `Punishment` record, `NaraCloseDialoguePacket` (server→client on death), `NaraCreeperPunishPacket`, `NaraAngryPacket` — all registered in `ModNetworking`.
+- `NaraServerEvents`: `pendingPunishmentDialogue` countdown map, `awaitingRespawn` set (death during punishment), `naraPunishmentActive` set (cleared only when punishment dialogue actually fires), `pendingWardenDespawn` map (Warden discarded after 80 ticks).
+- Punishment mob changed from Creeper to Warden: spawns at player position, `increaseAngerAt(player, 150)`, immediately calls `player.hurt(mobAttack, dmg)` for instant damage, despawns after 80 ticks.
+- Punishment dialogue requires player to select an apology choice; timeout re-triggers the Warden cycle; 10 cumulative ignores triggers angry portrait + `NaraAngryPacket`.
+- All HUD text uses lang keys: `nara.hud.hint.*`, `nara.hud.name`, `nara.hud.name.unknown`; `displayName` is now `Component` (not raw `String`).
+- Advancements in `data/koniava/advancement/`: `nara_welcome` (root), `nara_ignored` (hidden child), `nara_angry` (hidden child).
 - `AspectAltarBlockEntity`: ritual completion now checks adjacent block entities for `Capabilities.ItemHandler.BLOCK` and inserts result before falling back to dropping above altar.
 - `ManaDeployerBlock` + `ManaDeployerBlockEntity`: FakePlayer automation — left/right-click mode configurable via wand; BER loads Bedrock `.model.json` geometry + frame-interpolated animation system (no GeckoLib); fixed coordinate axes (X/Z negation for Bedrock→Java, UV winding correction).
 - `ResearchCommand`: added `unlock_all` subcommand — iterates `ResearchRegistry.all()`, calls `completeResearch()` on each; lang keys added to `en_us.json` and `zh_tw.json`.

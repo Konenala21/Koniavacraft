@@ -6,26 +6,16 @@ import com.github.nalamodikk.common.block.blockentity.mana_deployer.ManaDeployer
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.Map;
 
-/**
- * BER for ManaDeployerBlockEntity.
- * Loads Bedrock geometry + animation JSON once, renders every frame.
- *
- * Coordinate convention:
- *   Bedrock pixel unit = 1/16 block.
- *   All Bedrock coords are divided by 16 before passing to PoseStack/VertexConsumer.
- *   The block BER origin is the block's (0,0,0) corner; we translate +0.5 on X/Z
- *   to centre the model, then apply facing rotation.
- */
 public class ManaDeployerRenderer implements BlockEntityRenderer<ManaDeployerBlockEntity> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
@@ -42,15 +32,9 @@ public class ManaDeployerRenderer implements BlockEntityRenderer<ManaDeployerBlo
     private BedrockGeoData  model;
     private BedrockAnimData anim;
 
-    public ManaDeployerRenderer(BlockEntityRendererProvider.Context ctx) {
-        var rm = ctx.getBlockRenderDispatcher().getBlockModelShaper()
-                    .getModelManager().getClass(); // dummy to get ctx
-        // Lazy-load on first render to ensure resource manager is ready
-    }
+    public ManaDeployerRenderer(BlockEntityRendererProvider.Context ctx) {}
 
-    // ── Lazy init ─────────────────────────────────────────────────────────────
-
-    private void ensureLoaded(net.minecraft.client.Minecraft mc) {
+    private void ensureLoaded(Minecraft mc) {
         if (model != null) return;
         var rm = mc.getResourceManager();
         model = BedrockLoader.loadModel(rm, MODEL_LOC);
@@ -58,29 +42,22 @@ public class ManaDeployerRenderer implements BlockEntityRenderer<ManaDeployerBlo
         anim  = anims.get(ANIM_NAME);
     }
 
-    // ── Render ────────────────────────────────────────────────────────────────
-
     @Override
     public void render(ManaDeployerBlockEntity be, float partialTick,
                        PoseStack ps, MultiBufferSource buffers,
                        int light, int overlay) {
-        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        Minecraft mc = Minecraft.getInstance();
         ensureLoaded(mc);
         if (model == null) return;
 
-        BlockState state   = be.getBlockState();
-        Direction  facing  = state.getValue(ManaDeployerBlock.FACING);
-        float      animSec = be.getAnimTime(partialTick);
+        Direction facing  = be.getBlockState().getValue(ManaDeployerBlock.FACING);
+        float     animSec = be.getAnimTime(partialTick);
 
         VertexConsumer vc = buffers.getBuffer(RenderType.entityCutout(TEXTURE));
 
         ps.pushPose();
-
-        // Centre model at block middle, apply facing rotation
         ps.translate(0.5, 0.0, 0.5);
         ps.mulPose(Axis.YP.rotationDegrees(facingYRot(facing)));
-        // Bedrock entity coords: negate X and Z to match Java block rendering orientation.
-        ps.scale(-1f, 1f, -1f);
 
         for (BedrockGeoData.Bone root : model.roots) {
             renderBone(root, ps, vc, light, overlay, animSec, model.texW, model.texH);
@@ -89,44 +66,36 @@ public class ManaDeployerRenderer implements BlockEntityRenderer<ManaDeployerBlo
         ps.popPose();
     }
 
-    // ── Recursive bone render ─────────────────────────────────────────────────
-
     private void renderBone(BedrockGeoData.Bone bone, PoseStack ps,
                             VertexConsumer vc, int light, int overlay,
                             float animSec, float tw, float th) {
         ps.pushPose();
 
-        // Pivot in world units
         float px = bone.pivot[0] / 16f;
         float py = bone.pivot[1] / 16f;
         float pz = bone.pivot[2] / 16f;
 
-        // Translate to pivot
         ps.translate(px, py, pz);
 
-        // Apply animation transforms (in pixel units → world units)
         if (anim != null) {
             BedrockAnimData.BoneAnim ba = anim.bones.get(bone.name);
             if (ba != null) {
                 float[] pos = ba.position(animSec);
                 float[] rot = ba.rotation(animSec);
                 ps.translate(pos[0] / 16f, pos[1] / 16f, pos[2] / 16f);
-                // Bedrock rotation order: X → Y → Z
-                ps.mulPose(Axis.XP.rotationDegrees(rot[0]));
-                ps.mulPose(Axis.YP.rotationDegrees(rot[1]));
-                ps.mulPose(Axis.ZP.rotationDegrees(rot[2]));
+                // Bedrock XYZ intrinsic order, all axes negated vs Java right-hand rule
+                ps.mulPose(Axis.ZP.rotationDegrees(-rot[2]));
+                ps.mulPose(Axis.YP.rotationDegrees(-rot[1]));
+                ps.mulPose(Axis.XP.rotationDegrees(-rot[0]));
             }
         }
 
-        // Translate back from pivot
         ps.translate(-px, -py, -pz);
 
-        // Render cubes
         for (BedrockGeoData.Cube cube : bone.cubes) {
             renderCube(cube, ps, vc, light, overlay, tw, th);
         }
 
-        // Recurse children (they inherit this bone's accumulated transform)
         for (BedrockGeoData.Bone child : bone.children) {
             renderBone(child, ps, vc, light, overlay, animSec, tw, th);
         }
@@ -134,24 +103,21 @@ public class ManaDeployerRenderer implements BlockEntityRenderer<ManaDeployerBlo
         ps.popPose();
     }
 
-    // ── Cube render ───────────────────────────────────────────────────────────
-
     private void renderCube(BedrockGeoData.Cube cube, PoseStack ps,
                             VertexConsumer vc, int light, int overlay,
                             float tw, float th) {
         ps.pushPose();
 
-        // Cube's own rotation around its pivot
         float cpx = cube.pivot[0] / 16f;
         float cpy = cube.pivot[1] / 16f;
         float cpz = cube.pivot[2] / 16f;
         ps.translate(cpx, cpy, cpz);
-        ps.mulPose(Axis.XP.rotationDegrees(cube.rotation[0]));
-        ps.mulPose(Axis.YP.rotationDegrees(cube.rotation[1]));
-        ps.mulPose(Axis.ZP.rotationDegrees(cube.rotation[2]));
+        // Bedrock ZYX intrinsic: all axes negated vs Java right-hand rule
+        ps.mulPose(Axis.XP.rotationDegrees(-cube.rotation[0]));
+        ps.mulPose(Axis.YP.rotationDegrees(-cube.rotation[1]));
+        ps.mulPose(Axis.ZP.rotationDegrees(-cube.rotation[2]));
         ps.translate(-cpx, -cpy, -cpz);
 
-        // Cube corners in world units
         float x0 = cube.origin[0] / 16f;
         float y0 = cube.origin[1] / 16f;
         float z0 = cube.origin[2] / 16f;
@@ -161,37 +127,31 @@ public class ManaDeployerRenderer implements BlockEntityRenderer<ManaDeployerBlo
 
         PoseStack.Pose pose = ps.last();
 
-        // North (-Z)
         if (cube.north != null) {
             float u0=cube.north.u0(tw), v0=cube.north.v0(th), u1=cube.north.u1(tw), v1=cube.north.v1(th);
             quad(vc,pose, x1,y1,z0, x0,y1,z0, x0,y0,z0, x1,y0,z0,
                  u0,v0, u1,v0, u1,v1, u0,v1, 0,0,-1, light,overlay);
         }
-        // South (+Z)
         if (cube.south != null) {
             float u0=cube.south.u0(tw), v0=cube.south.v0(th), u1=cube.south.u1(tw), v1=cube.south.v1(th);
             quad(vc,pose, x0,y1,z1, x1,y1,z1, x1,y0,z1, x0,y0,z1,
                  u0,v0, u1,v0, u1,v1, u0,v1, 0,0,1, light,overlay);
         }
-        // East (+X)
         if (cube.east != null) {
             float u0=cube.east.u0(tw), v0=cube.east.v0(th), u1=cube.east.u1(tw), v1=cube.east.v1(th);
             quad(vc,pose, x1,y1,z1, x1,y1,z0, x1,y0,z0, x1,y0,z1,
                  u0,v0, u1,v0, u1,v1, u0,v1, 1,0,0, light,overlay);
         }
-        // West (-X)
         if (cube.west != null) {
             float u0=cube.west.u0(tw), v0=cube.west.v0(th), u1=cube.west.u1(tw), v1=cube.west.v1(th);
             quad(vc,pose, x0,y1,z0, x0,y1,z1, x0,y0,z1, x0,y0,z0,
                  u0,v0, u1,v0, u1,v1, u0,v1, -1,0,0, light,overlay);
         }
-        // Up (+Y)
         if (cube.up != null) {
             float u0=cube.up.u0(tw), v0=cube.up.v0(th), u1=cube.up.u1(tw), v1=cube.up.v1(th);
             quad(vc,pose, x0,y1,z0, x1,y1,z0, x1,y1,z1, x0,y1,z1,
                  u0,v0, u1,v0, u1,v1, u0,v1, 0,1,0, light,overlay);
         }
-        // Down (-Y)
         if (cube.down != null) {
             float u0=cube.down.u0(tw), v0=cube.down.v0(th), u1=cube.down.u1(tw), v1=cube.down.v1(th);
             quad(vc,pose, x0,y0,z1, x1,y0,z1, x1,y0,z0, x0,y0,z0,
@@ -200,8 +160,6 @@ public class ManaDeployerRenderer implements BlockEntityRenderer<ManaDeployerBlo
 
         ps.popPose();
     }
-
-    // ── Quad helper ───────────────────────────────────────────────────────────
 
     private static void quad(VertexConsumer vc, PoseStack.Pose pose,
                              float x0,float y0,float z0,
@@ -212,14 +170,11 @@ public class ManaDeployerRenderer implements BlockEntityRenderer<ManaDeployerBlo
                              float u2,float v2, float u3,float v3,
                              float nx,float ny,float nz,
                              int light, int overlay) {
-        // Reversed vertex order restores CCW winding after the ps.scale(-1,1,1) X-mirror.
         vc.addVertex(pose,x3,y3,z3).setColor(255,255,255,255).setUv(u3,v3).setOverlay(overlay).setLight(light).setNormal(pose,nx,ny,nz);
         vc.addVertex(pose,x2,y2,z2).setColor(255,255,255,255).setUv(u2,v2).setOverlay(overlay).setLight(light).setNormal(pose,nx,ny,nz);
         vc.addVertex(pose,x1,y1,z1).setColor(255,255,255,255).setUv(u1,v1).setOverlay(overlay).setLight(light).setNormal(pose,nx,ny,nz);
         vc.addVertex(pose,x0,y0,z0).setColor(255,255,255,255).setUv(u0,v0).setOverlay(overlay).setLight(light).setNormal(pose,nx,ny,nz);
     }
-
-    // ── Facing rotation ───────────────────────────────────────────────────────
 
     /** Model built with arm pointing +Z (south). Rotate so arm points FACING direction. */
     private static float facingYRot(Direction facing) {
