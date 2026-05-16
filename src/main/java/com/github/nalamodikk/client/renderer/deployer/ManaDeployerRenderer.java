@@ -79,10 +79,8 @@ public class ManaDeployerRenderer implements BlockEntityRenderer<ManaDeployerBlo
         // Centre model at block middle, apply facing rotation
         ps.translate(0.5, 0.0, 0.5);
         ps.mulPose(Axis.YP.rotationDegrees(facingYRot(facing)));
-        // Bedrock entity X axis is mirrored relative to Java block rendering.
-        // Scale -1 on X to correct the mirror; quad() emits vertices in reverse order
-        // to restore CCW winding after the reflection.
-        ps.scale(-1f, 1f, 1f);
+        // Bedrock entity coords: negate X and Z to match Java block rendering orientation.
+        ps.scale(-1f, 1f, -1f);
 
         for (BedrockGeoData.Bone root : model.roots) {
             renderBone(root, ps, vc, light, overlay, animSec, model.texW, model.texH);
