@@ -62,6 +62,23 @@ public class ManaCraftingRecipeProvider {
                 .manaCost(4000)
                 .save(output, "aspect_altar");
 
+        // ⑤ 基礎魔力電路板
+        // 排列：D=導線, C=晶片, W=黏膠, S=基板
+        //   D C D
+        //   W S W
+        //   D C D
+        ManaCraftingRecipeBuilder.create(ModItems.BASIC_MANA_CIRCUIT.get(), 1)
+                .shaped(true)
+                .pattern("DCD")
+                .pattern("WSW")
+                .pattern("DCD")
+                .define('D', ModItems.MANA_WIRE.get())
+                .define('C', ModItems.MANA_WAFER.get())
+                .define('W', ModItems.MANA_ADHESIVE.get())
+                .define('S', ModItems.MANA_SUBSTRATE.get())
+                .manaCost(3000)
+                .save(output, "basic_mana_circuit");
+
         ManaCraftingRecipeBuilder.create(ModBlocks.MANA_INFUSER.get(), 1)
                 .shaped(true)  // 明確設置為有序
                 .pattern("RGR")

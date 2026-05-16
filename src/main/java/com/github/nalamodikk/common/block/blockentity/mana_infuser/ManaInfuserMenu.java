@@ -147,6 +147,10 @@ public class ManaInfuserMenu extends AbstractContainerMenu {
         return itemstack;
     }
 
+    public net.minecraft.core.BlockPos getBlockEntityPos() {
+        return blockEntity.getBlockPos();
+    }
+
     @Override
     public boolean stillValid(Player player) {
         return stillValid(this.access, player, ModBlocks.MANA_INFUSER.get());

@@ -14,6 +14,7 @@ import java.util.List;
 public class AltarRecipeProvider {
 
     public static void generate(RecipeOutput output) {
+        registerCircuitMaterials(output);
         // 魔力水晶（催化：精煉魔力粉，底座：魔力碎片×4）
         save(output, "mana_crystal_ritual",
                 Ingredient.of(ModItems.REFINED_MANA_DUST.get()),
@@ -51,6 +52,19 @@ public class AltarRecipeProvider {
                 ),
                 new ItemStack(Items.GOLDEN_APPLE),
                 12000, 160
+        );
+    }
+
+    private static void registerCircuitMaterials(RecipeOutput output) {
+        save(output, "mana_wafer",
+                Ingredient.of(ModItems.REFINED_MANA_DUST.get()),
+                List.of(
+                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
+                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
+                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get())
+                ),
+                new ItemStack(ModItems.MANA_WAFER.get(), 2),
+                5000, 100
         );
     }
 

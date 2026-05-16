@@ -5,8 +5,11 @@ import com.github.nalamodikk.client.screenAPI.component.ManaBarWidget;
 import com.github.nalamodikk.client.screenAPI.component.ResearchLockWidget;
 import com.github.nalamodikk.client.screenAPI.framework.AbstractWidget;
 import com.github.nalamodikk.client.screenAPI.framework.AutoSizedModularScreen;
+import com.github.nalamodikk.client.screenAPI.framework.ButtonWidget;
 import com.github.nalamodikk.client.screenAPI.framework.Panel;
+import com.github.nalamodikk.common.network.packet.server.OpenUpgradeGuiPacket;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -20,6 +23,8 @@ public class ManaInfuserScreen extends AutoSizedModularScreen<ManaInfuserMenu> {
 
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/mana_infuser_gui.png");
+    private static final ResourceLocation UPGRADE_BUTTON_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/widget/upgrade_button.png");
 
     public ManaInfuserScreen(ManaInfuserMenu menu, Inventory playerInventory, Component title) {
         // ✨ v2: 自動檢測尺寸並繪製背景
@@ -36,7 +41,13 @@ public class ManaInfuserScreen extends AutoSizedModularScreen<ManaInfuserMenu> {
                 .setSize(10, 48)
                 .setDrawBackground(false)); // 根據原版代碼調整大小
 
-        // 2. 進度條 (67, 36) - 44x12 (與粉碎機一致)
+        // 2. 升級按鈕 (150, 22) — R 圖示下方
+        root.add(new ButtonWidget(150, 22, 18, 18, UPGRADE_BUTTON_TEXTURE, 18, 18, btn -> {
+            BlockPos pos = this.menu.getBlockEntityPos();
+            OpenUpgradeGuiPacket.sendToServer(pos);
+        }).setTooltip(() -> List.of(Component.translatable("screen.koniava.upgrade_button.tooltip"))));
+
+        // 3. 進度條 (67, 36) - 44x12 (與粉碎機一致)
         // 使用匿名 Widget 直接繪製大圖上的進度條
         root.add(new AbstractWidget(67, 36, 44, 12) {
             @Override

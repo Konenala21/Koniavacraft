@@ -8,6 +8,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.levelgen.SurfaceRules;
 import net.minecraft.world.level.levelgen.VerticalAnchor;
+import net.minecraft.world.level.levelgen.placement.CaveSurface;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -181,9 +182,14 @@ public class UniversalTerrainEcosystemLibrary {
         }
 
         // 🌱 地下規則
+        // deepSoilThreshold = 超出 UNDER_FLOOR 的額外格數；wrapper 需擴展才能讓深層土壤出現
         if (config.soilBlock() != null || config.deepSoilBlock() != null || config.stoneBlock() != null) {
+            SurfaceRules.ConditionSource depthCondition =
+                    (config.deepSoilBlock() != null && config.deepSoilThreshold() > Integer.MIN_VALUE)
+                    ? SurfaceRules.stoneDepthCheck(0, true, config.deepSoilThreshold(), CaveSurface.FLOOR)
+                    : SurfaceRules.UNDER_FLOOR;
             SurfaceRules.RuleSource undergroundRule = SurfaceRules.ifTrue(
-                    SurfaceRules.UNDER_FLOOR,
+                    depthCondition,
                     createUndergroundRule(config)
             );
             rules.add(undergroundRule);
@@ -239,25 +245,23 @@ public class UniversalTerrainEcosystemLibrary {
 
         // 🎯 關鍵修正：調整規則順序，確保層次正確
 
-        // 🌾 1. 淺層土壤規則（Y >= threshold 時使用普通土壤）
+        // 🌾 1. 淺層土壤（UNDER_FLOOR 範圍，地表下約 3-5 格）
         if (config.soilBlock() != null && config.deepSoilBlock() != null && config.deepSoilThreshold() > Integer.MIN_VALUE) {
-            SurfaceRules.RuleSource shallowSoilRule = SurfaceRules.ifTrue(
-                    SurfaceRules.yBlockCheck(VerticalAnchor.absolute(config.deepSoilThreshold()), 0), // Y >= threshold
+            undergroundRules.add(SurfaceRules.ifTrue(
+                    SurfaceRules.UNDER_FLOOR,
                     makeStateRule(config.soilBlock())
-            );
-            undergroundRules.add(shallowSoilRule);
+            ));
         }
 
-        // 🏔️ 2. 深層土壤規則（Y < threshold 時使用深層土壤）
+        // 🏔️ 2. 深層土壤（超出 UNDER_FLOOR 的部分；外層 wrapper 已擴展至 UNDER_FLOOR+threshold 格）
         if (config.deepSoilBlock() != null && config.deepSoilThreshold() > Integer.MIN_VALUE) {
-            SurfaceRules.RuleSource deepSoilRule = SurfaceRules.ifTrue(
-                    SurfaceRules.yBlockCheck(VerticalAnchor.absolute(config.deepSoilThreshold()), -1), // Y < threshold
+            undergroundRules.add(SurfaceRules.ifTrue(
+                    SurfaceRules.not(SurfaceRules.UNDER_FLOOR),
                     makeStateRule(config.deepSoilBlock())
-            );
-            undergroundRules.add(deepSoilRule);
+            ));
         }
 
-        // 🌾 3. 後備土壤規則（如果沒有深層土壤配置，使用普通土壤）
+        // 🌾 3. 後備土壤（只有 soilBlock，沒有 deepSoilBlock）
         else if (config.soilBlock() != null) {
             undergroundRules.add(makeStateRule(config.soilBlock()));
         }

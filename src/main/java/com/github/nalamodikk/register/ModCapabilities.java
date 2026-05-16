@@ -79,6 +79,9 @@ public class ModCapabilities {
         // 本源聚陣：只接收魔力（INPUT）
         event.registerBlockEntity(ModCapabilities.MANA, ModBlockEntities.ASPECT_ALTAR_BE.get(),
                 (blockEntity, side) -> new RestrictedManaHandler(blockEntity.getManaStorage(), true, false));
+        // 本源基座：物品欄能力（支援漏斗/其他 mod 自動化）
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.ASPECT_PEDESTAL_BE.get(),
+                (blockEntity, side) -> blockEntity.getItemHandler());
 
         // 導管能力
         event.registerBlockEntity(ModCapabilities.MANA, ModBlockEntities.ARCANE_CONDUIT_BE.get(), (blockEntity, side) -> blockEntity);

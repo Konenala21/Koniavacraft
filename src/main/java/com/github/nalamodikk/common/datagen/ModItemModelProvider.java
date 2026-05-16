@@ -26,8 +26,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         // 研究系統物品：借用 vanilla 貼圖
         withExistingParent(ModItems.RESEARCH_NOTE.getId().getPath(),
                 ResourceLocation.withDefaultNamespace("item/paper"));
-        withExistingParent(ModItems.INK_QUILL.getId().getPath(),
-                ResourceLocation.withDefaultNamespace("item/feather"));
         // 娜拉全息手錶：貼圖未完成前借用 vanilla compass
         withExistingParent(ModItems.NARA_WATCH.getId().getPath(),
                 ResourceLocation.withDefaultNamespace("item/compass"));
@@ -52,9 +50,8 @@ public class ModItemModelProvider extends ItemModelProvider {
             }
 
             // ❌ 跳過已在上方明確處理的物品
-            if (name.equals("research_note") || name.equals("ink_quill")
-                    || name.equals("nara_watch") || name.equals("completed_research")
-                    || name.equals("mana_crystal")) {
+            if (name.equals("research_note") || name.equals("nara_watch")
+                    || name.equals("completed_research") || name.equals("mana_crystal")) {
                 return;
             }
 

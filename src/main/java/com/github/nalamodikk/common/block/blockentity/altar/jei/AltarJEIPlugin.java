@@ -61,12 +61,21 @@ public class AltarJEIPlugin implements IModPlugin {
                 new ItemStack(ModBlocks.ASPECT_PEDESTAL.get()),
                 AltarRecipeCategory.RECIPE_TYPE);
 
-        // 多方塊結構指引：法杖 + 祭壇本身都能查看
+        // 多方塊結構指引：進階法杖、結構建造法杖、祭壇本身都能查看
         registration.addRecipeCatalyst(
                 new ItemStack(ModItems.ADVANCED_TECH_WAND.get()),
                 AltarMultiblockCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(
+                new ItemStack(ModItems.STRUCTURE_BUILD_WAND.get()),
+                AltarMultiblockCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(
                 new ItemStack(ModBlocks.ASPECT_ALTAR.get()),
+                AltarMultiblockCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(
+                new ItemStack(ModBlocks.MANA_BLOCK.get(), 8),
+                AltarMultiblockCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(
+                new ItemStack(ModBlocks.ASPECT_PEDESTAL.get(), 5),
                 AltarMultiblockCategory.RECIPE_TYPE);
     }
 }

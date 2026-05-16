@@ -12,6 +12,8 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.items.IItemHandler;
+import org.jetbrains.annotations.NotNull;
 
 public class AspectPedestalBlockEntity extends AbstractMultiblockPartBlockEntity {
 
@@ -54,6 +56,51 @@ public class AspectPedestalBlockEntity extends AbstractMultiblockPartBlockEntity
         heldItem = ItemStack.EMPTY;
         setChanged();
         notifyBlockUpdate();
+    }
+
+    public IItemHandler getItemHandler() {
+        return new IItemHandler() {
+            @Override
+            public int getSlots() { return 1; }
+
+            @Override
+            public @NotNull ItemStack getStackInSlot(int slot) {
+                return slot == 0 ? heldItem : ItemStack.EMPTY;
+            }
+
+            @Override
+            public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+                if (slot != 0 || stack.isEmpty() || !heldItem.isEmpty()) return stack;
+                if (!simulate) {
+                    heldItem = stack.copyWithCount(1);
+                    setChanged();
+                    notifyBlockUpdate();
+                }
+                ItemStack remainder = stack.copy();
+                remainder.shrink(1);
+                return remainder;
+            }
+
+            @Override
+            public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+                if (slot != 0 || heldItem.isEmpty() || amount <= 0) return ItemStack.EMPTY;
+                ItemStack result = heldItem.copyWithCount(1);
+                if (!simulate) {
+                    heldItem = ItemStack.EMPTY;
+                    setChanged();
+                    notifyBlockUpdate();
+                }
+                return result;
+            }
+
+            @Override
+            public int getSlotLimit(int slot) { return 1; }
+
+            @Override
+            public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+                return slot == 0 && !stack.isEmpty();
+            }
+        };
     }
 
     private void notifyBlockUpdate() {

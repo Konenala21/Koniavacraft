@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.1.6-4] - 2026-05-16
+
+### Player Changes / 玩家更新內容
+
+- Added T1 Basic Mana Circuit Board manufacturing chain (5 steps, 5 new intermediate items): Mana Substrate, Mana Wire, Mana Adhesive, Mana Wafer, and Basic Mana Circuit Board. Requires Mana Grinder, Aspect Altar, and Mana Crafting Table.
+- 新增 T1 基礎魔力電路板製造鏈（5 步驟、5 個中間材料）：魔力基板、魔力導線、魔力黏膠、魔力晶片、基礎魔力電路板，需要磨粉機、本源聚陣與魔力工作台。
+- Upgrade button is now shown in the Mana Grinder, Mana Crafting Table, and Mana Infuser GUIs.
+- 魔力磨粉機、魔力工作台、魔力注入機的 GUI 現在顯示升級按鈕。
+- Aspect Pedestal now supports automation: hoppers, Create, AE2, and other mods with item transport can insert and extract items automatically.
+- 本源底座現在支援自動化：漏斗、Create、AE2 等模組可直接存取底座物品。
+- JEI altar multiblock guide completely redesigned: a slider now shows the full altar structure with all upgrade rings stacked cumulatively (slide to T3 = base + T1 + T2 + T3 rings visible at once). Material count updates cumulatively as you slide. Press the "Inv" button to scan your inventory once — counts turn green/orange/red, and hovering over each material shows how many you have and how many are still missing.
+- JEI 祭壇多方塊指南全面重新設計：滑條模式可累積顯示整體祭壇結構（拉到 T3 = 同時顯示基礎 + T1 + T2 + T3 環）。材料數量依層數累積計算。按「Inv」按鈕即時掃描背包，數量顏色轉為綠/橙/紅，懸停材料可查看需要/擁有/還缺多少。
+- Material items in the JEI altar guide are now clickable — left-click to see uses, right-click to see recipes.
+- JEI 祭壇指南的材料物品現在可點擊，左鍵查用途，右鍵查配方。
+- Deep Mana Soil now generates correctly in Mana Plains biomes. Previously it never appeared due to a surface rule configuration error.
+- 深層魔力土壤現在可在魔力草原生物群系中正確生成，先前因地表規則設定錯誤導致完全不生成。
+
+### Developer Notes / 開發者備註
+
+- Registered 5 new items: mana_substrate, mana_wire, mana_adhesive, mana_wafer, basic_mana_circuit with textures and auto item model generation.
+- Added 3 ManaGrinder recipes (mana_substrate, mana_wire×4, mana_adhesive×3), 1 AltarRecipe (mana_wafer×2), 1 ManaCrafting shaped recipe (basic_mana_circuit) for the T1 circuit chain.
+- ManaGrinderMenu / ManaInfuserMenu: added getBlockEntityPos(); ManaCraftingScreen: null guard on getBlockEntity().
+- AspectPedestalBlockEntity.getItemHandler(): returns an IItemHandler wrapping the single heldItem slot (accepts 1 item, ejects on extract). Registered as Capabilities.ItemHandler.BLOCK in ModCapabilities.
+- AltarMultiblockCategory: full rewrite — replaced 7-tab system with SliderWidget (0–6 snap positions), cumulative render map (base + rings 0..tier-1), InventoryButtonWidget (one-shot inventory scan → cachedCounts[], countColor()), addTooltipCallback on each JEI slot for need/have/missing lines, auto-scale on tier change.
+- Surface rule fix: shallow mana soil uses UNDER_FLOOR (stoneDepthCheck default 0–5 blocks), deep mana soil uses not(UNDER_FLOOR) within stoneDepthCheck(0, true, 4, FLOOR). BiomeTerrainRegistration deepSoilThreshold changed from 20 → 4.
+
 ## [0.0.1.6-3] - 2026-05-15
 
 ### Player Changes / 玩家更新內容

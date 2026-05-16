@@ -70,10 +70,12 @@ public class BiomeTerrainRegistration {
      */
     private static void registerManaPlains() {
         // 地表規則：mana_grass_block / mana_soil / deep_mana_soil
+        // deepSoil threshold = UNDER_FLOOR 之外的額外格數
+        // 4 → deep_mana_soil 出現在地表下約 4-9 格（UNDER_FLOOR ≈ 3-5 + 4 = 7-9 格範圍）
         BiomeTerrainLibAPI.addBiome(ModBiomes.MANA_PLAINS)
                 .surface(() -> ModBlocks.MANA_GRASS_BLOCK.get())
                 .soil(() -> ModBlocks.MANA_SOIL.get())
-                .deepSoil(() -> ModBlocks.DEEP_MANA_SOIL.get(), 20)
+                .deepSoil(() -> ModBlocks.DEEP_MANA_SOIL.get(), 4)
                 .avoidWater()
                 .priority(10)
                 .register();

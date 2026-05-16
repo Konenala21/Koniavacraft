@@ -159,4 +159,8 @@ public class ManaGrinderMenu extends AbstractContainerMenu {
     public boolean isWorking() {
         return getProgress() > 0;
     }
+
+    public net.minecraft.core.BlockPos getBlockEntityPos() {
+        return blockEntity.getBlockPos();
+    }
 }

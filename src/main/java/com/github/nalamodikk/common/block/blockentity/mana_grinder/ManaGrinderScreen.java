@@ -5,8 +5,11 @@ import com.github.nalamodikk.client.screenAPI.component.ManaBarWidget;
 import com.github.nalamodikk.client.screenAPI.component.ResearchLockWidget;
 import com.github.nalamodikk.client.screenAPI.framework.AbstractWidget;
 import com.github.nalamodikk.client.screenAPI.framework.AutoSizedModularScreen;
+import com.github.nalamodikk.client.screenAPI.framework.ButtonWidget;
 import com.github.nalamodikk.client.screenAPI.framework.Panel;
+import com.github.nalamodikk.common.network.packet.server.OpenUpgradeGuiPacket;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -21,6 +24,8 @@ public class ManaGrinderScreen extends AutoSizedModularScreen<ManaGrinderMenu> {
 
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/mana_grinder_gui.png");
+    private static final ResourceLocation UPGRADE_BUTTON_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/widget/upgrade_button.png");
 
     public ManaGrinderScreen(ManaGrinderMenu menu, Inventory playerInventory, Component title) {
         // ✨ v2: 自動檢測尺寸並繪製背景
@@ -60,7 +65,13 @@ public class ManaGrinderScreen extends AutoSizedModularScreen<ManaGrinderMenu> {
             menu::getMaxMana
         ).setSize(10, 48).setDrawBackground(false));
 
-        // 3. JEI 配方提示區域 (右上角書本)
+        // 3. 升級按鈕 (150, 22) — JEI 書下方
+        root.add(new ButtonWidget(150, 22, 18, 18, UPGRADE_BUTTON_TEXTURE, 18, 18, btn -> {
+            BlockPos pos = this.menu.getBlockEntityPos();
+            OpenUpgradeGuiPacket.sendToServer(pos);
+        }).setTooltip(() -> List.of(Component.translatable("screen.koniava.upgrade_button.tooltip"))));
+
+        // 4. JEI 配方提示區域 (右上角書本)
         root.add(new AbstractWidget(149, 4, 21, 15) {
             @Override
             protected void renderWidget(GuiGraphics graphics, int localMouseX, int localMouseY, int screenMouseX, int screenMouseY) {

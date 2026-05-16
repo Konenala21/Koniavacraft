@@ -33,6 +33,14 @@ public class ModItems {
     public static final DeferredItem<Item> MANA_CRYSTAL_FRAGMENT = ITEMS.register("mana_crystal_fragment", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> REFINED_MANA_DUST = ITEMS.register("refined_mana_dust", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> MANA_CRYSTAL = ITEMS.register("mana_crystal", () -> new Item(new Item.Properties()));
+
+    // ── T1 電路板中間材料 ─────────────────────────────────────────────────────
+    public static final DeferredItem<Item> MANA_SUBSTRATE    = ITEMS.register("mana_substrate",    () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> MANA_WIRE         = ITEMS.register("mana_wire",         () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> MANA_ADHESIVE     = ITEMS.register("mana_adhesive",     () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> MANA_WAFER        = ITEMS.register("mana_wafer",        () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> BASIC_MANA_CIRCUIT = ITEMS.register("basic_mana_circuit", () -> new Item(new Item.Properties()));
+
     /***
      * 工具
      */
