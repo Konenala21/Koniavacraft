@@ -32,7 +32,7 @@ import java.util.List;
 @PrefixGameTestTemplate(false)
 public class AspectAltarGameTests {
 
-    private static final String TEMPLATE = "altar_area";
+    private static final String TEMPLATE = "empty";
 
     // altar 核心在模板 (7,3,7)；pillar_bottom 在 y-2=1，pillar_top 在 y-1=2
     private static final BlockPos ALTAR = new BlockPos(7, 3, 7);
@@ -173,11 +173,11 @@ public class AspectAltarGameTests {
             var altar = getAltar(helper);
 
             // 玩家 A 嘗試啟動（無配方 → no_recipe，但不是 ritual_active）
-            var resultA = altar.tryActivate();
+            var resultA = altar.tryActivate(null);
             boolean activeAfterA = altar.isActive();
 
             // 玩家 B 立刻再嘗試
-            var resultB = altar.tryActivate();
+            var resultB = altar.tryActivate(null);
 
             if (activeAfterA) {
                 // A 啟動成功 → B 應收到 ritual_active 錯誤

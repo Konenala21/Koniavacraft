@@ -1,5 +1,6 @@
 package com.github.nalamodikk.research.dynamic;
 
+import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.research.aspect.Aspect;
 import com.github.nalamodikk.research.aspect.ModAspects;
 import com.github.nalamodikk.research.knowledge.WorldAspectSavedData;
@@ -11,16 +12,23 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.vehicle.AbstractMinecart;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class EntityAspectResolver {
 
     public static List<Aspect> resolve(Entity entity, ServerLevel level) {
         if (entity == null) return List.of();
+
+        // Players have equipment-driven dynamic aspects — skip the entity-type cache
+        if (entity instanceof Player player) {
+            return resolvePlayer(player, level);
+        }
 
         ResourceLocation id = BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType());
         WorldAspectSavedData data = WorldAspectSavedData.get(level);
@@ -37,11 +45,39 @@ public class EntityAspectResolver {
         }
         addKeywordCandidates(path, aspects, candidates);
 
+        // Expand compound aspect candidates two levels deep
+        BaseMaterialRegistry.expandCandidatePool(aspects, candidates);
+
         List<Aspect> result = AspectExpression.express(id, aspects, candidates, data.getGenomeSeed(), capacity(path));
         if (result.isEmpty()) {
             result = AspectExpression.fallback(id, data.getGenomeSeed(), 3);
         }
         data.putEntityMapping(id, result);
+        return result;
+    }
+
+    public static List<Aspect> resolvePlayer(Player player, ServerLevel level) {
+        WorldAspectSavedData data = WorldAspectSavedData.get(level);
+
+        // Each player has a unique stable aspect fingerprint: UUID + world genome seed
+        String uuidHex = player.getStringUUID().replace("-", "");
+        ResourceLocation scanId = ResourceLocation.fromNamespaceAndPath(
+                KoniavacraftMod.MOD_ID, "player_" + uuidHex);
+
+        // All non-primary aspects are in play — compound aspects of any tier can appear
+        List<Aspect> candidates = ModAspects.all().stream()
+                .filter(a -> !a.isPrimary())
+                .collect(Collectors.toList());
+
+        // Stable per-player capacity: 6, 7, or 8 derived from UUID bits
+        long uuidBits = player.getUUID().getMostSignificantBits()
+                      ^ player.getUUID().getLeastSignificantBits();
+        int capacity = 6 + (int) Math.floorMod(uuidBits, 3);
+
+        List<Aspect> result = AspectExpression.express(scanId, List.of(), candidates, data.getGenomeSeed(), capacity);
+        if (result.isEmpty()) {
+            result = AspectExpression.fallback(scanId, data.getGenomeSeed(), 6);
+        }
         return result;
     }
 

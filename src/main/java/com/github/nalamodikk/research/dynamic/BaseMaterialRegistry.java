@@ -332,7 +332,7 @@ public class BaseMaterialRegistry {
         if (aspects.isEmpty()) {
             return List.of();
         }
-        AspectExpression.addAllUnique(candidates, getLogicalPool(aspects));
+        expandCandidatePool(aspects, candidates);
         return AspectExpression.express(id, aspects, candidates, genomeSeed, capacityForItem(item, aspects));
     }
 
@@ -447,7 +447,21 @@ public class BaseMaterialRegistry {
         return aspects;
     }
 
-    private static List<Aspect> getLogicalPool(List<Aspect> base) {
+    /**
+     * Expands the candidate pool three levels deep so Tier-C/D compound aspects
+     * (SENSUS, WISDOM, COMMERCE, LANGUAGE, etc.) can surface for items that earn
+     * them through indirect thematic chains.
+     */
+    public static void expandCandidatePool(List<Aspect> base, List<Aspect> candidates) {
+        List<Aspect> pass1 = new ArrayList<>(getLogicalPool(base));
+        AspectExpression.addAllUnique(candidates, pass1);
+        List<Aspect> pass2 = new ArrayList<>(getLogicalPool(pass1));
+        AspectExpression.addAllUnique(candidates, pass2);
+        // Third pass: reaches SENSUS, WISDOM, LANGUAGE, COMMERCE from e.g. COGNITION/WEALTH
+        AspectExpression.addAllUnique(candidates, getLogicalPool(pass2));
+    }
+
+    static List<Aspect> getLogicalPool(List<Aspect> base) {
         Set<Aspect> pool = new HashSet<>();
         for (Aspect a : base) {
             // Primary chains

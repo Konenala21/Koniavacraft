@@ -20,9 +20,13 @@ import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.crafting.RecipeHolder;
 
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ResearchCommand {
 
@@ -121,6 +125,11 @@ public class ResearchCommand {
             PlayerKnowledge knowledge = ResearchSavedData.get(player.serverLevel()).getOrCreate(player.getUUID());
             if (knowledge.completeResearch(id)) {
                 syncKnowledge(player);
+                ResearchRegistry.get(id).ifPresent(t -> {
+                    List<RecipeHolder<?>> toAward = player.serverLevel().getRecipeManager().getRecipes()
+                            .stream().filter(h -> t.getUnlockedRecipes().contains(h.id())).toList();
+                    if (!toAward.isEmpty()) player.awardRecipes(toAward);
+                });
                 changed++;
             }
         }
@@ -331,6 +340,13 @@ public class ResearchCommand {
                 total++;
             }
             syncKnowledge(player);
+            Set<ResourceLocation> allRecipeIds = new HashSet<>();
+            for (var r : ResearchRegistry.all()) allRecipeIds.addAll(r.getUnlockedRecipes());
+            if (!allRecipeIds.isEmpty()) {
+                List<RecipeHolder<?>> toAward = player.serverLevel().getRecipeManager().getRecipes()
+                        .stream().filter(h -> allRecipeIds.contains(h.id())).toList();
+                if (!toAward.isEmpty()) player.awardRecipes(toAward);
+            }
         }
 
         int researchCount = ResearchRegistry.all().size();

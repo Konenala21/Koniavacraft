@@ -28,7 +28,7 @@ public final class ResearchRegistry {
                     .tier(1)
                     .aspects(ModAspects.WATER, ModAspects.MANA)
                     .holeRatio(0.20)
-                    .unlocks(id("mana_scanner"))
+                    .unlocks(id("nara_watch"))
                     .build()
     );
 

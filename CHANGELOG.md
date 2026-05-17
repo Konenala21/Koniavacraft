@@ -2,133 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.0.1.6-11] - 2026-05-17
-
-### Player Changes / 玩家更新內容
-
-- Mana Deployer GUI now has an ON/OFF toggle button; the machine stops working and freezes its animation when disabled.
-- 魔力部署器 GUI 新增開關按鈕，關閉時機器停止運作且動畫也會停止。
-- Redstone pulse (rising edge) toggles the Mana Deployer on/off, like the Copper Bulb mechanic.
-- 紅石脈衝（上升沿）可切換魔力部署器開關，與銅燈機制相同。
-- Mana Deployer speed is now a free-input field (10 to 12000 ticks) instead of preset cycles.
-- 魔力部署器速度改為自由輸入欄位（10 至 12000 tick），不再是固定預設值切換。
-- Right-clicking the Mana Deployer with an item in hand no longer auto-inserts the item; use the GUI slot instead.
-- 持物右鍵魔力部署器不再自動插入物品，請透過 GUI 欄位操作。
-
-### Developer Notes / 開發者備註
-
-- ManaDeployerBlockEntity: removed SPEED_PRESETS/cycleSpeed(); added enabled, wasRedstonePowered fields; setIntervalTick() clamps [10,12000]; toggleEnabled(); onNeighborChanged() for redstone edge detection; ContainerData now has 5 slots (index 4 = enabled).
-- ManaDeployerBlock: added neighborChanged() to delegate redstone signals to BlockEntity.
-- ManaDeployerScreen: replaced speed-cycle click with vanilla EditBox; added ON/OFF button widget; override containerTick() to sync box when unfocused.
-- Replaced CycleDeployerSpeedPacket with SetDeployerIntervalPacket + ToggleDeployerEnabledPacket.
-
-## [0.0.1.6-10] - 2026-05-17
-
-### Player Changes / 玩家更新內容
-
-- Nara now appears after you craft the Research Table and close the crafting GUI, instead of when you first open the table.
-- 娜拉現在會在你合成出研究台並關閉合成介面後才出現說話，而非第一次開啟研究台時。
-- Completing a research entry now unlocks its associated crafting recipes in the recipe book.
-- 完成研究時，研究條目指定的配方會自動解鎖並顯示於配方書中。
-
-### Developer Notes / 開發者備註
-
-- Moved research table tutorial trigger from ResearchTableBlock.useWithoutItem() to NaraServerEvents.
-- NaraServerEvents: added onItemCrafted() — detects research_table craft, adds UUID to pendingResearchTableTutorial set if tutorial not yet seen.
-- NaraServerEvents.onServerTick(): checks pending players each tick; fires when player.containerMenu == player.inventoryMenu (no GUI open), then sends NaraTutorialPacket and marks tutorial seen.
-- ResearchRegistry.MANA_BASICS: fixed unlocks() pointing to removed mana_scanner; now points to nara_watch.
-- CompletedResearchItem.use(): on isNew, calls sp.awardRecipes() with RecipeHolder list resolved from ResearchTemplate.getUnlockedRecipes().
-- ResearchCommand.unlockResearch()/unlockAllResearch(): same recipe grant logic added for cheat commands.
-
-## [0.0.1.6-9] - 2026-05-17
-
-### Player Changes / 玩家更新內容
-
-- Nara now appears with a tutorial dialogue the first time you open the Research Table, explaining how to use notes and quills.
-- 娜拉會在你第一次開啟研究台時跳出來說明操作方式（只出現一次）。
-
-### Developer Notes / 開發者備註
-
-- PlayerKnowledge: added seenTutorials Set<String> with hasSeenTutorial/markTutorialSeen + save/load under "SeenTutorials" NBT tag.
-- NaraTutorialPacket (new): server→client packet carrying tutorialId string, routes to NaraTutorialFlow.start().
-- NaraTutorialFlow (new): client-side static class mapping tutorialId to dialogue lines. RESEARCH_TABLE = "research_table".
-- ResearchTableBlock.useWithoutItem(): after openMenu, calls knowledge.markTutorialSeen(RESEARCH_TABLE) — if returns true (first time), sends NaraTutorialPacket.
-- ModNetworking: registered NaraTutorialPacket.
-
-## [0.0.1.6-8] - 2026-05-17
-
-### Player Changes / 玩家更新內容
-
-- Scanner (Nara Watch) can now scan other players. Each player has a unique stable aspect fingerprint of 6 to 8 aspects drawn from all compound aspects.
-- High-level compound aspects (e.g. Cognition, Wisdom, Commerce, Sensus) now have a chance to appear when scanning items and entities that logically connect to them.
-- 娜拉手錶現可掃描其他玩家。每位玩家擁有獨特穩定的本源組合，從全部複合本源中隨機抽取 6 至 8 個。
-- 高階複合本源（如知識、知慧、感知、交易等）現在會根據掃描目標的本源鏈出現，不再永遠掃不出來。
-
-### Developer Notes / 開發者備註
-
-- EntityAspectResolver.resolve(): detect Player before cache lookup and delegate to resolvePlayer(). Player aspects bypass entity-type cache entirely (UUID-based scan id).
-- EntityAspectResolver.resolvePlayer(): draws from all non-primary aspects (ModAspects.all() filtered by isPrimary()). Capacity 6-8 determined by UUID bit hash for per-player stability. scanId = koniava:player_{uuidHex} so same player always produces same aspects per world seed.
-- BaseMaterialRegistry: added expandCandidatePool() — three-pass getLogicalPool expansion (was one). Pass 3 reaches Tier-C/D aspects such as SENSUS, WISDOM, LANGUAGE, COMMERCE that were previously unreachable.
-- Both EntityAspectResolver.resolve() and BaseMaterialRegistry.getSemanticAspects() now call expandCandidatePool.
-- NaraWatchItem: removed `instanceof Player` skip in getEntityTarget(); added PlayerTarget ScanTarget record with UUID-based ResourceLocation id so each player is a unique scan entry. scanHeader() override shows player name in discovery message.
-
-## [0.0.1.6-7] - 2026-05-17
-
-### Player Changes / 玩家更新內容
-
-- Fixed: Breaking a pillar of a formed altar no longer keeps the structure in the formed state. The altar now correctly reverts when any structural block is removed.
-- 修正：打掉已成形祭壇的矩陣柱子，結構現在會正確解散並恢復成魔力磚狀態。
-
-### Developer Notes / 開發者備註
-
-- AspectAltarBlockEntity.tick(): call checkStructure() first in the CHECK_INTERVAL branch when formed, before scanForPedestals(). Breaking a pillar now triggers disband within 40 ticks. Forming still requires wand activation.
-
-## [0.0.1.6-6] - 2026-05-17
-
-### Player Changes / 玩家更新內容
-
-- Mana Deployer now has a crafting recipe: 4 Mana Ingots + 2 Iron Ingots + 2 Basic Arcane Conduits + 1 Dispenser.
-- 魔力部署器現在有合成配方：4 魔力錠 + 2 鐵錠 + 2 基礎奧術導管 + 1 投放器。
-- Fixed Mana Deployer 3D model rendering: the model now displays correctly without mirroring or rotation errors.
-- 修正魔力部署器 3D 模型渲染：模型不再出現鏡像或旋轉錯誤。
-
-### Developer Notes / 開發者備註
-
-- ManaDeployerRenderer: corrected Geckolib coordinate convention (negate X for pivot/pos, ZYX rotation order, X-mirror for vertices).
-- ModBlockStateProvider: replaced static blockstate/model JSONs with datagen; extracted createHorizontalFacingVariants(Block, ModelFile) helper.
-- ModRenderLayers: fixed RegisterClientExtensionsEvent import (client.extensions.common, not client.event).
-- ModRecipeProvider: added shaped recipe for mana_deployer (MIM/CDC/MIM).
-
-## [0.0.1.6-5] - 2026-05-17
-
-### Player Changes / 玩家更新內容
-
-- Mana Deployer now has a GUI: right-click it with an empty hand to open. Shows current mana, mode, and interval speed.
-- 魔力部署器現在有 GUI：空手右鍵開啟，顯示目前魔力、模式與速度。
-- Mana Deployer animation stops when the machine has no mana.
-- 魔力部署器在無魔力時停止播放動畫。
-- Mana Deployer speed setting is now clickable in the GUI: click the speed label to cycle through 5, 10, 20, 40 tick intervals.
-- 魔力部署器的速度設定現在可在 GUI 中點擊切換，可循環選擇 5、10、20、40 tick 間隔。
-- Mana Deployer now renders as a 3D model in hand and inventory.
-- 魔力部署器現在在手持與物品欄中顯示為 3D 模型。
-- NeoForge updated from 21.1.219 to 21.1.230.
-- NeoForge 由 21.1.219 更新至 21.1.230。
-
-### Developer Notes / 開發者備註
-
-- ManaDeployerBlockEntity: added ContainerData (4 indices: currentMana, maxMana, mode, intervalTick), hasMana field synced via sendBlockUpdated, cycleSpeed() cycles SPEED_PRESETS {5,10,20,40}.
-- ManaDeployerScreen: AutoSizedModularScreen with ManaBarWidget, mode label, clickable speed label (sends CycleDeployerSpeedPacket on left-click, highlights blue on hover).
-- ManaDeployerMenu: AbstractContainerMenu with 1 machine slot + standard player inventory, addDataSlots for ContainerData sync.
-- CycleDeployerSpeedPacket: client-to-server packet, calls deployer.cycleSpeed() server-side.
-- ManaDeployerBEWLR: BlockEntityWithoutLevelRenderer for 3D item display, registered via RegisterClientExtensionsEvent.
-- getAnimTime(partialTick): returns animTimeSec frozen (no partialTick interpolation) when hasMana=false, eliminating animation twitching.
-- JEI: addTooltipCallback migrated to addRichTooltipCallback (ITooltipBuilder), ISubtypeInterpreter updated for JEI 19.27.x API.
-- directionConfig NBT: IOConfig now persisted in saveAdditional/loadAdditional as CompoundTag.
-
 ## [Unreleased]
 
 ### Player Changes / 玩家更新內容
 
+- Completing an altar ritual now triggers a visual performance: a burst glow at the altar center and a blue light pillar shooting into the sky (T3+). A completion chime plays on finish.
+- 完成祭壇儀式後現在會播放一場視覺演出：核心爆發輝光、藍色光柱衝天（T3 以上），完成時播放叮聲。
+- The performance duration scales with the recipe's processing time (320 to 700 ticks).
+- 演出持續時間依配方處理時間縮放（320 至 700 tick）。
+- Added "First Altar Ritual!" challenge advancement granted on first ritual completion.
+- 新增「第一次完成祭壇合成!」挑戰成就，首次完成祭壇儀式時授予。
+- Fixed: Completing an altar ritual and re-entering the world would incorrectly replay the completion animation.
+- 修正：完成祭壇儀式後重進世界，完成動畫會不正確地重新播放。
 - First-time login now triggers a visual novel-style dialogue with Nara (the mod's guide character). She introduces herself and explains the Holographic Watch.
 - 首次登入會觸發娜拉（模組引導角色）的視覺小說風格對話，介紹自己並說明全息手錶的用途。
 - Ignoring Nara's dialogue repeatedly will summon a Warden that instantly attacks. After dying and respawning, Nara will demand an apology before letting you go.
@@ -139,28 +24,68 @@ All notable changes to this project will be documented in this file.
 - 新增三個與娜拉介紹相關的隱藏成就：完成綁定、無視娜拉、讓娜拉生氣。
 - Added `/koniava nara replay` command to replay the Nara introduction dialogue.
 - 新增 `/koniava nara replay` 指令，可重新播放娜拉介紹對話。
-- Altar now outputs crafted results to adjacent containers (hoppers, chests, etc.) before dropping on the ground.
-- 祭壇儀式完成後，結果物品現在會優先輸出至相鄰容器（漏斗、箱子等），無法輸出時才掉落在地。
-- Added Mana Deployer block: point it at another block and it will automatically left- or right-click that block on your behalf using a FakePlayer. Supports redstone automation.
-- 新增魔力部署器方塊：對準目標方塊，自動以 FakePlayer 執行左鍵或右鍵操作，支援紅石自動化。
+- Nara now appears after you craft the Research Table and close the crafting GUI, instead of when you first open the table.
+- 娜拉現在會在你合成出研究台並關閉合成介面後才出現說話，而非第一次開啟研究台時。
+- Nara now appears with a tutorial dialogue the first time you open the Research Table, explaining how to use notes and quills.
+- 娜拉會在你第一次開啟研究台時跳出來說明操作方式（只出現一次）。
+- Completing a research entry now unlocks its associated crafting recipes in the recipe book.
+- 完成研究時，研究條目指定的配方會自動解鎖並顯示於配方書中。
 - Added `/koniava research unlock_all <targets>` command to instantly unlock all research entries for target players.
 - 新增指令 `/koniava research unlock_all <目標>`，可一次解鎖目標玩家的所有研究。
-- Resonance Ring no longer appears in the creative mode block tab (it is an internal structure component placed via the Structure Build Wand).
-- 共鳴環不再出現在創意模式方塊欄（屬於內部結構零件，請使用結構建造法杖放置）。
+- Scanner (Nara Watch) can now scan other players. Each player has a unique stable aspect fingerprint of 6 to 8 aspects drawn from all compound aspects.
+- High-level compound aspects (e.g. Cognition, Wisdom, Commerce, Sensus) now have a chance to appear when scanning items and entities that logically connect to them.
+- 娜拉手錶現可掃描其他玩家。每位玩家擁有獨特穩定的本源組合，從全部複合本源中隨機抽取 6 至 8 個。
+- 高階複合本源（如知識、知慧、感知、交易等）現在會根據掃描目標的本源鏈出現，不再永遠掃不出來。
+- Fixed: Breaking a pillar of a formed altar no longer keeps the structure in the formed state. The altar now correctly reverts when any structural block is removed.
+- 修正：打掉已成形祭壇的矩陣柱子，結構現在會正確解散並恢復成魔力磚狀態。
+- Mana Deployer GUI now has an ON/OFF toggle button; the machine stops working and freezes its animation when disabled.
+- 魔力部署器 GUI 新增開關按鈕，關閉時機器停止運作且動畫也會停止。
+- Redstone pulse (rising edge) toggles the Mana Deployer on/off, like the Copper Bulb mechanic.
+- 紅石脈衝（上升沿）可切換魔力部署器開關，與銅燈機制相同。
+- Mana Deployer speed is now a free-input field (10 to 12000 ticks) instead of preset cycles.
+- 魔力部署器速度改為自由輸入欄位（10 至 12000 tick），不再是固定預設值切換。
+- Right-clicking the Mana Deployer with an item in hand no longer auto-inserts the item; use the GUI slot instead.
+- 持物右鍵魔力部署器不再自動插入物品，請透過 GUI 欄位操作。
+- Mana Deployer now has a crafting recipe: 4 Mana Ingots + 2 Iron Ingots + 2 Basic Arcane Conduits + 1 Dispenser.
+- 魔力部署器現在有合成配方：4 魔力錠 + 2 鐵錠 + 2 基礎奧術導管 + 1 投放器。
+- Fixed Mana Deployer 3D model rendering: the model now displays correctly without mirroring or rotation errors.
+- 修正魔力部署器 3D 模型渲染：模型不再出現鏡像或旋轉錯誤。
 
 ### Developer Notes / 開發者備註
 
+- `AspectAltarBlockEntity`: added `completionAnimTick` + `completionDuration` (320 to 700 ticks); `completeRitual()` sets duration and tick, grants `first_altar_ritual` advancement to activator; `tick()` decrements and syncs while > 0. Fields NOT in `saveAdditional` (prevents replay on reload); added to `getUpdateTag()` only for server-to-client sync; `loadAdditional()` reads them (gets 0 from disk, correct value from sync packet).
+- `AspectAltarRenderer`: `renderCompletionShow()` with tier gates (T1+ billboard burst, T3+ blue pillar); `renderBluePillar()` 4-layer glow cylinder; `renderPillarCylinder()` with bottom/top alpha fade.
+- `tryActivate()` now accepts `UUID playerUUID`; `activatorUUID` stored for advancement grant in `completeRitual()`.
+- `first_altar_ritual` advancement (`data/koniava/advancement/first_altar_ritual.json`): `minecraft:impossible` trigger, granted programmatically via `PlayerAdvancements.award()`.
+- Completion sound changed to `EXPERIENCE_ORB_PICKUP` (pitch 1.2).
 - Nara dialogue system: `NaraDialogueManager` (state machine: INACTIVE/TYPING/WAITING/CHOOSING), `NaraDialogueOverlay` (HUD with portrait reveal animation, typewriter text, scrollable choices, timeout progress bar), `NaraFirstLoginFlow` (dialogue script with escalating timeouts 200→40 ticks over 10 ignores).
 - Network packets: `NaraStartDialoguePacket` + inner `Punishment` record, `NaraCloseDialoguePacket` (server→client on death), `NaraCreeperPunishPacket`, `NaraAngryPacket` — all registered in `ModNetworking`.
-- `NaraServerEvents`: `pendingPunishmentDialogue` countdown map, `awaitingRespawn` set (death during punishment), `naraPunishmentActive` set (cleared only when punishment dialogue actually fires), `pendingWardenDespawn` map (Warden discarded after 80 ticks).
+- `NaraServerEvents`: `pendingPunishmentDialogue` countdown map, `awaitingRespawn` set (death during punishment), `naraPunishmentActive` set, `pendingWardenDespawn` map (Warden discarded after 80 ticks).
 - Punishment mob changed from Creeper to Warden: spawns at player position, `increaseAngerAt(player, 150)`, immediately calls `player.hurt(mobAttack, dmg)` for instant damage, despawns after 80 ticks.
-- Punishment dialogue requires player to select an apology choice; timeout re-triggers the Warden cycle; 10 cumulative ignores triggers angry portrait + `NaraAngryPacket`.
 - All HUD text uses lang keys: `nara.hud.hint.*`, `nara.hud.name`, `nara.hud.name.unknown`; `displayName` is now `Component` (not raw `String`).
 - Advancements in `data/koniava/advancement/`: `nara_welcome` (root), `nara_ignored` (hidden child), `nara_angry` (hidden child).
-- `AspectAltarBlockEntity`: ritual completion now checks adjacent block entities for `Capabilities.ItemHandler.BLOCK` and inserts result before falling back to dropping above altar.
-- `ManaDeployerBlock` + `ManaDeployerBlockEntity`: FakePlayer automation — left/right-click mode configurable via wand; BER loads Bedrock `.model.json` geometry + frame-interpolated animation system (no GeckoLib); fixed coordinate axes (X/Z negation for Bedrock→Java, UV winding correction).
+- Moved research table tutorial trigger from `ResearchTableBlock.useWithoutItem()` to `NaraServerEvents`.
+- `NaraServerEvents`: added `onItemCrafted()` — detects research_table craft, adds UUID to `pendingResearchTableTutorial` set if tutorial not yet seen. `onServerTick()` checks pending players; fires when `player.containerMenu == player.inventoryMenu`.
+- `PlayerKnowledge`: added `seenTutorials Set<String>` with `hasSeenTutorial/markTutorialSeen` + save/load under "SeenTutorials" NBT tag.
+- `NaraTutorialPacket` (new): server→client packet carrying `tutorialId` string, routes to `NaraTutorialFlow.start()`.
+- `NaraTutorialFlow` (new): client-side static class mapping `tutorialId` to dialogue lines. `RESEARCH_TABLE = "research_table"`.
+- `CompletedResearchItem.use()`: on `isNew`, calls `sp.awardRecipes()` with `RecipeHolder` list resolved from `ResearchTemplate.getUnlockedRecipes()`.
+- `ResearchCommand.unlockResearch()/unlockAllResearch()`: same recipe grant logic added for cheat commands.
 - `ResearchCommand`: added `unlock_all` subcommand — iterates `ResearchRegistry.all()`, calls `completeResearch()` on each; lang keys added to `en_us.json` and `zh_tw.json`.
-- `ModCreativeModTabs`: `resonance_ring` added to path exclusion list in `koniava_blocks_tab`.
+- `ResearchRegistry.MANA_BASICS`: fixed `unlocks()` pointing to removed `mana_scanner`; now points to `nara_watch`.
+- `EntityAspectResolver.resolve()`: detect `Player` before cache lookup and delegate to `resolvePlayer()`. Player aspects bypass entity-type cache entirely (UUID-based scan id).
+- `EntityAspectResolver.resolvePlayer()`: draws from all non-primary aspects. Capacity 6–8 determined by UUID bit hash for per-player stability. `scanId = koniava:player_{uuidHex}` so same player always produces same aspects per world seed.
+- `BaseMaterialRegistry`: added `expandCandidatePool()` — three-pass `getLogicalPool` expansion reaching Tier-C/D aspects such as `SENSUS`, `WISDOM`, `LANGUAGE`, `COMMERCE` that were previously unreachable.
+- `NaraWatchItem`: removed `instanceof Player` skip in `getEntityTarget()`; added `PlayerTarget ScanTarget` record with UUID-based `ResourceLocation` id; `scanHeader()` override shows player name in discovery message.
+- `AspectAltarBlockEntity.tick()`: call `checkStructure()` first in the `CHECK_INTERVAL` branch when formed, before `scanForPedestals()`. Breaking a pillar now triggers disband within 40 ticks.
+- `ManaDeployerBlockEntity`: removed `SPEED_PRESETS/cycleSpeed()`; added `enabled`, `wasRedstonePowered` fields; `setIntervalTick()` clamps [10, 12000]; `toggleEnabled()`; `onNeighborChanged()` for redstone edge detection; `ContainerData` now has 5 slots (index 4 = enabled).
+- `ManaDeployerBlock`: added `neighborChanged()` to delegate redstone signals to `BlockEntity`.
+- `ManaDeployerScreen`: replaced speed-cycle click with vanilla `EditBox`; added ON/OFF button widget; override `containerTick()` to sync box when unfocused.
+- Replaced `CycleDeployerSpeedPacket` with `SetDeployerIntervalPacket` + `ToggleDeployerEnabledPacket`.
+- `ManaDeployerRenderer`: corrected Geckolib coordinate convention (negate X for pivot/pos, ZYX rotation order, X-mirror for vertices).
+- `ModBlockStateProvider`: replaced static blockstate/model JSONs with datagen; extracted `createHorizontalFacingVariants(Block, ModelFile)` helper.
+- `ModRenderLayers`: fixed `RegisterClientExtensionsEvent` import (`client.extensions.common`, not `client.event`).
+- `ModRecipeProvider`: added shaped recipe for `mana_deployer` (MIM/CDC/MIM).
 
 ## [0.0.1.6-4] - 2026-05-16
 
@@ -256,6 +181,10 @@ All notable changes to this project will be documented in this file.
 - 本源聚陣現在支援戴森環升級（T1–T6，最高 T12 規劃中）：在祭壇周圍放置共鳴環即可獲得升級階級，每個階級都會增加一個繞核心旋轉的發光環。
 - Pedestal scan radius increased from 4 to 6 blocks.
 - 底座偵測半徑從 4 增加到 6 格。
+- Altar now outputs crafted results to adjacent containers (hoppers, chests, etc.) before dropping on the ground.
+- 祭壇儀式完成後，結果物品現在會優先輸出至相鄰容器（漏斗、箱子等），無法輸出時才掉落在地。
+- Resonance Ring no longer appears in the creative mode block tab (it is an internal structure component placed via the Structure Build Wand).
+- 共鳴環不再出現在創意模式方塊欄（屬於內部結構零件，請使用結構建造法杖放置）。
 
 ### Developer Notes / 開發者備註
 
@@ -274,6 +203,8 @@ All notable changes to this project will be documented in this file.
 - `IWandActivatable` interface added; `AdvancedTechWandItem` and `StructureBuildWandItem` new items.
 - `ModCapabilities`: `MANA` capability registered for `ASPECT_ALTAR_BE` as input-only.
 - Updated LICENSE and `gradle.properties` `mod_license` to LGPL-3.0-only.
+- `AspectAltarBlockEntity`: ritual completion now checks adjacent block entities for `Capabilities.ItemHandler.BLOCK` and inserts result before falling back to dropping above altar.
+- `ModCreativeModTabs`: `resonance_ring` added to path exclusion list in `koniava_blocks_tab`.
 
 ## [0.0.1.6-2] - 2026-05-13
 

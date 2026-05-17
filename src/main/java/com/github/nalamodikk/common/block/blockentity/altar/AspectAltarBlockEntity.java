@@ -1,5 +1,6 @@
 package com.github.nalamodikk.common.block.blockentity.altar;
 
+import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.capability.ManaStorage;
 import com.github.nalamodikk.common.capability.mana.ManaAction;
 import com.github.nalamodikk.common.multiblock.AbstractMultiblockControllerBlockEntity;
@@ -9,6 +10,7 @@ import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
 import com.github.nalamodikk.register.ModBlockEntities;
 import com.github.nalamodikk.register.ModBlocks;
 import com.github.nalamodikk.register.ModRecipes;
+import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -18,6 +20,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
@@ -27,6 +32,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
+import java.util.UUID;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.ItemHandlerHelper;
@@ -294,6 +300,9 @@ public static final List<Vec3i> RING_T1 = List.of(
     );
 
 
+    private static final int MIN_COMPLETION_TICKS = 320;
+    private static final int MAX_COMPLETION_TICKS = 700;
+
     private int ticker = 0;
     private int tickCounter = 0;
     private boolean active = false;
@@ -302,6 +311,9 @@ public static final List<Vec3i> RING_T1 = List.of(
     private int ritualMaxTick = 0;
     private int upgradeTier = 0;
     private long ringPhaseStart = 0;
+    private int completionAnimTick = 0;
+    private int completionDuration = MIN_COMPLETION_TICKS;
+    private UUID activatorUUID = null;
 
     private final ManaStorage manaStorage = new ManaStorage(MAX_MANA, this::onManaChanged);
     private final EnumMap<Direction, IOHandlerUtils.IOType> directionConfig = new EnumMap<>(Direction.class);
@@ -328,7 +340,10 @@ public static final List<Vec3i> RING_T1 = List.of(
 
         if (++ticker >= CHECK_INTERVAL) {
             ticker = 0;
-            // 只掃底座，不自動成形（成形需要法杖觸發）
+            if (isFormed()) {
+                // 驗證結構完整性；若柱子被打掉則自動解散（成形仍需法杖觸發）
+                checkStructure();
+            }
             if (isFormed()) {
                 scanForPedestals();
                 refreshUpgradeTier();
@@ -339,6 +354,11 @@ public static final List<Vec3i> RING_T1 = List.of(
         tickCounter++;
 
         if (active) tickRitual();
+
+        if (completionAnimTick > 0) {
+            completionAnimTick--;
+            syncToClient();
+        }
     }
 
     private void extractManaFromNeighbors() {
@@ -379,12 +399,35 @@ public static final List<Vec3i> RING_T1 = List.of(
             level.addFreshEntity(entity);
         }
 
+        completionDuration = Math.max(MIN_COMPLETION_TICKS,
+                Math.min(MAX_COMPLETION_TICKS, ritualMaxTick / 3));
+        completionAnimTick = completionDuration;
+
+        if (level instanceof ServerLevel serverLevel && activatorUUID != null) {
+            ServerPlayer sp = serverLevel.getServer().getPlayerList().getPlayer(activatorUUID);
+            if (sp != null) {
+                AdvancementHolder adv = serverLevel.getServer().getAdvancements()
+                        .get(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "first_altar_ritual"));
+                if (adv != null) {
+                    var prog = sp.getAdvancements().getOrStartProgress(adv);
+                    if (!prog.isDone()) {
+                        for (String criterion : prog.getRemainingCriteria()) {
+                            sp.getAdvancements().award(adv, criterion);
+                        }
+                    }
+                }
+            }
+        }
+
         active = false;
         progress = 0f;
         ritualTick = 0;
         ritualMaxTick = 0;
         setChanged();
         syncToClient();
+
+        level.playSound(null, worldPosition, net.minecraft.sounds.SoundEvents.EXPERIENCE_ORB_PICKUP,
+                net.minecraft.sounds.SoundSource.BLOCKS, 1.0f, 1.2f);
     }
 
     private ItemStack tryOutputToAdjacentContainer(ItemStack stack) {
@@ -409,7 +452,7 @@ public static final List<Vec3i> RING_T1 = List.of(
 
     // ── 儀式觸發 ─────────────────────────────────────────────────────────────
 
-    public Component tryActivate() {
+    public Component tryActivate(UUID playerUUID) {
         if (!isFormed())
             return Component.translatable("block.koniava.aspect_altar.not_formed");
         if (active)
@@ -430,6 +473,7 @@ public static final List<Vec3i> RING_T1 = List.of(
         ritualTick = 0;
         ritualMaxTick = recipe.getProcessingTime();
         progress = 0f;
+        activatorUUID = playerUUID;
         setChanged();
         syncToClient();
         return Component.translatable("block.koniava.aspect_altar.ritual_started");
@@ -609,6 +653,8 @@ public static final List<Vec3i> RING_T1 = List.of(
 
     public int getUpgradeTier() { return upgradeTier; }
     public long getRingPhaseStart() { return ringPhaseStart; }
+    public int getCompletionAnimTick() { return completionAnimTick; }
+    public int getCompletionDuration() { return completionDuration; }
 
     public void refreshUpgradeTier() {
         if (level == null || !isFormed()) return;
@@ -689,12 +735,16 @@ public static final List<Vec3i> RING_T1 = List.of(
         manaStorage.setMana(tag.getInt("Mana"));
         upgradeTier = tag.getInt("UpgradeTier");
         ringPhaseStart = tag.getLong("RingPhaseStart");
+        completionAnimTick = tag.getInt("CompletionAnimTick");
+        completionDuration = tag.contains("CompletionDuration") ? tag.getInt("CompletionDuration") : MIN_COMPLETION_TICKS;
     }
 
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
         saveAdditional(tag, registries);
+        tag.putInt("CompletionAnimTick", completionAnimTick);
+        tag.putInt("CompletionDuration", completionDuration);
         return tag;
     }
 

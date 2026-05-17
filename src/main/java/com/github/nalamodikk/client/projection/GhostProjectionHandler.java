@@ -230,4 +230,5 @@ public final class GhostProjectionHandler {
 
         mainBuf.endBatch(RenderType.lines());
     }
+
 }

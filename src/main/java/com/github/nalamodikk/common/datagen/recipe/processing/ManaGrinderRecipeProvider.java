@@ -86,9 +86,8 @@ public class ManaGrinderRecipeProvider {
                 .processingTime(100)
                 .save();
 
-        // ③ 史萊姆球×2 + 魔力粉 → 魔力黏膠
+        // ③ 史萊姆球 + 魔力粉 → 魔力黏膠（grinder 只有 2 槽，改為單個 slime_ball）
         ProcessingRecipeProvider.createProcessingRecipe(output, "grinder/mana_adhesive", "grinder")
-                .input(Items.SLIME_BALL)
                 .input(Items.SLIME_BALL)
                 .input(ModItems.MANA_DUST.get())
                 .output(ModItems.MANA_ADHESIVE.get(), 3)

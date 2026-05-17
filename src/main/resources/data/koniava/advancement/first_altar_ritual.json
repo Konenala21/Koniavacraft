@@ -1,0 +1,17 @@
+{
+  "display": {
+    "icon": { "id": "koniava:aspect_altar" },
+    "title": { "text": "第一次完成祭壇合成!" },
+    "description": { "text": "恭喜你完成了第一次祭壇合成精彩演出" },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "trigger": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [["trigger"]]
+}

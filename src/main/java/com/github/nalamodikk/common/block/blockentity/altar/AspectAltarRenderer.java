@@ -164,6 +164,8 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
         float time = level.getGameTime() + partialTick;
         float ringTime = (level.getGameTime() - altar.getRingPhaseStart()) + partialTick;
         boolean active = altar.isActive();
+        int tier = altar.getUpgradeTier();
+
         renderFormedCore(poseStack, bufferSource, packedLight, packedOverlay, time, active);
         renderRings(altar, poseStack, bufferSource, packedLight, packedOverlay, ringTime);
         renderSolarCore(altar, poseStack, bufferSource, time);
@@ -171,6 +173,11 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
 
         if (active) {
             renderOrbitals(altar, poseStack, bufferSource, packedLight, packedOverlay, level, time);
+        }
+
+        int compTick = altar.getCompletionAnimTick();
+        if (compTick > 0) {
+            renderCompletionShow(altar, poseStack, bufferSource, compTick, altar.getCompletionDuration(), time, tier);
         }
     }
 
@@ -346,6 +353,7 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
     private void renderSolarCore(AspectAltarBlockEntity altar, PoseStack ps,
                                   MultiBufferSource mbs, float time) {
         if (altar.getUpgradeTier() < 3) return;   // T3 以上才觸發
+        if (altar.isActive()) return;              // 工作中完全不渲染太陽核心
 
         var mc = Minecraft.getInstance();
         var player = mc.player;
@@ -421,6 +429,115 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
             vc.addVertex(mat, outerR*cos1, 0, outerR*sin1).setColor(r, g, b, a);
             vc.addVertex(mat, outerR*cos2, 0, outerR*sin2).setColor(r, g, b, a);
             vc.addVertex(mat, innerR*cos2, 0, innerR*sin2).setColor(r, g, b, a);
+        }
+    }
+
+    // ── 儀式完成演出 ─────────────────────────────────────────────────────────────
+
+    private void renderCompletionShow(AspectAltarBlockEntity altar, PoseStack ps,
+                                       MultiBufferSource mbs, int animTick, int duration,
+                                       float time, int tier) {
+        // t: 1.0 → 0.0（從剛完成到演出結束）
+        float t = animTick / (float) duration;
+        float progress = 1.0f - t;
+
+        // 輝光強度曲線：前 15% 快速升起，中段維持，後 30% 淡出
+        float glowAlpha;
+        if (progress < 0.15f)       glowAlpha = progress / 0.15f;
+        else if (progress < 0.70f)  glowAlpha = 1.0f;
+        else                         glowAlpha = 1.0f - (progress - 0.70f) / 0.30f;
+
+        // T1+：爆發輝光圓（billboard，camera 朝向）
+        {
+            Minecraft mc = Minecraft.getInstance();
+            VertexConsumer vc = mbs.getBuffer(MIRenderTypes.solarGlow());
+            ps.pushPose();
+            ps.translate(0.5, 0.8, 0.5);
+            ps.mulPose(mc.gameRenderer.getMainCamera().rotation());
+            float burstSize = (float) Math.sin(progress * Math.PI) * (1.8f + tier * 0.4f);
+            int base = (int) (glowAlpha * 110);
+            renderGlowCircle(ps, vc, burstSize * 1.6f, 80,  160, 255, base / 4);
+            renderGlowCircle(ps, vc, burstSize * 1.0f, 130, 200, 255, base / 3);
+            renderGlowCircle(ps, vc, burstSize * 0.5f, 200, 230, 255, base / 2);
+            renderGlowCircle(ps, vc, burstSize * 0.18f, 240, 248, 255, base);
+            ps.popPose();
+        }
+
+        // T3+：藍色光柱衝天
+        if (tier >= 3 && glowAlpha > 0.01f) {
+            float maxHeight = 20.0f + tier * 4.0f;
+            float growFrac = Math.min(1.0f, progress / 0.25f);
+            float pillarHeight = maxHeight * growFrac;
+            if (pillarHeight > 0.5f) {
+                renderBluePillar(ps, mbs, pillarHeight, glowAlpha);
+            }
+        }
+
+        // T4+：多波空間波紋環（BER版，暫時停用，由shader負責）
+        /*
+        if (tier >= 4) {
+            VertexConsumer vc = mbs.getBuffer(MIRenderTypes.solarGlow());
+            int waveCount = Math.min(tier - 2, 4);
+            float maxRadius = 6.0f + tier * 1.5f;
+            for (int w = 0; w < waveCount; w++) {
+                float delay = w * 0.10f;
+                float waveP = Math.max(0, progress - delay) / (1.0f - delay);
+                if (waveP <= 0) continue;
+                float radius = waveP * maxRadius;
+                float waveAlpha = (1.0f - waveP) * glowAlpha;
+                if (waveAlpha <= 0.01f) continue;
+                float thickness = 0.12f + (1.0f - waveP) * 0.25f;
+                ps.pushPose();
+                ps.translate(0.5, 0.3 + w * 0.15f, 0.5);
+                renderEnergyRing(ps, vc, radius, thickness, 100, 180, 255, (int)(waveAlpha * 200));
+                renderEnergyRing(ps, vc, radius * 0.85f, thickness * 0.6f, 160, 220, 255, (int)(waveAlpha * 120));
+                ps.popPose();
+            }
+        }
+        */
+    }
+
+    private void renderBluePillar(PoseStack ps, MultiBufferSource mbs, float height, float alphaFactor) {
+        VertexConsumer vc = mbs.getBuffer(MIRenderTypes.solarGlow());
+        ps.pushPose();
+        ps.translate(0.5, 0.5, 0.5);
+        Matrix4f mat = ps.last().pose();
+        // 由外到內：外暈 → 中暈 → 芯 → 白芯
+        renderPillarCylinder(mat, vc, 1.1f, height, 70,  140, 255, (int)(40  * alphaFactor));
+        renderPillarCylinder(mat, vc, 0.55f, height, 110, 185, 255, (int)(90  * alphaFactor));
+        renderPillarCylinder(mat, vc, 0.22f, height, 170, 220, 255, (int)(160 * alphaFactor));
+        renderPillarCylinder(mat, vc, 0.08f, height, 235, 248, 255, (int)(220 * alphaFactor));
+        ps.popPose();
+    }
+
+    private void renderPillarCylinder(Matrix4f mat, VertexConsumer vc,
+                                       float radius, float height,
+                                       int r, int g, int b, int a) {
+        if (a <= 0) return;
+        float fadeH = Math.min(2.0f, height * 0.1f);
+        float midBot = fadeH;
+        float midTop = height - fadeH;
+        if (midTop <= midBot) midTop = midBot + 0.1f;
+
+        for (int i = 0; i < CIRCLE_SEGS; i++) {
+            int j = (i + 1) % CIRCLE_SEGS;
+            float c1 = CIRCLE_COS[i] * radius, s1 = CIRCLE_SIN[i] * radius;
+            float c2 = CIRCLE_COS[j] * radius, s2 = CIRCLE_SIN[j] * radius;
+            // 底部淡入
+            vc.addVertex(mat, c1, 0f,    s1).setColor(r, g, b, 0);
+            vc.addVertex(mat, c2, 0f,    s2).setColor(r, g, b, 0);
+            vc.addVertex(mat, c2, midBot, s2).setColor(r, g, b, a);
+            vc.addVertex(mat, c1, midBot, s1).setColor(r, g, b, a);
+            // 中段全亮
+            vc.addVertex(mat, c1, midBot, s1).setColor(r, g, b, a);
+            vc.addVertex(mat, c2, midBot, s2).setColor(r, g, b, a);
+            vc.addVertex(mat, c2, midTop, s2).setColor(r, g, b, a);
+            vc.addVertex(mat, c1, midTop, s1).setColor(r, g, b, a);
+            // 頂部淡出
+            vc.addVertex(mat, c1, midTop,  s1).setColor(r, g, b, a);
+            vc.addVertex(mat, c2, midTop,  s2).setColor(r, g, b, a);
+            vc.addVertex(mat, c2, height,  s2).setColor(r, g, b, 0);
+            vc.addVertex(mat, c1, height,  s1).setColor(r, g, b, 0);
         }
     }
 

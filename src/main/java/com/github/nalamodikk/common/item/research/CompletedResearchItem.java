@@ -19,6 +19,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 
 import java.util.List;
@@ -66,11 +67,15 @@ public class CompletedResearchItem extends Item {
                         .getCompletedResearch().size() == 1;
                 if (isVeryFirst) spawnFirstResearchCelebration(sp, serverLevel);
 
-                ResearchRegistry.get(researchId).ifPresent(t ->
-                        sp.sendSystemMessage(Component.translatable(
-                                "research.koniava.complete_notify",
-                                Component.translatable(t.getTitleKey()))
-                                .withStyle(ChatFormatting.GREEN)));
+                ResearchRegistry.get(researchId).ifPresent(t -> {
+                    sp.sendSystemMessage(Component.translatable(
+                            "research.koniava.complete_notify",
+                            Component.translatable(t.getTitleKey()))
+                            .withStyle(ChatFormatting.GREEN));
+                    List<RecipeHolder<?>> toAward = serverLevel.getRecipeManager().getRecipes()
+                            .stream().filter(h -> t.getUnlockedRecipes().contains(h.id())).toList();
+                    if (!toAward.isEmpty()) sp.awardRecipes(toAward);
+                });
 
                 // Consume the scroll
                 stack.shrink(1);

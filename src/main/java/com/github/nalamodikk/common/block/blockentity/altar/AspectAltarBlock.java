@@ -65,7 +65,7 @@ public class AspectAltarBlock extends BaseEntityBlock {
         if (level.isClientSide()) return InteractionResult.SUCCESS;
         if (!(level.getBlockEntity(pos) instanceof AspectAltarBlockEntity altar)) return InteractionResult.PASS;
 
-        Component result = altar.tryActivate();
+        Component result = altar.tryActivate(player.getUUID());
         player.displayClientMessage(result, true);
         return InteractionResult.SUCCESS;
     }

@@ -25,6 +25,8 @@ public class PlayerKnowledge {
     private final Set<ResourceLocation> availableResearchOverrides = new HashSet<>();
     private final Set<ResourceLocation> lockedResearch = new HashSet<>();
     private final Set<ResourceLocation> scannedItems = new HashSet<>();
+    private final Set<String> seenTutorials = new HashSet<>();
+    private final Set<String> pendingTutorials = new HashSet<>();
     private int currentTier = MIN_TIER;
 
     public enum ResearchState {
@@ -73,6 +75,25 @@ public class PlayerKnowledge {
 
     public Map<ResourceLocation, Integer> getDiscoveredAspectsMap() {
         return Collections.unmodifiableMap(discoveredAspects);
+    }
+
+    public boolean hasSeenTutorial(String tutorialId) {
+        return seenTutorials.contains(tutorialId);
+    }
+
+    public boolean markTutorialSeen(String tutorialId) {
+        pendingTutorials.remove(tutorialId);
+        return seenTutorials.add(tutorialId);
+    }
+
+    public void addPendingTutorial(String tutorialId) {
+        if (!seenTutorials.contains(tutorialId)) {
+            pendingTutorials.add(tutorialId);
+        }
+    }
+
+    public Set<String> getPendingTutorials() {
+        return Collections.unmodifiableSet(pendingTutorials);
     }
 
     public boolean recordItemScan(ResourceLocation itemId) {
@@ -212,6 +233,18 @@ public class PlayerKnowledge {
         }
         tag.put("ScannedItems", scannedList);
 
+        ListTag tutorialList = new ListTag();
+        for (String id : seenTutorials) {
+            tutorialList.add(StringTag.valueOf(id));
+        }
+        tag.put("SeenTutorials", tutorialList);
+
+        ListTag pendingList = new ListTag();
+        for (String id : pendingTutorials) {
+            pendingList.add(StringTag.valueOf(id));
+        }
+        tag.put("PendingTutorials", pendingList);
+
         tag.putInt("Tier", currentTier);
         return tag;
     }
@@ -230,6 +263,8 @@ public class PlayerKnowledge {
         loadAvailableResearchOverrides(tag, knowledge);
         loadLockedResearch(tag, knowledge);
         loadScannedItems(tag.getList("ScannedItems", Tag.TAG_STRING), knowledge);
+        loadSeenTutorials(tag.getList("SeenTutorials", Tag.TAG_STRING), knowledge);
+        loadPendingTutorials(tag.getList("PendingTutorials", Tag.TAG_STRING), knowledge);
         knowledge.addPrimaryAspects();
         knowledge.currentTier = clampTier(tag.getInt("Tier"));
         return knowledge;
@@ -293,6 +328,25 @@ public class PlayerKnowledge {
             ResourceLocation id = ResourceLocation.tryParse(scannedList.getString(i));
             if (id != null) {
                 knowledge.scannedItems.add(id);
+            }
+        }
+    }
+
+    private static void loadSeenTutorials(ListTag tutorialList, PlayerKnowledge knowledge) {
+        for (int i = 0; i < tutorialList.size(); i++) {
+            String id = tutorialList.getString(i);
+            if (!id.isEmpty()) {
+                knowledge.seenTutorials.add(id);
+            }
+        }
+    }
+
+    private static void loadPendingTutorials(ListTag pendingList, PlayerKnowledge knowledge) {
+        for (int i = 0; i < pendingList.size(); i++) {
+            String id = pendingList.getString(i);
+            // Only restore pending if not already seen
+            if (!id.isEmpty() && !knowledge.seenTutorials.contains(id)) {
+                knowledge.pendingTutorials.add(id);
             }
         }
     }

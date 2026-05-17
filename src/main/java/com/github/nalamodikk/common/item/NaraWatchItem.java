@@ -167,7 +167,7 @@ public class NaraWatchItem extends Item {
                 rewards.add(new AspectReward(aspect, reward, newlyDiscovered));
             }
 
-            notifyDiscovery(player, rewards);
+            notifyDiscovery(player, target.scanHeader(player), rewards);
             playSuccessEffects(player.level(), target.pos());
             savedData.setDirty();
             AspectSyncPacket.sendTo(player);
@@ -177,9 +177,8 @@ public class NaraWatchItem extends Item {
         }
     }
 
-    private void notifyDiscovery(ServerPlayer player, List<AspectReward> rewards) {
-        player.sendSystemMessage(Component.translatable("item.koniava.nara_watch.scan.first_time")
-                .withStyle(ChatFormatting.GOLD));
+    private void notifyDiscovery(ServerPlayer player, Component header, List<AspectReward> rewards) {
+        player.sendSystemMessage(header);
 
         for (AspectReward reward : rewards) {
             Component aspectName = reward.aspect().getName().copy()
@@ -204,6 +203,9 @@ public class NaraWatchItem extends Item {
         }
 
         Entity entity = getEntityTarget(player);
+        if (entity instanceof Player targetPlayer) {
+        return new ScanTarget.PlayerTarget(targetPlayer);
+        }
         if (entity != null) {
             return new ScanTarget.EntityTarget(entity);
         }
@@ -242,7 +244,7 @@ public class NaraWatchItem extends Item {
 
         for (Entity entity : player.level().getEntities(player, box)) {
             Entity target = entity instanceof PartEntity<?> part ? part.getParent() : entity;
-            if (target instanceof Player || target instanceof ItemEntity) {
+            if (target instanceof ItemEntity) {
                 continue;
             }
 
@@ -273,6 +275,11 @@ public class NaraWatchItem extends Item {
         Vec3 pos();
 
         List<Aspect> aspects(ServerLevel level);
+
+        default Component scanHeader(ServerPlayer scanner) {
+            return Component.translatable("item.koniava.nara_watch.scan.first_time")
+                    .withStyle(ChatFormatting.GOLD);
+        }
 
         record ItemTarget(ItemEntity entity) implements ScanTarget {
             @Override
@@ -339,6 +346,32 @@ public class NaraWatchItem extends Item {
             @Override
             public List<Aspect> aspects(ServerLevel level) {
                 return AspectScanner.getAspectsForFluid(level.getFluidState(hit.getBlockPos()), level);
+            }
+        }
+
+        // Each player gets a unique scan ID based on UUID so they can each be scanned independently.
+        // Aspects shift with equipment, making each player a distinct combination.
+        record PlayerTarget(Player targetPlayer) implements ScanTarget {
+            @Override
+            public ResourceLocation id() {
+                String uuidHex = targetPlayer.getStringUUID().replace("-", "");
+                return ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "player_" + uuidHex);
+            }
+
+            @Override
+            public Vec3 pos() {
+                return targetPlayer.position().add(0.0, targetPlayer.getBbHeight() / 2.0, 0.0);
+            }
+
+            @Override
+            public List<Aspect> aspects(ServerLevel level) {
+                return AspectScanner.getAspectsForEntity(targetPlayer, level);
+            }
+
+            @Override
+            public Component scanHeader(ServerPlayer scanner) {
+                return Component.translatable("item.koniava.nara_watch.scan.player_first_time",
+                        targetPlayer.getDisplayName()).withStyle(ChatFormatting.GOLD);
             }
         }
     }

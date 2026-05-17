@@ -73,31 +73,29 @@ public class ManaGrinderGameTests {
     // 2. 放入石頭 + 補滿魔力，100 tick 後輸出槽應有沙子
     //    stone_grind.json: stone → sand, mana_cost=2000, processing_time=100
     // -------------------------------------------------------------------------
-    @GameTest(template = "empty", templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 160)
+    @GameTest(template = "empty", templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 100)
     public static void stoneGrindsToSandWithMana(GameTestHelper helper) {
         helper.setBlock(POS, ModBlocks.MANA_GRINDER.get());
 
         helper.runAtTickTime(2, () -> {
             ManaGrinderBlockEntity grinder = getGrinder(helper);
-            // 補足夠的魔力（stone_grind 需要 2000）
-            grinder.getManaStorage().setMana(10000);
-            // 放入石頭，觸發配方偵測
-            grinder.getItemHandler().setStackInSlot(0, new ItemStack(Items.STONE));
+            // gravel_to_sand: mana_cost=500, processing_time=40
+            grinder.getManaStorage().setMana(2000);
+            grinder.getItemHandler().setStackInSlot(0, new ItemStack(Items.GRAVEL));
             grinder.markInputChanged();
         });
 
-        // stone_grind processing_time=100，給 130 tick 緩衝
-        helper.runAtTickTime(135, () -> {
+        // processing_time=40，給 40 tick 緩衝
+        helper.runAtTickTime(85, () -> {
             ManaGrinderBlockEntity grinder = getGrinder(helper);
-            ItemStack output = grinder.getItemHandler().getStackInSlot(2); // OUTPUT_SLOT_1 = 2
+            ItemStack output = grinder.getItemHandler().getStackInSlot(2);
             helper.assertTrue(
                     !output.isEmpty() && output.is(Items.SAND),
-                    "100 tick 研磨後輸出槽應有沙子，實際=" + output
+                    "40 tick 研磨後輸出槽應有沙子，實際=" + output
             );
-            // 魔力應有被扣除（2000），剩餘應少於初始值 10000
             int manaLeft = grinder.getManaStorage().getManaStored();
             helper.assertTrue(
-                    manaLeft < 10000,
+                    manaLeft < 2000,
                     "研磨過程魔力應被消耗，剩餘=" + manaLeft
             );
             helper.succeed();

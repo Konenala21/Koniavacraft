@@ -2,6 +2,7 @@ package com.github.nalamodikk.client.event;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.config.ModCommonConfig;
+import com.github.nalamodikk.narasystem.nara.event.NaraServerEvents;
 import com.github.nalamodikk.narasystem.nara.network.client.OpenNaraInitScreenPacket;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraSyncPacket;
 import com.github.nalamodikk.narasystem.nara.util.NaraHelper;
@@ -60,5 +61,8 @@ public class PlayerLoginEvent {
 
         // 同步研究進度
         KnowledgeSyncPacket.sendTo(player);
+
+        // 恢復未完成的教學 pending 狀態（server 重啟後重填記憶體 Set）
+        NaraServerEvents.restorePendingTutorials(player);
     }
 }

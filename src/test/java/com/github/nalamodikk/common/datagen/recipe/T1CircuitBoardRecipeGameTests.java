@@ -101,9 +101,8 @@ public class T1CircuitBoardRecipeGameTests {
 
     @GameTest(template = "empty", templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 140)
     public static void slimeBallsAndManaDustYieldsManaAdhesive(GameTestHelper helper) {
-        // slot0=史萊姆球（數量 2），slot1=魔力粉
-        ItemStack slimes = new ItemStack(Items.SLIME_BALL, 2);
-        setupGrinder(helper, slimes, new ItemStack(ModItems.MANA_DUST.get()), 10000);
+        // mana_adhesive: slime_ball + mana_dust → mana_adhesive×3 (mana=1500, time=60)
+        setupGrinder(helper, new ItemStack(Items.SLIME_BALL), new ItemStack(ModItems.MANA_DUST.get()), 10000);
 
         // processing_time=60，+40 緩衝
         helper.runAtTickTime(105, () -> {
