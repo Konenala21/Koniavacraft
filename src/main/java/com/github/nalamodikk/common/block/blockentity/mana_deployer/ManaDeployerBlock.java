@@ -49,7 +49,7 @@ public class ManaDeployerBlock extends BaseMachineBlock {
     }
 
     // Sneak + right-click (empty hand) → 切換模式
-    // Right-click (empty hand) → 取回物品
+    // Right-click (empty hand) → 開啟 GUI
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                Player player, BlockHitResult hit) {
@@ -66,16 +66,6 @@ public class ManaDeployerBlock extends BaseMachineBlock {
             return InteractionResult.SUCCESS;
         }
 
-        // 取回持有物品
-        ItemStack held = be.getHeldItem();
-        if (!held.isEmpty()) {
-            player.getInventory().placeItemBackInInventory(held);
-            be.setHeldItem(ItemStack.EMPTY);
-            be.setChanged();
-            return InteractionResult.SUCCESS;
-        }
-
-        // 空槽位：開啟 GUI
         player.openMenu(be, be.getBlockPos());
         return InteractionResult.SUCCESS;
     }

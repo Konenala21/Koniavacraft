@@ -146,6 +146,10 @@ public class ModCapabilities {
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.MANA_GRINDER_BE.get(),
                 (blockEntity, side) -> blockEntity.getItemHandlerForSide(side));
 
+        // 魔力部署器：所有面接收魔力（INPUT only）
+        event.registerBlockEntity(ModCapabilities.MANA, ModBlockEntities.MANA_DEPLOYER_BE.get(),
+                (blockEntity, side) -> new RestrictedManaHandler(blockEntity.getManaStorage(), true, false));
+
     }
 
 }
