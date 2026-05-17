@@ -177,6 +177,18 @@ public class ModRecipeProvider extends RecipeProvider {
                 .define('B', Blocks.IRON_BLOCK)
                 .unlockedBy("has_mana_crystal", has(ModItems.MANA_CRYSTAL.get()))
                 .save(output, "mana_infuser");
+
+        // 🤖 魔力部署器
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.MANA_DEPLOYER.get())
+                .pattern("MIM")
+                .pattern("CDC")
+                .pattern("MIM")
+                .define('M', ModItems.MANA_INGOT.get())
+                .define('I', Items.IRON_INGOT)
+                .define('C', ModBlocks.BASIC_ARCANE_CONDUIT.get())
+                .define('D', Blocks.DISPENSER)
+                .unlockedBy("has_mana_ingot", has(ModItems.MANA_INGOT.get()))
+                .save(output, "mana_deployer");
     }
 
     // === ⚡ 升級模組配方 ===

@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.1.6-6] - 2026-05-17
+
+### Player Changes / 玩家更新內容
+
+- Mana Deployer now has a crafting recipe: 4 Mana Ingots + 2 Iron Ingots + 2 Basic Arcane Conduits + 1 Dispenser.
+- 魔力部署器現在有合成配方：4 魔力錠 + 2 鐵錠 + 2 基礎奧術導管 + 1 投放器。
+- Fixed Mana Deployer 3D model rendering: the model now displays correctly without mirroring or rotation errors.
+- 修正魔力部署器 3D 模型渲染：模型不再出現鏡像或旋轉錯誤。
+
+### Developer Notes / 開發者備註
+
+- ManaDeployerRenderer: corrected Geckolib coordinate convention (negate X for pivot/pos, ZYX rotation order, X-mirror for vertices).
+- ModBlockStateProvider: replaced static blockstate/model JSONs with datagen; extracted createHorizontalFacingVariants(Block, ModelFile) helper.
+- ModRenderLayers: fixed RegisterClientExtensionsEvent import (client.extensions.common, not client.event).
+- ModRecipeProvider: added shaped recipe for mana_deployer (MIM/CDC/MIM).
+
 ## [0.0.1.6-5] - 2026-05-17
 
 ### Player Changes / 玩家更新內容
