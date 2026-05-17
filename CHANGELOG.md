@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.1.6-5] - 2026-05-17
+
+### Player Changes / 玩家更新內容
+
+- Mana Deployer now has a GUI: right-click it with an empty hand to open. Shows current mana, mode, and interval speed.
+- 魔力部署器現在有 GUI：空手右鍵開啟，顯示目前魔力、模式與速度。
+- Mana Deployer animation stops when the machine has no mana.
+- 魔力部署器在無魔力時停止播放動畫。
+- Mana Deployer speed setting is now clickable in the GUI: click the speed label to cycle through 5, 10, 20, 40 tick intervals.
+- 魔力部署器的速度設定現在可在 GUI 中點擊切換，可循環選擇 5、10、20、40 tick 間隔。
+- Mana Deployer now renders as a 3D model in hand and inventory.
+- 魔力部署器現在在手持與物品欄中顯示為 3D 模型。
+- NeoForge updated from 21.1.219 to 21.1.230.
+- NeoForge 由 21.1.219 更新至 21.1.230。
+
+### Developer Notes / 開發者備註
+
+- ManaDeployerBlockEntity: added ContainerData (4 indices: currentMana, maxMana, mode, intervalTick), hasMana field synced via sendBlockUpdated, cycleSpeed() cycles SPEED_PRESETS {5,10,20,40}.
+- ManaDeployerScreen: AutoSizedModularScreen with ManaBarWidget, mode label, clickable speed label (sends CycleDeployerSpeedPacket on left-click, highlights blue on hover).
+- ManaDeployerMenu: AbstractContainerMenu with 1 machine slot + standard player inventory, addDataSlots for ContainerData sync.
+- CycleDeployerSpeedPacket: client-to-server packet, calls deployer.cycleSpeed() server-side.
+- ManaDeployerBEWLR: BlockEntityWithoutLevelRenderer for 3D item display, registered via RegisterClientExtensionsEvent.
+- getAnimTime(partialTick): returns animTimeSec frozen (no partialTick interpolation) when hasMana=false, eliminating animation twitching.
+- JEI: addTooltipCallback migrated to addRichTooltipCallback (ITooltipBuilder), ISubtypeInterpreter updated for JEI 19.27.x API.
+- directionConfig NBT: IOConfig now persisted in saveAdditional/loadAdditional as CompoundTag.
+
 ## [Unreleased]
 
 ### Player Changes / 玩家更新內容

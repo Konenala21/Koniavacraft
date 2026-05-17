@@ -2,6 +2,7 @@ package com.github.nalamodikk.register;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.network.packet.server.OpenUpgradeGuiPacket;
+import com.github.nalamodikk.common.network.packet.server.deployer.CycleDeployerSpeedPacket;
 import com.github.nalamodikk.common.network.packet.server.conduit.PriorityUpdatePacket;
 import com.github.nalamodikk.common.network.packet.server.conduit.ResetPrioritiesPacket;
 import com.github.nalamodikk.common.network.packet.server.manatool.ConfigDirectionBatchUpdatePacket;
@@ -46,6 +47,8 @@ public class ModNetworking {
         NaraCloseDialoguePacket.registerTo(registrar);
         NaraCreeperPunishPacket.registerTo(registrar);
         NaraAngryPacket.registerTo(registrar);
+
+        CycleDeployerSpeedPacket.registerTo(registrar);
 
         ResearchCompletePacket.registerTo(registrar);
         ResearchAspectPlacePacket.registerTo(registrar);

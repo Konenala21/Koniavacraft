@@ -5,6 +5,7 @@ import com.github.nalamodikk.client.screenAPI.component.ManaBarWidget;
 import com.github.nalamodikk.client.screenAPI.framework.AbstractWidget;
 import com.github.nalamodikk.client.screenAPI.framework.AutoSizedModularScreen;
 import com.github.nalamodikk.client.screenAPI.framework.Panel;
+import com.github.nalamodikk.common.network.packet.server.deployer.CycleDeployerSpeedPacket;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -45,20 +46,24 @@ public class ManaDeployerScreen extends AutoSizedModularScreen<ManaDeployerMenu>
             }
         });
 
-        // Speed label
+        // Speed label (clickable, cycles speed preset)
         root.add(new AbstractWidget(30, 74, 116, 10) {
             @Override
             protected void renderWidget(GuiGraphics graphics, int localX, int localY, int screenX, int screenY) {
                 int ticks = menu.getIntervalTick();
                 Component speedText = Component.translatable("screen.koniava.mana_deployer.speed_label",
                         ticks, String.format("%.1f", 20f / ticks));
-                graphics.drawString(
-                        ManaDeployerScreen.this.font,
-                        speedText,
-                        0, 0,
-                        0x404040,
-                        false
-                );
+                int color = isMouseOver(screenX, screenY) ? 0x2277FF : 0x404040;
+                graphics.drawString(ManaDeployerScreen.this.font, speedText, 0, 0, color, false);
+            }
+
+            @Override
+            protected boolean onMouseClicked(int localX, int localY, int button) {
+                if (button == 0) {
+                    CycleDeployerSpeedPacket.sendToServer(menu.getBlockPos());
+                    return true;
+                }
+                return false;
             }
         });
     }

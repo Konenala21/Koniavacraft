@@ -32,8 +32,9 @@ public class ManaDeployerMenu extends AbstractContainerMenu {
 
         this.addDataSlots(blockEntity.getDeployerData());
 
-        // Machine slot: 1 item slot at centre of GUI
-        this.addSlot(new SlotItemHandler(blockEntity.getItemHandler(), 0, 79, 35));
+        var handler = blockEntity.getItemHandler();
+        if (handler == null) throw new IllegalStateException("ManaDeployer itemHandler is null");
+        this.addSlot(new SlotItemHandler(handler, 0, 79, 35));
 
         addPlayerInventory(playerInventory);
         addPlayerHotbar(playerInventory);

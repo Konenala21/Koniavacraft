@@ -170,6 +170,7 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
 
     /** Called by BER with partialTick for smooth animation. */
     public float getAnimTime(float partialTick) {
+        if (!hasMana) return animTimeSec;
         return (animTimeSec + partialTick / 20f) % 6.75f;
     }
 
