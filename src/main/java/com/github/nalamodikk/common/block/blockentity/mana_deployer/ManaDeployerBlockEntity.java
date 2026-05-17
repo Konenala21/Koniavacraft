@@ -81,6 +81,18 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
             directionConfig.put(dir, IOHandlerUtils.IOType.INPUT); // 所有面接收魔力
     }
 
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        // Initialize wasRedstonePowered from the actual current signal so the first
+        // neighborChanged() call does NOT falsely treat an existing signal as a rising edge.
+        if (level != null && !level.isClientSide) {
+            wasRedstonePowered = level.hasNeighborSignal(worldPosition);
+        }
+    }
+
     // ── Item slot (1 slot, max 1 item) ────────────────────────────────────────
 
     @Override
@@ -122,14 +134,15 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
         FakePlayer fp = FakePlayerFactory.get(serverLevel,
                 new GameProfile(FAKE_UUID, "[koniava-deployer]"));
         fp.setPos(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5);
-        fp.setItemInHand(InteractionHand.MAIN_HAND,
-                itemHandler.getStackInSlot(SLOT_ITEM).copy());
+        // Give fake player a copy; after use, write back so consumed items are reflected
+        fp.setItemInHand(InteractionHand.MAIN_HAND, itemHandler.getStackInSlot(SLOT_ITEM).copy());
 
         boolean acted = mode == Mode.RIGHT_CLICK
                 ? doRightClick(serverLevel, fp, facing, target)
                 : doLeftClick(serverLevel, fp, target);
 
         if (acted) {
+            itemHandler.setStackInSlot(SLOT_ITEM, fp.getMainHandItem());
             manaStorage.extractMana(MANA_COST, ManaAction.EXECUTE);
             setChanged();
         }

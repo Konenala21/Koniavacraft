@@ -29,8 +29,9 @@ public class ManaDeployerScreen extends AutoSizedModularScreen<ManaDeployerMenu>
     protected void init() {
         super.init();
 
-        // Interval EditBox — absolute screen coords
-        intervalBox = new EditBox(this.font, leftPos + 96, topPos + 67, 56, 12, Component.empty());
+        // Interval input box — absolute coords
+        // x=80 places it right after the "Ticks:" label (which occupies panel x=24~74)
+        intervalBox = new EditBox(this.font, leftPos + 80, topPos + 67, 60, 12, Component.empty());
         intervalBox.setMaxLength(5);
         intervalBox.setFilter(s -> s.matches("\\d*"));
         intervalBox.setValue(String.valueOf(menu.getIntervalTick()));
@@ -48,7 +49,7 @@ public class ManaDeployerScreen extends AutoSizedModularScreen<ManaDeployerMenu>
 
     @Override
     protected void containerTick() {
-        // Keep the editbox in sync when not focused
+        // Sync the box value while it is not being actively edited
         if (intervalBox != null && !intervalBox.isFocused()) {
             suppressResponder = true;
             intervalBox.setValue(String.valueOf(menu.getIntervalTick()));
@@ -58,16 +59,20 @@ public class ManaDeployerScreen extends AutoSizedModularScreen<ManaDeployerMenu>
 
     @Override
     protected void buildGui(Panel root) {
+        // Mana bar — left side
         root.add(new ManaBarWidget(7, 17, menu::getCurrentMana, menu::getMaxMana)
                 .setSize(10, 48).setDrawBackground(false));
 
-        // ON/OFF toggle button (top-right of machine area)
-        root.add(new AbstractWidget(152, 54, 18, 18) {
+        // ON/OFF toggle button — right side, same row as mode label
+        root.add(new AbstractWidget(148, 54, 20, 20) {
             @Override
             protected void renderWidget(GuiGraphics g, int lx, int ly, int sx, int sy) {
                 boolean en = menu.isEnabled();
                 g.fill(0, 0, width, height, en ? 0xFF2A7A30 : 0xFF7A2A2A);
                 if (isMouseOver(sx, sy)) g.fill(0, 0, width, height, 0x33FFFFFF);
+                // 1px inner border
+                g.fill(1, 1, width - 1, height - 1, en ? 0xFF3DB347 : 0xFFB33D3D);
+                if (isMouseOver(sx, sy)) g.fill(1, 1, width - 1, height - 1, 0x22FFFFFF);
                 Component label = Component.literal(en ? "ON" : "OFF");
                 int tx = (width - ManaDeployerScreen.this.font.width(label)) / 2;
                 int ty = (height - 8) / 2;
@@ -84,11 +89,12 @@ public class ManaDeployerScreen extends AutoSizedModularScreen<ManaDeployerMenu>
             }
         });
 
-        // Mode label
-        root.add(new AbstractWidget(25, 57, 120, 10) {
+        // Mode label — fixed short name, no double-prefix
+        root.add(new AbstractWidget(24, 57, 122, 10) {
             @Override
             protected void renderWidget(GuiGraphics g, int lx, int ly, int sx, int sy) {
-                String modeKey = "block.koniava.mana_deployer.mode."
+                // Use screen-specific short key to avoid double "Mode:" prefix
+                String modeKey = "screen.koniava.mana_deployer.mode."
                         + menu.getMode().name().toLowerCase();
                 g.drawString(ManaDeployerScreen.this.font,
                         Component.translatable("screen.koniava.mana_deployer.mode_label",
@@ -97,8 +103,8 @@ public class ManaDeployerScreen extends AutoSizedModularScreen<ManaDeployerMenu>
             }
         });
 
-        // Speed label (EditBox is added in init() at same row, x=96)
-        root.add(new AbstractWidget(25, 69, 68, 10) {
+        // "Ticks:" label (EditBox is at absolute leftPos+80, same row)
+        root.add(new AbstractWidget(24, 69, 54, 10) {
             @Override
             protected void renderWidget(GuiGraphics g, int lx, int ly, int sx, int sy) {
                 g.drawString(ManaDeployerScreen.this.font,
@@ -111,6 +117,6 @@ public class ManaDeployerScreen extends AutoSizedModularScreen<ManaDeployerMenu>
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
         graphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 4210752, false);
-        // Skip inventory label — not enough vertical space
+        // Inventory label omitted — not enough vertical space in the machine area
     }
 }
