@@ -34,7 +34,8 @@ public class ManaDeployerMenu extends AbstractContainerMenu {
 
         var handler = blockEntity.getItemHandler();
         if (handler == null) throw new IllegalStateException("ManaDeployer itemHandler is null");
-        this.addSlot(new SlotItemHandler(handler, 0, 79, 35));
+        // Position matches the slot graphic in the texture (gray inner at PNG 78,28)
+        this.addSlot(new SlotItemHandler(handler, 0, 77, 27));
 
         addPlayerInventory(playerInventory);
         addPlayerHotbar(playerInventory);
@@ -43,14 +44,16 @@ public class ManaDeployerMenu extends AbstractContainerMenu {
     private void addPlayerInventory(Inventory playerInventory) {
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 9; j++) {
-                this.addSlot(new Slot(playerInventory, j + i * 9 + 9, 8 + j * 18, 84 + i * 18));
+                // y=133 → item renders at y=134, matches texture inventory gray
+                this.addSlot(new Slot(playerInventory, j + i * 9 + 9, 8 + j * 18, 133 + i * 18));
             }
         }
     }
 
     private void addPlayerHotbar(Inventory playerInventory) {
         for (int i = 0; i < 9; i++) {
-            this.addSlot(new Slot(playerInventory, i, 8 + i * 18, 142));
+            // y=191 → item renders at y=192, matches texture hotbar gray
+            this.addSlot(new Slot(playerInventory, i, 8 + i * 18, 191));
         }
     }
 
