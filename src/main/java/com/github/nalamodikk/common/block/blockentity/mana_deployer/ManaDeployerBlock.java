@@ -74,7 +74,10 @@ public class ManaDeployerBlock extends BaseMachineBlock {
             be.setChanged();
             return InteractionResult.SUCCESS;
         }
-        return InteractionResult.PASS;
+
+        // 空槽位：開啟 GUI
+        player.openMenu(be, be.getBlockPos());
+        return InteractionResult.SUCCESS;
     }
 
     // Right-click with item → 設定持有物品（slot 空才插入）

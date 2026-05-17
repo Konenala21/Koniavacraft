@@ -6,6 +6,7 @@ import com.github.nalamodikk.common.block.blockentity.research.ResearchTableScre
 import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitConfigScreen;
 import com.github.nalamodikk.common.block.blockentity.mana_crafting.ManaCraftingScreen;
 import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorScreen;
+import com.github.nalamodikk.common.block.blockentity.mana_deployer.ManaDeployerScreen;
 import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderScreen;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserScreen;
 import com.github.nalamodikk.common.screen.block.shared.UniversalConfigScreen;
@@ -29,6 +30,7 @@ public class ModMenuScreens {
         event.register(ModMenuTypes.CONDUIT_CONFIG_MENU.get(), ArcaneConduitConfigScreen::new);
         event.register(ModMenuTypes.MANA_INFUSER.get(), ManaInfuserScreen::new);
         event.register(ModMenuTypes.MANA_GRINDER_MENU.get(), ManaGrinderScreen::new);
+        event.register(ModMenuTypes.MANA_DEPLOYER_MENU.get(), ManaDeployerScreen::new);
         event.register(ModMenuTypes.RESEARCH_TABLE_MENU.get(), ResearchTableScreen::new);
 
     }

@@ -19,6 +19,8 @@ import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitConfi
 import com.github.nalamodikk.common.block.blockentity.mana_crafting.ManaCraftingMenu;
 import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorMenu;
+import com.github.nalamodikk.common.block.blockentity.mana_deployer.ManaDeployerBlockEntity;
+import com.github.nalamodikk.common.block.blockentity.mana_deployer.ManaDeployerMenu;
 import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderMenu;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserBlockEntity;
@@ -103,6 +105,20 @@ public class ModMenuTypes {
                                     (be != null ? be.getClass().getSimpleName() : "null"));
                         }
                         return new ManaGrinderMenu(id, inv, grinder);
+                    });
+
+    // === 魔力部署器菜單 ===
+    public static final DeferredHolder<MenuType<?>, MenuType<ManaDeployerMenu>> MANA_DEPLOYER_MENU =
+            registerMenuType("mana_deployer",
+                    (id, inv, buf) -> {
+                        BlockPos pos = buf.readBlockPos();
+                        Level level = inv.player.level();
+                        BlockEntity be = level.getBlockEntity(pos);
+                        if (!(be instanceof ManaDeployerBlockEntity deployer)) {
+                            throw new IllegalStateException("Expected ManaDeployerBlockEntity at " + pos + " but found " +
+                                    (be != null ? be.getClass().getSimpleName() : "null"));
+                        }
+                        return new ManaDeployerMenu(id, inv, deployer);
                     });
 
     /**

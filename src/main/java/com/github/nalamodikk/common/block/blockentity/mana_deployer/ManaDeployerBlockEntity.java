@@ -15,6 +15,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
@@ -41,17 +42,44 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
 
     public enum Mode { RIGHT_CLICK, LEFT_CLICK }
 
-    private static final int  MANA_COST       = 20;
-    private static final int  SLOT_ITEM       = 0;
-    private static final UUID FAKE_UUID       =
+    private static final int   MANA_COST     = 20;
+    private static final int   SLOT_ITEM     = 0;
+    private static final UUID  FAKE_UUID     =
             UUID.fromString("a5db8636-5bf7-4928-a5e4-e6fc2a18b97d");
+    private static final int[] SPEED_PRESETS = {5, 10, 20, 40};
 
-    private Mode mode      = Mode.RIGHT_CLICK;
-    private int  tickTimer = 0;
+    private Mode    mode      = Mode.RIGHT_CLICK;
+    private int     tickTimer = 0;
+    /** Synced to client so BER knows whether to animate. */
+    private boolean hasMana   = false;
     /** Client-side animation time in seconds (wraps at animation length). */
-    private float animTimeSec = 0f;
+    private float   animTimeSec = 0f;
 
     private final EnumMap<Direction, IOHandlerUtils.IOType> directionConfig = new EnumMap<>(Direction.class);
+
+    private final ContainerData deployerData = new ContainerData() {
+        @Override
+        public int get(int index) {
+            return switch (index) {
+                case 0 -> manaStorage != null ? Math.min(manaStorage.getManaStored(), 32767) : 0;
+                case 1 -> manaStorage != null ? Math.min(manaStorage.getMaxManaStored(), 32767) : 0;
+                case 2 -> mode == Mode.LEFT_CLICK ? 1 : 0;
+                case 3 -> intervalTick;
+                default -> 0;
+            };
+        }
+        @Override
+        public void set(int index, int value) {
+            switch (index) {
+                case 2 -> mode = (value == 1) ? Mode.LEFT_CLICK : Mode.RIGHT_CLICK;
+                case 3 -> intervalTick = value;
+            }
+        }
+        @Override
+        public int getCount() { return 4; }
+    };
+
+    public ContainerData getDeployerData() { return deployerData; }
 
     public ManaDeployerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MANA_DEPLOYER_BE.get(), pos, state,
@@ -72,10 +100,19 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
     // ── Tick ──────────────────────────────────────────────────────────────────
 
     public static void tick(Level level, BlockPos pos, BlockState state, ManaDeployerBlockEntity be) {
-        // Client: advance animation time (6.75 s loop)
         if (level.isClientSide) {
-            be.animTimeSec = (be.animTimeSec + 1f / 20f) % 6.75f;
+            // Only animate when mana is available; speed scales with intervalTick
+            if (be.hasMana) {
+                be.animTimeSec = (be.animTimeSec + 1f / be.intervalTick) % 6.75f;
+            }
             return;
+        }
+        // Sync hasMana to client when it changes
+        boolean currentHasMana = be.manaStorage != null
+                && be.manaStorage.getManaStored() >= MANA_COST;
+        if (currentHasMana != be.hasMana) {
+            be.hasMana = currentHasMana;
+            be.syncToClient();
         }
         be.tickTimer++;
         if (be.tickTimer < be.intervalTick) return;
@@ -136,10 +173,36 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
         return (animTimeSec + partialTick / 20f) % 6.75f;
     }
 
-    public Mode    getMode()               { return mode; }
-    public void    toggleMode()            { mode = (mode == Mode.RIGHT_CLICK) ? Mode.LEFT_CLICK : Mode.RIGHT_CLICK; setChanged(); }
-    public ItemStack getHeldItem()         { return itemHandler == null ? ItemStack.EMPTY : itemHandler.getStackInSlot(SLOT_ITEM); }
-    public void    setHeldItem(ItemStack s){ if (itemHandler != null) { itemHandler.setStackInSlot(SLOT_ITEM, s); setChanged(); } }
+    public Mode      getMode()        { return mode; }
+    public boolean   isHasMana()     { return hasMana; }
+    public int       getIntervalTick(){ return intervalTick; }
+    public ItemStack getHeldItem()   { return itemHandler == null ? ItemStack.EMPTY : itemHandler.getStackInSlot(SLOT_ITEM); }
+    public void      setHeldItem(ItemStack s){ if (itemHandler != null) { itemHandler.setStackInSlot(SLOT_ITEM, s); setChanged(); } }
+
+    public void toggleMode() {
+        mode = (mode == Mode.RIGHT_CLICK) ? Mode.LEFT_CLICK : Mode.RIGHT_CLICK;
+        setChanged();
+    }
+
+    public void cycleSpeed() {
+        for (int i = 0; i < SPEED_PRESETS.length; i++) {
+            if (SPEED_PRESETS[i] == intervalTick) {
+                intervalTick = SPEED_PRESETS[(i + 1) % SPEED_PRESETS.length];
+                setChanged();
+                syncToClient();
+                return;
+            }
+        }
+        intervalTick = SPEED_PRESETS[0];
+        setChanged();
+        syncToClient();
+    }
+
+    private void syncToClient() {
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
 
     // ── NBT ───────────────────────────────────────────────────────────────────
 
@@ -147,6 +210,10 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putString("DeployerMode", mode.name());
+        tag.putBoolean("HasMana", hasMana);
+        CompoundTag ioTag = new CompoundTag();
+        directionConfig.forEach((dir, type) -> ioTag.putString(dir.getName(), type.name()));
+        tag.put("IOConfig", ioTag);
     }
 
     @Override
@@ -154,6 +221,17 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
         super.loadAdditional(tag, registries);
         try { mode = Mode.valueOf(tag.getString("DeployerMode")); }
         catch (Exception ignored) { mode = Mode.RIGHT_CLICK; }
+        hasMana = tag.getBoolean("HasMana");
+        if (tag.contains("IOConfig")) {
+            CompoundTag ioTag = tag.getCompound("IOConfig");
+            for (Direction dir : Direction.values()) {
+                String key = dir.getName();
+                if (ioTag.contains(key)) {
+                    try { directionConfig.put(dir, IOHandlerUtils.IOType.valueOf(ioTag.getString(key))); }
+                    catch (Exception ignored) {}
+                }
+            }
+        }
     }
 
     @Override protected boolean canGenerate() { return false; }
@@ -201,6 +279,6 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
 
     @Override
     public @Nullable AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
-        return null;
+        return new ManaDeployerMenu(id, inv, this);
     }
 }
