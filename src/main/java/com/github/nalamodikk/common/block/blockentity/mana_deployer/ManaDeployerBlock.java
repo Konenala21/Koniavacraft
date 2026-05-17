@@ -5,12 +5,10 @@ import com.github.nalamodikk.register.ModBlockEntities;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -42,14 +40,21 @@ public class ManaDeployerBlock extends BaseMachineBlock {
     }
 
     @Override
+    public void neighborChanged(BlockState state, Level level, BlockPos pos,
+                                Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
+        if (!level.isClientSide && level.getBlockEntity(pos) instanceof ManaDeployerBlockEntity be) {
+            be.onNeighborChanged(level, pos);
+        }
+    }
+
+    @Override
     public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(
             Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.MANA_DEPLOYER_BE.get(),
                 ManaDeployerBlockEntity::tick);
     }
 
-    // Sneak + right-click (empty hand) → 切換模式
-    // Right-click (empty hand) → 開啟 GUI
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                Player player, BlockHitResult hit) {
@@ -68,25 +73,5 @@ public class ManaDeployerBlock extends BaseMachineBlock {
 
         player.openMenu(be, be.getBlockPos());
         return InteractionResult.SUCCESS;
-    }
-
-    // Right-click with item → 設定持有物品（slot 空才插入）
-    @Override
-    protected ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level,
-                                              BlockPos pos, Player player,
-                                              InteractionHand hand, BlockHitResult hit) {
-        if (level.isClientSide) return ItemInteractionResult.SUCCESS;
-        if (hand != InteractionHand.MAIN_HAND)
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-        if (!(level.getBlockEntity(pos) instanceof ManaDeployerBlockEntity be))
-            return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
-
-        if (be.getHeldItem().isEmpty()) {
-            ItemStack toInsert = stack.split(1);
-            be.setHeldItem(toInsert);
-            be.setChanged();
-            return ItemInteractionResult.SUCCESS;
-        }
-        return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
 }

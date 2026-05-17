@@ -2,7 +2,8 @@ package com.github.nalamodikk.register;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.network.packet.server.OpenUpgradeGuiPacket;
-import com.github.nalamodikk.common.network.packet.server.deployer.CycleDeployerSpeedPacket;
+import com.github.nalamodikk.common.network.packet.server.deployer.SetDeployerIntervalPacket;
+import com.github.nalamodikk.common.network.packet.server.deployer.ToggleDeployerEnabledPacket;
 import com.github.nalamodikk.common.network.packet.server.conduit.PriorityUpdatePacket;
 import com.github.nalamodikk.common.network.packet.server.conduit.ResetPrioritiesPacket;
 import com.github.nalamodikk.common.network.packet.server.manatool.ConfigDirectionBatchUpdatePacket;
@@ -14,6 +15,7 @@ import com.github.nalamodikk.common.network.packet.server.player.gui.OpenExtraEq
 import com.github.nalamodikk.narasystem.nara.network.client.NaraAngryPacket;
 import com.github.nalamodikk.narasystem.nara.network.client.NaraCreeperPunishPacket;
 import com.github.nalamodikk.narasystem.nara.network.client.NaraStartDialoguePacket;
+import com.github.nalamodikk.narasystem.nara.network.client.NaraTutorialPacket;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraBindRequestPacket;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraCloseDialoguePacket;
 import com.github.nalamodikk.research.network.AspectSynthesisPacket;
@@ -44,11 +46,13 @@ public class ModNetworking {
         ResetPrioritiesPacket.registerTo(registrar);
         NaraBindRequestPacket.registerTo(registrar);
         NaraStartDialoguePacket.registerTo(registrar);  // 含 Punishment inner record
+        NaraTutorialPacket.registerTo(registrar);
         NaraCloseDialoguePacket.registerTo(registrar);
         NaraCreeperPunishPacket.registerTo(registrar);
         NaraAngryPacket.registerTo(registrar);
 
-        CycleDeployerSpeedPacket.registerTo(registrar);
+        SetDeployerIntervalPacket.registerTo(registrar);
+        ToggleDeployerEnabledPacket.registerTo(registrar);
 
         ResearchCompletePacket.registerTo(registrar);
         ResearchAspectPlacePacket.registerTo(registrar);

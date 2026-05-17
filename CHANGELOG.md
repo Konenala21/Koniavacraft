@@ -2,6 +2,87 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.1.6-11] - 2026-05-17
+
+### Player Changes / 玩家更新內容
+
+- Mana Deployer GUI now has an ON/OFF toggle button; the machine stops working and freezes its animation when disabled.
+- 魔力部署器 GUI 新增開關按鈕，關閉時機器停止運作且動畫也會停止。
+- Redstone pulse (rising edge) toggles the Mana Deployer on/off, like the Copper Bulb mechanic.
+- 紅石脈衝（上升沿）可切換魔力部署器開關，與銅燈機制相同。
+- Mana Deployer speed is now a free-input field (10 to 12000 ticks) instead of preset cycles.
+- 魔力部署器速度改為自由輸入欄位（10 至 12000 tick），不再是固定預設值切換。
+- Right-clicking the Mana Deployer with an item in hand no longer auto-inserts the item; use the GUI slot instead.
+- 持物右鍵魔力部署器不再自動插入物品，請透過 GUI 欄位操作。
+
+### Developer Notes / 開發者備註
+
+- ManaDeployerBlockEntity: removed SPEED_PRESETS/cycleSpeed(); added enabled, wasRedstonePowered fields; setIntervalTick() clamps [10,12000]; toggleEnabled(); onNeighborChanged() for redstone edge detection; ContainerData now has 5 slots (index 4 = enabled).
+- ManaDeployerBlock: added neighborChanged() to delegate redstone signals to BlockEntity.
+- ManaDeployerScreen: replaced speed-cycle click with vanilla EditBox; added ON/OFF button widget; override containerTick() to sync box when unfocused.
+- Replaced CycleDeployerSpeedPacket with SetDeployerIntervalPacket + ToggleDeployerEnabledPacket.
+
+## [0.0.1.6-10] - 2026-05-17
+
+### Player Changes / 玩家更新內容
+
+- Nara now appears after you craft the Research Table and close the crafting GUI, instead of when you first open the table.
+- 娜拉現在會在你合成出研究台並關閉合成介面後才出現說話，而非第一次開啟研究台時。
+- Completing a research entry now unlocks its associated crafting recipes in the recipe book.
+- 完成研究時，研究條目指定的配方會自動解鎖並顯示於配方書中。
+
+### Developer Notes / 開發者備註
+
+- Moved research table tutorial trigger from ResearchTableBlock.useWithoutItem() to NaraServerEvents.
+- NaraServerEvents: added onItemCrafted() — detects research_table craft, adds UUID to pendingResearchTableTutorial set if tutorial not yet seen.
+- NaraServerEvents.onServerTick(): checks pending players each tick; fires when player.containerMenu == player.inventoryMenu (no GUI open), then sends NaraTutorialPacket and marks tutorial seen.
+- ResearchRegistry.MANA_BASICS: fixed unlocks() pointing to removed mana_scanner; now points to nara_watch.
+- CompletedResearchItem.use(): on isNew, calls sp.awardRecipes() with RecipeHolder list resolved from ResearchTemplate.getUnlockedRecipes().
+- ResearchCommand.unlockResearch()/unlockAllResearch(): same recipe grant logic added for cheat commands.
+
+## [0.0.1.6-9] - 2026-05-17
+
+### Player Changes / 玩家更新內容
+
+- Nara now appears with a tutorial dialogue the first time you open the Research Table, explaining how to use notes and quills.
+- 娜拉會在你第一次開啟研究台時跳出來說明操作方式（只出現一次）。
+
+### Developer Notes / 開發者備註
+
+- PlayerKnowledge: added seenTutorials Set<String> with hasSeenTutorial/markTutorialSeen + save/load under "SeenTutorials" NBT tag.
+- NaraTutorialPacket (new): server→client packet carrying tutorialId string, routes to NaraTutorialFlow.start().
+- NaraTutorialFlow (new): client-side static class mapping tutorialId to dialogue lines. RESEARCH_TABLE = "research_table".
+- ResearchTableBlock.useWithoutItem(): after openMenu, calls knowledge.markTutorialSeen(RESEARCH_TABLE) — if returns true (first time), sends NaraTutorialPacket.
+- ModNetworking: registered NaraTutorialPacket.
+
+## [0.0.1.6-8] - 2026-05-17
+
+### Player Changes / 玩家更新內容
+
+- Scanner (Nara Watch) can now scan other players. Each player has a unique stable aspect fingerprint of 6 to 8 aspects drawn from all compound aspects.
+- High-level compound aspects (e.g. Cognition, Wisdom, Commerce, Sensus) now have a chance to appear when scanning items and entities that logically connect to them.
+- 娜拉手錶現可掃描其他玩家。每位玩家擁有獨特穩定的本源組合，從全部複合本源中隨機抽取 6 至 8 個。
+- 高階複合本源（如知識、知慧、感知、交易等）現在會根據掃描目標的本源鏈出現，不再永遠掃不出來。
+
+### Developer Notes / 開發者備註
+
+- EntityAspectResolver.resolve(): detect Player before cache lookup and delegate to resolvePlayer(). Player aspects bypass entity-type cache entirely (UUID-based scan id).
+- EntityAspectResolver.resolvePlayer(): draws from all non-primary aspects (ModAspects.all() filtered by isPrimary()). Capacity 6-8 determined by UUID bit hash for per-player stability. scanId = koniava:player_{uuidHex} so same player always produces same aspects per world seed.
+- BaseMaterialRegistry: added expandCandidatePool() — three-pass getLogicalPool expansion (was one). Pass 3 reaches Tier-C/D aspects such as SENSUS, WISDOM, LANGUAGE, COMMERCE that were previously unreachable.
+- Both EntityAspectResolver.resolve() and BaseMaterialRegistry.getSemanticAspects() now call expandCandidatePool.
+- NaraWatchItem: removed `instanceof Player` skip in getEntityTarget(); added PlayerTarget ScanTarget record with UUID-based ResourceLocation id so each player is a unique scan entry. scanHeader() override shows player name in discovery message.
+
+## [0.0.1.6-7] - 2026-05-17
+
+### Player Changes / 玩家更新內容
+
+- Fixed: Breaking a pillar of a formed altar no longer keeps the structure in the formed state. The altar now correctly reverts when any structural block is removed.
+- 修正：打掉已成形祭壇的矩陣柱子，結構現在會正確解散並恢復成魔力磚狀態。
+
+### Developer Notes / 開發者備註
+
+- AspectAltarBlockEntity.tick(): call checkStructure() first in the CHECK_INTERVAL branch when formed, before scanForPedestals(). Breaking a pillar now triggers disband within 40 ticks. Forming still requires wand activation.
+
 ## [0.0.1.6-6] - 2026-05-17
 
 ### Player Changes / 玩家更新內容

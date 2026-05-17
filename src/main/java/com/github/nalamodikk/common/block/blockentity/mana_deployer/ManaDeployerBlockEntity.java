@@ -30,14 +30,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.EnumMap;
 import java.util.UUID;
 
-/**
- * 魔力部署器 — 消耗魔力模擬玩家右鍵（放置/互動）或左鍵（破壞）。
- *
- * 操作：
- *   右鍵（空手）     → 取回持有物品
- *   右鍵（持物）     → 設定持有物品
- *   Shift + 右鍵    → 切換模式（RIGHT_CLICK / LEFT_CLICK）
- */
+/** 魔力部署器 — 消耗魔力模擬玩家右鍵（放置/互動）或左鍵（破壞）。 */
 public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
 
     public enum Mode { RIGHT_CLICK, LEFT_CLICK }
@@ -46,14 +39,12 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
     private static final int   SLOT_ITEM     = 0;
     private static final UUID  FAKE_UUID     =
             UUID.fromString("a5db8636-5bf7-4928-a5e4-e6fc2a18b97d");
-    private static final int[] SPEED_PRESETS = {5, 10, 20, 40};
-
     private Mode    mode      = Mode.RIGHT_CLICK;
     private int     tickTimer = 0;
-    /** Synced to client so BER knows whether to animate. */
     private boolean hasMana   = false;
-    /** Client-side animation time in seconds (wraps at animation length). */
     private float   animTimeSec = 0f;
+    private boolean enabled   = true;
+    private boolean wasRedstonePowered = false;
 
     private final EnumMap<Direction, IOHandlerUtils.IOType> directionConfig = new EnumMap<>(Direction.class);
 
@@ -65,6 +56,7 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
                 case 1 -> manaStorage != null ? Math.min(manaStorage.getMaxManaStored(), 32767) : 0;
                 case 2 -> mode == Mode.LEFT_CLICK ? 1 : 0;
                 case 3 -> intervalTick;
+                case 4 -> enabled ? 1 : 0;
                 default -> 0;
             };
         }
@@ -73,10 +65,11 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
             switch (index) {
                 case 2 -> mode = (value == 1) ? Mode.LEFT_CLICK : Mode.RIGHT_CLICK;
                 case 3 -> intervalTick = value;
+                case 4 -> enabled = (value == 1);
             }
         }
         @Override
-        public int getCount() { return 4; }
+        public int getCount() { return 5; }
     };
 
     public ContainerData getDeployerData() { return deployerData; }
@@ -101,19 +94,18 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
 
     public static void tick(Level level, BlockPos pos, BlockState state, ManaDeployerBlockEntity be) {
         if (level.isClientSide) {
-            // Only animate when mana is available; speed scales with intervalTick
-            if (be.hasMana) {
+            if (be.hasMana && be.enabled) {
                 be.animTimeSec = (be.animTimeSec + 1f / be.intervalTick) % 6.75f;
             }
             return;
         }
-        // Sync hasMana to client when it changes
         boolean currentHasMana = be.manaStorage != null
                 && be.manaStorage.getManaStored() >= MANA_COST;
         if (currentHasMana != be.hasMana) {
             be.hasMana = currentHasMana;
             be.syncToClient();
         }
+        if (!be.enabled) return;
         be.tickTimer++;
         if (be.tickTimer < be.intervalTick) return;
         be.tickTimer = 0;
@@ -168,9 +160,8 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
 
     // ── Accessors ─────────────────────────────────────────────────────────────
 
-    /** Called by BER with partialTick for smooth animation. */
     public float getAnimTime(float partialTick) {
-        if (!hasMana) return animTimeSec;
+        if (!hasMana || !enabled) return animTimeSec;
         return (animTimeSec + partialTick / 20f) % 6.75f;
     }
 
@@ -185,18 +176,27 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
         setChanged();
     }
 
-    public void cycleSpeed() {
-        for (int i = 0; i < SPEED_PRESETS.length; i++) {
-            if (SPEED_PRESETS[i] == intervalTick) {
-                intervalTick = SPEED_PRESETS[(i + 1) % SPEED_PRESETS.length];
-                setChanged();
-                syncToClient();
-                return;
-            }
-        }
-        intervalTick = SPEED_PRESETS[0];
+    public void setIntervalTick(int ticks) {
+        intervalTick = Math.clamp(ticks, 10, 12000);
         setChanged();
         syncToClient();
+    }
+
+    public void toggleEnabled() {
+        enabled = !enabled;
+        setChanged();
+        syncToClient();
+    }
+
+    public boolean isEnabled() { return enabled; }
+
+    public void onNeighborChanged(Level level, BlockPos pos) {
+        boolean powered = level.hasNeighborSignal(pos);
+        if (powered && !wasRedstonePowered) {
+            toggleEnabled();
+        }
+        wasRedstonePowered = powered;
+        setChanged();
     }
 
     private void syncToClient() {
@@ -212,6 +212,8 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
         super.saveAdditional(tag, registries);
         tag.putString("DeployerMode", mode.name());
         tag.putBoolean("HasMana", hasMana);
+        tag.putBoolean("Enabled", enabled);
+        tag.putBoolean("WasRedstonePowered", wasRedstonePowered);
         CompoundTag ioTag = new CompoundTag();
         directionConfig.forEach((dir, type) -> ioTag.putString(dir.getName(), type.name()));
         tag.put("IOConfig", ioTag);
@@ -223,6 +225,9 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
         try { mode = Mode.valueOf(tag.getString("DeployerMode")); }
         catch (Exception ignored) { mode = Mode.RIGHT_CLICK; }
         hasMana = tag.getBoolean("HasMana");
+        enabled = !tag.contains("Enabled") || tag.getBoolean("Enabled");
+        wasRedstonePowered = tag.getBoolean("WasRedstonePowered");
+        intervalTick = Math.clamp(intervalTick, 10, 12000);
         if (tag.contains("IOConfig")) {
             CompoundTag ioTag = tag.getCompound("IOConfig");
             for (Direction dir : Direction.values()) {

@@ -13,11 +13,11 @@ public class ManaDeployerMenu extends AbstractContainerMenu {
 
     private final ManaDeployerBlockEntity blockEntity;
 
-    // ContainerData indices
     private static final int DATA_CURRENT_MANA  = 0;
     private static final int DATA_MAX_MANA      = 1;
     private static final int DATA_MODE          = 2;
     private static final int DATA_INTERVAL_TICK = 3;
+    private static final int DATA_ENABLED       = 4;
 
     // Slot boundaries
     private static final int MACHINE_SLOTS = 1;
@@ -108,6 +108,10 @@ public class ManaDeployerMenu extends AbstractContainerMenu {
 
     public int getIntervalTick() {
         return blockEntity.getDeployerData().get(DATA_INTERVAL_TICK);
+    }
+
+    public boolean isEnabled() {
+        return blockEntity.getDeployerData().get(DATA_ENABLED) != 0;
     }
 
     public BlockPos getBlockPos() {
