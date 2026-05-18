@@ -44,6 +44,13 @@ public class AltarUpgradeAnimManager {
         return ACTIVE.get(pos);
     }
 
+    public static AnimState getActiveT6State() {
+        for (AnimState s : ACTIVE.values()) {
+            if (s.tier() == 6 && !s.isDone()) return s;
+        }
+        return null;
+    }
+
     public static void clientTick() {
         Minecraft mc = Minecraft.getInstance();
         Iterator<Map.Entry<BlockPos, AnimState>> it = ACTIVE.entrySet().iterator();

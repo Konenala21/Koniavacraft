@@ -12,7 +12,8 @@
   ],
   "client": [
     "client.MinecraftAccessor",
-    "client.LanguageSelectScreenMixin"
+    "client.LanguageSelectScreenMixin",
+    "client.MouseHandlerT6Mixin"
   ],
   "server": [],
   "injectors": {
