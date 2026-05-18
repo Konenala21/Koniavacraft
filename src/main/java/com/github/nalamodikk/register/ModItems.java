@@ -7,6 +7,7 @@ import com.github.nalamodikk.common.item.research.AspectTokenItem;
 import com.github.nalamodikk.common.item.research.CompletedResearchItem;
 import com.github.nalamodikk.common.item.research.InkQuillItem;
 import com.github.nalamodikk.common.item.research.ResearchNoteItem;
+import com.github.nalamodikk.common.item.DevRenderTestItem;
 import com.github.nalamodikk.common.item.debug.ManaDebugToolItem;
 import com.github.nalamodikk.common.item.tool.AdvancedTechWandItem;
 import com.github.nalamodikk.common.item.tool.BasicTechWandItem;
@@ -83,6 +84,10 @@ public class ModItems {
 
     public static final DeferredItem<AspectTokenItem> ASPECT_TOKEN =
             ITEMS.register("aspect_token", () -> new AspectTokenItem(
+                    new Item.Properties().stacksTo(1)));
+
+    public static final DeferredItem<DevRenderTestItem> DEV_RENDER_TEST_1 =
+            ITEMS.register("dev_render_test_1", () -> new DevRenderTestItem(
                     new Item.Properties().stacksTo(1)));
 
     public static void register(IEventBus eventBus){

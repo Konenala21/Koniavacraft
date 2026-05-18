@@ -6,6 +6,14 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+### Developer Notes / 開發者備註
+
+---
+
+## [0.0.1.6-5] - 2026-05-18
+
+### Player Changes / 玩家更新內容
+
 - Completing an altar ritual now triggers a visual performance: a burst glow at the altar center and a blue light pillar shooting into the sky (T3+). A completion chime plays on finish.
 - 完成祭壇儀式後現在會播放一場視覺演出：核心爆發輝光、藍色光柱衝天（T3 以上），完成時播放叮聲。
 - The performance duration scales with the recipe's processing time (320 to 700 ticks).
@@ -86,6 +94,10 @@ All notable changes to this project will be documented in this file.
 - `ModBlockStateProvider`: replaced static blockstate/model JSONs with datagen; extracted `createHorizontalFacingVariants(Block, ModelFile)` helper.
 - `ModRenderLayers`: fixed `RegisterClientExtensionsEvent` import (`client.extensions.common`, not `client.event`).
 - `ModRecipeProvider`: added shaped recipe for `mana_deployer` (MIM/CDC/MIM).
+- Redesigned `basic_mana_circuit` texture: dark board with dithered surface, teal circuit lines, purple nodes, and a 2x2 crystal core (top-left bright, bottom-right shadow for gem depth).
+- `ModCreativeModTabs`: added `koniava_dev_tab`; introduced `DEV_ITEM_PATHS` Set (`mana_debug_tool`, `dev_render_test_1`) to exclude dev items from `koniava_items_tab` and show them only in the new tab.
+- `DevRenderTestItem`: added `appendHoverText()` with two tooltip lines (usage hint + orbital-railgun prototype note); both lang files updated.
+- New WIP shader files: `ClientEffectEvents`, `ManaStrikeShaderRenderer`, `OrbitalTestShaderRenderer` (orbital-railgun prototype reference, not yet production-ready).
 
 ## [0.0.1.6-4] - 2026-05-16
 

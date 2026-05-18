@@ -572,6 +572,7 @@
   "creativetab.koniava_items": "Koniavacraft - Items",
   "creativetab.koniava_blocks": "Koniavacraft - Blocks",
   "creativetab.koniava_modules": "Koniavacraft - Modules",
+  "creativetab.koniava_dev": "Koniavacraft - Dev Tools",
   "//20": "=== CONFIG OPTIONS ===",
   "koniava.config.calculateThreadCount": "Thread Pool Size for Particle Calculation (Recommended: CPU cores - 1)",
   "koniava.config.manaRecipeRefreshInterval": "How many ticks to refresh the mana crafting recipe result (Recommended value: 2-10)",
@@ -685,5 +686,9 @@
   "nara.hud.hint.choose": "↕ Scroll  [F] Confirm  [1][2] Select",
 
   "nara.hud.name": "Nara",
-  "nara.hud.name.unknown": "???"
+  "nara.hud.name.unknown": "???",
+
+  "item.koniava.dev_render_test_1": "Dev Render Test Item 1",
+  "item.koniava.dev_render_test.tooltip.1": "Right-click: ManaStrike effect. Shift+Right-click: Orbital effect.",
+  "item.koniava.dev_render_test.tooltip.2": "Some effects are prototyped from orbital-railgun."
 }

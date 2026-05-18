@@ -18,10 +18,9 @@ public class ManaDeployerScreen extends AutoSizedModularScreen<ManaDeployerMenu>
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/mana_deployer_gui_texture.png");
 
-    // GUI height = 215 to match the full texture layout
-    // Machine area: y=17~130  |  inventory separator: y=131~133  |  player inv: y=134~191  |  hotbar: y=192~207
+    // Texture: 176x216 (y=0..215). Machine area y=4..132, inv border y=133, inv gray y=134..185, hotbar y=192..207
     private static final int GUI_W = 176;
-    private static final int GUI_H = 215;
+    private static final int GUI_H = 216;
 
     private EditBox intervalBox;
     private boolean suppressResponder = false;
@@ -117,7 +116,7 @@ public class ManaDeployerScreen extends AutoSizedModularScreen<ManaDeployerMenu>
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
         graphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 4210752, false);
-        // Inventory label drawn at y=128 (just above the inventory separator bar)
-        graphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, 128, 4210752, false);
+        // Inventory label at y=123: text covers 123..130, 2px gap, then slot border y=133, gray y=134
+        graphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, 123, 4210752, false);
     }
 }

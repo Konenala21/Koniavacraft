@@ -1,20 +1,24 @@
 package com.github.nalamodikk;
 
 import com.github.nalamodikk.biome.BiomeTerrainRegistration;
+import com.github.nalamodikk.client.renderer.ManaStrikeShaderRenderer;
 import com.github.nalamodikk.common.config.ModClientConfig;
 import com.github.nalamodikk.common.config.ModCommonConfig;
 import com.github.nalamodikk.register.*;
+import com.github.nalamodikk.register.client.ModKeyMappings;
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.fml.loading.FMLEnvironment;
-import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.loading.FMLLoader;
+import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import org.slf4j.Logger;
@@ -60,7 +64,11 @@ public class KoniavacraftMod {
         ModMenuTypes.register(modEventBus);
         ModCreativeModTabs.register(modEventBus);
         if (FMLEnvironment.dist == Dist.CLIENT) {
-            modEventBus.addListener(com.github.nalamodikk.register.client.ModKeyMappings::onRegisterKeyMappings);
+            modEventBus.addListener(ModKeyMappings::onRegisterKeyMappings);
+            modEventBus.addListener((RegisterClientReloadListenersEvent e) ->
+                    e.registerReloadListener((ResourceManagerReloadListener)
+                            rm -> ManaStrikeShaderRenderer.reload()));
+            // ClientEffectEvents is auto-registered by @EventBusSubscriber; no manual register needed.
         }
         // Register ourselves for server and other game events we are interested in.
         // Note that this is necessary if and only if we want *this* class (ExampleMod)

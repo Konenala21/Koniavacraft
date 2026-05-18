@@ -13,9 +13,16 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 public class ModCreativeModTabs {
+
+    // 開發者專用物品的 registry path，這些會從一般欄位排除、只出現在 dev tab
+    private static final Set<String> DEV_ITEM_PATHS = Set.of(
+            "mana_debug_tool",
+            "dev_render_test_1"
+    );
 
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB , KoniavacraftMod.MOD_ID);
@@ -27,7 +34,23 @@ public class ModCreativeModTabs {
                             .title(Component.translatable("creativetab.koniava_items"))
                             .displayItems((parameters, output) -> {
                                 ModItems.ITEMS.getEntries().forEach(item -> {
-                                    if (!(item.get() instanceof BlockItem)) {
+                                    if (item.get() instanceof BlockItem) return;
+                                    String path = item.getId().getPath();
+                                    if (DEV_ITEM_PATHS.contains(path)) return;
+                                    output.accept(item.get());
+                                });
+                            })
+                            .build());
+
+    public static final Supplier<CreativeModeTab> koniava_DEV_TAB =
+            CREATIVE_MODE_TABS.register("koniava_dev_tab", () ->
+                    CreativeModeTab.builder()
+                            .icon(() -> new ItemStack(ModItems.MANA_DEBUG_TOOL.get()))
+                            .title(Component.translatable("creativetab.koniava_dev"))
+                            .displayItems((parameters, output) -> {
+                                ModItems.ITEMS.getEntries().forEach(item -> {
+                                    String path = item.getId().getPath();
+                                    if (DEV_ITEM_PATHS.contains(path)) {
                                         output.accept(item.get());
                                     }
                                 });

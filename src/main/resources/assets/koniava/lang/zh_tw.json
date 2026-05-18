@@ -572,6 +572,7 @@
   "creativetab.koniava_items": "娜拉工藝-物品",
   "creativetab.koniava_blocks": "娜拉工藝-方塊",
   "creativetab.koniava_modules": "娜拉工藝-模塊零件",
+  "creativetab.koniava_dev": "娜拉工藝-開發工具",
   "//20": "=== 配置選項 ===",
   "koniava.config.calculateThreadCount": "粒子運算線程池大小（建議：CPU 核心數 - 1）",
   "koniava.config.manaRecipeRefreshInterval": "每幾 tick 更新一次魔力合成配方結果（建議值：2～10）",
@@ -685,5 +686,9 @@
   "nara.hud.hint.choose": "↕ 滾輪選擇  [F] 確認  [1][2] 直接選",
 
   "nara.hud.name": "娜拉",
-  "nara.hud.name.unknown": "???"
+  "nara.hud.name.unknown": "???",
+
+  "item.koniava.dev_render_test_1": "創造開發渲染物品1",
+  "item.koniava.dev_render_test.tooltip.1": "右鍵: ManaStrike 特效，Shift 右鍵: Orbital 特效",
+  "item.koniava.dev_render_test.tooltip.2": "部分特效以 orbital-railgun 為原型設計"
 }
