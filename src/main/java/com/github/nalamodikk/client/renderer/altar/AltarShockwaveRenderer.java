@@ -25,10 +25,19 @@ import java.util.Map;
 @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID, value = Dist.CLIENT)
 public class AltarShockwaveRenderer {
 
-    private static int programId  = -1;
-    private static int vaoId      = -1;
-    private static int vboId      = -1;
-    private static int locDepth, locInvProj, locInvView, locCamPos, locAltarPos, locWaves;
+    // Shader fragments: common → fx_shockwave → fx_pillar → stage
+    private static final String[] FRAG_PATHS = {
+        "shaders/altar/common.glsl",
+        "shaders/altar/fx_shockwave.glsl",
+        "shaders/altar/fx_pillar.glsl",
+        "shaders/altar/stage_altar_shock.fsh",
+    };
+
+    private static int programId   = -1;
+    private static int vaoId       = -1;
+    private static int vboId       = -1;
+    private static int locDepth, locInvProj, locInvView, locCamPos, locBlockPos;
+    private static int locWaves, locPillarAlpha, locPillarRadius;
     private static boolean initialized = false;
 
     @SubscribeEvent
@@ -36,7 +45,7 @@ public class AltarShockwaveRenderer {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
 
         List<Map.Entry<BlockPos, AltarUpgradeAnimManager.AnimState>> entries =
-                AltarUpgradeAnimManager.getActiveLowTierEntries();
+                AltarUpgradeAnimManager.getActiveShockwaveEntries();
         if (entries.isEmpty()) return;
 
         if (!initialized) {
@@ -53,7 +62,7 @@ public class AltarShockwaveRenderer {
         new Matrix4f(event.getProjectionMatrix()).invert().get(invProj);
         new Matrix4f(event.getModelViewMatrix()).invert().get(invView);
 
-        int prevProg  = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
+        int  prevProg = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
         boolean wasDep = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
         boolean wasBl  = GL11.glIsEnabled(GL11.GL_BLEND);
 
@@ -73,46 +82,72 @@ public class AltarShockwaveRenderer {
         GL30.glBindVertexArray(vaoId);
         for (var entry : entries) {
             BlockPos pos   = entry.getKey();
-            float    tick  = entry.getValue().tick();
-            float[]  waves = computeWaves(tick);
+            AltarUpgradeAnimManager.AnimState state = entry.getValue();
+            // T6 entries: treat as T5 during the T4-T5 prefix phase
+            int   tier = (state.tier() == 6) ? 5 : state.tier();
+            float tick = state.tick();
 
-            GL20.glUniform3f(locAltarPos, pos.getX() + 0.5f, pos.getY(), pos.getZ() + 0.5f);
+            float[] waves       = computeWaves(tier, tick);
+            float   pillarAlpha = computePillarAlpha(tier, tick);
+            float   pillarRad   = computePillarRadius(tier);
+
+            GL20.glUniform3f(locBlockPos, pos.getX() + 0.5f, pos.getY(), pos.getZ() + 0.5f);
             GL20.glUniform3fv(locWaves, waves);
+            GL20.glUniform1f(locPillarAlpha, pillarAlpha);
+            GL20.glUniform1f(locPillarRadius, pillarRad);
             GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 0, 4);
         }
         GL30.glBindVertexArray(0);
 
         GL20.glUseProgram(prevProg);
         if (wasDep) GL11.glEnable(GL11.GL_DEPTH_TEST);
-        if (!wasBl) GL11.glDisable(GL11.GL_BLEND);
+        if (!wasBl)  GL11.glDisable(GL11.GL_BLEND);
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
     }
 
-    // Returns a float[9] for Waves[3] uniform: (radius, alpha, thickness) x 3
-    private static float[] computeWaves(float tick) {
-        float[] data = new float[9]; // 3 waves * 3 floats
-        for (int w = 0; w < 3; w++) {
+    // ── Wave parameters (float[15] = 5 × vec3) ───────────────────────────────
+
+    private static float[] computeWaves(int tier, float tick) {
+        float[] data      = new float[15]; // 5 waves × 3 floats, zeros = inactive
+        int   waveCount   = (tier <= 3) ? 3 : 5;
+        float maxRadius   = (tier <= 3) ? 14f : 18f;
+
+        for (int w = 0; w < waveCount; w++) {
             float wAge = tick - w * 26f;
             if (wAge <= 0f || wAge > 26f) continue;
             float progress  = wAge / 26f;
-            float radius    = progress * 14f;
-            float alpha     = (float) Math.sin(progress * Math.PI) * 0.75f;
-            float thickness = 0.20f + (1f - progress) * 0.30f;
-            int base = w * 3;
-            data[base]     = radius;
-            data[base + 1] = alpha;
-            data[base + 2] = thickness;
+            data[w * 3]     = progress * maxRadius;
+            data[w * 3 + 1] = (float) Math.sin(progress * Math.PI) * 0.75f;
+            data[w * 3 + 2] = 0.20f + (1f - progress) * 0.30f;
         }
         return data;
     }
 
+    private static float computePillarAlpha(int tier, float tick) {
+        float start = (tier <= 3) ?  79f : 500f;
+        float end   = (tier <= 3) ? 109f : 580f;
+        if (tick <= start || tick >= end) return 0f;
+        float p = (tick - start) / (end - start);
+        if (p < 0.15f) return p / 0.15f;
+        if (p < 0.65f) return 1f;
+        return 1f - (p - 0.65f) / 0.35f;
+    }
+
+    private static float computePillarRadius(int tier) {
+        return (tier <= 3) ? 0.25f : 0.55f;
+    }
+
+    // ── GL setup ─────────────────────────────────────────────────────────────
+
     private static void init() {
         ResourceManager rm = Minecraft.getInstance().getResourceManager();
         try {
-            String vert = read(rm, "shaders/altar_shockwave.vsh");
-            String frag = read(rm, "shaders/altar_shockwave.fsh");
+            String vert = read(rm, "shaders/altar_shockwave.vsh"); // reuse existing vsh
+            StringBuilder frag = new StringBuilder();
+            for (String path : FRAG_PATHS) frag.append(read(rm, path)).append('\n');
+
             int v = compile(GL20.GL_VERTEX_SHADER,   vert);
-            int f = compile(GL20.GL_FRAGMENT_SHADER, frag);
+            int f = compile(GL20.GL_FRAGMENT_SHADER, frag.toString());
             programId = GL20.glCreateProgram();
             GL20.glAttachShader(programId, v);
             GL20.glAttachShader(programId, f);
@@ -126,12 +161,14 @@ public class AltarShockwaveRenderer {
                 return;
             }
             GL20.glUseProgram(programId);
-            locDepth    = GL20.glGetUniformLocation(programId, "DepthSampler");
-            locInvProj  = GL20.glGetUniformLocation(programId, "InvProjMat");
-            locInvView  = GL20.glGetUniformLocation(programId, "InvViewMat");
-            locCamPos   = GL20.glGetUniformLocation(programId, "CameraPosition");
-            locAltarPos = GL20.glGetUniformLocation(programId, "AltarPos");
-            locWaves    = GL20.glGetUniformLocation(programId, "Waves");
+            locDepth       = GL20.glGetUniformLocation(programId, "DepthSampler");
+            locInvProj     = GL20.glGetUniformLocation(programId, "InvProjMat");
+            locInvView     = GL20.glGetUniformLocation(programId, "InvViewMat");
+            locCamPos      = GL20.glGetUniformLocation(programId, "CameraPosition");
+            locBlockPos    = GL20.glGetUniformLocation(programId, "BlockPosition");
+            locWaves       = GL20.glGetUniformLocation(programId, "Waves");
+            locPillarAlpha = GL20.glGetUniformLocation(programId, "PillarAlpha");
+            locPillarRadius= GL20.glGetUniformLocation(programId, "PillarRadius");
             GL20.glUseProgram(0);
         } catch (Exception e) {
             KoniavacraftMod.LOGGER.error("[Shockwave] Init failed", e);
@@ -151,9 +188,9 @@ public class AltarShockwaveRenderer {
     }
 
     public static void release() {
-        if (programId != -1) { GL20.glDeleteProgram(programId);   programId = -1; }
-        if (vboId     != -1) { GL15.glDeleteBuffers(vboId);       vboId     = -1; }
-        if (vaoId     != -1) { GL30.glDeleteVertexArrays(vaoId);  vaoId     = -1; }
+        if (programId != -1) { GL20.glDeleteProgram(programId);  programId = -1; }
+        if (vboId     != -1) { GL15.glDeleteBuffers(vboId);      vboId     = -1; }
+        if (vaoId     != -1) { GL30.glDeleteVertexArrays(vaoId); vaoId     = -1; }
         initialized = false;
     }
 

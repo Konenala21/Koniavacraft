@@ -55,11 +55,16 @@ public class AltarUpgradeAnimManager {
         return null;
     }
 
-    // Returns active T1-T3 entries for the shockwave shader renderer
-    public static java.util.List<java.util.Map.Entry<BlockPos, AnimState>> getActiveLowTierEntries() {
+    // Returns entries that need shockwave/pillar shader rendering:
+    // T1-T5 animations, plus T6 while still in its T4-T5 prefix phase (tick < T6_PHASE_OFFSET)
+    public static java.util.List<java.util.Map.Entry<BlockPos, AnimState>> getActiveShockwaveEntries() {
         java.util.List<java.util.Map.Entry<BlockPos, AnimState>> list = new java.util.ArrayList<>();
         for (java.util.Map.Entry<BlockPos, AnimState> e : ACTIVE.entrySet()) {
-            if (e.getValue().tier() <= 3 && !e.getValue().isDone()) list.add(e);
+            AnimState s = e.getValue();
+            if (s.isDone()) continue;
+            if (s.tier() <= 5 || (s.tier() == 6 && s.tick() < T6_PHASE_OFFSET)) {
+                list.add(e);
+            }
         }
         return list;
     }
