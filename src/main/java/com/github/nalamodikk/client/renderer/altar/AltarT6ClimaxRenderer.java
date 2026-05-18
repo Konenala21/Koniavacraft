@@ -23,22 +23,18 @@ import java.util.List;
 import java.util.Map;
 
 @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID, value = Dist.CLIENT)
-public class AltarShockwaveRenderer {
+public class AltarT6ClimaxRenderer {
 
-    // Shader fragments: common → fx_shockwave → fx_pillar → stage
     private static final String[] FRAG_PATHS = {
         "shaders/altar/common.glsl",
-        "shaders/altar/fx_shockwave.glsl",
-        "shaders/altar/fx_pillar.glsl",
-        "shaders/altar/stage_altar_shock.fsh",
+        "shaders/altar/fx_t6_climax.glsl",
+        "shaders/altar/stage_altar_t6_climax.fsh",
     };
 
-    private static int programId   = -1;
-    private static int vaoId       = -1;
-    private static int vboId       = -1;
-    private static int locDepth, locInvProj, locInvView, locCamPos, locBlockPos;
-    private static int locWaves, locPillarAlpha, locPillarRadius;
-    private static int locGroundTwist, locITime;
+    private static int  programId   = -1;
+    private static int  vaoId       = -1;
+    private static int  vboId       = -1;
+    private static int  locDepth, locInvProj, locInvView, locCamPos, locBlockPos, locTime;
     private static boolean initialized = false;
     private static boolean initFailed  = false;
 
@@ -52,7 +48,7 @@ public class AltarShockwaveRenderer {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
 
         List<Map.Entry<BlockPos, AltarUpgradeAnimManager.AnimState>> entries =
-                AltarUpgradeAnimManager.getActiveShockwaveEntries();
+                AltarUpgradeAnimManager.getActiveT6ClimaxEntries();
         if (entries.isEmpty()) return;
 
         if (!initialized) {
@@ -68,9 +64,9 @@ public class AltarShockwaveRenderer {
         SCRATCH_PROJ.set(event.getProjectionMatrix()).invert().get(INV_PROJ_ARR);
         SCRATCH_VIEW.set(event.getModelViewMatrix()).invert().get(INV_VIEW_ARR);
 
-        int  prevProg = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
-        boolean wasDep = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
-        boolean wasBl  = GL11.glIsEnabled(GL11.GL_BLEND);
+        int     prevProg = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
+        boolean wasDep   = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
+        boolean wasBl    = GL11.glIsEnabled(GL11.GL_BLEND);
 
         GL11.glDisable(GL11.GL_DEPTH_TEST);
         GL11.glEnable(GL11.GL_BLEND);
@@ -85,27 +81,16 @@ public class AltarShockwaveRenderer {
         GL20.glUniformMatrix4fv(locInvView, false, INV_VIEW_ARR);
         GL20.glUniform3f(locCamPos, (float) camPos.x, (float) camPos.y, (float) camPos.z);
 
+        // Limit to 1 entry: T6 climax raymarching is expensive and effects would visually
+        // stack unrecognisably if rendered for multiple simultaneous altars.
+        var entry  = entries.get(0);
+        BlockPos pos   = entry.getKey();
+        float lt6 = (entry.getValue().tick() - AltarUpgradeAnimManager.T6_PHASE_OFFSET) / 20f;
+
+        GL20.glUniform3f(locBlockPos, pos.getX() + 0.5f, pos.getY(), pos.getZ() + 0.5f);
+        GL20.glUniform1f(locTime, lt6);
         GL30.glBindVertexArray(vaoId);
-        for (var entry : entries) {
-            BlockPos pos   = entry.getKey();
-            AltarUpgradeAnimManager.AnimState state = entry.getValue();
-            // T6 entries: treat as T5 during the T4-T5 prefix phase
-            int   tier = (state.tier() == 6) ? 5 : state.tier();
-            float tick = state.tick();
-
-            float[] waves       = computeWaves(tier, tick);
-            float   pillarAlpha = computePillarAlpha(tier, tick);
-            float   pillarRad   = computePillarRadius(tier);
-            float   twistAngle  = computeGroundTwist(tier, tick);
-
-            GL20.glUniform3f(locBlockPos, pos.getX() + 0.5f, pos.getY(), pos.getZ() + 0.5f);
-            GL20.glUniform3fv(locWaves, waves);
-            GL20.glUniform1f(locPillarAlpha, pillarAlpha);
-            GL20.glUniform1f(locPillarRadius, pillarRad);
-            GL20.glUniform1f(locGroundTwist, twistAngle);
-            GL20.glUniform1f(locITime, tick / 20f);
-            GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 0, 4);
-        }
+        GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 0, 4);
         GL30.glBindVertexArray(0);
 
         GL20.glUseProgram(prevProg);
@@ -115,52 +100,10 @@ public class AltarShockwaveRenderer {
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
     }
 
-    // ── Wave parameters (float[15] = 5 × vec3) ───────────────────────────────
-
-    private static float[] computeWaves(int tier, float tick) {
-        float[] data      = new float[15]; // 5 waves × 3 floats, zeros = inactive
-        int   waveCount   = (tier <= 3) ? 3 : 5;
-        float maxRadius   = (tier <= 3) ? 14f : 18f;
-
-        for (int w = 0; w < waveCount; w++) {
-            float wAge = tick - w * 26f;
-            if (wAge <= 0f || wAge > 26f) continue;
-            float progress  = wAge / 26f;
-            data[w * 3]     = progress * maxRadius;
-            data[w * 3 + 1] = (float) Math.sin(progress * Math.PI) * 0.75f;
-            data[w * 3 + 2] = 0.20f + (1f - progress) * 0.30f;
-        }
-        return data;
-    }
-
-    private static float computePillarAlpha(int tier, float tick) {
-        float start = (tier <= 3) ?  79f : 500f;
-        float end   = (tier <= 3) ? 109f : 580f;
-        if (tick <= start || tick >= end) return 0f;
-        float p = (tick - start) / (end - start);
-        if (p < 0.15f) return p / 0.15f;
-        if (p < 0.65f) return 1f;
-        return 1f - (p - 0.65f) / 0.35f;
-    }
-
-    private static float computePillarRadius(int tier) {
-        return (tier <= 3) ? 0.25f : 0.55f;
-    }
-
-    // Ground twist angle for T4-T5: linearly ramps up during the ring wave phase (0-130t)
-    // giving the rings a spiral/warped appearance (orbital fx_ground_twist concept)
-    private static float computeGroundTwist(int tier, float tick) {
-        if (tier <= 3) return 0f;
-        // Ramp from 0 to ~0.9 rad (≈52°) over 300 ticks, then hold
-        return Math.min(tick / 300f, 1f) * 0.9f;
-    }
-
-    // ── GL setup ─────────────────────────────────────────────────────────────
-
     private static void init() {
         ResourceManager rm = Minecraft.getInstance().getResourceManager();
         try {
-            String vert = read(rm, "shaders/altar_shockwave.vsh"); // reuse existing vsh
+            String vert = read(rm, "shaders/altar_shockwave.vsh");
             StringBuilder frag = new StringBuilder();
             for (String path : FRAG_PATHS) frag.append(read(rm, path)).append('\n');
 
@@ -174,23 +117,19 @@ public class AltarShockwaveRenderer {
             GL20.glDeleteShader(v);
             GL20.glDeleteShader(f);
             if (GL20.glGetProgrami(programId, GL20.GL_LINK_STATUS) == GL11.GL_FALSE) {
-                KoniavacraftMod.LOGGER.error("[Shockwave] Link: {}", GL20.glGetProgramInfoLog(programId));
+                KoniavacraftMod.LOGGER.error("[AltarT6Climax] Link: {}", GL20.glGetProgramInfoLog(programId));
                 GL20.glDeleteProgram(programId);
                 programId = -1;
                 initFailed = true;
                 return;
             }
             GL20.glUseProgram(programId);
-            locDepth       = GL20.glGetUniformLocation(programId, "DepthSampler");
-            locInvProj     = GL20.glGetUniformLocation(programId, "InvProjMat");
-            locInvView     = GL20.glGetUniformLocation(programId, "InvViewMat");
-            locCamPos      = GL20.glGetUniformLocation(programId, "CameraPosition");
-            locBlockPos    = GL20.glGetUniformLocation(programId, "BlockPosition");
-            locWaves       = GL20.glGetUniformLocation(programId, "Waves");
-            locPillarAlpha = GL20.glGetUniformLocation(programId, "PillarAlpha");
-            locPillarRadius= GL20.glGetUniformLocation(programId, "PillarRadius");
-            locGroundTwist = GL20.glGetUniformLocation(programId, "GroundTwistAngle");
-            locITime       = GL20.glGetUniformLocation(programId, "iTime");
+            locDepth    = GL20.glGetUniformLocation(programId, "DepthSampler");
+            locInvProj  = GL20.glGetUniformLocation(programId, "InvProjMat");
+            locInvView  = GL20.glGetUniformLocation(programId, "InvViewMat");
+            locCamPos   = GL20.glGetUniformLocation(programId, "CameraPosition");
+            locBlockPos = GL20.glGetUniformLocation(programId, "BlockPosition");
+            locTime     = GL20.glGetUniformLocation(programId, "iTime");
             GL20.glUseProgram(0);
 
             vaoId = GL30.glGenVertexArrays();
@@ -204,7 +143,7 @@ public class AltarShockwaveRenderer {
             GL30.glBindVertexArray(0);
             initialized = true;
         } catch (Exception e) {
-            KoniavacraftMod.LOGGER.error("[Shockwave] Init failed", e);
+            KoniavacraftMod.LOGGER.error("[AltarT6Climax] Init failed", e);
             if (programId != -1) { GL20.glDeleteProgram(programId); programId = -1; }
             initFailed = true;
         }
@@ -213,9 +152,9 @@ public class AltarShockwaveRenderer {
     public static void reload() { initFailed = false; release(); }
 
     public static void release() {
-        if (programId != -1) { GL20.glDeleteProgram(programId);  programId = -1; }
-        if (vboId     != -1) { GL15.glDeleteBuffers(vboId);      vboId     = -1; }
-        if (vaoId     != -1) { GL30.glDeleteVertexArrays(vaoId); vaoId     = -1; }
+        if (programId != -1) { GL20.glDeleteProgram(programId);      programId   = -1; }
+        if (vboId     != -1) { GL15.glDeleteBuffers(vboId);          vboId       = -1; }
+        if (vaoId     != -1) { GL30.glDeleteVertexArrays(vaoId);     vaoId       = -1; }
         initialized = false;
     }
 
@@ -231,7 +170,7 @@ public class AltarShockwaveRenderer {
         GL20.glShaderSource(id, src);
         GL20.glCompileShader(id);
         if (GL20.glGetShaderi(id, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
-            KoniavacraftMod.LOGGER.error("[Shockwave] Compile: {}", GL20.glGetShaderInfoLog(id));
+            KoniavacraftMod.LOGGER.error("[AltarT6Climax] Compile: {}", GL20.glGetShaderInfoLog(id));
             initFailed = true;
         }
         return id;

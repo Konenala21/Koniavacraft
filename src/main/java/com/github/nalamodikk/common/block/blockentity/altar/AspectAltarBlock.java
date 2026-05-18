@@ -10,6 +10,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -57,6 +58,19 @@ public class AspectAltarBlock extends BaseEntityBlock {
     public RenderShape getRenderShape(BlockState state) {
         // 成形後由 BER 渲染動畫，未成形用靜態方塊模型
         return state.getValue(FORMED) ? RenderShape.ENTITYBLOCK_ANIMATED : RenderShape.MODEL;
+    }
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        if (!state.is(newState.getBlock()) && level instanceof ServerLevel serverLevel) {
+            if (level.getBlockEntity(pos) instanceof AspectAltarBlockEntity altar) {
+                int tier = altar.getUpgradeTier();
+                if (tier > 0) {
+                    AltarTierSavedData.get(serverLevel).saveTier(pos, tier);
+                }
+            }
+        }
+        super.onRemove(state, level, pos, newState, movedByPiston);
     }
 
     @Override

@@ -25,16 +25,18 @@ public class AltarFadeRenderer {
     private static int vboId     = -1;
     private static int locColor;
     private static boolean initialized = false;
+    private static boolean initFailed  = false;
 
-    @SubscribeEvent
+    @SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.HIGH)
     public static void onRenderLevel(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
         float alpha = AltarUpgradeAnimManager.getScreenFadeAlpha();
         if (alpha <= 0.001f) return;
 
         if (!initialized) {
+            if (initFailed) return;
             init();
-            if (programId == -1) return;
+            if (!initialized) return;
         }
 
         int prevProg  = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
@@ -64,6 +66,7 @@ public class AltarFadeRenderer {
             String frag = read(rm, "shaders/altar_fade.fsh");
             int v = compile(GL20.GL_VERTEX_SHADER, vert);
             int f = compile(GL20.GL_FRAGMENT_SHADER, frag);
+            if (initFailed) { GL20.glDeleteShader(v); GL20.glDeleteShader(f); return; }
             programId = GL20.glCreateProgram();
             GL20.glAttachShader(programId, v);
             GL20.glAttachShader(programId, f);
@@ -74,27 +77,31 @@ public class AltarFadeRenderer {
                 KoniavacraftMod.LOGGER.error("[AltarFade] Link: {}", GL20.glGetProgramInfoLog(programId));
                 GL20.glDeleteProgram(programId);
                 programId = -1;
+                initFailed = true;
                 return;
             }
             GL20.glUseProgram(programId);
             locColor = GL20.glGetUniformLocation(programId, "FadeColor");
             GL20.glUseProgram(0);
+
+            vaoId = GL30.glGenVertexArrays();
+            vboId = GL15.glGenBuffers();
+            GL30.glBindVertexArray(vaoId);
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
+            float[] quad = {-1f,-1f, 1f,-1f, 1f,1f, -1f,1f};
+            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, quad, GL15.GL_STATIC_DRAW);
+            GL20.glVertexAttribPointer(0, 2, GL11.GL_FLOAT, false, 0, 0);
+            GL20.glEnableVertexAttribArray(0);
+            GL30.glBindVertexArray(0);
+            initialized = true;
         } catch (Exception e) {
             KoniavacraftMod.LOGGER.error("[AltarFade] Init failed", e);
-            return;
+            if (programId != -1) { GL20.glDeleteProgram(programId); programId = -1; }
+            initFailed = true;
         }
-
-        vaoId = GL30.glGenVertexArrays();
-        vboId = GL15.glGenBuffers();
-        GL30.glBindVertexArray(vaoId);
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
-        float[] quad = {-1f,-1f, 1f,-1f, 1f,1f, -1f,1f};
-        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, quad, GL15.GL_STATIC_DRAW);
-        GL20.glVertexAttribPointer(0, 2, GL11.GL_FLOAT, false, 0, 0);
-        GL20.glEnableVertexAttribArray(0);
-        GL30.glBindVertexArray(0);
-        initialized = true;
     }
+
+    public static void reload() { initFailed = false; release(); }
 
     public static void release() {
         if (programId != -1) { GL20.glDeleteProgram(programId); programId = -1; }
@@ -114,8 +121,10 @@ public class AltarFadeRenderer {
         int id = GL20.glCreateShader(type);
         GL20.glShaderSource(id, src);
         GL20.glCompileShader(id);
-        if (GL20.glGetShaderi(id, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE)
+        if (GL20.glGetShaderi(id, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
             KoniavacraftMod.LOGGER.error("[AltarFade] Compile: {}", GL20.glGetShaderInfoLog(id));
+            initFailed = true;
+        }
         return id;
     }
 }

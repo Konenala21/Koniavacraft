@@ -6,8 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
-- Placing resonance rings on a T4 or T5 altar now triggers an upgrade animation: five ground shockwave rings, a screen fade to black, an orbital sphere shader effect, a massive light pillar, and a chime. Reaching Tier 5 grants the challenge advancement "The Grand Finale Begins!".
-- 對 T4 或 T5 祭壇放置共鳴環現在會觸發升級動畫：五段地面衝擊波環、黑幕淡入淡出、軌道球體 shader 特效、巨大光柱與叮聲。達到第 5 層時獲得挑戰成就「好戲開場！」。
+- T4 and T5 altar upgrades now feature a full second-stage animation: ground shockwaves with spatial twist, screen fade to black with inward collapse wave, an expanding orbital sphere, four corner pillars plus a center pillar shooting skyward, four large suns rising from each pillar (each splitting into 4 small suns for 16 total), the 16 small suns orbiting and descending into a ring formation, then rapidly contracting as a massive skyward pillar engulfs the structure. A chime and the "The Grand Finale Begins!" challenge advancement appear at the end.
+- T4 和 T5 祭壇升級現在有完整的第二階段動畫：地面衝擊波伴隨空間扭曲、黑幕淡入淡出附帶往內聚集波、膨脹球體 shader、四根角落柱子與中心核心各射出光柱、每根柱子冉冉升起一顆大太陽（各分裂出 4 顆小太陽共 16 顆）、16 顆小太陽旋轉降落並排成環狀陣形後急速收縮，同時一根巨大沖天柱包覆整個環狀結構，最終以叮聲和「好戲開場！」挑戰成就作結。
 
 - Placing resonance rings on a T1-T3 altar now triggers an upgrade animation: three ground shockwave rings expand from the core, followed by a brief light pillar, ending with a chime sound.
 - 對 T1-T3 祭壇放置共鳴環現在會觸發升級動畫：三段地面衝擊波環從核心向外擴散，接著短暫光柱，以叮聲結束。

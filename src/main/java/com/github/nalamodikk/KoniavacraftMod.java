@@ -2,6 +2,11 @@ package com.github.nalamodikk;
 
 import com.github.nalamodikk.biome.BiomeTerrainRegistration;
 import com.github.nalamodikk.client.renderer.ManaStrikeShaderRenderer;
+import com.github.nalamodikk.client.renderer.altar.AltarShockwaveRenderer;
+import com.github.nalamodikk.client.renderer.altar.AltarMagicCircleRenderer;
+import com.github.nalamodikk.client.renderer.altar.AltarT6ClimaxRenderer;
+import com.github.nalamodikk.client.renderer.altar.AltarT45OrbRenderer;
+import com.github.nalamodikk.client.renderer.altar.AltarFadeRenderer;
 import com.github.nalamodikk.common.config.ModClientConfig;
 import com.github.nalamodikk.common.config.ModCommonConfig;
 import com.github.nalamodikk.register.*;
@@ -66,8 +71,14 @@ public class KoniavacraftMod {
         if (FMLEnvironment.dist == Dist.CLIENT) {
             modEventBus.addListener(ModKeyMappings::onRegisterKeyMappings);
             modEventBus.addListener((RegisterClientReloadListenersEvent e) ->
-                    e.registerReloadListener((ResourceManagerReloadListener)
-                            rm -> ManaStrikeShaderRenderer.reload()));
+                    e.registerReloadListener((ResourceManagerReloadListener) rm -> {
+                        ManaStrikeShaderRenderer.reload();
+                        AltarShockwaveRenderer.reload();
+                        AltarMagicCircleRenderer.reload();
+                        AltarT6ClimaxRenderer.reload();
+                        AltarT45OrbRenderer.reload();
+                        AltarFadeRenderer.reload();
+                    }));
             // ClientEffectEvents is auto-registered by @EventBusSubscriber; no manual register needed.
         }
         // Register ourselves for server and other game events we are interested in.

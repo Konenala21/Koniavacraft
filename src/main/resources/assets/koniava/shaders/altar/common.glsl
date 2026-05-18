@@ -46,3 +46,27 @@ vec3 worldPos(vec3 uvd) {
     vec3 vp  = hp.xyz / hp.w;
     return (InvViewMat * vec4(vp, 1.0)).xyz + CameraPosition;
 }
+
+// Analytical ray-sphere: hit distance (> 0) or -1.0 on miss
+float raySphere(vec3 ro, vec3 rd, vec3 center, float radius) {
+    vec3  oc = ro - center;
+    float b  = dot(oc, rd);
+    float c  = dot(oc, oc) - radius * radius;
+    float d  = b * b - c;
+    if (d < 0.0) return -1.0;
+    float t = -b - sqrt(d);
+    return (t > 0.0) ? t : -1.0;
+}
+
+// T4-T5 sun glow color: blue-white gradient by index (0-3)
+vec3 sunColorT45(int i) {
+    return mix(vec3(0.30, 0.65, 1.00), vec3(0.85, 0.94, 1.00), float(i) / 3.0);
+}
+
+// 4 corner pillar positions in shader-space (relative to altar block centre)
+// Matches AspectAltarBlockEntity.PILLAR_TOP offsets: (±3, -1, ±3)
+vec3 pillarPos45(int i) {
+    float sx = (i < 2) ? -3.0 : 3.0;
+    float sz = (i == 0 || i == 2) ? -3.0 : 3.0;
+    return vec3(sx, -1.0, sz);
+}

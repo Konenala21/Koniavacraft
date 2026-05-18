@@ -8,6 +8,7 @@
     "announce_to_chat": true,
     "hidden": false
   },
+  "parent": "koniava:altar_upgrade_t5",
   "criteria": {
     "obtained": {
       "trigger": "minecraft:impossible"

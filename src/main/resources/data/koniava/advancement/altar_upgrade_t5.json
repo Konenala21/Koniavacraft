@@ -8,6 +8,7 @@
     "announce_to_chat": true,
     "hidden": false
   },
+  "parent": "koniava:first_altar_ritual",
   "criteria": {
     "obtained": {
       "trigger": "minecraft:impossible"

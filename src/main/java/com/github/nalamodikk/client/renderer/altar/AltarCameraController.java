@@ -9,22 +9,27 @@ import net.neoforged.neoforge.client.event.ViewportEvent;
 @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID, value = Dist.CLIENT)
 public class AltarCameraController {
 
-    // Pitch lock window: 160-1050t
+    // Pitch lock: locks 160-280t, holds until 870t, releases 870-980t (synced with circle descent)
     private static final float LOCK_START  = 160f;
     private static final float BLEND_END   = 280f;
-    private static final float HOLD_END    = 850f;
-    private static final float RELEASE_END = 1050f;
+    private static final float HOLD_END    = 870f;
+    private static final float RELEASE_END = 980f;
 
-    // Shake timeline
+    // Shake timeline: fully gone by 850t so camera is stable when tracking circle descent
     private static final float SHAKE_RISE_START = 60f;
     private static final float SHAKE_RAMP_END   = 200f;
     private static final float SHAKE_PEAK_END   = 400f;
-    private static final float SHAKE_HOLD_END   = 700f;
-    private static final float SHAKE_DROP_END   = 950f;
-    private static final float SHAKE_FADE_END   = 1100f;
+    private static final float SHAKE_HOLD_END   = 580f;
+    private static final float SHAKE_DROP_END   = 770f;
+    private static final float SHAKE_FADE_END   = 850f;
 
     private static float capturedYaw   = 0f;
     private static boolean wasT6Active = false;
+
+    public static void reset() {
+        capturedYaw   = 0f;
+        wasT6Active   = false;
+    }
 
     // Used by MouseHandlerT6Mixin to decide whether to suppress input
     public static boolean isCameraLocked() {
@@ -74,7 +79,10 @@ public class AltarCameraController {
         if (tick < LOCK_START)   return 0f;
         if (tick < BLEND_END)    return smoothstep((tick - LOCK_START) / (BLEND_END - LOCK_START));
         if (tick < HOLD_END)     return 1f;
-        if (tick < RELEASE_END)  return 1f - smoothstep((tick - HOLD_END) / (RELEASE_END - HOLD_END));
+        if (tick < RELEASE_END) {
+            float t = (tick - HOLD_END) / (RELEASE_END - HOLD_END);
+            return 1f - (t * t);  // ease-in: stays locked longer, releases quickly at end
+        }
         return 0f;
     }
 

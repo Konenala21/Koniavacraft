@@ -11,7 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
-public record AltarUpgradeAnimPacket(BlockPos pos, int tier) implements CustomPacketPayload {
+public record AltarUpgradeAnimPacket(BlockPos pos, int tier, boolean triggerDialogue) implements CustomPacketPayload {
 
     public static final Type<AltarUpgradeAnimPacket> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "altar_upgrade_anim"));
@@ -23,6 +23,7 @@ public record AltarUpgradeAnimPacket(BlockPos pos, int tier) implements CustomPa
             StreamCodec.composite(
                     POS_CODEC, AltarUpgradeAnimPacket::pos,
                     ByteBufCodecs.VAR_INT, AltarUpgradeAnimPacket::tier,
+                    ByteBufCodecs.BOOL, AltarUpgradeAnimPacket::triggerDialogue,
                     AltarUpgradeAnimPacket::new
             );
 
@@ -33,7 +34,7 @@ public record AltarUpgradeAnimPacket(BlockPos pos, int tier) implements CustomPa
         registrar.playToClient(TYPE, STREAM_CODEC,
                 (packet, context) -> context.enqueueWork(() -> {
                     if (FMLEnvironment.dist.isClient()) {
-                        AltarUpgradeAnimManager.startAnimation(packet.pos(), packet.tier());
+                        AltarUpgradeAnimManager.startAnimation(packet.pos(), packet.tier(), packet.triggerDialogue());
                     }
                 }));
     }

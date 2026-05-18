@@ -11,7 +11,10 @@ import com.github.nalamodikk.register.ModBlockEntities;
 import com.github.nalamodikk.register.ModBlocks;
 import com.github.nalamodikk.register.ModRecipes;
 import com.github.nalamodikk.common.network.packet.client.altar.AltarUpgradeAnimPacket;
+import com.github.nalamodikk.narasystem.nara.hud.NaraTutorialFlow;
+import com.github.nalamodikk.research.knowledge.ResearchSavedData;
 import net.minecraft.advancements.AdvancementHolder;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -296,6 +299,7 @@ public static final List<Vec3i> RING_T1 = List.of(
             new Vec3i(  0, 12, -2), new Vec3i(  0, 12, -1), new Vec3i(  0, 12,  1), new Vec3i(  0, 12,  2),
             new Vec3i(  0, 12,  3), new Vec3i(  0, 12,  4), new Vec3i(  0, 12,  5), new Vec3i(  0, 13,  0)
     );
+    // Only T1-T6 are active. RING_T7-T12 are defined below but not yet included here.
     public static final List<List<Vec3i>> ALL_RINGS = List.of(
             RING_T1, RING_T2, RING_T3, RING_T4, RING_T5, RING_T6
     );
@@ -663,7 +667,32 @@ public static final List<Vec3i> RING_T1 = List.of(
 
     public void refreshUpgradeTier() {
         if (level == null || !isFormed()) return;
-        // 夾緊舊值，防止存檔 tier 超出目前 ALL_RINGS 範圍（如從 T12 縮回 T6）
+        // Restore tier silently when the core is rebuilt at a previously-upgraded position.
+        // applyRingReplace is called here (not by the comparison below) so rings become RESONANCE_RING
+        // immediately without triggering the upgrade animation packet.
+        if (upgradeTier == 0 && level instanceof ServerLevel sl) {
+            AltarTierSavedData tierData = AltarTierSavedData.get(sl);
+            int saved = tierData.peekTier(worldPosition);
+            if (saved > 0) {
+                int actualRings = 0;
+                for (List<Vec3i> ring : ALL_RINGS) {
+                    if (checkRingComplete(ring)) actualRings++;
+                    else break;
+                }
+                int toRestore = Math.min(saved, Math.min(actualRings, ALL_RINGS.size()));
+                if (toRestore > 0) {
+                    for (int i = 0; i < toRestore; i++) applyRingReplace(ALL_RINGS.get(i));
+                    upgradeTier = toRestore;
+                    tierData.clearTier(worldPosition);
+                    setChanged();
+                    // Return here so the normal newTier-comparison segment below does not fire
+                    // an upgrade animation packet in the same tick. Any extra rings the player
+                    // placed will be detected on the next CHECK_INTERVAL and trigger a proper
+                    // player-visible upgrade animation at that point.
+                    return;
+                }
+            }
+        }
         upgradeTier = Math.min(upgradeTier, ALL_RINGS.size());
         int newTier = 0;
         for (List<Vec3i> ring : ALL_RINGS) {
@@ -674,22 +703,28 @@ public static final List<Vec3i> RING_T1 = List.of(
             if (newTier > upgradeTier) {
                 for (int i = upgradeTier; i < newTier; i++) applyRingReplace(ALL_RINGS.get(i));
                 if (level instanceof ServerLevel serverLevel) {
-                    AltarUpgradeAnimPacket packet = new AltarUpgradeAnimPacket(worldPosition, newTier);
-                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayersTrackingChunk(
-                            serverLevel,
-                            new net.minecraft.world.level.ChunkPos(worldPosition),
-                            packet
-                    );
+                    ResearchSavedData researchData = newTier == 6 ? ResearchSavedData.get(serverLevel) : null;
+                    AdvancementHolder tierAdv = null;
                     if (newTier >= 5) {
                         String advId = newTier == 6 ? "altar_upgrade_t6" : "altar_upgrade_t5";
-                        AdvancementHolder tierAdv = serverLevel.getServer().getAdvancements()
+                        tierAdv = serverLevel.getServer().getAdvancements()
                                 .get(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, advId));
+                    }
+                    for (ServerPlayer sp : serverLevel.players()) {
+                        boolean triggerDialogue = false;
+                        if (researchData != null) {
+                            var knowledge = researchData.getOrCreate(sp.getUUID());
+                            if (!knowledge.hasSeenTutorial(NaraTutorialFlow.ALTAR_T6)) {
+                                triggerDialogue = true;
+                                knowledge.markTutorialSeen(NaraTutorialFlow.ALTAR_T6);
+                                researchData.setDirty();
+                            }
+                        }
+                        PacketDistributor.sendToPlayer(sp, new AltarUpgradeAnimPacket(worldPosition, newTier, triggerDialogue));
                         if (tierAdv != null) {
-                            for (ServerPlayer sp : serverLevel.players()) {
-                                var prog = sp.getAdvancements().getOrStartProgress(tierAdv);
-                                if (!prog.isDone()) {
-                                    for (String c : prog.getRemainingCriteria()) sp.getAdvancements().award(tierAdv, c);
-                                }
+                            var prog = sp.getAdvancements().getOrStartProgress(tierAdv);
+                            if (!prog.isDone()) {
+                                for (String c : prog.getRemainingCriteria()) sp.getAdvancements().award(tierAdv, c);
                             }
                         }
                     }
@@ -749,6 +784,8 @@ public static final List<Vec3i> RING_T1 = List.of(
         tag.putInt("Mana", manaStorage.getManaStored());
         tag.putInt("UpgradeTier", upgradeTier);
         tag.putLong("RingPhaseStart", ringPhaseStart);
+        tag.putInt("CompletionAnimTick", completionAnimTick);
+        tag.putInt("CompletionDuration", completionDuration);
     }
 
     @Override
@@ -769,8 +806,6 @@ public static final List<Vec3i> RING_T1 = List.of(
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
         saveAdditional(tag, registries);
-        tag.putInt("CompletionAnimTick", completionAnimTick);
-        tag.putInt("CompletionDuration", completionDuration);
         return tag;
     }
 

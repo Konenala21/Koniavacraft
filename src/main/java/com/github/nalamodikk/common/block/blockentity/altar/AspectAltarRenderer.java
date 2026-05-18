@@ -189,7 +189,9 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
 
         renderFormedCore(poseStack, bufferSource, packedLight, packedOverlay, time, active);
         renderRings(altar, poseStack, bufferSource, packedLight, packedOverlay, ringTime);
-        renderSolarCore(altar, poseStack, bufferSource, time);
+        if (!AltarUpgradeAnimManager.isAnimating(altar.getBlockPos())) {
+            renderSolarCore(altar, poseStack, bufferSource, time);
+        }
         renderSealSystem(altar, poseStack, bufferSource, packedLight, packedOverlay);
 
         if (active) {
@@ -230,27 +232,7 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
     }
 
     private void renderT6Upgrade(PoseStack ps, MultiBufferSource mbs, float tick) {
-        VertexConsumer vc = mbs.getBuffer(MIRenderTypes.solarGlow());
-
-        // 過渡地面波（0-40t，銜接 T4-5 結尾）
-        for (int w = 0; w < 2; w++) {
-            float wAge = tick - w * 20f;
-            if (wAge <= 0f || wAge > 20f) continue;
-            float progress = wAge / 20f;
-            float alpha = (float) Math.sin(progress * Math.PI);
-            ps.pushPose();
-            ps.translate(0.5, -1.8, 0.5);
-            renderEnergyRing(ps, vc, progress * 12f, 0.25f + (1f - progress) * 0.35f, 150, 200, 255, (int)(alpha * 160));
-            ps.popPose();
-        }
-
-        // 光柱衝天（400-520t，黑幕清除後才可見）
-        if (tick > 400f && tick < 520f) {
-            float age  = tick - 400f;
-            float prog = age / 120f;
-            float alph = prog < 0.15f ? prog / 0.15f : (prog < 0.7f ? 1f : 1f - (prog - 0.7f) / 0.3f);
-            renderBluePillar(ps, mbs, 35f, alph * 0.9f);
-        }
+        // All T6 climax effects handled by AltarT6ClimaxRenderer fullscreen shader
     }
 
     private void renderT4T5Upgrade(PoseStack ps, MultiBufferSource mbs, float tick) {
@@ -304,7 +286,14 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
                               float time) {
         int tier = altar.getUpgradeTier();
         if (tier == 0) return;
-        if (AltarUpgradeAnimManager.isAnimating(altar.getBlockPos())) return;
+
+        AltarUpgradeAnimManager.AnimState animState = AltarUpgradeAnimManager.getState(altar.getBlockPos());
+        boolean isAnimating = animState != null && !animState.isDone();
+
+        // During any upgrade animation, show only the rings that existed before this upgrade
+        // (tier - 1), so the previous structure remains visible while the new tier animates.
+        int renderTier = isAnimating ? Math.max(0, tier - 1) : tier;
+        if (renderTier == 0) return;
 
         if (cachedRingQuads == null) {
             BakedModel ringModel = Minecraft.getInstance().getModelManager().getModel(RING_MODEL_LOC);
@@ -320,7 +309,7 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
 
         var consumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(TextureAtlas.LOCATION_BLOCKS));
 
-        for (int t = 0; t < tier && t < RING_CONFIGS.length; t++) {
+        for (int t = 0; t < renderTier && t < RING_CONFIGS.length; t++) {
             RingConfig cfg = RING_CONFIGS[t];
             renderOneRing(poseStack, consumer, packedLight, packedOverlay, quads, cfg, time);
         }

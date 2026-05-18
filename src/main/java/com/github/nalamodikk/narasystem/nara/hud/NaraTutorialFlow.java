@@ -10,6 +10,12 @@ public class NaraTutorialFlow {
     public static final String RESEARCH_TABLE = "research_table";
     public static final String ALTAR_T6       = "altar_t6";
 
+    private static boolean altarT6Shown = false;
+
+    public static void resetSessionFlags() {
+        altarT6Shown = false;
+    }
+
     public static void start(String tutorialId) {
         switch (tutorialId) {
             case RESEARCH_TABLE -> startResearchTable();
@@ -36,10 +42,11 @@ public class NaraTutorialFlow {
     }
 
     private static void startAltarT6() {
+        if (altarT6Shown) return;
         var mc = Minecraft.getInstance();
-        Component playerName = mc.player != null
-                ? mc.player.getDisplayName()
-                : Component.literal("???");
+        if (mc.player == null) return;
+        altarT6Shown = true;
+        Component playerName = mc.player.getDisplayName();
         NaraDialogueManager.setPortraitShown();
         NaraDialogueManager.startDialogue(List.of(
                 NaraDialogueLine.simple(
