@@ -680,6 +680,18 @@ public static final List<Vec3i> RING_T1 = List.of(
                             new net.minecraft.world.level.ChunkPos(worldPosition),
                             packet
                     );
+                    if (newTier >= 5) {
+                        AdvancementHolder t5Adv = serverLevel.getServer().getAdvancements()
+                                .get(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "altar_upgrade_t5"));
+                        if (t5Adv != null) {
+                            for (ServerPlayer sp : serverLevel.players()) {
+                                var prog = sp.getAdvancements().getOrStartProgress(t5Adv);
+                                if (!prog.isDone()) {
+                                    for (String c : prog.getRemainingCriteria()) sp.getAdvancements().award(t5Adv, c);
+                                }
+                            }
+                        }
+                    }
                 }
             } else {
                 for (int i = newTier; i < upgradeTier; i++) restoreRingBlocks(ALL_RINGS.get(i));

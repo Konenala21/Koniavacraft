@@ -12,7 +12,7 @@
   "message.koniava.build_wand.blocked": "%s position(s) are blocked by existing blocks (shown in orange).",
   "message.koniava.build_wand.ready_to_form": "All structure blocks placed. Use Advanced Tech Wand (Multiblock mode, crouch + right-click) to form.",
   "message.koniava.build_wand.ring_ready": "Ring T%s blocks all placed. Structure will update shortly.",
-  "message.koniava.build_wand.all_rings_done": "All Dyson ring upgrades complete! (T%s)",
+  "message.koniava.build_wand.all_rings_done": "All Resonance Ring upgrades complete! (T%s)",
   "message.koniava.altar.formed": "Structure formed!",
   "message.koniava.altar.not_formed": "Structure incomplete.",
   "item.koniava.basic_tech_wand.tooltip.mode": "Mode: %s",
@@ -681,6 +681,8 @@
   "nara.dialogue.angry.line1": "Hmph! I'm done with you! Goodbye!",
   "advancement.koniava.nara_angry.title": "Wow! You made Nara angry!",
   "advancement.koniava.nara_angry.description": "Looks like you don't need Nara's guidance?",
+  "advancement.koniava.altar_upgrade_t5.title": "The Grand Finale Begins!",
+  "advancement.koniava.altar_upgrade_t5.description": "Are you ready to ascend to the final tier?",
 
   "nara.hud.hint.continue": "[F] Continue",
   "nara.hud.hint.skip": "[F] Skip",

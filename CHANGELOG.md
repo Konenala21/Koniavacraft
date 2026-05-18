@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Placing resonance rings on a T4 or T5 altar now triggers an upgrade animation: five ground shockwave rings, a screen fade to black, an orbital sphere shader effect, a massive light pillar, and a chime. Reaching Tier 5 grants the challenge advancement "The Grand Finale Begins!".
+- 對 T4 或 T5 祭壇放置共鳴環現在會觸發升級動畫：五段地面衝擊波環、黑幕淡入淡出、軌道球體 shader 特效、巨大光柱與叮聲。達到第 5 層時獲得挑戰成就「好戲開場！」。
+
 - Placing resonance rings on a T1-T3 altar now triggers an upgrade animation: three ground shockwave rings expand from the core, followed by a brief light pillar, ending with a chime sound.
 - 對 T1-T3 祭壇放置共鳴環現在會觸發升級動畫：三段地面衝擊波環從核心向外擴散，接著短暫光柱，以叮聲結束。
 
@@ -17,6 +20,12 @@ All notable changes to this project will be documented in this file.
 - JEI 祭壇配方面板在配方有 tier 需求時會顯示「需要第 X 層升級環」。
 
 ### Developer Notes / 開發者備註
+
+- `AltarFadeRenderer`: new `@EventBusSubscriber` class (client-only). Hooks `RenderLevelStageEvent.AFTER_LEVEL` to render a full-screen black overlay using `altar_fade.vsh/fsh` and `AltarUpgradeAnimManager.getScreenFadeAlpha()`. Handles T4+ screen blackout (60-270t).
+- `AltarUpgradeAnimManager`: added `getScreenFadeAlpha()` returning 0-1 for T4+ tiers; added orbital shader trigger at tick 150 (ORBITAL_SPHERE_SATS mode); added `OrbitalTestShaderRenderer` and `Vec3` imports.
+- `AspectAltarRenderer.renderT4T5Upgrade()`: five staggered ground ring waves (0-130t, radius 18) and a final tall pillar (500-580t, height 30). Dispatched from `renderUpgradeAnimation()` for tier 4-5.
+- `AspectAltarBlockEntity.refreshUpgradeTier()`: grants `altar_upgrade_t5` advancement to all online players in the level when `newTier >= 5`.
+- Added `data/koniava/advancement/altar_upgrade_t5.json` (challenge frame, impossible trigger, server-side awarded).
 
 - `AltarRecipe`: added `minTier` field (int, default 0). JSON field `min_tier` is optional for backward compatibility.
 - `AspectAltarBlockEntity.findMatchingRecipe()`: switched from `getRecipeFor()` to `getAllRecipesFor()` stream with tier filter (`h.value().getMinTier() <= upgradeTier`).

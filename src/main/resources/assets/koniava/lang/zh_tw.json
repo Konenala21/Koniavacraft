@@ -12,7 +12,7 @@
   "message.koniava.build_wand.blocked": "%s 個位置被其他方塊佔用（橘色高亮），請先清除再建造。",
   "message.koniava.build_wand.ready_to_form": "結構方塊已全部就位。請使用高級科技魔杖（多方塊成形模式，蹲下右鍵）觸發成形。",
   "message.koniava.build_wand.ring_ready": "T%s 環方塊已全部就位，結構即將更新。",
-  "message.koniava.build_wand.all_rings_done": "戴森環升級全部完成！（T%s）",
+  "message.koniava.build_wand.all_rings_done": "共鳴環升級全部完成！（T%s）",
   "message.koniava.altar.formed": "結構已成形！",
   "message.koniava.altar.not_formed": "結構不完整。",
   "item.koniava.basic_tech_wand.tooltip.mode": "模式: %s",
@@ -681,6 +681,8 @@
   "nara.dialogue.angry.line1": "哼！我不理你了！再見！",
   "advancement.koniava.nara_angry.title": "哇！你惹娜拉生氣了！",
   "advancement.koniava.nara_angry.description": "看起來你不需要娜拉引導了？",
+  "advancement.koniava.altar_upgrade_t5.title": "好戲開場！",
+  "advancement.koniava.altar_upgrade_t5.description": "準備好升級到最終階段了嗎！？",
 
   "nara.hud.hint.continue": "[F] 繼續",
   "nara.hud.hint.skip": "[F] 跳過",

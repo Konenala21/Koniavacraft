@@ -214,8 +214,10 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
         float tick = state.tick() + partialTick;
         if (state.tier() <= 3) {
             renderT1T3Upgrade(ps, mbs, tick);
+        } else if (state.tier() <= 5) {
+            renderT4T5Upgrade(ps, mbs, tick);
         }
-        // T4-T5 和 T6 在 Phase 3+ 實作
+        // T6 在 Phase 4 實作
     }
 
     private void renderT1T3Upgrade(PoseStack ps, MultiBufferSource mbs, float tick) {
@@ -247,6 +249,39 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
             else if (pProg < 0.65f) pAlpha = 1.0f;
             else                     pAlpha = 1.0f - (pProg - 0.65f) / 0.35f;
             renderBluePillar(ps, mbs, 18f, pAlpha);
+        }
+    }
+
+    private void renderT4T5Upgrade(PoseStack ps, MultiBufferSource mbs, float tick) {
+        VertexConsumer vc = mbs.getBuffer(MIRenderTypes.solarGlow());
+
+        // Phase A: 5 段地面環形衝擊波（0-130t），各 26t，依序錯開
+        for (int w = 0; w < 5; w++) {
+            float wAge = tick - w * 26f;
+            if (wAge <= 0f || wAge > 26f) continue;
+            float progress  = wAge / 26f;
+            float radius    = progress * 18f;
+            float alpha     = (float) Math.sin(progress * Math.PI);
+            float thickness = 0.25f + (1f - progress) * 0.40f;
+            int   iAlpha    = (int)(alpha * 200);
+
+            ps.pushPose();
+            ps.translate(0.5, -1.8, 0.5);
+            renderEnergyRing(ps, vc, radius,         thickness,         100, 180, 255, iAlpha);
+            renderEnergyRing(ps, vc, radius * 0.85f, thickness * 0.45f, 160, 220, 255, (int)(alpha * 120));
+            renderEnergyRing(ps, vc, radius * 0.70f, thickness * 0.20f, 200, 240, 255, (int)(alpha * 70));
+            ps.popPose();
+        }
+
+        // Phase D: 最終大光柱（500-580t），音效觸發前出現
+        if (tick > 500f && tick < 580f) {
+            float pAge  = tick - 500f;
+            float pProg = pAge / 80f;
+            float pAlpha;
+            if (pProg < 0.12f)      pAlpha = pProg / 0.12f;
+            else if (pProg < 0.70f) pAlpha = 1.0f;
+            else                     pAlpha = 1.0f - (pProg - 0.70f) / 0.30f;
+            renderBluePillar(ps, mbs, 30f, pAlpha);
         }
     }
 
