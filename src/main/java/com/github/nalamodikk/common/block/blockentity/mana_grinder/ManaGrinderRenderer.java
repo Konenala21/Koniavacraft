@@ -410,11 +410,6 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
     }
 
     @Override
-    public boolean shouldRenderOffScreen(ManaGrinderBlockEntity blockEntity) {
-        return true;
-    }
-
-    @Override
     public AABB getRenderBoundingBox(ManaGrinderBlockEntity blockEntity) {
         return BlockbenchModelRenderUtils.getTwoBlockTallBoundingBox(blockEntity.getBlockPos());
     }

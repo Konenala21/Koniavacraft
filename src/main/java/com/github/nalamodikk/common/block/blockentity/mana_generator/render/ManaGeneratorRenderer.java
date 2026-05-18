@@ -129,18 +129,18 @@ public class ManaGeneratorRenderer implements BlockEntityRenderer<ManaGeneratorB
         );
     }
 
+    private static final Vector3f ORIGIN_BONE    = new Vector3f(8.0F  / 16.0F, 29.24749F / 16.0F, 8.29246F / 16.0F);
+    private static final Vector3f ORIGIN_BONE3   = new Vector3f(3.0F  / 16.0F, 29.24749F / 16.0F, 8.29246F / 16.0F);
+    private static final Vector3f ORIGIN_BONE4   = new Vector3f(13.0F / 16.0F, 29.24749F / 16.0F, 8.29246F / 16.0F);
+    private static final Vector3f ORIGIN_DEFAULT = new Vector3f(0.0F, 0.0F, 0.0F);
+
     private Vector3f getBlockbenchGroupOrigin(String groupName) {
         return switch (groupName) {
-            case "bone" -> new Vector3f(8.0F / 16.0F, 29.24749F / 16.0F, 8.29246F / 16.0F);
-            case "bone3" -> new Vector3f(3.0F / 16.0F, 29.24749F / 16.0F, 8.29246F / 16.0F);
-            case "bone4" -> new Vector3f(13.0F / 16.0F, 29.24749F / 16.0F, 8.29246F / 16.0F);
-            default -> new Vector3f(0.0F, 0.0F, 0.0F);
+            case "bone"  -> ORIGIN_BONE;
+            case "bone3" -> ORIGIN_BONE3;
+            case "bone4" -> ORIGIN_BONE4;
+            default      -> ORIGIN_DEFAULT;
         };
-    }
-
-    @Override
-    public boolean shouldRenderOffScreen(ManaGeneratorBlockEntity blockEntity) {
-        return true;
     }
 
     @Override

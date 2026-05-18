@@ -11,8 +11,10 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.phys.AABB;
 
 import java.util.Map;
 
@@ -189,8 +191,10 @@ public class ManaDeployerRenderer implements BlockEntityRenderer<ManaDeployerBlo
     }
 
     @Override
-    public boolean shouldRenderOffScreen(ManaDeployerBlockEntity be) {
-        return true; // arm may extend beyond block bounds
+    public AABB getRenderBoundingBox(ManaDeployerBlockEntity be) {
+        BlockPos pos = be.getBlockPos();
+        return new AABB(pos.getX() - 1, pos.getY(), pos.getZ() - 1,
+                        pos.getX() + 2, pos.getY() + 2, pos.getZ() + 2);
     }
 
     @Override

@@ -124,10 +124,10 @@ public class SolarCollectorRenderer implements BlockEntityRenderer<SolarManaColl
         );
     }
 
+    private static final Vector3f ORIGIN_BONE    = new Vector3f(0.0F, 29.24749F / 16.0F, 0.29246F / 16.0F);
+    private static final Vector3f ORIGIN_DEFAULT = new Vector3f(0.5F, 0.5F, 0.5F);
+
     private Vector3f getGroupOrigin(String groupName) {
-        return switch (groupName) {
-            case "bone" -> new Vector3f(0.0F / 16.0F, 29.24749F / 16.0F, 0.29246F / 16.0F);
-            default -> new Vector3f(0.5F, 0.5F, 0.5F);
-        };
+        return "bone".equals(groupName) ? ORIGIN_BONE : ORIGIN_DEFAULT;
     }
 }

@@ -30,6 +30,10 @@ public final class BedrockAnimData {
 
         static final float[] ZERO3 = {0f, 0f, 0f};
 
+        // Reused each frame to avoid per-frame allocation; safe because rendering is single-threaded.
+        private final float[] posScratch = new float[3];
+        private final float[] rotScratch = new float[3];
+
         BoneAnim(TreeMap<Float, float[]> posFrames, float[] posConst,
                  TreeMap<Float, float[]> rotFrames, float[] rotConst) {
             this.posFrames = posFrames;
@@ -38,10 +42,10 @@ public final class BedrockAnimData {
             this.rotConst  = rotConst;
         }
 
-        public float[] position(float time) { return eval(posFrames, posConst, time); }
-        public float[] rotation(float time) { return eval(rotFrames, rotConst, time); }
+        public float[] position(float time) { return eval(posFrames, posConst, time, posScratch); }
+        public float[] rotation(float time) { return eval(rotFrames, rotConst, time, rotScratch); }
 
-        private static float[] eval(TreeMap<Float, float[]> frames, float[] constant, float t) {
+        private static float[] eval(TreeMap<Float, float[]> frames, float[] constant, float t, float[] out) {
             if (constant != null)                       return constant;
             if (frames == null || frames.isEmpty())     return ZERO3;
             Map.Entry<Float, float[]> lo = frames.floorEntry(t);
@@ -51,11 +55,10 @@ public final class BedrockAnimData {
             if (lo.getKey().equals(hi.getKey())) return lo.getValue();
             float fac = (t - lo.getKey()) / (hi.getKey() - lo.getKey());
             float[] a = lo.getValue(), b = hi.getValue();
-            return new float[]{
-                a[0] + fac * (b[0] - a[0]),
-                a[1] + fac * (b[1] - a[1]),
-                a[2] + fac * (b[2] - a[2])
-            };
+            out[0] = a[0] + fac * (b[0] - a[0]);
+            out[1] = a[1] + fac * (b[1] - a[1]);
+            out[2] = a[2] + fac * (b[2] - a[2]);
+            return out;
         }
     }
 }
