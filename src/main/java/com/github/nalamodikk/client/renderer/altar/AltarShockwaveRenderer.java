@@ -38,6 +38,7 @@ public class AltarShockwaveRenderer {
     private static int vboId       = -1;
     private static int locDepth, locInvProj, locInvView, locCamPos, locBlockPos;
     private static int locWaves, locPillarAlpha, locPillarRadius;
+    private static int locGroundTwist, locITime;
     private static boolean initialized = false;
 
     @SubscribeEvent
@@ -90,11 +91,14 @@ public class AltarShockwaveRenderer {
             float[] waves       = computeWaves(tier, tick);
             float   pillarAlpha = computePillarAlpha(tier, tick);
             float   pillarRad   = computePillarRadius(tier);
+            float   twistAngle  = computeGroundTwist(tier, tick);
 
             GL20.glUniform3f(locBlockPos, pos.getX() + 0.5f, pos.getY(), pos.getZ() + 0.5f);
             GL20.glUniform3fv(locWaves, waves);
             GL20.glUniform1f(locPillarAlpha, pillarAlpha);
             GL20.glUniform1f(locPillarRadius, pillarRad);
+            GL20.glUniform1f(locGroundTwist, twistAngle);
+            GL20.glUniform1f(locITime, tick / 20f);
             GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 0, 4);
         }
         GL30.glBindVertexArray(0);
@@ -137,6 +141,14 @@ public class AltarShockwaveRenderer {
         return (tier <= 3) ? 0.25f : 0.55f;
     }
 
+    // Ground twist angle for T4-T5: linearly ramps up during the ring wave phase (0-130t)
+    // giving the rings a spiral/warped appearance (orbital fx_ground_twist concept)
+    private static float computeGroundTwist(int tier, float tick) {
+        if (tier <= 3) return 0f;
+        // Ramp from 0 to ~0.9 rad (≈52°) over 300 ticks, then hold
+        return Math.min(tick / 300f, 1f) * 0.9f;
+    }
+
     // ── GL setup ─────────────────────────────────────────────────────────────
 
     private static void init() {
@@ -169,6 +181,8 @@ public class AltarShockwaveRenderer {
             locWaves       = GL20.glGetUniformLocation(programId, "Waves");
             locPillarAlpha = GL20.glGetUniformLocation(programId, "PillarAlpha");
             locPillarRadius= GL20.glGetUniformLocation(programId, "PillarRadius");
+            locGroundTwist = GL20.glGetUniformLocation(programId, "GroundTwistAngle");
+            locITime       = GL20.glGetUniformLocation(programId, "iTime");
             GL20.glUseProgram(0);
         } catch (Exception e) {
             KoniavacraftMod.LOGGER.error("[Shockwave] Init failed", e);

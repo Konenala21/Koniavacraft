@@ -9,7 +9,10 @@ void fxAltarShockwave(vec3 startP, vec3 dir, float sceneD, inout vec3 addLight) 
     float tG = (RING_Y - startP.y) / dir.y;
     if (tG <= 0.05 || tG >= sceneD) return;
 
-    float hitR = length((startP + dir * tG).xz);
+    // Apply ground twist (T4-T5+): rotate the XZ hit point so rings appear to spiral
+    vec2 hitXZ = (startP + dir * tG).xz;
+    if (abs(GroundTwistAngle) > 0.001) hitXZ = rotate2(hitXZ, GroundTwistAngle);
+    float hitR = length(hitXZ);
 
     for (int w = 0; w < 5; w++) {
         float radius    = Waves[w].x;
