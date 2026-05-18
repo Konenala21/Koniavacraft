@@ -1,6 +1,7 @@
 package com.github.nalamodikk.register;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.network.packet.client.altar.AltarUpgradeAnimPacket;
 import com.github.nalamodikk.common.network.packet.server.OpenUpgradeGuiPacket;
 import com.github.nalamodikk.common.network.packet.server.deployer.SetDeployerIntervalPacket;
 import com.github.nalamodikk.common.network.packet.server.deployer.ToggleDeployerEnabledPacket;
@@ -58,5 +59,6 @@ public class ModNetworking {
         ResearchAspectPlacePacket.registerTo(registrar);
         StartResearchPacket.registerTo(registrar);
         AspectSynthesisPacket.registerTo(registrar);
+        AltarUpgradeAnimPacket.registerToClient(registrar);
     }
 }

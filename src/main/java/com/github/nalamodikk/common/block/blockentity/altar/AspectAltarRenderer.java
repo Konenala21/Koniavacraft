@@ -1,6 +1,7 @@
 package com.github.nalamodikk.common.block.blockentity.altar;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.client.renderer.altar.AltarUpgradeAnimManager;
 import com.github.nalamodikk.common.utils.render.BlockbenchModelRenderUtils;
 import com.github.nalamodikk.common.utils.render.BlockbenchModelRenderUtils.ModelElement;
 import com.google.gson.JsonObject;
@@ -132,6 +133,9 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
     private boolean modelLoaded = false;
     private List<BakedQuad> cachedRingQuads = null;
 
+    private List<ModelElement>[] phaseRotating = null;
+    private List<ModelElement>[] phaseStill    = null;
+
     public AspectAltarRenderer(BlockEntityRendererProvider.Context ctx) {
         loadAndParseModel();
     }
@@ -147,11 +151,28 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
                 JsonObject modelData = JsonParser.parseReader(reader).getAsJsonObject();
                 allElements.clear();
                 allElements.addAll(BlockbenchModelRenderUtils.parseElements(modelData));
+                buildPhasePartitions();
                 modelLoaded = true;
                 LOGGER.debug("Loaded {} elements for aspect altar", allElements.size());
             }
         } catch (Exception e) {
             LOGGER.error("Failed to load aspect altar model.", e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void buildPhasePartitions() {
+        phaseRotating = new List[PHASES.length];
+        phaseStill    = new List[PHASES.length];
+        for (int i = 0; i < PHASES.length; i++) {
+            Predicate<ModelElement> sel = PHASES[i].selector();
+            List<ModelElement> rot   = new ArrayList<>();
+            List<ModelElement> still = new ArrayList<>();
+            for (ModelElement e : allElements) {
+                (sel.test(e) ? rot : still).add(e);
+            }
+            phaseRotating[i] = List.copyOf(rot);
+            phaseStill[i]    = List.copyOf(still);
         }
     }
 
@@ -204,11 +225,8 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
                     : 90f;
             PhaseConfig cfg = PHASES[phase];
 
-            List<ModelElement> rotating  = new ArrayList<>(9);
-            List<ModelElement> still = new ArrayList<>(18);
-            for (ModelElement e : allElements) {
-                (cfg.selector().test(e) ? rotating : still).add(e);
-            }
+            List<ModelElement> rotating = phaseRotating[phase];
+            List<ModelElement> still    = phaseStill[phase];
 
             BlockbenchModelRenderUtils.renderElementList(poseStack, consumer, packedLight, packedOverlay, still);
 
@@ -231,6 +249,7 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
                               float time) {
         int tier = altar.getUpgradeTier();
         if (tier == 0) return;
+        if (AltarUpgradeAnimManager.isAnimating(altar.getBlockPos())) return;
 
         if (cachedRingQuads == null) {
             BakedModel ringModel = Minecraft.getInstance().getModelManager().getModel(RING_MODEL_LOC);
@@ -283,7 +302,8 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
         float orbitSpeed = (1f + progress * 4f) * 0.04f;
         float baseY      = 0.9f + progress * 0.3f;
 
-        int count = (int) pedestalItems.stream().filter(s -> !s.isEmpty()).count();
+        int count = 0;
+        for (ItemStack s : pedestalItems) if (!s.isEmpty()) count++;
         if (count == 0) return;
 
         ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();

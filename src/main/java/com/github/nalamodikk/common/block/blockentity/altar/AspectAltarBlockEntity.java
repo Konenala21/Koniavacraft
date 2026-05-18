@@ -10,6 +10,7 @@ import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
 import com.github.nalamodikk.register.ModBlockEntities;
 import com.github.nalamodikk.register.ModBlocks;
 import com.github.nalamodikk.register.ModRecipes;
+import com.github.nalamodikk.common.network.packet.client.altar.AltarUpgradeAnimPacket;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -672,6 +673,14 @@ public static final List<Vec3i> RING_T1 = List.of(
         if (newTier != upgradeTier) {
             if (newTier > upgradeTier) {
                 for (int i = upgradeTier; i < newTier; i++) applyRingReplace(ALL_RINGS.get(i));
+                if (level instanceof ServerLevel serverLevel) {
+                    AltarUpgradeAnimPacket packet = new AltarUpgradeAnimPacket(worldPosition, newTier);
+                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayersTrackingChunk(
+                            serverLevel,
+                            new net.minecraft.world.level.ChunkPos(worldPosition),
+                            packet
+                    );
+                }
             } else {
                 for (int i = newTier; i < upgradeTier; i++) restoreRingBlocks(ALL_RINGS.get(i));
             }
