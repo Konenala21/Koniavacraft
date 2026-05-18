@@ -457,7 +457,7 @@ import java.util.Optional;
             boolean changed = false;
             for (Direction dir : Direction.values()) {
                 IOHandlerUtils.IOType newType = map.getOrDefault(dir, getDefaultIOType(dir));
-                if (!ioMap.get(dir).equals(newType)) {
+                if (!ioMap.getOrDefault(dir, getDefaultIOType(dir)).equals(newType)) {
                     ioMap.put(dir, newType);
                     changed = true;
                 }

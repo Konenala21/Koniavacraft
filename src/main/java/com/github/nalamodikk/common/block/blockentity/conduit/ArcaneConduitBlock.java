@@ -100,6 +100,11 @@ public class ArcaneConduitBlock extends BaseEntityBlock {
     }
 
 
+    public static void clearStaticCaches() {
+        playerBuildingHistory.clear();
+        lastCleanup = 0;
+    }
+
     private static void cleanupOldHistory() {
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastCleanup > HISTORY_CLEANUP_INTERVAL) {

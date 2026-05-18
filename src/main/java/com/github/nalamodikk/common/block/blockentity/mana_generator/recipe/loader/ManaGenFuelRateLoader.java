@@ -37,7 +37,7 @@ public class ManaGenFuelRateLoader extends SimpleJsonResourceReloadListener {
     private static final String DEFAULT_NAMESPACE = KoniavacraftMod.MOD_ID;
     private static final int DEFAULT_BURN_TIME = 0;  // 默認燃燒時間
     private static final int DEFAULT_ENERGY_RATE = 0;
-    public static final int DEFAULT_INTERVAL = 0;
+    public static final int DEFAULT_INTERVAL = 1;
     private static final Set<ResourceLocation> warnedAlready = new HashSet<>();
 
     public ManaGenFuelRateLoader() {
@@ -51,7 +51,8 @@ public class ManaGenFuelRateLoader extends SimpleJsonResourceReloadListener {
 
     @Override
     protected void apply(Map<ResourceLocation, JsonElement> objects, ResourceManager resourceManager, ProfilerFiller profiler) {
-        FUEL_RATES.clear(); // 清除舊的數據
+        FUEL_RATES.clear();
+        warnedAlready.clear();
 
         for (Map.Entry<ResourceLocation, JsonElement> entry : objects.entrySet()) {
             ResourceLocation id = entry.getKey();
@@ -145,7 +146,7 @@ public class ManaGenFuelRateLoader extends SimpleJsonResourceReloadListener {
         }
 
         public int getIntervalTick() {
-            return intervalTick > 0 ? intervalTick : DEFAULT_INTERVAL;
+            return Math.max(1, intervalTick);
         }
         public int getManaRate() {
             return manaRate;

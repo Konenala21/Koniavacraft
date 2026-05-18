@@ -1,6 +1,7 @@
 package com.github.nalamodikk.narasystem.nara.event;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitBlock;
 import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitBlockEntity;
 import com.github.nalamodikk.narasystem.nara.hud.NaraTutorialFlow;
 import com.github.nalamodikk.narasystem.nara.network.client.NaraStartDialoguePacket;
@@ -50,6 +51,7 @@ public class NaraServerEvents {
         pendingResearchTableTutorial.clear();
         tutorialLoginDelay.clear();
         ArcaneConduitBlockEntity.clearAllStaticCachesGracefully();
+        ArcaneConduitBlock.clearStaticCaches();
         ResearchGate.clearCache();
     }
 
