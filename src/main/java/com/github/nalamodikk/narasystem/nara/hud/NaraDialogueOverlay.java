@@ -98,9 +98,10 @@ public class NaraDialogueOverlay {
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.player == null) return;
         if (mc.isPaused()) return;
         // 玩家死亡時暫停對話，等重生後由 server 重新觸發
-        if (mc.player != null && mc.player.isDeadOrDying()) return;
+        if (mc.player.isDeadOrDying()) return;
         NaraDialogueManager.tick();
         NaraWatchHighlight.tick();
         if (NaraDialogueManager.wasCharAddedThisTick()) {
