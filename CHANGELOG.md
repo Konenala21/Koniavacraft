@@ -10,6 +10,19 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.0.1.6-6] - 2026-05-18
+
+### Player Changes / 玩家更新內容
+
+- Fixed crash on the main menu introduced in 0.0.1.6-5.
+- 修正 0.0.1.6-5 引入的主選單 crash。
+
+### Developer Notes / 開發者備註
+
+- `NaraDialogueOverlay.onClientTick()`: added `mc.level == null || mc.player == null` guard at method entry. `mc.level` is null on the main menu, causing NPE when accessing `mc.level.random`.
+
+---
+
 ## [0.0.1.6-5] - 2026-05-18
 
 ### Player Changes / 玩家更新內容
