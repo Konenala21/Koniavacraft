@@ -85,7 +85,13 @@ public class ModNeoNalaEnergyStorage implements IEnergyStorage, INBTSerializable
     }
 
     public void deserializeNBT(CompoundTag tag) {
-        this.energy = new BigDecimal(tag.getString("Energy")).setScale(DECIMAL_DIGITS, RoundingMode.DOWN);
+        if (tag.contains("Energy")) {
+            try {
+                this.energy = new BigDecimal(tag.getString("Energy")).setScale(DECIMAL_DIGITS, RoundingMode.DOWN);
+            } catch (NumberFormatException e) {
+                this.energy = BigDecimal.ZERO.setScale(DECIMAL_DIGITS, RoundingMode.DOWN);
+            }
+        }
         // 若你有計畫支援容量動態變化，再取消以下註解
         // this.capacity = new BigDecimal(tag.getString("Capacity")).setScale(DECIMAL_DIGITS, RoundingMode.DOWN);
     }

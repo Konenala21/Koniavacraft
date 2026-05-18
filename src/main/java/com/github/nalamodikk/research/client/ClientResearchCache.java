@@ -114,5 +114,13 @@ public final class ClientResearchCache {
         return currentTier;
     }
 
+    public static void clear() {
+        discoveredAspects = new HashMap<>();
+        completedResearch = new HashSet<>();
+        availableResearchOverrides = new HashSet<>();
+        lockedResearch = new HashSet<>();
+        currentTier = 1;
+    }
+
     private ClientResearchCache() {}
 }
