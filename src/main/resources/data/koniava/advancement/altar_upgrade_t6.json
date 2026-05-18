@@ -1,0 +1,17 @@
+{
+  "display": {
+    "icon": { "id": "koniava:aspect_altar" },
+    "title": { "translate": "advancement.koniava.altar_upgrade_t6.title" },
+    "description": { "translate": "advancement.koniava.altar_upgrade_t6.description" },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "obtained": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [["obtained"]]
+}

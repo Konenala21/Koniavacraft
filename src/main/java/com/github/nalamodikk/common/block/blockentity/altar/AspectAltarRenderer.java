@@ -216,8 +216,9 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
             renderT1T3Upgrade(ps, mbs, tick);
         } else if (state.tier() <= 5) {
             renderT4T5Upgrade(ps, mbs, tick);
+        } else if (state.tier() == 6) {
+            renderT6Upgrade(ps, mbs, tick);
         }
-        // T6 在 Phase 4 實作
     }
 
     private void renderT1T3Upgrade(PoseStack ps, MultiBufferSource mbs, float tick) {
@@ -249,6 +250,30 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
             else if (pProg < 0.65f) pAlpha = 1.0f;
             else                     pAlpha = 1.0f - (pProg - 0.65f) / 0.35f;
             renderBluePillar(ps, mbs, 18f, pAlpha);
+        }
+    }
+
+    private void renderT6Upgrade(PoseStack ps, MultiBufferSource mbs, float tick) {
+        VertexConsumer vc = mbs.getBuffer(MIRenderTypes.solarGlow());
+
+        // 過渡地面波（0-40t，銜接 T4-5 結尾）
+        for (int w = 0; w < 2; w++) {
+            float wAge = tick - w * 20f;
+            if (wAge <= 0f || wAge > 20f) continue;
+            float progress = wAge / 20f;
+            float alpha = (float) Math.sin(progress * Math.PI);
+            ps.pushPose();
+            ps.translate(0.5, -1.8, 0.5);
+            renderEnergyRing(ps, vc, progress * 12f, 0.25f + (1f - progress) * 0.35f, 150, 200, 255, (int)(alpha * 160));
+            ps.popPose();
+        }
+
+        // 光柱衝天（400-520t，黑幕清除後才可見）
+        if (tick > 400f && tick < 520f) {
+            float age  = tick - 400f;
+            float prog = age / 120f;
+            float alph = prog < 0.15f ? prog / 0.15f : (prog < 0.7f ? 1f : 1f - (prog - 0.7f) / 0.3f);
+            renderBluePillar(ps, mbs, 35f, alph * 0.9f);
         }
     }
 

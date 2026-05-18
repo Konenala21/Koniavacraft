@@ -681,13 +681,14 @@ public static final List<Vec3i> RING_T1 = List.of(
                             packet
                     );
                     if (newTier >= 5) {
-                        AdvancementHolder t5Adv = serverLevel.getServer().getAdvancements()
-                                .get(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "altar_upgrade_t5"));
-                        if (t5Adv != null) {
+                        String advId = newTier == 6 ? "altar_upgrade_t6" : "altar_upgrade_t5";
+                        AdvancementHolder tierAdv = serverLevel.getServer().getAdvancements()
+                                .get(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, advId));
+                        if (tierAdv != null) {
                             for (ServerPlayer sp : serverLevel.players()) {
-                                var prog = sp.getAdvancements().getOrStartProgress(t5Adv);
+                                var prog = sp.getAdvancements().getOrStartProgress(tierAdv);
                                 if (!prog.isDone()) {
-                                    for (String c : prog.getRemainingCriteria()) sp.getAdvancements().award(t5Adv, c);
+                                    for (String c : prog.getRemainingCriteria()) sp.getAdvancements().award(tierAdv, c);
                                 }
                             }
                         }

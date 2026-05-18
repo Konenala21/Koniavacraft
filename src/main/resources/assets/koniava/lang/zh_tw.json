@@ -683,6 +683,11 @@
   "advancement.koniava.nara_angry.description": "看起來你不需要娜拉引導了？",
   "advancement.koniava.altar_upgrade_t5.title": "好戲開場！",
   "advancement.koniava.altar_upgrade_t5.description": "準備好升級到最終階段了嗎！？",
+  "advancement.koniava.altar_upgrade_t6.title": "建造最終極的本源矩陣！",
+  "advancement.koniava.altar_upgrade_t6.description": "六層共振環全數激活，本源魔力輸出突破理論上限。這個世界的魔工文明，從此刻起正式開始。",
+  "nara.dialogue.altar_t6.line1": "哇 %s 恭喜你建造了本世界的第一個最終極無敵厲害結構！",
+  "nara.dialogue.altar_t6.line2": "你真的太厲害了……我有點嫉妒呢。",
+  "nara.dialogue.altar_t6.confirm": "謝謝娜拉！",
 
   "nara.hud.hint.continue": "[F] 繼續",
   "nara.hud.hint.skip": "[F] 跳過",

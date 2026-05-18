@@ -683,6 +683,11 @@
   "advancement.koniava.nara_angry.description": "Looks like you don't need Nara's guidance?",
   "advancement.koniava.altar_upgrade_t5.title": "The Grand Finale Begins!",
   "advancement.koniava.altar_upgrade_t5.description": "Are you ready to ascend to the final tier?",
+  "advancement.koniava.altar_upgrade_t6.title": "The Ultimate Aspect Matrix!",
+  "advancement.koniava.altar_upgrade_t6.description": "All six resonance rings fully activated. Aspect energy output has surpassed all theoretical limits. The mana-industrial civilization of this world begins now.",
+  "nara.dialogue.altar_t6.line1": "Wow, %s! Congratulations on building the most incredibly powerful structure this world has ever seen!",
+  "nara.dialogue.altar_t6.line2": "You're truly amazing... I'm a little jealous, honestly.",
+  "nara.dialogue.altar_t6.confirm": "Thanks, Nara!",
 
   "nara.hud.hint.continue": "[F] Continue",
   "nara.hud.hint.skip": "[F] Skip",
