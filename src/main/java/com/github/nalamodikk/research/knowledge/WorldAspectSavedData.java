@@ -141,11 +141,14 @@ public class WorldAspectSavedData extends SavedData {
         }
         CompoundTag mapTag = tag.getCompound(keyName);
         for (String key : mapTag.getAllKeys()) {
-            ResourceLocation id = ResourceLocation.parse(key);
+            ResourceLocation id = ResourceLocation.tryParse(key);
+            if (id == null) continue;
             ListTag list = mapTag.getList(key, Tag.TAG_STRING);
             List<Aspect> aspects = new ArrayList<>();
             for (int i = 0; i < list.size(); i++) {
-                Aspect aspect = ModAspects.get(ResourceLocation.parse(list.getString(i)));
+                ResourceLocation aspectId = ResourceLocation.tryParse(list.getString(i));
+                if (aspectId == null) continue;
+                Aspect aspect = ModAspects.get(aspectId);
                 if (aspect != null) {
                     aspects.add(aspect);
                 }

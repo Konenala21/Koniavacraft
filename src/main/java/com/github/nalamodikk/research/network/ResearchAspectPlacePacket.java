@@ -88,7 +88,8 @@ public record ResearchAspectPlacePacket(
             }
 
             if (previousAspectId != null) {
-                refundAspect(knowledge, ResourceLocation.parse(previousAspectId));
+                ResourceLocation prevLoc = ResourceLocation.tryParse(previousAspectId);
+                if (prevLoc != null) refundAspect(knowledge, prevLoc);
             }
 
             if (newAspectId != null) {

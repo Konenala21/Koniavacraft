@@ -27,6 +27,11 @@ public final class ResearchGate {
     private static long   cacheTickStamp = -1L;
     private static final Map<String, Boolean> tickCache = new HashMap<>();
 
+    static void clearCache() {
+        cacheTickStamp = -1L;
+        tickCache.clear();
+    }
+
     static {
         require("mana_generator",      "mana_generation");
         require("mana_grinder",        "mana_crystallisation");

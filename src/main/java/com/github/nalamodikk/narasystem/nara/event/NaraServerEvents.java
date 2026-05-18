@@ -1,11 +1,13 @@
 package com.github.nalamodikk.narasystem.nara.event;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitBlockEntity;
 import com.github.nalamodikk.narasystem.nara.hud.NaraTutorialFlow;
 import com.github.nalamodikk.narasystem.nara.network.client.NaraStartDialoguePacket;
 import com.github.nalamodikk.narasystem.nara.network.client.NaraTutorialPacket;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraCloseDialoguePacket;
 import com.github.nalamodikk.register.ModBlocks;
+import com.github.nalamodikk.research.ResearchGate;
 import com.github.nalamodikk.research.knowledge.ResearchSavedData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -47,6 +49,8 @@ public class NaraServerEvents {
         pendingWardenDespawn.clear();
         pendingResearchTableTutorial.clear();
         tutorialLoginDelay.clear();
+        ArcaneConduitBlockEntity.clearAllStaticCachesGracefully();
+        ResearchGate.clearCache();
     }
 
     public static void schedulePunishmentDialogue(UUID playerUUID, int delayTicks) {
