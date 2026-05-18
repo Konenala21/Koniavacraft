@@ -251,9 +251,9 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
         super.loadAdditional(tag, registries);
         try { mode = Mode.valueOf(tag.getString("DeployerMode")); }
         catch (Exception ignored) { mode = Mode.RIGHT_CLICK; }
-        hasMana = tag.getBoolean("HasMana");
+        if (tag.contains("HasMana")) hasMana = tag.getBoolean("HasMana");
         enabled = !tag.contains("Enabled") || tag.getBoolean("Enabled");
-        wasRedstonePowered = tag.getBoolean("WasRedstonePowered");
+        if (tag.contains("WasRedstonePowered")) wasRedstonePowered = tag.getBoolean("WasRedstonePowered");
         intervalTick = Math.clamp(intervalTick, 10, 12000);
         if (tag.contains("IOConfig")) {
             CompoundTag ioTag = tag.getCompound("IOConfig");

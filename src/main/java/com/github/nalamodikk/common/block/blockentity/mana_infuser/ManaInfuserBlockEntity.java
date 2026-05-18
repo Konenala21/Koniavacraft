@@ -306,7 +306,7 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock imple
     }
 
     public void toggleIOMode(Direction direction) {
-        IOHandlerUtils.IOType currentType = directionConfig.get(direction);
+        IOHandlerUtils.IOType currentType = directionConfig.getOrDefault(direction, IOHandlerUtils.IOType.DISABLED);
         IOHandlerUtils.IOType nextType = IOHandlerUtils.nextIOType(currentType);
         directionConfig.put(direction, nextType);
         setChanged();
@@ -395,7 +395,7 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock imple
                 }
             }
         }
-        if (tag.getBoolean("HasRecipe")) hasInputChanged = true;
+        if (tag.contains("HasRecipe") && tag.getBoolean("HasRecipe")) hasInputChanged = true;
         if (tag.contains("UpgradeInventory")) {
             upgradeInventory.deserializeNBT(registries, tag.getCompound("UpgradeInventory"));
         }
