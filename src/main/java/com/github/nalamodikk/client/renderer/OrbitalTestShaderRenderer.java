@@ -22,16 +22,26 @@ import java.util.List;
 
 public class OrbitalTestShaderRenderer {
 
-    public enum Mode {
-        ORBITAL ("shaders/orbital_test.fsh", 36f),
-        SHIELD  ("shaders/test_shield.fsh",   8f),
-        TORUS   ("shaders/test_torus.fsh",     8f),
-        CYLINDER("shaders/test_cylinder.fsh", 10f),
-        CRYSTAL ("shaders/test_crystal.fsh",   8f);
+    private static final String COMMON = "shaders/orbital/common.glsl";
 
-        public final String fragPath;
-        public final float  totalSecs;
-        Mode(String f, float s) { fragPath = f; totalSecs = s; }
+    public enum Mode {
+        // 拆分後的 orbital 組合
+        ORBITAL_CHARGE   (new String[]{COMMON, "shaders/orbital/stage_charge.fsh"},                                         2f),
+        ORBITAL_SPHERE   (new String[]{COMMON, "shaders/orbital/sdf_sphere.glsl",    "shaders/orbital/stage_body.fsh"},    16f),
+        ORBITAL_SATS     (new String[]{COMMON, "shaders/orbital/sdf_satellites.glsl","shaders/orbital/stage_body.fsh"},    16f),
+        ORBITAL_FULL     (new String[]{COMMON, "shaders/orbital/sdf_full.glsl",      "shaders/orbital/stage_body.fsh"},    16f),
+        ORBITAL_COLLAPSE (new String[]{COMMON, "shaders/orbital/sdf_collapse.glsl",  "shaders/orbital/stage_collapse.fsh"}, 8f),
+        // 完整原版 orbital（含 charge + full + collapse）
+        ORBITAL          (new String[]{"shaders/orbital_test.fsh"},                                                         36f),
+        // 其他測試 shader
+        SHIELD           (new String[]{"shaders/test_shield.fsh"},                    8f),
+        TORUS            (new String[]{"shaders/test_torus.fsh"},                     8f),
+        CYLINDER         (new String[]{"shaders/test_cylinder.fsh"},                 10f),
+        CRYSTAL          (new String[]{"shaders/test_crystal.fsh"},                   8f);
+
+        public final String[] fragPaths;
+        public final float    totalSecs;
+        Mode(String[] paths, float s) { fragPaths = paths; totalSecs = s; }
     }
 
     public static Mode currentMode = Mode.ORBITAL;
@@ -144,8 +154,11 @@ public class OrbitalTestShaderRenderer {
         ResourceManager rm = Minecraft.getInstance().getResourceManager();
         try {
             String vert = readResource(rm, "shaders/orbital_test.vsh");
-            String frag = readResource(rm, currentMode.fragPath);
-            programId = buildProgram(vert, frag);
+            StringBuilder fragBuilder = new StringBuilder();
+            for (String path : currentMode.fragPaths) {
+                fragBuilder.append(readResource(rm, path)).append('\n');
+            }
+            programId = buildProgram(vert, fragBuilder.toString());
             GL20.glUseProgram(programId);
             locDiffuse  = GL20.glGetUniformLocation(programId, "DiffuseSampler");
             locDepth    = GL20.glGetUniformLocation(programId, "DepthSampler");

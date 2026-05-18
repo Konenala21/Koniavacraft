@@ -296,9 +296,11 @@ void main() {
                         bestCol = sunColor(i);
                     }
 
-                    // k/dist² geometry glow on nearby blocks only
+                    // k/dist² geometry glow — only when orb is in front of geometry
+                    float tOrb = raySphere(startP, dir, sPos, 6.0);
+                    float occlude = (tOrb < 0.0 || tOrb < sceneD) ? 1.0 : 0.0;
                     float d2 = dot(endP - sPos, endP - sPos) + 0.08;
-                    addLight += sunColor(i) * (0.005 / d2) * orbFade * convFade;
+                    addLight += sunColor(i) * (0.005 / d2) * orbFade * convFade * occlude;
                 }
                 // Render closest hit sun as solid pixel
                 if (bestT < sceneD) {
@@ -328,7 +330,7 @@ void main() {
             float denom = dot(dir.xz, dir.xz);
             if (denom > 0.0001) {
                 float tCA  = -dot(startP.xz, dir.xz) / denom;
-                if (tCA > 0.0) {
+                if (tCA > 0.0 && tCA < sceneD) {
                     vec3  ca   = startP + dir * tCA;
                     float htCA = ca.y;
                     float dCA  = length(ca.xz);
