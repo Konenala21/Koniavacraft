@@ -396,6 +396,7 @@
   "jei.koniava.altar.catalyst": "Catalyst (place on altar center)",
   "jei.koniava.altar.mana": "Mana Cost: %s",
   "jei.koniava.altar.time": "Time: %ss",
+  "jei.koniava.altar.tier": "Requires Tier %s Ring",
   "//8": "=== MESSAGES ===",
   "message.koniava.nara.sync_error": "An error occurred while syncing Nara state: %s",
   "message.koniava.mana_added": "Added %s Mana. Current Mana: %s",

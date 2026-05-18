@@ -6,7 +6,17 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Altar upgrade rings now have a real mechanical effect: recipes can require a minimum ring tier to craft.
+- 祭壇升級環現在有實際作用：配方可設定最低升級環層數需求，未達標時無法啟動儀式。
+- JEI altar recipe panel now shows the required ring tier when a recipe needs one.
+- JEI 祭壇配方面板在配方有 tier 需求時會顯示「需要第 X 層升級環」。
+
 ### Developer Notes / 開發者備註
+
+- `AltarRecipe`: added `minTier` field (int, default 0). JSON field `min_tier` is optional for backward compatibility.
+- `AspectAltarBlockEntity.findMatchingRecipe()`: switched from `getRecipeFor()` to `getAllRecipesFor()` stream with tier filter (`h.value().getMinTier() <= upgradeTier`).
+- `AltarRecipeProvider.save()`: added overload accepting `minTier` parameter.
+- `AltarRecipeCategory`: HEIGHT increased to 82; draws tier requirement line when `minTier > 0`.
 
 ---
 

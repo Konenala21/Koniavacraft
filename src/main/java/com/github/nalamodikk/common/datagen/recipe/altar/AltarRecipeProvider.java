@@ -71,7 +71,13 @@ public class AltarRecipeProvider {
     private static void save(RecipeOutput output, String name,
                               Ingredient catalyst, List<Ingredient> ingredients,
                               ItemStack result, int manaCost, int processingTime) {
-        AltarRecipe recipe = new AltarRecipe(catalyst, ingredients, result, manaCost, processingTime);
+        save(output, name, catalyst, ingredients, result, manaCost, processingTime, 0);
+    }
+
+    private static void save(RecipeOutput output, String name,
+                              Ingredient catalyst, List<Ingredient> ingredients,
+                              ItemStack result, int manaCost, int processingTime, int minTier) {
+        AltarRecipe recipe = new AltarRecipe(catalyst, ingredients, result, manaCost, processingTime, minTier);
         output.accept(
                 ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "altar/" + name),
                 recipe, null

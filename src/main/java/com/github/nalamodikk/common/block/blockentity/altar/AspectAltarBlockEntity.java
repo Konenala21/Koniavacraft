@@ -487,7 +487,11 @@ public static final List<Vec3i> RING_T1 = List.of(
                 .map(AspectPedestalBlockEntity::getHeldItem)
                 .toList();
         AltarRecipe.AltarInput input = new AltarRecipe.AltarInput(catalyst, ingredients);
-        return level.getRecipeManager().getRecipeFor(ModRecipes.ALTAR_TYPE.get(), input, level);
+        return level.getRecipeManager()
+                .getAllRecipesFor(ModRecipes.ALTAR_TYPE.get())
+                .stream()
+                .filter(h -> h.value().matches(input, level) && h.value().getMinTier() <= upgradeTier)
+                .findFirst();
     }
 
     // ── 結構生命週期 ──────────────────────────────────────────────────────────

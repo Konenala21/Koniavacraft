@@ -18,6 +18,7 @@ public class ClientForgeEvents {
         event.getDispatcher().register(
             Commands.literal("koniava")
                 .then(Commands.literal("ui_test")
+                .requires(source -> source.hasPermission(2))
                 .executes(context -> {
                     // 打開測試介面
                     // 必須在主執行緒執行

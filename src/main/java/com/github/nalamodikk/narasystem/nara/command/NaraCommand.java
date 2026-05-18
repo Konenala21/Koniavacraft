@@ -15,6 +15,7 @@ public class NaraCommand {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("koniava")
                 .then(Commands.literal("nara")
+                        .requires(source -> source.hasPermission(2))
                         .then(Commands.literal("replay")
                                 .executes(ctx -> {
                                     if (!(ctx.getSource().getEntity() instanceof ServerPlayer player)) {

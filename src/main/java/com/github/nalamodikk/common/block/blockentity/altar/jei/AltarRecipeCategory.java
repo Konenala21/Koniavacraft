@@ -49,7 +49,7 @@ public class AltarRecipeCategory implements IRecipeCategory<AltarRecipe> {
     private static final int OUT_Y    = CAT_Y;
     private static final int TEXT_Y   = 60;
     private static final int WIDTH    = OUT_X + 16 + 6;   // 110
-    private static final int HEIGHT   = 74;
+    private static final int HEIGHT   = 82;
 
     private final IGuiHelper guiHelper;
     private final IDrawable icon;
@@ -117,5 +117,10 @@ public class AltarRecipeCategory implements IRecipeCategory<AltarRecipe> {
         gfx.drawString(font,
                 Component.translatable("jei.koniava.altar.time", Math.round(recipe.getProcessingTime() / 20f)),
                 1, TEXT_Y + 9, 0x555555, false);
+        if (recipe.getMinTier() > 0) {
+            gfx.drawString(font,
+                    Component.translatable("jei.koniava.altar.tier", recipe.getMinTier()),
+                    1, TEXT_Y + 18, 0xAA6600, false);
+        }
     }
 }

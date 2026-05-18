@@ -396,6 +396,7 @@
   "jei.koniava.altar.catalyst": "催化物（放置於祭壇核心底座）",
   "jei.koniava.altar.mana": "魔力消耗：%s",
   "jei.koniava.altar.time": "時間：%s 秒",
+  "jei.koniava.altar.tier": "需要第 %s 層升級環",
   "//8": "=== 訊息 ===",
   "message.koniava.nara.sync_error": "同步娜拉狀態時發生錯誤：%s",
   "message.koniava.mana_added": "增加了 %s 魔力。當前魔力：%s",

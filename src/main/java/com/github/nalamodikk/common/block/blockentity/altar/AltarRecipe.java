@@ -23,14 +23,21 @@ public class AltarRecipe implements Recipe<AltarRecipe.AltarInput> {
     private final ItemStack result;
     private final int manaCost;
     private final int processingTime;
+    private final int minTier;
 
     public AltarRecipe(Ingredient catalyst, List<Ingredient> ingredients,
                        ItemStack result, int manaCost, int processingTime) {
+        this(catalyst, ingredients, result, manaCost, processingTime, 0);
+    }
+
+    public AltarRecipe(Ingredient catalyst, List<Ingredient> ingredients,
+                       ItemStack result, int manaCost, int processingTime, int minTier) {
         this.catalyst = catalyst;
         this.ingredients = ingredients;
         this.result = result;
         this.manaCost = manaCost;
         this.processingTime = processingTime;
+        this.minTier = minTier;
     }
 
     // ── 配方匹配 ─────────────────────────────────────────────────────────────
@@ -79,6 +86,7 @@ public class AltarRecipe implements Recipe<AltarRecipe.AltarInput> {
     public ItemStack getResult() { return result; }
     public int getManaCost() { return manaCost; }
     public int getProcessingTime() { return processingTime; }
+    public int getMinTier() { return minTier; }
 
     @Override
     public NonNullList<Ingredient> getIngredients() {
@@ -123,7 +131,8 @@ public class AltarRecipe implements Recipe<AltarRecipe.AltarInput> {
                 Ingredient.CODEC.listOf().fieldOf("ingredients").forGetter(AltarRecipe::getIngredientList),
                 ItemStack.CODEC.fieldOf("result").forGetter(AltarRecipe::getResult),
                 Codec.INT.fieldOf("mana_cost").forGetter(AltarRecipe::getManaCost),
-                Codec.INT.fieldOf("processing_time").forGetter(AltarRecipe::getProcessingTime)
+                Codec.INT.fieldOf("processing_time").forGetter(AltarRecipe::getProcessingTime),
+                Codec.INT.optionalFieldOf("min_tier", 0).forGetter(AltarRecipe::getMinTier)
         ).apply(inst, AltarRecipe::new));
 
         public static final StreamCodec<RegistryFriendlyByteBuf, AltarRecipe> STREAM_CODEC =
@@ -133,6 +142,7 @@ public class AltarRecipe implements Recipe<AltarRecipe.AltarInput> {
                         ItemStack.STREAM_CODEC, AltarRecipe::getResult,
                         ByteBufCodecs.INT, AltarRecipe::getManaCost,
                         ByteBufCodecs.INT, AltarRecipe::getProcessingTime,
+                        ByteBufCodecs.INT, AltarRecipe::getMinTier,
                         AltarRecipe::new
                 );
 
