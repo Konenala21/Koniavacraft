@@ -410,11 +410,6 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock imple
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
 
-        if (itemHandler != null) {
-            CompoundTag itemsTag = itemHandler.serializeNBT(registries);
-            tag.put("Items", itemsTag);
-        }
-
         tag.put("DirectionConfig", serializeIOMap());
         tag.putInt("ManaSpent", manaSpent);
         tag.put("UpgradeInventory", upgradeInventory.serializeNBT(registries));
@@ -423,11 +418,6 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock imple
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-
-        if (tag.contains("Items") && itemHandler != null) {
-            CompoundTag itemsTag = tag.getCompound("Items");
-            itemHandler.deserializeNBT(registries, itemsTag);
-        }
 
         if (tag.contains("DirectionConfig")) {
             deserializeIOMap(tag.getCompound("DirectionConfig"));

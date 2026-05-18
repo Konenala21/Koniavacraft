@@ -372,12 +372,12 @@ public abstract class AbstractManaMachineEntityBlock extends BlockEntity impleme
         }
 
         // 📊 載入進度和基本狀態
-        progress = tag.getInt("Progress");
-        maxProgress = tag.getInt("MaxProgress");
-        tickCounter = tag.getInt("TickCounter");
-        manaPerCycle = tag.getInt("ManaPerCycle");
-        energyPerTick = tag.getInt("EnergyPerTick");
-        intervalTick = tag.getInt("IntervalTick");
+        if (tag.contains("Progress"))     progress     = tag.getInt("Progress");
+        if (tag.contains("MaxProgress"))  maxProgress  = tag.getInt("MaxProgress");
+        if (tag.contains("TickCounter"))  tickCounter  = tag.getInt("TickCounter");
+        if (tag.contains("ManaPerCycle")) manaPerCycle = tag.getInt("ManaPerCycle");
+        if (tag.contains("EnergyPerTick")) energyPerTick = tag.getInt("EnergyPerTick");
+        if (tag.contains("IntervalTick")) intervalTick = tag.getInt("IntervalTick");
         if (tag.hasUUID("Owner")) {
             ownerId = tag.getUUID("Owner");
         }
