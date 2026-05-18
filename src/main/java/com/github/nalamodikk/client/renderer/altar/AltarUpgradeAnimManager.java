@@ -55,6 +55,15 @@ public class AltarUpgradeAnimManager {
         return null;
     }
 
+    // Returns active T1-T3 entries for the shockwave shader renderer
+    public static java.util.List<java.util.Map.Entry<BlockPos, AnimState>> getActiveLowTierEntries() {
+        java.util.List<java.util.Map.Entry<BlockPos, AnimState>> list = new java.util.ArrayList<>();
+        for (java.util.Map.Entry<BlockPos, AnimState> e : ACTIVE.entrySet()) {
+            if (e.getValue().tier() <= 3 && !e.getValue().isDone()) list.add(e);
+        }
+        return list;
+    }
+
     public static void clientTick() {
         Minecraft mc = Minecraft.getInstance();
         Iterator<Map.Entry<BlockPos, AnimState>> it = ACTIVE.entrySet().iterator();
