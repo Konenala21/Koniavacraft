@@ -25,6 +25,13 @@ public class OrbitalTestShaderRenderer {
     private static final String COMMON    = "shaders/orbital/common.glsl";
     private static final String SW_EXP    = "shaders/orbital/fx_shockwave_expand.glsl";
     private static final String SW_COL    = "shaders/orbital/fx_shockwave_collapse.glsl";
+    // visual fx
+    private static final String FX_TWIST  = "shaders/orbital/fx_ground_twist.glsl";
+    private static final String FX_RING   = "shaders/orbital/fx_ring_box.glsl";
+    private static final String FX_FADE   = "shaders/orbital/fx_fade_black.glsl";
+    private static final String FX_SURF   = "shaders/orbital/fx_surface_color.glsl";
+    // stages
+    private static final String ST_CHG    = "shaders/orbital/stage_charge.fsh";
     private static final String ST_BODY   = "shaders/orbital/stage_body.fsh";
     private static final String ST_COLL   = "shaders/orbital/stage_collapse.fsh";
     // sdf parts
@@ -40,14 +47,14 @@ public class OrbitalTestShaderRenderer {
 
     public enum Mode {
         // ── charge（無需 SDF）─────────────────────────────────────────────────
-        ORBITAL_CHARGE        (new String[]{COMMON, "shaders/orbital/stage_charge.fsh"},             2f),
+        ORBITAL_CHARGE        (new String[]{COMMON, FX_TWIST, FX_RING, FX_FADE, ST_CHG},            2f),
         // ── 球系列 ────────────────────────────────────────────────────────────
-        ORBITAL_SPHERE        (new String[]{COMMON, P_SPHERE,                   C_SPHERE, SW_EXP, ST_BODY}, 16f),
-        ORBITAL_SPHERE_SATS   (new String[]{COMMON, P_SPHERE, P_SATS,           C_SATS,   SW_EXP, ST_BODY}, 16f),
-        ORBITAL_SPHERE_BEAMS  (new String[]{COMMON, P_SPHERE,         P_BEAMS,  C_BEAMS,  SW_EXP, ST_BODY}, 16f),
-        ORBITAL_FULL          (new String[]{COMMON, P_SPHERE, P_SATS, P_BEAMS,  C_FULL,   SW_EXP, ST_BODY}, 16f),
+        ORBITAL_SPHERE        (new String[]{COMMON, P_SPHERE,                   C_SPHERE, SW_EXP, FX_SURF, ST_BODY}, 16f),
+        ORBITAL_SPHERE_SATS   (new String[]{COMMON, P_SPHERE, P_SATS,           C_SATS,   SW_EXP, FX_SURF, ST_BODY}, 16f),
+        ORBITAL_SPHERE_BEAMS  (new String[]{COMMON, P_SPHERE,         P_BEAMS,  C_BEAMS,  SW_EXP, FX_SURF, ST_BODY}, 16f),
+        ORBITAL_FULL          (new String[]{COMMON, P_SPHERE, P_SATS, P_BEAMS,  C_FULL,   SW_EXP, FX_SURF, ST_BODY}, 16f),
         // ── 崩解 ──────────────────────────────────────────────────────────────
-        ORBITAL_COLLAPSE      (new String[]{COMMON,                              C_COLL,   SW_COL, ST_COLL},  8f),
+        ORBITAL_COLLAPSE      (new String[]{COMMON,                              C_COLL,   SW_COL, FX_SURF, ST_COLL},  8f),
         // ── 完整原版（monolithic）────────────────────────────────────────────
         ORBITAL               (new String[]{"shaders/orbital_test.fsh"},                            36f),
         // 其他測試 shader
