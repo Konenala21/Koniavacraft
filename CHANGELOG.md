@@ -6,6 +6,15 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Fixed a bug where a fully upgraded Mana Infuser with max efficiency upgrades could craft items for free instead of consuming mana.
+- 修正 Mana Infuser 在效率升級滿級時可免費製作物品的漏洞，現在至少消耗 1 點魔力。
+- Fixed a bug where fuel items without an explicit generation interval in the data pack would generate mana every single tick instead of at the correct rate.
+- 修正燃料資料包未設定生成間隔時每 tick 都產出魔力的漏洞，現在最短間隔為 1 tick。
+- Altar upgrade tier is now saved when the altar core is broken and silently restored when rebuilt at the same position, provided the resonance rings are still in place.
+- 祭壇核心被拆除時現在會記錄升級層數，在相同位置重建核心且共鳴環仍在位時靜默還原，無需重新播放升級動畫。
+- Fixed several cases where corrupt or missing NBT data could crash the game when loading a world or opening a machine's interface.
+- 修正多處損壞或缺失 NBT 資料可能導致載入世界或開啟機器介面時 crash 的問題。
+
 - T4 and T5 altar upgrades now feature a full second-stage animation: ground shockwaves with spatial twist, screen fade to black with inward collapse wave, an expanding orbital sphere, four corner pillars plus a center pillar shooting skyward, four large suns rising from each pillar (each splitting into 4 small suns for 16 total), the 16 small suns orbiting and descending into a ring formation, then rapidly contracting as a massive skyward pillar engulfs the structure. A chime and the "The Grand Finale Begins!" challenge advancement appear at the end.
 - T4 和 T5 祭壇升級現在有完整的第二階段動畫：地面衝擊波伴隨空間扭曲、黑幕淡入淡出附帶往內聚集波、膨脹球體 shader、四根角落柱子與中心核心各射出光柱、每根柱子冉冉升起一顆大太陽（各分裂出 4 顆小太陽共 16 顆）、16 顆小太陽旋轉降落並排成環狀陣形後急速收縮，同時一根巨大沖天柱包覆整個環狀結構，最終以叮聲和「好戲開場！」挑戰成就作結。
 
@@ -20,6 +29,20 @@ All notable changes to this project will be documented in this file.
 - JEI 祭壇配方面板在配方有 tier 需求時會顯示「需要第 X 層升級環」。
 
 ### Developer Notes / 開發者備註
+
+- `ManaInfuserBlockEntity`: `canGenerate()` and `completeInfusion()` now use `Math.max(1, manaCost / getEfficiencyMultiplier())` to prevent integer division yielding 0 and granting free crafts.
+- `ManaGenFuelRateLoader`: `DEFAULT_INTERVAL` changed from 0 to 1; `getIntervalTick()` returns `Math.max(1, intervalTick)` to prevent per-tick over-production; `warnedAlready` is now cleared on each data-pack reload.
+- `AltarTierSavedData`: added `peekTier()` / `clearTier()` pair; `onRemove()` in `AspectAltarBlock` saves tier on core removal; `refreshUpgradeTier()` silently restores the tier without triggering an animation packet, then returns early so the normal upgrade path handles any extra rings on the next interval.
+- Fixed multiple `ResourceLocation.parse()` calls in NBT load paths that could throw `ResourceLocationException` on corrupt saves; all changed to `tryParse()` with null-skip. Affected: `WorldAspectSavedData`, `ResearchAspectPlacePacket`, `ResearchTableBlockEntity`, `ResearchScreen`, `ResearchAspectPlacePacket`.
+- `AbstractManaMachineEntityBlock.loadAdditional`: wrapped all `tag.getInt()` calls with `tag.contains()` guards so fields absent from older saves are not silently reset to zero.
+- `ModNeoNalaEnergyStorage.deserializeNBT`: wrapped `new BigDecimal(tag.getString(...))` in `tag.contains` + try/catch to prevent `NumberFormatException` crash on corrupt saves.
+- All server-side static Maps/Sets now cleared in `NaraServerEvents.onServerStopping`: `NaraServerEvents` (6 collections), `PlayerItemProtectionEvents.SOULBOUND_STORAGE`, `ArcaneConduitBlockEntity` caches, `ArcaneConduitBlock.playerBuildingHistory`, `ResearchGate.tickCache`.
+- All client-side static state now cleared in `ClientTickHandler.onClientLogOut`: `NaraTutorialFlow`, `NaraFirstLoginFlow.ignoreCount`, `AltarUpgradeAnimManager`, `AltarCameraController`, `ManaStrikeShaderRenderer`, `OrbitalTestShaderRenderer`, `ClientResearchCache`.
+- Added `initFailed` flag to `ManaStrikeShaderRenderer` (and altar renderers previously) so a failed shader load does not retry every frame; also moved VAO/VBO creation inside the try/catch block for all 5 altar renderers and ManaStrikeShaderRenderer.
+- `NaraSyncPacket`: removed bogus `registerToServer()` method that re-registered the packet as `playToClient` with an empty handler, which caused duplicate-type registration on dedicated servers.
+- `ResearchGate.hasCompleted()`: added per-server-tick result cache (`tickCache`) so 20+ machines calling `canOperate` in the same tick share a single `SavedData` lookup.
+- `ManaCraftingTableBlockEntity.setChanged()` override that called `sendBlockUpdated` on every tick has been removed.
+- `AspectAltarBlockEntity`: removed `syncToClient()` from the `completionAnimTick` countdown and throttled `tickRitual()` sync to every 10 ticks.
 
 - `AltarFadeRenderer`: new `@EventBusSubscriber` class (client-only). Hooks `RenderLevelStageEvent.AFTER_LEVEL` to render a full-screen black overlay using `altar_fade.vsh/fsh` and `AltarUpgradeAnimManager.getScreenFadeAlpha()`. Handles T4+ screen blackout (60-270t).
 - `AltarUpgradeAnimManager`: added `getScreenFadeAlpha()` returning 0-1 for T4+ tiers; added orbital shader trigger at tick 150 (ORBITAL_SPHERE_SATS mode); added `OrbitalTestShaderRenderer` and `Vec3` imports.

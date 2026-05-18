@@ -27,7 +27,7 @@ public final class ResearchGate {
     private static long   cacheTickStamp = -1L;
     private static final Map<String, Boolean> tickCache = new HashMap<>();
 
-    static void clearCache() {
+    public static void clearCache() {
         cacheTickStamp = -1L;
         tickCache.clear();
     }
