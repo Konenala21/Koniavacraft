@@ -200,6 +200,54 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
         if (compTick > 0) {
             renderCompletionShow(altar, poseStack, bufferSource, compTick, altar.getCompletionDuration(), time, tier);
         }
+
+        AltarUpgradeAnimManager.AnimState upgradeState = AltarUpgradeAnimManager.getState(altar.getBlockPos());
+        if (upgradeState != null && !upgradeState.isDone()) {
+            renderUpgradeAnimation(upgradeState, poseStack, bufferSource, partialTick);
+        }
+    }
+
+    // ── 升級動畫 ──────────────────────────────────────────────────────────────────
+
+    private void renderUpgradeAnimation(AltarUpgradeAnimManager.AnimState state,
+                                         PoseStack ps, MultiBufferSource mbs, float partialTick) {
+        float tick = state.tick() + partialTick;
+        if (state.tier() <= 3) {
+            renderT1T3Upgrade(ps, mbs, tick);
+        }
+        // T4-T5 和 T6 在 Phase 3+ 實作
+    }
+
+    private void renderT1T3Upgrade(PoseStack ps, MultiBufferSource mbs, float tick) {
+        VertexConsumer vc = mbs.getBuffer(MIRenderTypes.solarGlow());
+
+        // 3 段地面環形衝擊波，各 26 ticks，間隔 26t 依序起始
+        for (int w = 0; w < 3; w++) {
+            float wAge = tick - w * 26f;
+            if (wAge <= 0f || wAge > 26f) continue;
+            float progress  = wAge / 26f;
+            float radius    = progress * 14f;
+            float alpha     = (float) Math.sin(progress * Math.PI);
+            float thickness = 0.20f + (1f - progress) * 0.30f;
+            int   iAlpha    = (int)(alpha * 190);
+
+            ps.pushPose();
+            ps.translate(0.5, -1.8, 0.5);
+            renderEnergyRing(ps, vc, radius,         thickness,         100, 180, 255, iAlpha);
+            renderEnergyRing(ps, vc, radius * 0.85f, thickness * 0.45f, 160, 220, 255, (int)(alpha * 110));
+            ps.popPose();
+        }
+
+        // 光柱（79-109t）突然出現，短暫停留，淡出
+        if (tick > 79f && tick < 109f) {
+            float pAge  = tick - 79f;
+            float pProg = pAge / 30f;
+            float pAlpha;
+            if (pProg < 0.15f)      pAlpha = pProg / 0.15f;
+            else if (pProg < 0.65f) pAlpha = 1.0f;
+            else                     pAlpha = 1.0f - (pProg - 0.65f) / 0.35f;
+            renderBluePillar(ps, mbs, 18f, pAlpha);
+        }
     }
 
     private void renderFormedCore(PoseStack poseStack, MultiBufferSource bufferSource,

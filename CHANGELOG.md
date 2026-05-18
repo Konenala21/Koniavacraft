@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Placing resonance rings on a T1-T3 altar now triggers an upgrade animation: three ground shockwave rings expand from the core, followed by a brief light pillar, ending with a chime sound.
+- 對 T1-T3 祭壇放置共鳴環現在會觸發升級動畫：三段地面衝擊波環從核心向外擴散，接著短暫光柱，以叮聲結束。
+
 - Advanced Arcane Conduit and Elite Arcane Conduit can no longer be crafted at a crafting table. They now require the Aspect Altar with Tier 1 and Tier 3 resonance rings respectively.
 - 進階奧術導管和精英奧術導管不再能在合成台製作，現在分別需要 T1 和 T3 升級環的祭壇才能完成儀式。
 - Altar upgrade rings now have a real mechanical effect: recipes can require a minimum ring tier to craft.

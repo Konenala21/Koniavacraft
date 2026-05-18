@@ -1,6 +1,9 @@
 package com.github.nalamodikk.client.renderer.altar;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -40,13 +43,33 @@ public class AltarUpgradeAnimManager {
     }
 
     public static void clientTick() {
+        Minecraft mc = Minecraft.getInstance();
         Iterator<Map.Entry<BlockPos, AnimState>> it = ACTIVE.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<BlockPos, AnimState> entry = it.next();
-            AnimState next = entry.getValue().advance();
+            AnimState current = entry.getValue();
+            // 叮 音效觸發
+            if (mc.level != null) {
+                float soundTick = getSoundTick(current.tier());
+                if (current.tick() < soundTick && current.tick() + 1f >= soundTick) {
+                    BlockPos p = entry.getKey();
+                    mc.level.playLocalSound(p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5,
+                            SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 1.0f, 1.2f, false);
+                }
+            }
+            AnimState next = current.advance();
             if (next.isDone()) it.remove();
             else entry.setValue(next);
         }
+    }
+
+    private static float getSoundTick(int tier) {
+        return switch (tier) {
+            case 1, 2, 3 -> 110f;
+            case 4, 5    -> 580f;
+            case 6       -> 1180f;
+            default      -> 110f;
+        };
     }
 
     public static void clear() { ACTIVE.clear(); }
