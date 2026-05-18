@@ -25,5 +25,5 @@ void main() {
     // 爆炸時從藍紫轉白
     vec3 shockwave_color = mix(mix(C_BLUE, C_PURPLE, 0.4), vec3(1.0), clamp(iTime / T_END - 1.0, 0.0, 1.0));
 
-    fragColor = vec4(mix(original * shockwave(end_point, localTime) * shockwave_color, col, threshold), 1.0);
+    fragColor = vec4(mix(original * shockwave(sDist(end_point, localTime), localTime) * shockwave_color, col, threshold), 1.0);
 }

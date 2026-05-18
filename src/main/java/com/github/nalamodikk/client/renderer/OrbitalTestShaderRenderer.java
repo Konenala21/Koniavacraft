@@ -22,15 +22,19 @@ import java.util.List;
 
 public class OrbitalTestShaderRenderer {
 
-    private static final String COMMON = "shaders/orbital/common.glsl";
+    private static final String COMMON   = "shaders/orbital/common.glsl";
+    private static final String SW_EXP   = "shaders/orbital/fx_shockwave_expand.glsl";
+    private static final String SW_COL   = "shaders/orbital/fx_shockwave_collapse.glsl";
+    private static final String ST_BODY  = "shaders/orbital/stage_body.fsh";
+    private static final String ST_COLL  = "shaders/orbital/stage_collapse.fsh";
 
     public enum Mode {
-        // 拆分後的 orbital 組合
-        ORBITAL_CHARGE   (new String[]{COMMON, "shaders/orbital/stage_charge.fsh"},                                         2f),
-        ORBITAL_SPHERE   (new String[]{COMMON, "shaders/orbital/sdf_sphere.glsl",    "shaders/orbital/stage_body.fsh"},    16f),
-        ORBITAL_SATS     (new String[]{COMMON, "shaders/orbital/sdf_satellites.glsl","shaders/orbital/stage_body.fsh"},    16f),
-        ORBITAL_FULL     (new String[]{COMMON, "shaders/orbital/sdf_full.glsl",      "shaders/orbital/stage_body.fsh"},    16f),
-        ORBITAL_COLLAPSE (new String[]{COMMON, "shaders/orbital/sdf_collapse.glsl",  "shaders/orbital/stage_collapse.fsh"}, 8f),
+        // 拆分後的 orbital 組合（sdf + shockwave + stage 三層）
+        ORBITAL_CHARGE   (new String[]{COMMON, "shaders/orbital/stage_charge.fsh"},                                              2f),
+        ORBITAL_SPHERE   (new String[]{COMMON, "shaders/orbital/sdf_sphere.glsl",     SW_EXP, ST_BODY},                        16f),
+        ORBITAL_SATS     (new String[]{COMMON, "shaders/orbital/sdf_satellites.glsl", SW_EXP, ST_BODY},                        16f),
+        ORBITAL_FULL     (new String[]{COMMON, "shaders/orbital/sdf_full.glsl",       SW_EXP, ST_BODY},                        16f),
+        ORBITAL_COLLAPSE (new String[]{COMMON, "shaders/orbital/sdf_collapse.glsl",   SW_COL, ST_COLL},                         8f),
         // 完整原版 orbital（含 charge + full + collapse）
         ORBITAL          (new String[]{"shaders/orbital_test.fsh"},                                                         36f),
         // 其他測試 shader

@@ -19,6 +19,6 @@ void main() {
     float threshold = step(sDist(hit_point, localTime), MIN_DIST * 2.0);
     threshold *= step(distance(start_point, hit_point), distance(start_point, end_point));
 
-    float shock = shockwave(end_point, localTime);
+    float shock = shockwave(sDist(end_point, localTime), localTime);
     fragColor = vec4(mix(original * shock * C_BLUE, col, threshold), 1.0);
 }

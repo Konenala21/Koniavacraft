@@ -16,12 +16,3 @@ vec2 raycast(vec3 point, vec3 dir, float localTime) {
     }
     return vec2(traveled, float(close_steps));
 }
-
-float shockwave(vec3 endPoint, float localTime) {
-    float dist         = sDist(endPoint, localTime);
-    float fade_factor  = clamp(5.0 / localTime - 0.25, 0.0, 1.0);
-    return fade_factor * (10.0 / pow(dist, 2.0)
-        + 20.0 / abs(dist - 50.0 * (localTime - 0.5)) - 0.3
-        + 5.0  / abs(dist - 25.0 * (localTime - 0.5)) - 0.2
-    ) + smoothstep(dist - 10.0, dist, 80.0 * (localTime - 2.5));
-}
