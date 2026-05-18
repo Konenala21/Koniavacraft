@@ -217,7 +217,11 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
         } else if (state.tier() <= 5) {
             renderT4T5Upgrade(ps, mbs, tick);
         } else if (state.tier() == 6) {
-            renderT6Upgrade(ps, mbs, tick);
+            if (tick < AltarUpgradeAnimManager.T6_PHASE_OFFSET) {
+                renderT4T5Upgrade(ps, mbs, tick);                          // T4-T5 前奏
+            } else {
+                renderT6Upgrade(ps, mbs, tick - AltarUpgradeAnimManager.T6_PHASE_OFFSET); // T6 高潮
+            }
         }
     }
 

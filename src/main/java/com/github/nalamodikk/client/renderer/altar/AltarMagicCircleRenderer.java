@@ -37,7 +37,11 @@ public class AltarMagicCircleRenderer {
         AltarUpgradeAnimManager.AnimState state = AltarUpgradeAnimManager.getActiveT6State();
         if (state == null) return;
 
-        float tick    = state.tick();
+        // Magic circle only renders in the T6 climax phase
+        float rawTick = state.tick();
+        if (rawTick < AltarUpgradeAnimManager.T6_PHASE_OFFSET) return;
+        float tick    = rawTick - AltarUpgradeAnimManager.T6_PHASE_OFFSET;
+
         float alpha   = getMagicCircleAlpha(tick);
         float scale   = getMagicCircleScale(tick);
         if (alpha <= 0.001f || scale <= 0.001f) return;

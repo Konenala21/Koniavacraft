@@ -30,7 +30,8 @@ public class AltarCameraController {
     public static boolean isCameraLocked() {
         AltarUpgradeAnimManager.AnimState s = AltarUpgradeAnimManager.getActiveT6State();
         if (s == null) return false;
-        float tick = s.tick();
+        // Camera effects only apply in the T6 climax phase (after T4-T5 prefix)
+        float tick = s.tick() - AltarUpgradeAnimManager.T6_PHASE_OFFSET;
         return tick >= LOCK_START && tick < RELEASE_END;
     }
 
@@ -39,15 +40,18 @@ public class AltarCameraController {
         AltarUpgradeAnimManager.AnimState state = AltarUpgradeAnimManager.getActiveT6State();
         boolean isActive = state != null && !state.isDone();
 
-        // Capture yaw the frame the animation becomes active
-        if (isActive && !wasT6Active) {
+        // Capture yaw when the T6 climax phase begins
+        float rawTick = isActive ? state.tick() + (float) event.getPartialTick() : 0f;
+        boolean inClimax = isActive && rawTick >= AltarUpgradeAnimManager.T6_PHASE_OFFSET;
+        if (inClimax && !wasT6Active) {
             capturedYaw = event.getYaw();
         }
-        wasT6Active = isActive;
+        wasT6Active = inClimax;
 
-        if (!isActive) return;
+        if (!inClimax) return;
 
-        float tick  = state.tick() + (float) event.getPartialTick();
+        // Shift tick so all curves start from 0 at the T6 climax begin
+        float tick  = rawTick - AltarUpgradeAnimManager.T6_PHASE_OFFSET;
         float blend = computePitchBlend(tick);
         float shake = computeShakeAmp(tick);
 
