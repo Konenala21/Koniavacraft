@@ -28,8 +28,7 @@ public record ResearchCompletePacket(ResourceLocation researchId, BlockPos table
 
     public static final StreamCodec<io.netty.buffer.ByteBuf, ResearchCompletePacket> STREAM_CODEC =
             StreamCodec.composite(
-                    net.minecraft.network.codec.ByteBufCodecs.STRING_UTF8.map(
-                            ResourceLocation::tryParse, ResourceLocation::toString),
+                    ResourceLocation.STREAM_CODEC,
                     ResearchCompletePacket::researchId,
                     BlockPos.STREAM_CODEC,
                     ResearchCompletePacket::tablePos,

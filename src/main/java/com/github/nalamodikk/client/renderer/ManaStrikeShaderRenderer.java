@@ -67,6 +67,7 @@ public class ManaStrikeShaderRenderer {
     private static int locTime,    locAlpha;
 
     private static boolean initialized = false;
+    private static boolean initFailed  = false;
 
     // ── Public API ────────────────────────────────────────────────────────────
 
@@ -91,8 +92,9 @@ public class ManaStrikeShaderRenderer {
         if (activeEffects.isEmpty()) return;
 
         if (!initialized) {
+            if (initFailed) { activeEffects.clear(); return; }
             init();
-            if (programId == -1) { activeEffects.clear(); return; }
+            if (programId == -1) { initFailed = true; activeEffects.clear(); return; }
         }
 
         var mainTarget = mc.getMainRenderTarget();
@@ -214,6 +216,7 @@ public class ManaStrikeShaderRenderer {
 
     /** Discard compiled shaders; next render call will re-compile from the new resource pack. */
     public static void reload() {
+        initFailed = false;
         release();
     }
 
@@ -237,23 +240,21 @@ public class ManaStrikeShaderRenderer {
             locTime     = GL20.glGetUniformLocation(programId, "iTime");
             locAlpha    = GL20.glGetUniformLocation(programId, "iAlpha");
             GL20.glUseProgram(0);
+            vaoId = GL30.glGenVertexArrays();
+            vboId = GL15.glGenBuffers();
+            GL30.glBindVertexArray(vaoId);
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
+            float[] quad = {-1f,-1f, 1f,-1f, 1f,1f, -1f,1f};
+            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, quad, GL15.GL_STATIC_DRAW);
+            GL20.glVertexAttribPointer(0, 2, GL11.GL_FLOAT, false, 0, 0);
+            GL20.glEnableVertexAttribArray(0);
+            GL30.glBindVertexArray(0);
+            initialized = true;
         } catch (Exception e) {
             KoniavacraftMod.LOGGER.error("[ManaStrike] Shader load failed", e);
-            programId = -1;
-            return;
+            if (programId != -1) { GL20.glDeleteProgram(programId); programId = -1; }
+            initFailed = true;
         }
-
-        vaoId = GL30.glGenVertexArrays();
-        vboId = GL15.glGenBuffers();
-        GL30.glBindVertexArray(vaoId);
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
-        float[] quad = {-1f,-1f, 1f,-1f, 1f,1f, -1f,1f};
-        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, quad, GL15.GL_STATIC_DRAW);
-        GL20.glVertexAttribPointer(0, 2, GL11.GL_FLOAT, false, 0, 0);
-        GL20.glEnableVertexAttribArray(0);
-        GL30.glBindVertexArray(0);
-
-        initialized = true;
     }
 
     public static void release() {

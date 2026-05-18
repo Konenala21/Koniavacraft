@@ -9,6 +9,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,6 +25,11 @@ import java.util.UUID;
 public class PlayerItemProtectionEvents {
 
     private static final Map<UUID, List<ItemStack>> SOULBOUND_STORAGE = new HashMap<>();
+
+    @SubscribeEvent
+    public static void onServerStopping(ServerStoppingEvent event) {
+        SOULBOUND_STORAGE.clear();
+    }
 
     @SubscribeEvent
     public static void onLivingDrops(LivingDropsEvent event) {

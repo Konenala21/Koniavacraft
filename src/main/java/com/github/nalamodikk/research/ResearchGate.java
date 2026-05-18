@@ -23,6 +23,10 @@ public final class ResearchGate {
 
     private static final Map<String, ResourceLocation> REQUIREMENTS = new HashMap<>();
 
+    // Per-tick cache: same player+research lookup is resolved only once per server tick.
+    private static long   cacheTickStamp = -1L;
+    private static final Map<String, Boolean> tickCache = new HashMap<>();
+
     static {
         require("mana_generator",      "mana_generation");
         require("mana_grinder",        "mana_crystallisation");
@@ -91,8 +95,16 @@ public final class ResearchGate {
     }
 
     private static boolean hasCompleted(ServerLevel serverLevel, UUID playerId, ResourceLocation required) {
-        ResearchSavedData data = ResearchSavedData.get(serverLevel);
-        return data.getOrCreate(playerId).hasCompleted(required);
+        long now = serverLevel.getServer().getTickCount();
+        if (now != cacheTickStamp) {
+            cacheTickStamp = now;
+            tickCache.clear();
+        }
+        String key = playerId + ":" + required;
+        return tickCache.computeIfAbsent(key, k -> {
+            ResearchSavedData data = ResearchSavedData.get(serverLevel);
+            return data.getOrCreate(playerId).hasCompleted(required);
+        });
     }
 
     private static void sendLockedMessage(ServerPlayer player, ResourceLocation required) {

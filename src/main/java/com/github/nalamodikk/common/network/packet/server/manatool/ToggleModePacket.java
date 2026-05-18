@@ -38,7 +38,7 @@ public record ToggleModePacket(BlockPos pos) implements CustomPacketPayload {
 
     public static void handle(ToggleModePacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            ServerPlayer player = (ServerPlayer) context.player();
+            if (!(context.player() instanceof ServerPlayer player)) return;
             Level level = player.level();
 
             if (!level.isLoaded(packet.pos())) return;

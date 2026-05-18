@@ -15,6 +15,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -37,6 +38,16 @@ public class NaraServerEvents {
     // Login restore delay: prevents tutorial firing within the first few seconds of login
     private static final Map<UUID, Integer> tutorialLoginDelay = new HashMap<>();
     private static final int LOGIN_TUTORIAL_DELAY = 60; // 3 seconds
+
+    @SubscribeEvent
+    public static void onServerStopping(ServerStoppingEvent event) {
+        pendingPunishmentDialogue.clear();
+        awaitingRespawn.clear();
+        naraPunishmentActive.clear();
+        pendingWardenDespawn.clear();
+        pendingResearchTableTutorial.clear();
+        tutorialLoginDelay.clear();
+    }
 
     public static void schedulePunishmentDialogue(UUID playerUUID, int delayTicks) {
         pendingPunishmentDialogue.put(playerUUID, delayTicks);

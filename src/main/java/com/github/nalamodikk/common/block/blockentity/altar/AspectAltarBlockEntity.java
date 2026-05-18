@@ -362,7 +362,6 @@ public static final List<Vec3i> RING_T1 = List.of(
 
         if (completionAnimTick > 0) {
             completionAnimTick--;
-            syncToClient();
         }
     }
 
@@ -375,8 +374,8 @@ public static final List<Vec3i> RING_T1 = List.of(
         if (level == null || ritualMaxTick <= 0) return;
         ritualTick++;
         progress = (float) ritualTick / ritualMaxTick;
-        if (ritualTick >= ritualMaxTick) completeRitual();
-        syncToClient();
+        if (ritualTick >= ritualMaxTick) { completeRitual(); return; }
+        if (ritualTick % 10 == 0) syncToClient();
     }
 
     private void completeRitual() {
