@@ -22,21 +22,34 @@ import java.util.List;
 
 public class OrbitalTestShaderRenderer {
 
-    private static final String COMMON   = "shaders/orbital/common.glsl";
-    private static final String SW_EXP   = "shaders/orbital/fx_shockwave_expand.glsl";
-    private static final String SW_COL   = "shaders/orbital/fx_shockwave_collapse.glsl";
-    private static final String ST_BODY  = "shaders/orbital/stage_body.fsh";
-    private static final String ST_COLL  = "shaders/orbital/stage_collapse.fsh";
+    private static final String COMMON    = "shaders/orbital/common.glsl";
+    private static final String SW_EXP    = "shaders/orbital/fx_shockwave_expand.glsl";
+    private static final String SW_COL    = "shaders/orbital/fx_shockwave_collapse.glsl";
+    private static final String ST_BODY   = "shaders/orbital/stage_body.fsh";
+    private static final String ST_COLL   = "shaders/orbital/stage_collapse.fsh";
+    // sdf parts
+    private static final String P_SPHERE  = "shaders/orbital/sdf_parts/sphere_core.glsl";
+    private static final String P_SATS    = "shaders/orbital/sdf_parts/satellites_only.glsl";
+    private static final String P_BEAMS   = "shaders/orbital/sdf_parts/beams_only.glsl";
+    // sdf combiners
+    private static final String C_SPHERE  = "shaders/orbital/sdf_combine/sphere.glsl";
+    private static final String C_SATS    = "shaders/orbital/sdf_combine/sphere_sats.glsl";
+    private static final String C_BEAMS   = "shaders/orbital/sdf_combine/sphere_beams.glsl";
+    private static final String C_FULL    = "shaders/orbital/sdf_combine/sphere_full.glsl";
+    private static final String C_COLL    = "shaders/orbital/sdf_combine/collapse.glsl";
 
     public enum Mode {
-        // 拆分後的 orbital 組合（sdf + shockwave + stage 三層）
-        ORBITAL_CHARGE   (new String[]{COMMON, "shaders/orbital/stage_charge.fsh"},                                              2f),
-        ORBITAL_SPHERE   (new String[]{COMMON, "shaders/orbital/sdf_sphere.glsl",     SW_EXP, ST_BODY},                        16f),
-        ORBITAL_SATS     (new String[]{COMMON, "shaders/orbital/sdf_satellites.glsl", SW_EXP, ST_BODY},                        16f),
-        ORBITAL_FULL     (new String[]{COMMON, "shaders/orbital/sdf_full.glsl",       SW_EXP, ST_BODY},                        16f),
-        ORBITAL_COLLAPSE (new String[]{COMMON, "shaders/orbital/sdf_collapse.glsl",   SW_COL, ST_COLL},                         8f),
-        // 完整原版 orbital（含 charge + full + collapse）
-        ORBITAL          (new String[]{"shaders/orbital_test.fsh"},                                                         36f),
+        // ── charge（無需 SDF）─────────────────────────────────────────────────
+        ORBITAL_CHARGE        (new String[]{COMMON, "shaders/orbital/stage_charge.fsh"},             2f),
+        // ── 球系列 ────────────────────────────────────────────────────────────
+        ORBITAL_SPHERE        (new String[]{COMMON, P_SPHERE,                   C_SPHERE, SW_EXP, ST_BODY}, 16f),
+        ORBITAL_SPHERE_SATS   (new String[]{COMMON, P_SPHERE, P_SATS,           C_SATS,   SW_EXP, ST_BODY}, 16f),
+        ORBITAL_SPHERE_BEAMS  (new String[]{COMMON, P_SPHERE,         P_BEAMS,  C_BEAMS,  SW_EXP, ST_BODY}, 16f),
+        ORBITAL_FULL          (new String[]{COMMON, P_SPHERE, P_SATS, P_BEAMS,  C_FULL,   SW_EXP, ST_BODY}, 16f),
+        // ── 崩解 ──────────────────────────────────────────────────────────────
+        ORBITAL_COLLAPSE      (new String[]{COMMON,                              C_COLL,   SW_COL, ST_COLL},  8f),
+        // ── 完整原版（monolithic）────────────────────────────────────────────
+        ORBITAL               (new String[]{"shaders/orbital_test.fsh"},                            36f),
         // 其他測試 shader
         SHIELD           (new String[]{"shaders/test_shield.fsh"},                    8f),
         TORUS            (new String[]{"shaders/test_torus.fsh"},                     8f),

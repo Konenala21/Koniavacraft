@@ -51,3 +51,21 @@ float computeScale(float localTime) {
     return 1.2 * (T_EXPANSION * 25.0 / (localTime + 0.7) / 32.0
         - 32.0 * (1.0 - pow(clamp(2.0 * localTime / T_EXPANSION - 1.0, 0.0, 10.0), 2.0))) + 2.4;
 }
+
+// 衛星與光柱共用的軌道座標計算：回傳旋轉後的 p1, p2 與當前 scale
+void computeOrbitalPoints(vec3 p, float localTime,
+                           out vec3 p1, out vec3 p2, out float scale) {
+    scale = computeScale(localTime);
+    float rotation = min(25.0 / (localTime - 25.0) + 1.5, 0.0);
+    p.xz = rotate2(p.xz, rotation);
+    const float num = 6.28318530718 / 8.0;
+    float offset = -pow((localTime - 6.5) / 1.4, 2.0) + 60.0;
+    float theta  = atan(p.z, p.x);
+    theta = floor(theta / num);
+    float c1 = num * (theta + 0.0);
+    p1 = mat3(cos(c1), 0.0, -sin(c1), 0.0, 1.0, 0.0, sin(c1), 0.0, cos(c1)) * p;
+    float c2 = num * (theta + 1.0);
+    p2 = mat3(cos(c2), 0.0, -sin(c2), 0.0, 1.0, 0.0, sin(c2), 0.0, cos(c2)) * p;
+    p1.x -= offset;
+    p2.x -= offset;
+}
