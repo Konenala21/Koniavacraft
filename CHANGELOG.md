@@ -16,6 +16,8 @@ All notable changes to this project will be documented in this file.
 
 - Fixed crash on the main menu introduced in 0.0.1.6-5.
 - 修正 0.0.1.6-5 引入的主選單 crash。
+- First Nara binding now announces to all players in chat, letting others know a new player has arrived.
+- 首次綁定娜拉現在會廣播到所有玩家的聊天室，讓老玩家知道有新人加入。
 
 ### Developer Notes / 開發者備註
 
