@@ -3,6 +3,7 @@ package com.github.nalamodikk.client.event;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.client.renderer.altar.AltarCameraController;
 import com.github.nalamodikk.client.renderer.altar.AltarUpgradeAnimManager;
+import com.github.nalamodikk.client.renderer.ManaStrikeShaderRenderer;
 import com.github.nalamodikk.narasystem.nara.hud.NaraFirstLoginFlow;
 import com.github.nalamodikk.narasystem.nara.hud.NaraTutorialFlow;
 import net.neoforged.api.distmarker.Dist;
@@ -25,5 +26,6 @@ public class ClientTickHandler {
         NaraFirstLoginFlow.resetIgnoreCount();
         AltarUpgradeAnimManager.clear();
         AltarCameraController.reset();
+        ManaStrikeShaderRenderer.release();
     }
 }

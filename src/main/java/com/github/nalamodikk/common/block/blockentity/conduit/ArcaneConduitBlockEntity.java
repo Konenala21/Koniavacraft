@@ -843,6 +843,7 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
 
             // 清理其他靜態數據
             conduitTickOffsets.clear();
+            globalTickOffset = 0;
 
             LOGGER.info("Graceful cleanup completed");
 

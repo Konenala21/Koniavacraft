@@ -42,7 +42,6 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock imple
     private static final int MAX_MANA_CAPACITY = 50000;
     private static final int MANA_TRANSFER_RATE = 200;
     private static final int INFUSION_TIME = 60;
-    private static final int MANA_PER_CYCLE = 0;
     private static final int INTERVAL_TICK = 5;
     private static final int STATE_SYNC_INTERVAL_TICKS = 100; // 5 秒（20 tick/s）
 
@@ -149,7 +148,7 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock imple
     @Override
     protected boolean canGenerate() {
         if (currentRecipe == null) return false;
-        if (manaStorage != null && manaStorage.getManaStored() < currentRecipe.getManaCost() / getEfficiencyMultiplier()) return false;
+        if (manaStorage != null && manaStorage.getManaStored() < Math.max(1, currentRecipe.getManaCost() / getEfficiencyMultiplier())) return false;
 
         ItemStack input = itemHandler != null ? itemHandler.getStackInSlot(INPUT_SLOT) : ItemStack.EMPTY;
         if (input.getCount() < currentRecipe.getInputCount()) return false;
@@ -208,7 +207,7 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock imple
 
     private void completeInfusion() {
         if (currentRecipe == null) return;
-        manaStorage.extractMana(currentRecipe.getManaCost() / getEfficiencyMultiplier(), ManaAction.EXECUTE);
+        manaStorage.extractMana(Math.max(1, currentRecipe.getManaCost() / getEfficiencyMultiplier()), ManaAction.EXECUTE);
         itemHandler.extractItem(INPUT_SLOT, currentRecipe.getInputCount(), false);
 
         ItemStack result = currentRecipe.getResult().copy();
@@ -373,7 +372,7 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock imple
         super.saveAdditional(tag, registries);
         CompoundTag ioTag = new CompoundTag();
         for (Direction dir : Direction.values()) {
-            ioTag.putString(dir.name(), directionConfig.get(dir).name());
+            ioTag.putString(dir.name(), directionConfig.getOrDefault(dir, IOHandlerUtils.IOType.BOTH).name());
         }
         tag.put("IOConfig", ioTag);
         tag.putBoolean("HasRecipe", currentRecipe != null);
