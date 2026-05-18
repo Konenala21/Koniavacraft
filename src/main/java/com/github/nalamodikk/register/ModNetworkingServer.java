@@ -4,7 +4,7 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.network.packet.server.manatool.*;
 import com.github.nalamodikk.narasystem.nara.network.client.NaraSystemIntroMessagePacket;
 import com.github.nalamodikk.narasystem.nara.network.client.OpenNaraInitScreenPacket;
-import com.github.nalamodikk.narasystem.nara.network.server.NaraSyncPacket;
+
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -20,7 +20,6 @@ public class ModNetworkingServer {
 
         ManaUpdatePacket.registerToServer(registrar);
         NaraSystemIntroMessagePacket.registerToServer(registrar);
-        NaraSyncPacket.registerToServer(registrar);
         OpenNaraInitScreenPacket.registerToServer(registrar);
 
     }

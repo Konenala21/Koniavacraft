@@ -29,12 +29,6 @@ public record NaraSyncPacket(boolean isBound) implements CustomPacketPayload {
     }
 
 
-    // ✅ 正確範本
-    public static void registerToServer(PayloadRegistrar registrar) {
-        registrar.playToClient(TYPE, STREAM_CODEC, (packet, context) -> {});
-    }
-
-
 
 
 }

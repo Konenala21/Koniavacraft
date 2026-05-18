@@ -444,7 +444,7 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock imple
     private CompoundTag serializeIOMap() {
         CompoundTag tag = new CompoundTag();
         for (Direction direction : Direction.values()) {
-            tag.putString(direction.getName(), directionConfig.get(direction).name());
+            tag.putString(direction.getName(), directionConfig.getOrDefault(direction, getDefaultIOType(direction)).name());
         }
         return tag;
     }

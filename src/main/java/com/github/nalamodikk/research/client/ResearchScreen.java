@@ -584,8 +584,6 @@ public class ResearchScreen extends Screen {
         return gridStartY + row * ROW_SPACING + (col % 2 == 1 ? ROW_SPACING / 2 : 0);
     }
 
-    private Aspect aspect(int paletteIndex) { return palette.get(paletteIndex); }
-
     /** Extract a normalised [0,1] colour channel from a packed RGB int. */
     private static float channel(int color, int shift) {
         return ((color >> shift) & 0xFF) / 255f;
