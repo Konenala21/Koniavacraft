@@ -2,6 +2,7 @@ package com.github.nalamodikk.common.datagen.recipe.altar;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.block.blockentity.altar.AltarRecipe;
+import com.github.nalamodikk.register.ModBlocks;
 import com.github.nalamodikk.register.ModItems;
 import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.resources.ResourceLocation;
@@ -15,6 +16,7 @@ public class AltarRecipeProvider {
 
     public static void generate(RecipeOutput output) {
         registerCircuitMaterials(output);
+        registerConduits(output);
         // 魔力水晶（催化：精煉魔力粉，底座：魔力碎片×4）
         save(output, "mana_crystal_ritual",
                 Ingredient.of(ModItems.REFINED_MANA_DUST.get()),
@@ -65,6 +67,42 @@ public class AltarRecipeProvider {
                 ),
                 new ItemStack(ModItems.MANA_WAFER.get(), 2),
                 5000, 100
+        );
+    }
+
+    private static void registerConduits(RecipeOutput output) {
+        // T1 進階導管 ×8（需要 1 層升級環）
+        save(output, "advanced_arcane_conduit",
+                Ingredient.of(ModItems.MANA_INGOT.get()),
+                List.of(
+                        Ingredient.of(ModBlocks.BASIC_ARCANE_CONDUIT.get()),
+                        Ingredient.of(ModBlocks.BASIC_ARCANE_CONDUIT.get()),
+                        Ingredient.of(ModBlocks.BASIC_ARCANE_CONDUIT.get()),
+                        Ingredient.of(ModBlocks.BASIC_ARCANE_CONDUIT.get()),
+                        Ingredient.of(ModItems.REFINED_MANA_DUST.get()),
+                        Ingredient.of(ModItems.REFINED_MANA_DUST.get()),
+                        Ingredient.of(Items.GOLD_INGOT),
+                        Ingredient.of(Items.GOLD_INGOT)
+                ),
+                new ItemStack(ModBlocks.ADVANCED_ARCANE_CONDUIT.get(), 8),
+                20000, 240, 1
+        );
+
+        // T3 精英導管 ×8（需要 3 層升級環）
+        save(output, "elite_arcane_conduit",
+                Ingredient.of(ModItems.MANA_CRYSTAL.get()),
+                List.of(
+                        Ingredient.of(ModBlocks.ADVANCED_ARCANE_CONDUIT.get()),
+                        Ingredient.of(ModBlocks.ADVANCED_ARCANE_CONDUIT.get()),
+                        Ingredient.of(ModBlocks.ADVANCED_ARCANE_CONDUIT.get()),
+                        Ingredient.of(ModBlocks.ADVANCED_ARCANE_CONDUIT.get()),
+                        Ingredient.of(Items.DIAMOND),
+                        Ingredient.of(Items.DIAMOND),
+                        Ingredient.of(Items.AMETHYST_SHARD),
+                        Ingredient.of(Items.AMETHYST_SHARD)
+                ),
+                new ItemStack(ModBlocks.ELITE_ARCANE_CONDUIT.get(), 8),
+                40000, 400, 3
         );
     }
 

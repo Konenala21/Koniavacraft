@@ -90,29 +90,7 @@ public class ModRecipeProvider extends RecipeProvider {
                 .unlockedBy("has_mana_dust", has(ModItems.MANA_DUST.get()))
                 .save(output, "basic_arcane_conduit");
 
-        // 🔗 進階奧術導管
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.ADVANCED_ARCANE_CONDUIT.get(), 8)
-                .pattern("RMR")
-                .pattern("CBC")
-                .pattern("RMR")
-                .define('R', ModItems.REFINED_MANA_DUST.get())
-                .define('M', ModItems.MANA_INGOT.get())
-                .define('C', ModBlocks.BASIC_ARCANE_CONDUIT.get())
-                .define('B', Items.GOLD_INGOT)
-                .unlockedBy("has_basic_arcane_conduit", has(ModBlocks.BASIC_ARCANE_CONDUIT.get()))
-                .save(output, "advanced_arcane_conduit");
-
-        // 🔗 精英奧術導管
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.ELITE_ARCANE_CONDUIT.get(), 8)
-                .pattern("RDR")
-                .pattern("CAC")
-                .pattern("RDR")
-                .define('R', ModItems.REFINED_MANA_DUST.get())
-                .define('D', Items.DIAMOND)
-                .define('C', ModBlocks.ADVANCED_ARCANE_CONDUIT.get())
-                .define('A', Items.AMETHYST_SHARD)
-                .unlockedBy("has_advanced_arcane_conduit", has(ModBlocks.ADVANCED_ARCANE_CONDUIT.get()))
-                .save(output, "elite_arcane_conduit");
+        // 進階/精英導管已移至祭壇配方（altar recipe），需要升級環 T1/T3
 
         // 🔥 魔力發電機
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.MANA_GENERATOR.get())
