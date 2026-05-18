@@ -155,7 +155,7 @@ public class ResearchTableBlockEntity extends BlockEntity {
         savedPlacements.clear();
         activeResearchId = null;
         if (tag.contains("ActiveResearch")) {
-            activeResearchId = ResourceLocation.parse(tag.getString("ActiveResearch"));
+            activeResearchId = ResourceLocation.tryParse(tag.getString("ActiveResearch"));
             if (tag.contains("Placements")) {
                 CompoundTag placements = tag.getCompound("Placements");
                 placements.getAllKeys().forEach(key -> savedPlacements.put(key, placements.getString(key)));

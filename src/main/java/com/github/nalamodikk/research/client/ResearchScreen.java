@@ -108,7 +108,9 @@ public class ResearchScreen extends Screen {
                     String[] parts = entry.getKey().split(",");
                     int q = Integer.parseInt(parts[0]);
                     int r = Integer.parseInt(parts[1]);
-                    Aspect aspect = ModAspects.get(ResourceLocation.parse(entry.getValue()));
+                    ResourceLocation aspectRl = ResourceLocation.tryParse(entry.getValue());
+                    if (aspectRl == null) continue;
+                    Aspect aspect = ModAspects.get(aspectRl);
                     HexCoord coord = new HexCoord(q, r);
                     GridCell cell  = grid.getCell(coord);
                     // Guard: only restore into cells that are still EMPTY (layout is deterministic

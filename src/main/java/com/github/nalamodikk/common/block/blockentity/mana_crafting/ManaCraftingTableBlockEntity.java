@@ -299,8 +299,6 @@ public class ManaCraftingTableBlockEntity extends BlockEntity implements MenuPro
     @Override
     public void setChanged() {
         super.setChanged();
-        if (level != null)
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
     }
     @Override
     public int getManaStored() {
