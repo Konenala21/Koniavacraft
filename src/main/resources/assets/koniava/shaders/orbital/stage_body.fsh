@@ -1,5 +1,5 @@
 // ── Stage Body：主體 raymarched（搭配任何 sdf_*.glsl）────────────────────
-// 依賴：sDist(vec3, float), raycast(vec3, vec3, float), shockwave(vec3, float)
+// 依賴：sDist(vec3, float), raycast(vec3, vec3, float), shockwave(float dist, float localTime)
 
 void main() {
     vec3  original    = texture(DiffuseSampler, texCoord).rgb;

@@ -1,5 +1,5 @@
 // ── Stage Collapse：崩解收尾（T_END 之後）───────────────────────────────────
-// 依賴：sDist(vec3, float), raycast(vec3, vec3, float), shockwave(vec3, float)
+// 依賴：sDist(vec3, float), raycast(vec3, vec3, float), shockwave(float dist, float localTime)
 
 void main() {
     vec3  original    = texture(DiffuseSampler, texCoord).rgb;
