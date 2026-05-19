@@ -22,11 +22,12 @@ public class NaraGuideScreen extends Screen {
 
     private static final ResourceLocation BACKGROUND =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID,
-                    "textures/gui/nara_watch/background.png");
+                    "textures/gui/nara_watch/background_2.png");
 
+    // Pixel positions measured from background_2.png (512x512 texture, panel 400x252)
     private static final int PANEL_W = 400, PANEL_H = 252;
-    private static final int CL_X = 18,  CL_Y = 13, CL_W = 82,  CL_H = 202;
-    private static final int CA_X = 108, CA_Y = 13, CA_W = 284, CA_H = 202;
+    private static final int CL_X = 8,  CL_Y = 10, CL_W = 70, CL_H = 208;
+    private static final int CA_X = 82, CA_Y = 10, CA_W = 314, CA_H = 208;
 
     // ── Guide content ─────────────────────────────────────────────────────────
     // [chapter][page] = { titleKey, bodyKey }
@@ -163,7 +164,7 @@ public class NaraGuideScreen extends Screen {
         if (activeChapter >= PAGES.length) return;
         int pageCount = PAGES[activeChapter].length;
 
-        int barY = panelY + PANEL_H - 30;
+        int barY = panelY + CL_Y + CL_H + 6;
         int cx   = panelX + PANEL_W / 2;
 
         // Page indicator
@@ -225,7 +226,7 @@ public class NaraGuideScreen extends Screen {
         }
 
         int pageCount = activeChapter < PAGES.length ? PAGES[activeChapter].length : 1;
-        int barY = panelY + PANEL_H - 30;
+        int barY = panelY + CL_Y + CL_H + 6;
 
         // Prev
         int prevX = panelX + CA_X;
