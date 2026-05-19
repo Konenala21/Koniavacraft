@@ -711,6 +711,17 @@
   "item.koniava.dev_render_test.tooltip.2": "Some effects are prototyped from orbital-railgun.",
   "item.koniava.dev_render_test_2": "Dev Render Test Item 2 (Fourier)",
 
+  "item.koniava.consensus_glasses": "Consensus Glasses",
+  "item.koniava.consensus_glasses.tooltip": "Right-click another player to merge both players' completed research.",
+  "item.koniava.consensus_glasses.synced_with": "Last synced: %s",
+  "item.koniava.consensus_glasses.sync_done": "Research consensus achieved with %s.",
+  "item.koniava.consensus_glasses.sync_received": "%s has achieved research consensus with you.",
+
+  "item.koniava.source_codex": "Source Codex",
+  "item.koniava.source_codex.tooltip.1": "Right-click: unlock all research and recipes.",
+  "item.koniava.source_codex.tooltip.2": "No crafting recipe exists for this item.",
+  "item.koniava.source_codex.activated": "Source Codex activated. All mana knowledge unlocked.",
+
   "advancement.koniava.craft_research_table.title": "First Steps in Research",
   "advancement.koniava.craft_research_table.description": "Built a Research Table. The foundation of mana knowledge.",
 
@@ -740,10 +751,10 @@
   "guide.koniava.mana.conduit.title": "Conduit Network",
   "guide.koniava.mana.conduit.body": "Conduits connect generators to machines; mana is pushed automatically upstream to downstream. Three tiers:\n\nBasic: 256 mana/tick\nAdvanced: 1024 mana/tick (altar crafted)\nElite: 4096 mana/tick (high-tier altar)\n\nConduits auto-connect when placed adjacent.",
   "guide.koniava.mana.machines.title": "Mana Machines",
-  "guide.koniava.mana.machines.body": "Machines available once connected to mana:\n\nMana Grinder: grinds raw materials into processed components\nMana Crafting Table: special crafting using mana\nMana Infuser: infuses items with mana to enhance them\nMana Deployer: automated operations with animation\n\nEach machine requires sufficient mana throughput to operate.",
+  "guide.koniava.mana.machines.body": "Machines available once connected to mana:\n\nMana Grinder: grinds raw materials into processed components\nMana Crafting Table: special crafting using mana\nMana Infuser: infuses items with mana to enhance them\nMana Deployer: automated operations with animation\n\nEach machine requires sufficient mana throughput to operate.\n\nNote: each machine's crafting recipe is locked until you complete the corresponding research tree node.",
 
   "guide.koniava.altar.overview.title": "Altar Overview",
-  "guide.koniava.altar.overview.body": "The altar is the core device for synthesizing high-tier items by consuming aspect points and materials. It is a multi-block structure of a core, pillars, pedestals, and resonance rings. Check JEI for the 3D multi-block preview.\n\nSix tiers (T1-T6): higher tiers unlock stronger crafts.",
+  "guide.koniava.altar.overview.body": "The altar is the core device for synthesizing high-tier items by consuming aspect points and materials. It is a multi-block structure of a core, pillars, pedestals, and resonance rings. Check JEI for the 3D multi-block preview.\n\nSix tiers (T1-T6): higher tiers unlock stronger crafts.\n\nResearch required: complete the corresponding research tree nodes to unlock altar material recipes for each tier.",
   "guide.koniava.altar.usage.title": "Using the Altar",
   "guide.koniava.altar.usage.body": "1. Build the multi-block structure as shown in JEI.\n2. Place the required materials on the surrounding AspectPedestals.\n3. Right-click the core block. The altar consumes aspect points and materials.\n4. The result item appears at the center.\n\nIf mana or materials are missing, the altar displays an error hint.",
   "guide.koniava.altar.upgrade.title": "Upgrading the Altar",

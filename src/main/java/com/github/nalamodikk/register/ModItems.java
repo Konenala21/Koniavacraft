@@ -7,8 +7,10 @@ import com.github.nalamodikk.common.item.research.AspectTokenItem;
 import com.github.nalamodikk.common.item.research.CompletedResearchItem;
 import com.github.nalamodikk.common.item.research.InkQuillItem;
 import com.github.nalamodikk.common.item.research.ResearchNoteItem;
+import com.github.nalamodikk.common.item.ConsensusGlassesItem;
 import com.github.nalamodikk.common.item.DevRenderTestItem;
 import com.github.nalamodikk.common.item.DevRenderTestItem2;
+import com.github.nalamodikk.common.item.SourceCodexItem;
 import com.github.nalamodikk.common.item.debug.ManaDebugToolItem;
 import com.github.nalamodikk.common.item.tool.AdvancedTechWandItem;
 import com.github.nalamodikk.common.item.tool.BasicTechWandItem;
@@ -85,6 +87,15 @@ public class ModItems {
 
     public static final DeferredItem<AspectTokenItem> ASPECT_TOKEN =
             ITEMS.register("aspect_token", () -> new AspectTokenItem(
+                    new Item.Properties().stacksTo(1)));
+
+    // 特殊物品
+    public static final DeferredItem<ConsensusGlassesItem> CONSENSUS_GLASSES =
+            ITEMS.register("consensus_glasses", () -> new ConsensusGlassesItem(
+                    new Item.Properties().stacksTo(1)));
+
+    public static final DeferredItem<SourceCodexItem> SOURCE_CODEX =
+            ITEMS.register("source_codex", () -> new SourceCodexItem(
                     new Item.Properties().stacksTo(1)));
 
     public static final DeferredItem<DevRenderTestItem> DEV_RENDER_TEST_1 =

@@ -711,6 +711,17 @@
   "item.koniava.dev_render_test.tooltip.2": "部分特效以 orbital-railgun 為原型設計",
   "item.koniava.dev_render_test_2": "開發渲染物品2（傅立葉曲線）",
 
+  "item.koniava.consensus_glasses": "共識眼鏡",
+  "item.koniava.consensus_glasses.tooltip": "右鍵對準另一位玩家：合併雙方所有研究進度。",
+  "item.koniava.consensus_glasses.synced_with": "上次同步：%s",
+  "item.koniava.consensus_glasses.sync_done": "已和 %s 完成研究共識。",
+  "item.koniava.consensus_glasses.sync_received": "%s 和你完成了研究共識。",
+
+  "item.koniava.source_codex": "源典",
+  "item.koniava.source_codex.tooltip.1": "右鍵使用：解鎖所有研究與配方。",
+  "item.koniava.source_codex.tooltip.2": "此物品不存在任何合成配方。",
+  "item.koniava.source_codex.activated": "源典已激活，所有本源知識已解鎖。",
+
   "advancement.koniava.craft_research_table.title": "研究起步",
   "advancement.koniava.craft_research_table.description": "合成了研究台，魔力知識體系的第一塊磚。",
 
@@ -740,10 +751,10 @@
   "guide.koniava.mana.conduit.title": "導管網路",
   "guide.koniava.mana.conduit.body": "導管連接生成器和機器，魔力自動從上游推送到下游。三種等級：\n\n基礎導管：256 魔力/tick\n進階導管：1024 魔力/tick（需祭壇合成）\n精英導管：4096 魔力/tick（需高階祭壇）\n\n導管靠近即自動連接。",
   "guide.koniava.mana.machines.title": "魔力機器",
-  "guide.koniava.mana.machines.body": "連接魔力後可使用的機器：\n\n魔力研磨機：研磨原材料獲得加工材料\n魔力合成台：消耗魔力進行特殊合成\n魔力注入機：將魔力注入物品強化性能\n魔力部署器：自動化操作（含動畫演出）\n\n各機器需要消耗足夠的導管魔力才能運作。",
+  "guide.koniava.mana.machines.body": "連接魔力後可使用的機器：\n\n魔力研磨機：研磨原材料獲得加工材料\n魔力合成台：消耗魔力進行特殊合成\n魔力注入機：將魔力注入物品強化性能\n魔力部署器：自動化操作（含動畫演出）\n\n各機器需要消耗足夠的導管魔力才能運作。\n\n注意：各機器的合成配方需要先完成對應的研究樹節點才能解鎖。",
 
   "guide.koniava.altar.overview.title": "祭壇系統概覽",
-  "guide.koniava.altar.overview.body": "祭壇是消耗本源點數和材料、合成高級物品的核心裝置。結構由核心、支柱、基座和升級環組成，可在 JEI 中查看 3D 多方塊結構預覽。\n\n共有 T1 至 T6 六個等級，更高 Tier 的祭壇可合成更強力的物品。",
+  "guide.koniava.altar.overview.body": "祭壇是消耗本源點數和材料、合成高級物品的核心裝置。結構由核心、支柱、基座和升級環組成，可在 JEI 中查看 3D 多方塊結構預覽。\n\n共有 T1 至 T6 六個等級，更高 Tier 的祭壇可合成更強力的物品。\n\n需要研究：完成研究樹中對應 Tier 的研究節點，才能取得祭壇材料的合成配方。",
   "guide.koniava.altar.usage.title": "如何使用祭壇",
   "guide.koniava.altar.usage.body": "1. 按照 JEI 中的多方塊結構建造祭壇。\n2. 把合成所需的材料分別放到周圍的基座（AspectPedestal）上。\n3. 右鍵核心方塊，祭壇會消耗指定的本源點數和材料。\n4. 完成後中央產出物品。\n\n魔力不足或材料不對時，祭壇會顯示錯誤提示。",
   "guide.koniava.altar.upgrade.title": "升級祭壇",
