@@ -47,8 +47,33 @@ public class AltarRecipe implements Recipe<AltarRecipe.AltarInput> {
         if (!catalyst.test(input.catalyst())) return false;
         List<ItemStack> nonEmpty = input.pedestalItems().stream()
                 .filter(s -> !s.isEmpty()).toList();
-        if (nonEmpty.size() != ingredients.size()) return false;
+        if (nonEmpty.size() < ingredients.size()) return false;
         return matchIngredients(ingredients, nonEmpty);
+    }
+
+    /**
+     * Returns original indices (into the given items list) that were matched to recipe ingredients.
+     * Items list may include empty stacks and extra items beyond what the recipe needs.
+     * Returns null if no match is found.
+     */
+    public int[] findMatchedIndices(List<ItemStack> items) {
+        List<Integer> nonEmptyOrig = new ArrayList<>();
+        List<ItemStack> nonEmpty = new ArrayList<>();
+        for (int i = 0; i < items.size(); i++) {
+            if (!items.get(i).isEmpty()) {
+                nonEmptyOrig.add(i);
+                nonEmpty.add(items.get(i));
+            }
+        }
+        if (nonEmpty.size() < ingredients.size()) return null;
+        boolean[] used = new boolean[nonEmpty.size()];
+        int[] matchedInNonEmpty = new int[ingredients.size()];
+        if (!matchWithIndices(ingredients, nonEmpty, used, matchedInNonEmpty, 0)) return null;
+        int[] result = new int[ingredients.size()];
+        for (int i = 0; i < matchedInNonEmpty.length; i++) {
+            result[i] = nonEmptyOrig.get(matchedInNonEmpty[i]);
+        }
+        return result;
     }
 
     /** 不限順序匹配底座物品 */
@@ -65,6 +90,21 @@ public class AltarRecipe implements Recipe<AltarRecipe.AltarInput> {
             if (!used[i] && ing.test(items.get(i))) {
                 used[i] = true;
                 if (matchRecursive(recipe, items, used, idx + 1)) return true;
+                used[i] = false;
+            }
+        }
+        return false;
+    }
+
+    private static boolean matchWithIndices(List<Ingredient> recipe, List<ItemStack> items,
+                                             boolean[] used, int[] matched, int idx) {
+        if (idx == recipe.size()) return true;
+        Ingredient ing = recipe.get(idx);
+        for (int i = 0; i < items.size(); i++) {
+            if (!used[i] && ing.test(items.get(i))) {
+                used[i] = true;
+                matched[idx] = i;
+                if (matchWithIndices(recipe, items, used, matched, idx + 1)) return true;
                 used[i] = false;
             }
         }
