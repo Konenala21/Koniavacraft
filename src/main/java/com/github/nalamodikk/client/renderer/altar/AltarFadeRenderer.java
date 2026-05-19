@@ -9,7 +9,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
@@ -22,7 +21,6 @@ public class AltarFadeRenderer {
 
     private static int programId = -1;
     private static int vaoId     = -1;
-    private static int vboId     = -1;
     private static int locColor;
     private static boolean initialized = false;
     private static boolean initFailed  = false;
@@ -51,7 +49,7 @@ public class AltarFadeRenderer {
         GL20.glUniform4f(locColor, 0f, 0f, 0f, alpha);
 
         GL30.glBindVertexArray(vaoId);
-        GL11.glDrawArrays(GL11.GL_TRIANGLE_FAN, 0, 4);
+        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, 3);
         GL30.glBindVertexArray(0);
 
         GL20.glUseProgram(prevProg);
@@ -84,15 +82,8 @@ public class AltarFadeRenderer {
             locColor = GL20.glGetUniformLocation(programId, "FadeColor");
             GL20.glUseProgram(0);
 
+            // Empty VAO — vertex positions generated in shader via gl_VertexID
             vaoId = GL30.glGenVertexArrays();
-            vboId = GL15.glGenBuffers();
-            GL30.glBindVertexArray(vaoId);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
-            float[] quad = {-1f,-1f, 1f,-1f, 1f,1f, -1f,1f};
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, quad, GL15.GL_STATIC_DRAW);
-            GL20.glVertexAttribPointer(0, 2, GL11.GL_FLOAT, false, 0, 0);
-            GL20.glEnableVertexAttribArray(0);
-            GL30.glBindVertexArray(0);
             initialized = true;
         } catch (Exception e) {
             KoniavacraftMod.LOGGER.error("[AltarFade] Init failed", e);
@@ -104,9 +95,8 @@ public class AltarFadeRenderer {
     public static void reload() { initFailed = false; release(); }
 
     public static void release() {
-        if (programId != -1) { GL20.glDeleteProgram(programId); programId = -1; }
-        if (vboId     != -1) { GL15.glDeleteBuffers(vboId);     vboId     = -1; }
-        if (vaoId     != -1) { GL30.glDeleteVertexArrays(vaoId); vaoId    = -1; }
+        if (programId != -1) { GL20.glDeleteProgram(programId);  programId = -1; }
+        if (vaoId     != -1) { GL30.glDeleteVertexArrays(vaoId); vaoId     = -1; }
         initialized = false;
     }
 

@@ -18,13 +18,13 @@ void main() {
     float sceneD = max(length(endP), 0.01);
     vec3  dir    = endP / sceneD;
 
-    // Only rays pointing upward reach the sky plane
-    if (dir.y <= 0.001) discard;
+    // Discard rays nearly parallel to the horizontal plane (div-by-near-zero guard)
+    if (abs(dir.y) <= 0.001) discard;
 
     // Intersect ray with horizontal disc plane at CircleWorldY
     float tP = (CircleWorldY - startP.y) / dir.y;
-    // Discard if behind camera or occluded by scene geometry (with 5% tolerance for depth precision)
-    if (tP <= 0.05 || tP >= sceneD * 1.05) discard;
+    // Discard only if behind camera — no geometry occlusion (magic effect, visible through blocks)
+    if (tP <= 0.05) discard;
 
     vec2  hitXZ   = (startP + dir * tP).xz;
     float normDist = length(hitXZ) / CircleWorldRadius;

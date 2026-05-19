@@ -55,6 +55,13 @@ All notable changes to this project will be documented in this file.
 - `AltarRecipeProvider.save()`: added overload accepting `minTier` parameter.
 - `AltarRecipeCategory`: HEIGHT increased to 82; draws tier requirement line when `minTier > 0`.
 
+- T6 altar upgrade animation camera controller reworked: pitch-only control (no yaw lock), smooth tilt to sky during climax, tracks magic circle descent to horizon, then stamps `setXRot(0)` at release so camera stays at horizon instead of snapping back to pre-animation view.
+- T4/T5/T6 screen fade base alpha raised from 0.25 to 0.9 so the world stays dark throughout the orb animation, not just during the initial flash peak.
+- T6 prefix (T4-T5 replay) no longer fades back to bright before the climax begins; the base darkness carries through seamlessly and the climax ramps from 0.9 to 0.94.
+- `AltarFadeRenderer`: replaced VBO quad with `gl_VertexID` fullscreen triangle in `altar_fade.vsh`, removing vertex attribute location ambiguity that prevented the black overlay from rendering.
+- Magic circle: rotation, descent, and radius shrink now all run simultaneously from 870t; rotation extends to 1020t for 3 full turns total.
+- Magic circle shader: removed upward-ray-only restriction and geometry depth occlusion so the disc is visible from above and when overlapping the altar structure.
+
 ---
 
 ## [0.0.1.6-6] - 2026-05-18

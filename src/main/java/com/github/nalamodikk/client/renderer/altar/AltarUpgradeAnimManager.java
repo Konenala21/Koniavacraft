@@ -133,10 +133,15 @@ public class AltarUpgradeAnimManager {
             if (s.tier() < 4) continue;
             float t = s.tick();
             if (s.tier() == 6) {
-                if (t < T6_PHASE_OFFSET) return calcT45FadeAlpha(t);
-                // T6 高潮（相對 T6_PHASE_OFFSET）：瞬間變黑、緩慢淡出
+                if (t < T6_PHASE_OFFSET) {
+                    // T6 prefix: same timing as standalone T4/T5, no fade-out before climax
+                    float peak = Math.min(smoothstep(60f, 155f, t), 1f - smoothstep(205f, 320f, t)) * 0.94f;
+                    float base = smoothstep(60f, 155f, t) * 0.9f;
+                    return Math.max(peak, base);
+                }
+                // T6 climax: starts at 0.25 (matching prefix base), ramps to 0.94, fades at 700-870t
                 float t6 = t - T6_PHASE_OFFSET;
-                float base6 = Math.min(smoothstep(0f, 22f, t6), 1f - smoothstep(200f, 340f, t6)) * 0.94f;
+                float base6 = (0.9f + 0.04f * smoothstep(0f, 22f, t6)) * (1f - smoothstep(700f, 870f, t6));
                 if (base6 > 0.001f) return base6;
                 continue;
             } else {
@@ -148,7 +153,9 @@ public class AltarUpgradeAnimManager {
     }
 
     private static float calcT45FadeAlpha(float t) {
-        return Math.min(smoothstep(60f, 155f, t), 1f - smoothstep(205f, 320f, t)) * 0.94f;
+        float peak = Math.min(smoothstep(60f, 155f, t), 1f - smoothstep(205f, 320f, t)) * 0.94f;
+        float base = smoothstep(60f, 155f, t) * (1f - smoothstep(550f, 600f, t)) * 0.9f;
+        return Math.max(peak, base);
     }
 
     public static float smoothstep(float edge0, float edge1, float x) {

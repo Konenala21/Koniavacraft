@@ -196,8 +196,9 @@ public class AltarMagicCircleRenderer {
 
     private static float getMagicCircleRotation(float tick) {
         if (tick < 700f) return 0f;
-        float t = Math.min(1f, (tick - 700f) / 260f);
-        return t * t * (float)(Math.PI * 4.0);
+        // Rotation spans 700-1020t: ease-in so it accelerates as it descends (3 full turns)
+        float t = Math.min(1f, (tick - 700f) / 320f);
+        return t * t * (float)(Math.PI * 6.0);
     }
 
     // World Y position above altar: stays at 45 until descent, then falls to 1
@@ -205,19 +206,19 @@ public class AltarMagicCircleRenderer {
         if (tick < 870f) return 45f;
         if (tick < 980f) {
             float t = (tick - 870f) / 110f;
-            return lerp(45f, 1f, t * t);  // ease-in: slow start, fast end to match angular acceleration
+            return lerp(45f, 1f, t * t);  // ease-in: slow start, fast end
         }
         return 1f;
     }
 
-    // World-space radius in blocks
+    // World-space radius in blocks: shrinks simultaneously with descent from 870t
     private static float getMagicCircleWorldRadius(float tick) {
         if (tick < 380f || tick > 1020f) return 0f;
-        if (tick < 700f)  return 0.68f * 22f;
-        if (tick < 870f)  return lerp(0.68f, 0.80f, (tick - 700f) / 170f) * 22f;
-        if (tick < 980f)  return 0.80f * 22f;  // full size during descent (870-980t)
-        if (tick < 1020f) return lerp(0.80f, 0.00f, AltarUpgradeAnimManager.smoothstep(980f, 1020f, tick)) * 22f;
-        return 0f;
+        if (tick < 700f) return 0.68f * 22f;
+        if (tick < 870f) return lerp(0.68f, 0.80f, (tick - 700f) / 170f) * 22f;
+        // From 870t: descent + shrink simultaneously (ease-in, full→0 over 150t)
+        float t = Math.min(1f, (tick - 870f) / 150f);
+        return lerp(0.80f, 0.00f, t * t) * 22f;
     }
 
     private static float lerp(float a, float b, float t) {
