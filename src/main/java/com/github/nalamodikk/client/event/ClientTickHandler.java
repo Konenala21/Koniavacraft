@@ -2,6 +2,7 @@ package com.github.nalamodikk.client.event;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.client.renderer.altar.AltarCameraController;
+import com.github.nalamodikk.client.renderer.altar.AltarFadeRenderer;
 import com.github.nalamodikk.client.renderer.altar.AltarUpgradeAnimManager;
 import com.github.nalamodikk.client.renderer.ManaStrikeShaderRenderer;
 import com.github.nalamodikk.client.renderer.OrbitalTestShaderRenderer;
@@ -30,6 +31,7 @@ public class ClientTickHandler {
         AltarCameraController.reset();
         ManaStrikeShaderRenderer.release();
         OrbitalTestShaderRenderer.release();
+        AltarFadeRenderer.release();
         ClientResearchCache.clear();
     }
 }

@@ -386,20 +386,19 @@ public static final List<Vec3i> RING_T1 = List.of(
 
         AltarRecipe recipe = holder.get().value();
         if (manaStorage.getManaStored() < recipe.getManaCost()) { cancelRitual(); return; }
-        manaStorage.extractMana(recipe.getManaCost(), ManaAction.EXECUTE);
 
-        // 消耗催化物
-        if (centerPedestal != null) centerPedestal.consumeItem();
-
-        // 只消耗配方實際匹配到的底座，多餘的保留
+        // Validate ingredient indices BEFORE consuming anything — defensive guard against
+        // findMatchedIndices diverging from the earlier matches() check
         List<AspectPedestalBlockEntity> nonCenter = activePedestals.stream()
                 .filter(p -> p != centerPedestal).toList();
         List<ItemStack> nonCenterItems = nonCenter.stream()
                 .map(AspectPedestalBlockEntity::getHeldItem).toList();
         int[] matched = recipe.findMatchedIndices(nonCenterItems);
-        if (matched != null) {
-            for (int idx : matched) nonCenter.get(idx).consumeItem();
-        }
+        if (matched == null) { cancelRitual(); return; }
+
+        manaStorage.extractMana(recipe.getManaCost(), ManaAction.EXECUTE);
+        if (centerPedestal != null) centerPedestal.consumeItem();
+        for (int idx : matched) nonCenter.get(idx).consumeItem();
 
         ItemStack result = recipe.getResult().copy();
 

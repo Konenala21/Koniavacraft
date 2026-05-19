@@ -43,7 +43,10 @@ public class AltarCameraController {
     @SubscribeEvent
     public static void onComputeCameraAngles(ViewportEvent.ComputeCameraAngles event) {
         AltarUpgradeAnimManager.AnimState state = AltarUpgradeAnimManager.getActiveT6State();
-        if (state == null || state.isDone()) return;
+        if (state == null || state.isDone()) {
+            pendingStamp = false;  // clear if animation ended or was interrupted
+            return;
+        }
 
         float rawTick = state.tick() + (float) event.getPartialTick();
         if (rawTick < AltarUpgradeAnimManager.T6_PHASE_OFFSET) return;
