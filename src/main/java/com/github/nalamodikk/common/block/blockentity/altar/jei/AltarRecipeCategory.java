@@ -35,21 +35,21 @@ public class AltarRecipeCategory implements IRecipeCategory<AltarRecipe> {
 
     // 環形佈局參數（像 TC4 聚合祭壇）
     // 催化物在圓心，材料繞一圈，箭頭往右，結果在右邊
-    private static final int CAT_CX   = 30;   // 圓心 X
-    private static final int CAT_CY   = 33;   // 圓心 Y
-    private static final int RING_R   = 22;   // 材料槽圓心到圓心距離（px）
+    private static final int CAT_CX   = 38;   // 圓心 X
+    private static final int CAT_CY   = 40;   // 圓心 Y
+    private static final int RING_R   = 30;   // 材料槽圓心到圓心距離（px）— 8 槽間距約 7.6px
     private static final int HALF     = 8;    // 16px slot 的一半
     private static final int CAT_X    = CAT_CX - HALF;  // 催化物槽左上 X
     private static final int CAT_Y    = CAT_CY - HALF;  // 催化物槽左上 Y
-    private static final int ARROW_X  = 64;
+    private static final int ARROW_X  = 82;
     private static final int ARROW_Y  = CAT_CY - 8;
     private static final int ARROW_W  = 22;
     private static final int ARROW_H  = 16;
     private static final int OUT_X    = ARROW_X + ARROW_W + 2;
     private static final int OUT_Y    = CAT_Y;
-    private static final int TEXT_Y   = 60;
-    private static final int WIDTH    = OUT_X + 16 + 6;   // 110
-    private static final int HEIGHT   = 82;
+    private static final int TEXT_Y   = 84;
+    private static final int WIDTH    = OUT_X + 16 + 6;   // 128
+    private static final int HEIGHT   = 116;
 
     private final IGuiHelper guiHelper;
     private final IDrawable icon;

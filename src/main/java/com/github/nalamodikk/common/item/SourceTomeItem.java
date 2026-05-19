@@ -1,5 +1,6 @@
 package com.github.nalamodikk.common.item;
 
+import com.github.nalamodikk.research.aspect.ModAspects;
 import com.github.nalamodikk.research.knowledge.ResearchSavedData;
 import com.github.nalamodikk.research.network.KnowledgeSyncPacket;
 import com.github.nalamodikk.research.template.ResearchRegistry;
@@ -45,6 +46,12 @@ public class SourceTomeItem extends Item {
                 knowledge.completeResearch(research.getId());
             }
             knowledge.setTier(MAX_TIER);
+
+            for (var aspect : ModAspects.all()) {
+                int current = knowledge.getAspectCount(aspect.getId());
+                if (current < 500) knowledge.setAspectAmount(aspect.getId(), 500);
+            }
+
             savedData.setDirty();
             KnowledgeSyncPacket.sendTo(sp);
 
@@ -60,7 +67,7 @@ public class SourceTomeItem extends Item {
             level.playSound(null, sp.blockPosition(),
                     SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0f, 0.8f);
             sp.sendSystemMessage(
-                    Component.translatable("item.koniava.source_codex.activated")
+                    Component.translatable("item.koniava.source_tome.activated")
                             .withStyle(ChatFormatting.GOLD));
         }
 
@@ -69,9 +76,9 @@ public class SourceTomeItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext ctx, List<Component> tips, TooltipFlag flag) {
-        tips.add(Component.translatable("item.koniava.source_codex.tooltip.1")
+        tips.add(Component.translatable("item.koniava.source_tome.tooltip.1")
                 .withStyle(ChatFormatting.GOLD));
-        tips.add(Component.translatable("item.koniava.source_codex.tooltip.2")
+        tips.add(Component.translatable("item.koniava.source_tome.tooltip.2")
                 .withStyle(ChatFormatting.DARK_GRAY));
     }
 }

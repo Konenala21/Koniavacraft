@@ -13,10 +13,10 @@ import java.util.List;
 /**
  * Holographic guide screen accessible from the NaraWatchScreen.
  *
- * Layout (reuses nara_watch background.png, 400x252):
- *   Chapter list:  x=18..99   (82px), y=13..215
- *   Content area:  x=108..399 (284px), y=13..215
- *   Bottom bar:    y=220..245  — prev/next page + page indicator
+ * Layout (background_2.png 512x512, panel 400x252):
+ *   Chapter list: x=18..79  (w=62), entries start at y=20
+ *   Content area: x=80..395 (w=316), y=8..217
+ *   Bottom bar:   y = CL_Y + CL_H + 6
  */
 public class NaraGuideScreen extends Screen {
 
@@ -24,11 +24,17 @@ public class NaraGuideScreen extends Screen {
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID,
                     "textures/gui/nara_watch/background_2.png");
 
-    // Pixel positions measured from background_2.png (512x512 texture, panel 400x252)
-    // Dark column: texture x=5..75 (w=70), y=8..218 (h=210)
+    // Panel / region constants (verified against texture pixels)
     private static final int PANEL_W = 400, PANEL_H = 252;
-    private static final int CL_X = 5,  CL_Y = 8, CL_W = 70, CL_H = 210;
-    private static final int CA_X = 79, CA_Y = 8, CA_W = 317, CA_H = 210;
+    private static final int CL_X = 18, CL_Y = 8,  CL_W = 62, CL_H = 210;
+    private static final int CA_X = 80, CA_Y = 8,  CA_W = 316, CA_H = 210;
+
+    // Chapter entries start below title area
+    private static final int CL_ENTRY_TOP = 12;
+
+    // Scrollbar strip on right side of content area
+    private static final int SCROLL_TRACK_W = 5;
+    private static final int SCROLL_PAD     = 6; // reserved width for scroll track
 
     // ── Guide content ─────────────────────────────────────────────────────────
     // [chapter][page] = { titleKey, bodyKey }
@@ -71,6 +77,8 @@ public class NaraGuideScreen extends Screen {
     private int panelX, panelY;
     private int activeChapter = 0;
     private int activePage    = 0;
+    private int scrollOffset  = 0;  // pixels scrolled in content area
+    private int totalContentH = 0;  // computed each frame
 
     public NaraGuideScreen(@Nullable Screen parent) {
         super(Component.translatable("gui.koniava.nara_guide.title"));
@@ -98,12 +106,11 @@ public class NaraGuideScreen extends Screen {
 
         g.blit(BACKGROUND, panelX, panelY, 0, 0, PANEL_W, PANEL_H, 512, 512);
 
-        // Title strip
         g.drawCenteredString(font, title,
-                panelX + CA_X + CA_W / 2, panelY + 5, 0x2233AA);
+                panelX + PANEL_W / 2, panelY + 5, 0x2233AA);
 
         renderChapterList(g, mouseX, mouseY);
-        renderContent(g);
+        renderContent(g, mouseX, mouseY);
         renderBottomBar(g, mouseX, mouseY);
     }
 
@@ -111,9 +118,10 @@ public class NaraGuideScreen extends Screen {
         int entryH = 20;
         g.enableScissor(panelX + CL_X, panelY + CL_Y,
                         panelX + CL_X + CL_W, panelY + CL_Y + CL_H);
+
         for (int i = 0; i < CHAPTER_KEYS.length; i++) {
             int ex = panelX + CL_X;
-            int ey = panelY + CL_Y + i * (entryH + 2);
+            int ey = panelY + CL_ENTRY_TOP + i * (entryH + 4);
             boolean active  = activeChapter == i;
             boolean hovered = !active && mouseX >= ex && mouseX < ex + CL_W
                            && mouseY >= ey && mouseY < ey + entryH;
@@ -129,26 +137,47 @@ public class NaraGuideScreen extends Screen {
             }
 
             Component label = Component.translatable(CHAPTER_KEYS[i]);
-            List<FormattedCharSequence> wrapped = font.split(label, CL_W - 4);
+            List<FormattedCharSequence> wrapped = font.split(label, CL_W - 6);
             int textY = ey + (entryH - wrapped.size() * 9) / 2;
             for (FormattedCharSequence line : wrapped) {
-                g.drawString(font, line, ex + 4, textY, col, false);
+                g.drawString(font, line, ex + 5, textY, col, false);
                 textY += 9;
             }
         }
+
         g.disableScissor();
     }
 
-    private void renderContent(GuiGraphics g) {
+    private void renderContent(GuiGraphics g, int mouseX, int mouseY) {
         if (activeChapter >= PAGES.length) return;
         String[] page = PAGES[activeChapter][activePage];
 
-        int x = panelX + CA_X + 6;
-        int y = panelY + CA_Y + 6;
-        int maxW = CA_W - 12;
+        int clipX1 = panelX + CA_X;
+        int clipY1 = panelY + CA_Y;
+        int clipX2 = clipX1 + CA_W;
+        int clipY2 = clipY1 + CA_H;
+
+        int x    = clipX1 + 6;
+        int maxW = CA_W - 12 - SCROLL_PAD;
+
+        // Pre-compute line lists so we know total height before rendering
+        Component titleComp = Component.translatable(page[0]);
+        Component bodyComp  = Component.translatable(page[1]);
+        List<FormattedCharSequence> bodyLines = font.split(bodyComp, maxW);
+
+        // title(9) + gap(4) + separator(1) + gap(5) = 19px header, then 10px per line
+        totalContentH = 19 + bodyLines.size() * 10 + 4;
+
+        int viewH   = CA_H - 4;
+        int maxScroll = Math.max(0, totalContentH - viewH);
+        scrollOffset  = Math.max(0, Math.min(scrollOffset, maxScroll));
+
+        // Clip to content area
+        g.enableScissor(clipX1, clipY1, clipX2, clipY2);
+
+        int y = clipY1 + 6 - scrollOffset;
 
         // Page title
-        Component titleComp = Component.translatable(page[0]);
         g.drawString(font, titleComp, x, y, 0x2233AA, false);
         y += 13;
 
@@ -156,11 +185,31 @@ public class NaraGuideScreen extends Screen {
         g.fill(x, y, x + maxW, y + 1, 0x44334466);
         y += 6;
 
-        // Body text
-        Component bodyComp = Component.translatable(page[1]);
-        for (FormattedCharSequence line : font.split(bodyComp, maxW)) {
+        // Body lines
+        for (FormattedCharSequence line : bodyLines) {
             g.drawString(font, line, x, y, 0x223355, false);
             y += 10;
+        }
+
+        g.disableScissor();
+
+        // Scrollbar (only when content overflows)
+        if (maxScroll > 0) {
+            int trackX = clipX2 - SCROLL_TRACK_W - 1;
+            int trackY1 = clipY1 + 3;
+            int trackY2 = clipY2 - 3;
+            int trackH  = trackY2 - trackY1;
+
+            // Track background
+            g.fill(trackX, trackY1, trackX + SCROLL_TRACK_W, trackY2, 0x22334477);
+
+            // Thumb
+            int thumbH = Math.max(12, trackH * viewH / totalContentH);
+            int thumbY = trackY1 + (trackH - thumbH) * scrollOffset / maxScroll;
+            boolean thumbHov = mouseX >= trackX && mouseX < trackX + SCROLL_TRACK_W
+                            && mouseY >= thumbY  && mouseY < thumbY + thumbH;
+            g.fill(trackX, thumbY, trackX + SCROLL_TRACK_W, thumbY + thumbH,
+                   thumbHov ? 0xCC4455AA : 0xAA334477);
         }
     }
 
@@ -171,30 +220,29 @@ public class NaraGuideScreen extends Screen {
         int barY = panelY + CL_Y + CL_H + 6;
         int cx   = panelX + PANEL_W / 2;
 
+        // Back button
+        int backX = panelX + CL_X;
+        boolean backHov = mouseX >= backX && mouseX < backX + CL_W
+                       && mouseY >= barY   && mouseY < barY + 18;
+        g.fill(backX, barY, backX + CL_W, barY + 18,
+               backHov ? 0xCC152150 : 0xCC0D1830);
+        g.fill(backX, barY, backX + CL_W, barY + 1, 0xFF334477);
+        g.fill(backX, barY + 17, backX + CL_W, barY + 18, 0xFF334477);
+        g.drawCenteredString(font,
+                Component.translatable("gui.koniava.nara_guide.back"),
+                backX + CL_W / 2, barY + 5, backHov ? 0xCCDDFF : 0x778899);
+
         // Page indicator
         String indicator = (activePage + 1) + " / " + pageCount;
-        g.drawCenteredString(font, Component.literal(indicator), cx, barY + 7, 0x556688);
+        g.drawCenteredString(font, Component.literal(indicator), cx, barY + 5, 0x556688);
 
-        // Prev button
+        // Prev button (4px gap from back button)
         boolean hasPrev = activePage > 0 || activeChapter > 0;
-        renderNavBtn(g, mouseX, mouseY, panelX + CA_X, barY, "◀", hasPrev);
+        renderNavBtn(g, mouseX, mouseY, panelX + CA_X + 4, barY, "◀", hasPrev);
 
         // Next button
         boolean hasNext = activePage < pageCount - 1 || activeChapter < PAGES.length - 1;
         renderNavBtn(g, mouseX, mouseY, panelX + CA_X + CA_W - 36, barY, "▶", hasNext);
-
-        // Back to watch button (bottom-right of chapter list area)
-        int backX = panelX + CL_X;
-        int backY = panelY + PANEL_H - 30;
-        boolean backHov = mouseX >= backX && mouseX < backX + CL_W
-                       && mouseY >= backY && mouseY < backY + 18;
-        g.fill(backX, backY, backX + CL_W, backY + 18,
-               backHov ? 0xCC152150 : 0xCC0D1830);
-        g.fill(backX, backY, backX + CL_W, backY + 1, 0xFF334477);
-        g.fill(backX, backY + 17, backX + CL_W, backY + 18, 0xFF334477);
-        g.drawCenteredString(font,
-                Component.translatable("gui.koniava.nara_guide.back"),
-                backX + CL_W / 2, backY + 5, backHov ? 0xCCDDFF : 0x778899);
     }
 
     private void renderNavBtn(GuiGraphics g, int mouseX, int mouseY,
@@ -216,15 +264,34 @@ public class NaraGuideScreen extends Screen {
     // ── Input ─────────────────────────────────────────────────────────────────
 
     @Override
+    public boolean mouseScrolled(double mx, double my, double scrollX, double scrollY) {
+        // Scroll only when mouse is over content area
+        int cax = panelX + CA_X, cay = panelY + CA_Y;
+        if (mx >= cax && mx < cax + CA_W && my >= cay && my < cay + CA_H) {
+            int viewH     = CA_H - 4;
+            int maxScroll = Math.max(0, totalContentH - viewH);
+            scrollOffset  = Math.max(0, Math.min(maxScroll,
+                    scrollOffset - (int) (scrollY * 12)));
+            return true;
+        }
+        return super.mouseScrolled(mx, my, scrollX, scrollY);
+    }
+
+    @Override
     public boolean mouseClicked(double mx, double my, int btn) {
         if (btn != 0) return super.mouseClicked(mx, my, btn);
 
         // Chapter list clicks
         int entryH = 20;
         for (int i = 0; i < CHAPTER_KEYS.length; i++) {
-            int ex = panelX + CL_X, ey = panelY + CL_Y + i * (entryH + 2);
+            int ex = panelX + CL_X;
+            int ey = panelY + CL_ENTRY_TOP + i * (entryH + 4);
             if (mx >= ex && mx < ex + CL_W && my >= ey && my < ey + entryH) {
-                if (activeChapter != i) { activeChapter = i; activePage = 0; }
+                if (activeChapter != i) {
+                    activeChapter = i;
+                    activePage    = 0;
+                    scrollOffset  = 0;
+                }
                 return true;
             }
         }
@@ -232,8 +299,15 @@ public class NaraGuideScreen extends Screen {
         int pageCount = activeChapter < PAGES.length ? PAGES[activeChapter].length : 1;
         int barY = panelY + CL_Y + CL_H + 6;
 
+        // Back button
+        int backX = panelX + CL_X;
+        if (mx >= backX && mx < backX + CL_W && my >= barY && my < barY + 18) {
+            this.onClose();
+            return true;
+        }
+
         // Prev
-        int prevX = panelX + CA_X;
+        int prevX = panelX + CA_X + 4;
         if (mx >= prevX && mx < prevX + 36 && my >= barY && my < barY + 18) {
             if (activePage > 0) {
                 activePage--;
@@ -241,6 +315,7 @@ public class NaraGuideScreen extends Screen {
                 activeChapter--;
                 activePage = PAGES[activeChapter].length - 1;
             }
+            scrollOffset = 0;
             return true;
         }
 
@@ -253,13 +328,7 @@ public class NaraGuideScreen extends Screen {
                 activeChapter++;
                 activePage = 0;
             }
-            return true;
-        }
-
-        // Back button
-        int backX = panelX + CL_X, backY = panelY + PANEL_H - 30;
-        if (mx >= backX && mx < backX + CL_W && my >= backY && my < backY + 18) {
-            this.onClose();
+            scrollOffset = 0;
             return true;
         }
 

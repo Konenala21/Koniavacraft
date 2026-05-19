@@ -43,7 +43,7 @@
   "block.koniava.aspect_altar.formed": "結構已成立。",
   "block.koniava.aspect_altar.catalyst_placed": "催化物品已放入。",
   "item.koniava.mana_pickaxe": "魔力鎬",
-  "item.koniava.mana_pickaxe.tooltip": "連鎖挖掘最多 32 個相鄰同種方塊。按住 Shift 停用。",
+  "item.koniava.mana_pickaxe.tooltip": "連鎖挖掘最多 32 個相鄰同種礦石方塊。按住 Shift 停用。",
   "item.koniava.ink_quill.out_of_ink": "墨水耗盡，需要補充",
   "item.koniava.ink_quill.refill_hint": "在合成台與墨囊組合即可補充。",
   "item.koniava.ink_quill.out_of_ink_prompt": "墨水羽毛筆的墨水已耗盡，請先補充後再繼續研究。",
@@ -712,15 +712,17 @@
   "item.koniava.dev_render_test_2": "開發渲染物品2（傅立葉曲線）",
 
   "item.koniava.consensus_glasses": "共識眼鏡",
-  "item.koniava.consensus_glasses.tooltip": "右鍵對準另一位玩家：合併雙方所有研究進度。",
-  "item.koniava.consensus_glasses.synced_with": "上次同步：%s",
-  "item.koniava.consensus_glasses.sync_done": "已和 %s 完成研究共識。",
-  "item.koniava.consensus_glasses.sync_received": "%s 和你完成了研究共識。",
+  "item.koniava.consensus_glasses.tooltip.unbound": "右鍵使用：將你目前的研究進度和本源資料存入此物品。",
+  "item.koniava.consensus_glasses.tooltip.copy": "右鍵使用：將物品內儲存的知識複製到你的記錄。",
+  "item.koniava.consensus_glasses.bound_to": "綁定玩家：%s",
+  "item.koniava.consensus_glasses.bind_success": "你的知識已存入此物品，其他玩家可從中複製研究資料。",
+  "item.koniava.consensus_glasses.already_bound": "此物品已綁定到你的知識。",
+  "item.koniava.consensus_glasses.copy_success": "已將 %s 的知識複製到你的記錄。",
 
   "item.koniava.source_tome": "源典",
   "item.koniava.source_tome.tooltip.1": "右鍵使用：解鎖所有研究與配方。",
   "item.koniava.source_tome.tooltip.2": "此物品不存在任何合成配方。",
-  "item.koniava.source_tome.activated": "源典已激活，所有本源知識已解鎖。",
+  "item.koniava.source_tome.activated": "源典已激活，所有研究、配方與本源知識已全數解鎖。",
 
   "advancement.koniava.craft_research_table.title": "研究起步",
   "advancement.koniava.craft_research_table.description": "合成了研究台，魔力知識體系的第一塊磚。",
@@ -735,14 +737,14 @@
   "guide.koniava.chapter.altar": "祭壇系統",
 
   "guide.koniava.aspect.intro.title": "什麼是本源？",
-  "guide.koniava.aspect.intro.body": "本源是構成這個世界魔力的基本單位，類似魔力的化學元素。六種主本源：水、火、木、金、土、烏，加上由它們複合而成的 80 種次本源，構成整個本源體系。\n\n掃描萬物即可收集本源點數，這些點數用於解鎖研究和驅動祭壇合成。",
+  "guide.koniava.aspect.intro.body": "本源是構成這個世界魔力的基本單位，類似魔力的化學元素。六種主本源：水、火、木、金、土、烏，加上由它們複合而成的 80 種次本源，構成整個本源體系。\n\n掃描萬物即可收集本源點數，這些點數用於研究謎題（在六角謎題中連接本源路徑時消耗）。",
   "guide.koniava.aspect.scanning.title": "如何掃描",
   "guide.koniava.aspect.scanning.body": "手持娜拉手錶，對準方塊、生物或地上的物品，長按右鍵約半秒。\n\n掃描完成後，聊天欄會顯示目標含有的本源種類和獲得的點數。同一個目標只能掃描一次。\n\n掃描範圍：4.5 格以內。",
   "guide.koniava.aspect.types.title": "主要本源種類",
   "guide.koniava.aspect.types.body": "水：液體、魚類、寒冷相關\n火：燃料、熔岩、爆炸相關\n木：植物、木材、生物相關\n金：礦石、金屬、工具相關\n土：石材、泥土、地形相關\n烏：黑暗、虛空、神秘相關\n\n不同種類的目標會給出不同本源組合。",
 
   "guide.koniava.research.overview.title": "研究系統概覽",
-  "guide.koniava.research.overview.body": "手持手錶對準空氣右鍵，開啟研究知識樹。節點分為三種狀態：\n\n可解鎖（藍色閃爍）：前置條件已滿足，點擊後會收到研究筆記。\n已完成（綠色）：研究已解鎖，配方和功能已開放。\n鎖定（灰色）：前置研究或本源條件未達成。",
+  "guide.koniava.research.overview.body": "手持手錶對準空氣右鍵，開啟研究知識樹。節點分為三種狀態：\n\n可解鎖（藍色閃爍）：前置條件已滿足，點擊選取後，再次點擊即可領取研究筆記。\n已完成（綠色）：研究已解鎖，配方和功能已開放。\n鎖定（灰色）：前置研究或本源條件未達成。",
   "guide.koniava.research.table.title": "使用研究台",
   "guide.koniava.research.table.body": "取得研究筆記後，合成研究台並放置。打開介面：\n\n左槽：放入研究筆記\n右槽：放入墨水羽毛筆\n確認後謎題開始，把相關的本源格連成一條路徑即可完成研究。\n\n完成研究會解鎖對應的合成配方。",
 
@@ -754,9 +756,9 @@
   "guide.koniava.mana.machines.body": "連接魔力後可使用的機器：\n\n魔力研磨機：研磨原材料獲得加工材料\n魔力合成台：消耗魔力進行特殊合成\n魔力注入機：將魔力注入物品強化性能\n魔力部署器：自動化操作（含動畫演出）\n\n各機器需要消耗足夠的導管魔力才能運作。\n\n注意：各機器的合成配方需要先完成對應的研究樹節點才能解鎖。",
 
   "guide.koniava.altar.overview.title": "祭壇系統概覽",
-  "guide.koniava.altar.overview.body": "祭壇是消耗本源點數和材料、合成高級物品的核心裝置。結構由核心、支柱、基座和升級環組成，可在 JEI 中查看 3D 多方塊結構預覽。\n\n共有 T1 至 T6 六個等級，更高 Tier 的祭壇可合成更強力的物品。\n\n需要研究：完成研究樹中對應 Tier 的研究節點，才能取得祭壇材料的合成配方。",
+  "guide.koniava.altar.overview.body": "祭壇是消耗魔力和底座材料、合成高級物品的核心裝置。結構由核心、支柱、基座和升級環組成，可在 JEI 中查看 3D 多方塊結構預覽。\n\n共有 T1 至 T6 六個等級，更高 Tier 的祭壇可合成更強力的物品。\n\n需要研究：完成研究樹中對應 Tier 的研究節點，才能取得祭壇材料的合成配方。",
   "guide.koniava.altar.usage.title": "如何使用祭壇",
-  "guide.koniava.altar.usage.body": "1. 按照 JEI 中的多方塊結構建造祭壇。\n2. 把合成所需的材料分別放到周圍的基座（AspectPedestal）上。\n3. 右鍵核心方塊，祭壇會消耗指定的本源點數和材料。\n4. 完成後中央產出物品。\n\n魔力不足或材料不對時，祭壇會顯示錯誤提示。",
+  "guide.koniava.altar.usage.body": "1. 按照 JEI 中的多方塊結構建造祭壇。\n2. 把合成所需的材料分別放到周圍的基座（AspectPedestal）上。\n3. 右鍵核心方塊，祭壇會消耗對應的魔力和底座上的材料。\n4. 完成後中央產出物品。\n\n魔力不足或材料不對時，祭壇會顯示錯誤提示。",
   "guide.koniava.altar.upgrade.title": "升級祭壇",
   "guide.koniava.altar.upgrade.body": "在現有祭壇結構上加裝升級環（Resonance Ring）即可升級 Tier。\n\nT1：最基本結構\nT2-T4：逐漸增加支柱和升級環\nT5-T6：需要完整環繞結構\n\n升級 T5 和 T6 會觸發專屬升級動畫。T6 是目前的最高等級。"
 }

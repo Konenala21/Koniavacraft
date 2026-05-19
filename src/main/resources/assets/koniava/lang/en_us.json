@@ -37,7 +37,7 @@
   "block.koniava.aspect_altar.formed": "Structure complete.",
   "block.koniava.aspect_altar.catalyst_placed": "Catalyst placed.",
   "item.koniava.mana_pickaxe": "Mana Pickaxe",
-  "item.koniava.mana_pickaxe.tooltip": "Chain mines up to 32 connected blocks. Hold Shift to disable.",
+  "item.koniava.mana_pickaxe.tooltip": "Chain mines up to 32 connected ore blocks. Hold Shift to disable.",
   "item.koniava.ink_quill.out_of_ink": "Out of Ink. Needs refill.",
   "item.koniava.ink_quill.refill_hint": "Combine with an Ink Sac in a crafting grid.",
   "item.koniava.ink_quill.out_of_ink_prompt": "Your Ink Quill is out of ink. Refill it with an Ink Sac before continuing.",
@@ -712,15 +712,17 @@
   "item.koniava.dev_render_test_2": "Dev Render Test Item 2 (Fourier)",
 
   "item.koniava.consensus_glasses": "Consensus Glasses",
-  "item.koniava.consensus_glasses.tooltip": "Right-click another player to merge both players' completed research.",
-  "item.koniava.consensus_glasses.synced_with": "Last synced: %s",
-  "item.koniava.consensus_glasses.sync_done": "Research consensus achieved with %s.",
-  "item.koniava.consensus_glasses.sync_received": "%s has achieved research consensus with you.",
+  "item.koniava.consensus_glasses.tooltip.unbound": "Right-click to bind your current research and aspects to this item.",
+  "item.koniava.consensus_glasses.tooltip.copy": "Right-click to copy the stored knowledge to yourself.",
+  "item.koniava.consensus_glasses.bound_to": "Bound to: %s",
+  "item.koniava.consensus_glasses.bind_success": "Your knowledge has been stored in this item. Others may now copy from it.",
+  "item.koniava.consensus_glasses.already_bound": "This item is already bound to your knowledge.",
+  "item.koniava.consensus_glasses.copy_success": "Copied %s's knowledge to your records.",
 
   "item.koniava.source_tome": "Source Tome",
   "item.koniava.source_tome.tooltip.1": "Right-click: unlock all research and recipes.",
   "item.koniava.source_tome.tooltip.2": "No crafting recipe exists for this item.",
-  "item.koniava.source_tome.activated": "Source Tome activated. All mana knowledge unlocked.",
+  "item.koniava.source_tome.activated": "Source Tome activated. All research, recipes, and aspect knowledge unlocked.",
 
   "advancement.koniava.craft_research_table.title": "First Steps in Research",
   "advancement.koniava.craft_research_table.description": "Built a Research Table. The foundation of mana knowledge.",
@@ -735,14 +737,14 @@
   "guide.koniava.chapter.altar": "Altar",
 
   "guide.koniava.aspect.intro.title": "What Are Aspects?",
-  "guide.koniava.aspect.intro.body": "Aspects are the fundamental units that make up the mana in this world, think of them as the chemical elements of magic. Six primary aspects: Water, Fire, Wood, Metal, Earth, and Void, plus 80 compound aspects derived from them.\n\nScanning objects grants aspect points, which are spent on research and altar synthesis.",
+  "guide.koniava.aspect.intro.body": "Aspects are the fundamental units that make up the mana in this world, think of them as the chemical elements of magic. Six primary aspects: Water, Fire, Wood, Metal, Earth, and Void, plus 80 compound aspects derived from them.\n\nScanning objects grants aspect points, which are spent on research (connecting aspect paths in the hex puzzle).",
   "guide.koniava.aspect.scanning.title": "How to Scan",
   "guide.koniava.aspect.scanning.body": "Hold the Nara Watch and aim at a block, entity, or item on the ground. Hold right-click for about half a second.\n\nOn completion, the chat shows which aspects were found and how many points were gained. Each target can only be scanned once.\n\nScan range: 4.5 blocks.",
   "guide.koniava.aspect.types.title": "Primary Aspect Types",
   "guide.koniava.aspect.types.body": "Water: liquids, fish, cold-related\nFire: fuels, lava, explosions\nWood: plants, wood, living things\nMetal: ores, metals, tools\nEarth: stone, dirt, terrain\nVoid: darkness, emptiness, mystery\n\nDifferent targets yield different aspect combinations.",
 
   "guide.koniava.research.overview.title": "Research Overview",
-  "guide.koniava.research.overview.body": "Hold the watch and right-click on air to open the research tree. Nodes have three states:\n\nAvailable (blue pulse): prerequisites met, click to receive a research note.\nCompleted (green): unlocked, recipes and features are active.\nLocked (gray): missing prereqs or aspect requirements.",
+  "guide.koniava.research.overview.body": "Hold the watch and right-click on air to open the research tree. Nodes have three states:\n\nAvailable (blue pulse): prerequisites met, click to select, then click again to receive a research note.\nCompleted (green): unlocked, recipes and features are active.\nLocked (gray): missing prereqs or aspect requirements.",
   "guide.koniava.research.table.title": "Using the Research Table",
   "guide.koniava.research.table.body": "After getting a research note, craft and place a Research Table. Open it:\n\nLeft slot: research note\nRight slot: ink quill\nConfirm to start the puzzle, then connect related aspect cells into a path to complete the research.\n\nCompleting research unlocks the corresponding crafting recipes.",
 
@@ -754,9 +756,9 @@
   "guide.koniava.mana.machines.body": "Machines available once connected to mana:\n\nMana Grinder: grinds raw materials into processed components\nMana Crafting Table: special crafting using mana\nMana Infuser: infuses items with mana to enhance them\nMana Deployer: automated operations with animation\n\nEach machine requires sufficient mana throughput to operate.\n\nNote: each machine's crafting recipe is locked until you complete the corresponding research tree node.",
 
   "guide.koniava.altar.overview.title": "Altar Overview",
-  "guide.koniava.altar.overview.body": "The altar is the core device for synthesizing high-tier items by consuming aspect points and materials. It is a multi-block structure of a core, pillars, pedestals, and resonance rings. Check JEI for the 3D multi-block preview.\n\nSix tiers (T1-T6): higher tiers unlock stronger crafts.\n\nResearch required: complete the corresponding research tree nodes to unlock altar material recipes for each tier.",
+  "guide.koniava.altar.overview.body": "The altar is the core device for synthesizing high-tier items by consuming mana and materials. It is a multi-block structure of a core, pillars, pedestals, and resonance rings. Check JEI for the 3D multi-block preview.\n\nSix tiers (T1-T6): higher tiers unlock stronger crafts.\n\nResearch required: complete the corresponding research tree nodes to unlock altar material recipes for each tier.",
   "guide.koniava.altar.usage.title": "Using the Altar",
-  "guide.koniava.altar.usage.body": "1. Build the multi-block structure as shown in JEI.\n2. Place the required materials on the surrounding AspectPedestals.\n3. Right-click the core block. The altar consumes aspect points and materials.\n4. The result item appears at the center.\n\nIf mana or materials are missing, the altar displays an error hint.",
+  "guide.koniava.altar.usage.body": "1. Build the multi-block structure as shown in JEI.\n2. Place the required materials on the surrounding AspectPedestals.\n3. Right-click the core block. The altar consumes mana and the materials from the pedestals.\n4. The result item appears at the center.\n\nIf mana or materials are missing, the altar displays an error hint.",
   "guide.koniava.altar.upgrade.title": "Upgrading the Altar",
   "guide.koniava.altar.upgrade.body": "Add Resonance Rings to the existing structure to upgrade the altar tier.\n\nT1: minimal structure\nT2-T4: progressively more pillars and rings\nT5-T6: full surrounding structure required\n\nUpgrading to T5 and T6 triggers a dedicated upgrade animation. T6 is the current maximum tier."
 }

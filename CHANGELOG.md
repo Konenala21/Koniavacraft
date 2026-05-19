@@ -37,6 +37,19 @@ All notable changes to this project will be documented in this file.
 - 祭壇升級環現在有實際作用：配方可設定最低升級環層數需求，未達標時無法啟動儀式。
 - JEI altar recipe panel now shows the required ring tier when a recipe needs one.
 - JEI 祭壇配方面板在配方有 tier 需求時會顯示「需要第 X 層升級環」。
+- Consensus Glasses redesigned: first use binds the item to the holder, snapshotting their research and aspect data. Subsequent use by other players copies the stored knowledge to them. Use by the bound player shows an "already bound" message.
+- 共識眼鏡重新設計：第一次右鍵使用時，物品會綁定到該玩家並快照其研究進度與本源資料。其他玩家右鍵使用時，會將儲存的資料複製到自己；已綁定玩家再次使用時，顯示提示訊息。
+- Source Tome now also grants all aspects (minimum 500 per aspect) in addition to unlocking all research.
+- 源典現在在解鎖所有研究的同時，也會解鎖所有本源知識（每種本源至少 500 點）。
+
+- Fixed guide descriptions incorrectly stating the altar consumes aspect points. The altar consumes mana and pedestal materials only.
+- 修正指引文字錯誤描述祭壇消耗本源點數的說法，祭壇實際只消耗魔力和底座材料。
+- Fixed Mana Pickaxe tooltip not specifying that chain mining only triggers on ore blocks.
+- 修正魔力鎬 tooltip 未說明連鎖挖掘只對礦石方塊有效。
+- Fixed research overview guide incorrectly stating a single click receives a research note. Two clicks are required.
+- 修正研究概覽指引說「一次點擊即可取得研究筆記」的錯誤說法，實際需要點擊兩次。
+- Fixed Source Tome item tooltip and activated message still referencing the old `source_codex` lang keys, causing raw key strings to display in-game.
+- 修正源典（Source Tome）物品 tooltip 和激活訊息仍使用舊的 `source_codex` 語言鍵，導致遊戲內顯示原始鍵名的問題。
 
 ### Developer Notes / 開發者備註
 
