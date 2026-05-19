@@ -10,6 +10,8 @@ import com.github.nalamodikk.client.renderer.altar.AltarFadeRenderer;
 import com.github.nalamodikk.common.config.ModClientConfig;
 import com.github.nalamodikk.common.config.ModCommonConfig;
 import com.github.nalamodikk.register.*;
+import com.github.nalamodikk.register.ModStructurePieceTypes;
+import com.github.nalamodikk.register.ModStructureTypes;
 import com.github.nalamodikk.register.client.ModKeyMappings;
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;
@@ -68,6 +70,8 @@ public class KoniavacraftMod {
         ModBlockEntities.register(modEventBus);
         ModMenuTypes.register(modEventBus);
         ModCreativeModTabs.register(modEventBus);
+        ModStructureTypes.register(modEventBus);
+        ModStructurePieceTypes.register(modEventBus);
         if (FMLEnvironment.dist == Dist.CLIENT) {
             modEventBus.addListener(ModKeyMappings::onRegisterKeyMappings);
             modEventBus.addListener((RegisterClientReloadListenersEvent e) ->

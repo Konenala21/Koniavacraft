@@ -2,6 +2,7 @@ package com.github.nalamodikk.common.datagen;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.biome.ModBiomes;
+import com.github.nalamodikk.common.datagen.worldgen.ModStructures;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.BiomeTagsProvider;
@@ -39,6 +40,9 @@ public class ModBiomeTagProvider extends BiomeTagsProvider {
                 .add(Biomes.SAVANNA_PLATEAU)
                 .add(Biomes.WINDSWEPT_SAVANNA)
                 // 🌟 添加自訂生物群落 - 魔力草原
+                .addOptional(ModBiomes.MANA_PLAINS.location());
+
+        tag(ModStructures.HAS_ABANDONED_RUINS)
                 .addOptional(ModBiomes.MANA_PLAINS.location());
     }
 }
