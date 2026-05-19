@@ -92,7 +92,10 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         dropSelf(ModBlocks.ADVANCED_ARCANE_CONDUIT.get()); // 🆕 進階奧術導管
         dropSelf(ModBlocks.ELITE_ARCANE_CONDUIT.get()); // 🆕 精英奧術導管
         dropSelf(ModBlocks.MANA_SOIL.get());
-        dropSelf(ModBlocks.MANA_GRASS_BLOCK.get());
+        add(ModBlocks.MANA_GRASS_BLOCK.get(),
+                createSilkTouchDispatchTable(
+                        ModBlocks.MANA_GRASS_BLOCK.get(),
+                        LootItem.lootTableItem(ModBlocks.MANA_SOIL.get())));
         dropSelf(ModBlocks.MANA_INFUSER.get());
         dropSelf(ModBlocks.MANA_GRINDER.get());
         dropSelf(ModBlocks.RESEARCH_TABLE.get());
