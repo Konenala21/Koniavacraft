@@ -7,7 +7,9 @@ import com.github.nalamodikk.narasystem.nara.network.client.OpenNaraInitScreenPa
 import com.github.nalamodikk.narasystem.nara.network.server.NaraSyncPacket;
 import com.github.nalamodikk.narasystem.nara.util.NaraHelper;
 import com.github.nalamodikk.register.ModDataAttachments;
+import com.github.nalamodikk.research.knowledge.ResearchSavedData;
 import com.github.nalamodikk.research.network.KnowledgeSyncPacket;
+import com.github.nalamodikk.research.template.ResearchRegistry;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.NonNullList;
 import net.minecraft.gametest.framework.GameTestServer;
@@ -45,6 +47,27 @@ public class PlayerLoginEvent {
 
         // 傳送同步封包（無論動畫是否開啟都需要）
         PacketDistributor.sendToPlayer(player, new NaraSyncPacket(NaraHelper.isBound(player)));
+
+        // 補授所有 innate 研究給已綁定的玩家（相容舊存檔）
+        if (NaraHelper.isBound(player)) {
+            var savedData = ResearchSavedData.get(player.serverLevel());
+            boolean anyNew = false;
+            for (var template : ResearchRegistry.all()) {
+                if (template.isInnate() && !savedData.getOrCreate(player.getUUID()).hasCompleted(template.getId())) {
+                    boolean isNew = savedData.completeResearch(player.getUUID(), template.getId());
+                    if (isNew) {
+                        ResearchRegistry.get(template.getId()).ifPresent(t -> {
+                            var toAward = player.serverLevel().getRecipeManager().getRecipes()
+                                    .stream().filter(h -> t.getUnlockedRecipes().contains(h.id())).toList();
+                            if (!toAward.isEmpty()) player.awardRecipes(toAward);
+                        });
+                        anyNew = true;
+                    }
+                }
+            }
+            if (anyNew) savedData.setDirty();
+        }
+
         KnowledgeSyncPacket.sendTo(player);
 
         // ===== 動畫相關邏輯（這部分可以被設定關閉） =====

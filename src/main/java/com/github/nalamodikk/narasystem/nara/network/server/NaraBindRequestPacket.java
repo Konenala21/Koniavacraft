@@ -6,6 +6,9 @@ import com.github.nalamodikk.narasystem.nara.event.NaraServerEvents;
 import com.github.nalamodikk.narasystem.nara.network.client.NaraStartDialoguePacket;
 import com.github.nalamodikk.narasystem.nara.util.NaraHelper;
 import com.github.nalamodikk.register.ModItems;
+import com.github.nalamodikk.research.knowledge.ResearchSavedData;
+import com.github.nalamodikk.research.network.KnowledgeSyncPacket;
+import com.github.nalamodikk.research.template.ResearchRegistry;
 import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.core.component.DataComponents;
@@ -67,6 +70,8 @@ public record NaraBindRequestPacket(boolean bind) implements CustomPacketPayload
                 NaraServerEvents.grantWelcomeAdvancement(serverPlayer);
                 // 煙火三發
                 spawnWelcomeFireworks(serverPlayer);
+                // 固有研究：研究基礎（解鎖研究台合成）
+                grantInnateResearch(serverPlayer);
                 // 皮膚 model 由 client 端自己讀
                 PacketDistributor.sendToPlayer(serverPlayer, new NaraStartDialoguePacket());
             }
@@ -107,6 +112,21 @@ public record NaraBindRequestPacket(boolean bind) implements CustomPacketPayload
         ItemStack watch = new ItemStack(ModItems.NARA_WATCH.get());
         if (!inventory.add(watch)) {
             serverPlayer.drop(watch, false);
+        }
+    }
+
+    private static void grantInnateResearch(ServerPlayer player) {
+        var researchId = ResearchRegistry.RESEARCH_BASICS.getId();
+        var savedData = ResearchSavedData.get(player.serverLevel());
+        boolean isNew = savedData.completeResearch(player.getUUID(), researchId);
+        if (isNew) {
+            ResearchRegistry.get(researchId).ifPresent(t -> {
+                var toAward = player.serverLevel().getRecipeManager().getRecipes()
+                        .stream().filter(h -> t.getUnlockedRecipes().contains(h.id())).toList();
+                if (!toAward.isEmpty()) player.awardRecipes(toAward);
+            });
+            savedData.setDirty();
+            KnowledgeSyncPacket.sendTo(player);
         }
     }
 

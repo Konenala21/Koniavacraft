@@ -22,12 +22,22 @@ public final class ResearchRegistry {
 
     // ── Tier 1 — 魔法期入門 ──────────────────────────────────────────────────
 
+    /** Innate research granted automatically when the player first binds Nara. Unlocks the Research Table. */
+    public static final ResearchTemplate RESEARCH_BASICS = register(
+            ResearchTemplate.builder(id("research_basics"))
+                    .tier(1)
+                    .innate()
+                    .unlocks(id("research_table"))
+                    .build()
+    );
+
     /** First research: player scans mana grass and water, discovers mana flows. */
     public static final ResearchTemplate MANA_BASICS = register(
             ResearchTemplate.builder(id("mana_basics"))
                     .tier(1)
                     .aspects(ModAspects.WATER, ModAspects.MANA)
                     .holeRatio(0.20)
+                    .prerequisites(id("research_basics"))
                     .unlocks(id("nara_watch"))
                     .build()
     );
@@ -115,6 +125,34 @@ public final class ResearchRegistry {
                     .holeRatio(0.33)
                     .prerequisites(id("mana_flow"), id("mana_crystallisation"))
                     .unlocks(id("advanced_arcane_conduit"), id("elite_arcane_conduit"))
+                    .build()
+    );
+
+    /**
+     * Mana Deployer: mana-powered dispenser for automation.
+     * Mechanism↔Momentum (both involve directed force), Momentum↔Mana (shared WU component).
+     */
+    public static final ResearchTemplate MANA_DEPLOYER = register(
+            ResearchTemplate.builder(id("mana_deployer"))
+                    .tier(1)
+                    .aspects(ModAspects.MECHANISM, ModAspects.MOMENTUM, ModAspects.MANA)
+                    .holeRatio(0.30)
+                    .prerequisites(id("mana_flow"))
+                    .unlocks(id("mana_deployer"))
+                    .build()
+    );
+
+    /**
+     * Altar construction: player learns to build the Aspect Altar multiblock.
+     * Resonance↔Crystal (both involve structured mana), Crystal↔Mana (shared component).
+     */
+    public static final ResearchTemplate ASPECT_ALTAR = register(
+            ResearchTemplate.builder(id("aspect_altar"))
+                    .tier(1)
+                    .aspects(ModAspects.RESONANCE, ModAspects.CRYSTAL, ModAspects.MANA)
+                    .holeRatio(0.35)
+                    .prerequisites(id("mana_crystallisation"))
+                    .unlocks(id("aspect_altar"), id("aspect_pedestal"))
                     .build()
     );
 

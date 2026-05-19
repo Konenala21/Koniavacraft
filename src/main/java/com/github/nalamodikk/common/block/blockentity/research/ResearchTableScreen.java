@@ -108,6 +108,7 @@ public class ResearchTableScreen extends AbstractContainerScreen<ResearchTableMe
         }
 
         ResearchRegistry.get(researchId).ifPresent(template -> {
+            if (template.isInnate()) return;
             List<Aspect> palette = buildPalette(template);
             this.onClose();
             minecraft.setScreen(new ResearchScreen(template, palette, menu.getBlockEntity().getBlockPos()));

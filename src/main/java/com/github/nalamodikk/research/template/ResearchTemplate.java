@@ -25,6 +25,7 @@ public final class ResearchTemplate {
     private final List<ResourceLocation> unlockedRecipes; // recipe IDs unlocked on completion
     private final ItemStack icon;                    // display icon in the knowledge book UI
     private final String titleKey;                   // translation key for the title
+    private final boolean innate;                    // granted automatically, no puzzle required
 
     private ResearchTemplate(Builder builder) {
         this.id = builder.id;
@@ -35,6 +36,7 @@ public final class ResearchTemplate {
         this.unlockedRecipes = List.copyOf(builder.unlockedRecipes);
         this.icon = builder.icon;
         this.titleKey = builder.titleKey;
+        this.innate = builder.innate;
     }
 
     // ── Getters ──────────────────────────────────────────────────────────────
@@ -47,6 +49,7 @@ public final class ResearchTemplate {
     public List<ResourceLocation> getUnlockedRecipes() { return unlockedRecipes; }
     public ItemStack getIcon()                       { return icon.copy(); }
     public String getTitleKey()                      { return titleKey; }
+    public boolean isInnate()                        { return innate; }
 
     // ── Availability check ───────────────────────────────────────────────────
 
@@ -91,6 +94,7 @@ public final class ResearchTemplate {
         private List<ResourceLocation> unlockedRecipes = List.of();
         private ItemStack icon = ItemStack.EMPTY;
         private String titleKey;
+        private boolean innate = false;
 
         private Builder(ResourceLocation id) {
             this.id = id;
@@ -105,9 +109,10 @@ public final class ResearchTemplate {
         public Builder unlocks(ResourceLocation... recipeIds)            { this.unlockedRecipes = List.of(recipeIds); return this; }
         public Builder icon(ItemStack icon)                              { this.icon = icon; return this; }
         public Builder titleKey(String key)                              { this.titleKey = key; return this; }
+        public Builder innate()                                          { this.innate = true; return this; }
 
         public ResearchTemplate build() {
-            if (requiredAspects.size() < 2)
+            if (!innate && requiredAspects.size() < 2)
                 throw new IllegalStateException("Research " + id + " needs at least 2 required aspects");
             return new ResearchTemplate(this);
         }
