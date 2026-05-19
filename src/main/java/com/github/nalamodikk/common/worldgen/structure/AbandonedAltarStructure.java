@@ -3,6 +3,7 @@ package com.github.nalamodikk.common.worldgen.structure;
 import com.github.nalamodikk.register.ModStructureTypes;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.Structure;
@@ -27,12 +28,16 @@ public class AbandonedAltarStructure extends Structure {
 
     @Override
     protected Optional<GenerationStub> findGenerationPoint(GenerationContext ctx) {
-        return onTopOfChunkCenter(ctx, Heightmap.Types.WORLD_SURFACE_WG, builder ->
-                builder.addPiece(new AbandonedAltarPiece(
-                        ctx.structureTemplateManager(),
-                        ctx.chunkPos().getMiddleBlockPosition(0),
-                        templateId))
-        );
+        return onTopOfChunkCenter(ctx, Heightmap.Types.WORLD_SURFACE_WG, builder -> {
+            int x = ctx.chunkPos().getMiddleBlockX();
+            int z = ctx.chunkPos().getMiddleBlockZ();
+            int y = ctx.chunkGenerator().getFirstOccupiedHeight(
+                    x, z, Heightmap.Types.WORLD_SURFACE_WG, ctx.heightAccessor(), ctx.randomState()) + 1;
+            builder.addPiece(new AbandonedAltarPiece(
+                    ctx.structureTemplateManager(),
+                    new BlockPos(x, y, z),
+                    templateId));
+        });
     }
 
     @Override
