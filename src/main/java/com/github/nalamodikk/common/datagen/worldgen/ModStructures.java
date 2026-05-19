@@ -17,24 +17,37 @@ import java.util.Map;
 
 public class ModStructures {
 
-    public static final ResourceKey<Structure> ABANDONED_ALTAR_01 =
-            ResourceKey.create(Registries.STRUCTURE,
-                    ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "abandoned_altar_01"));
-
     public static final TagKey<Biome> HAS_ABANDONED_RUINS =
             TagKey.create(Registries.BIOME,
                     ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "has_structure/abandoned_ruins"));
 
+    // 01: 最破損，小地形高機率
+    public static final ResourceKey<Structure> ABANDONED_ALTAR_01 = key("abandoned_altar_01");
+    // 02: 中等損壞，大地形出現
+    public static final ResourceKey<Structure> ABANDONED_ALTAR_02 = key("abandoned_altar_02");
+    // 03: 中等損壞（另一變體），小地形偶爾出現
+    public static final ResourceKey<Structure> ABANDONED_ALTAR_03 = key("abandoned_altar_03");
+    // 04: 最完整但損壞，大地形低機率
+    public static final ResourceKey<Structure> ABANDONED_ALTAR_04 = key("abandoned_altar_04");
+
+    private static ResourceKey<Structure> key(String name) {
+        return ResourceKey.create(Registries.STRUCTURE,
+                ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, name));
+    }
+
     public static void bootstrap(BootstrapContext<Structure> ctx) {
         HolderGetter<Biome> biomes = ctx.lookup(Registries.BIOME);
+        var biomeSet = biomes.getOrThrow(HAS_ABANDONED_RUINS);
+        var settings = new Structure.StructureSettings(biomeSet, Map.of(),
+                GenerationStep.Decoration.SURFACE_STRUCTURES, TerrainAdjustment.NONE);
 
-        ctx.register(ABANDONED_ALTAR_01, new AbandonedAltarStructure(
-                new Structure.StructureSettings(
-                        biomes.getOrThrow(HAS_ABANDONED_RUINS),
-                        Map.of(),
-                        GenerationStep.Decoration.SURFACE_STRUCTURES,
-                        TerrainAdjustment.NONE
-                )
-        ));
+        ctx.register(ABANDONED_ALTAR_01, new AbandonedAltarStructure(settings,
+                ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "abandoned_altar_01")));
+        ctx.register(ABANDONED_ALTAR_02, new AbandonedAltarStructure(settings,
+                ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "abandoned_altar_02")));
+        ctx.register(ABANDONED_ALTAR_03, new AbandonedAltarStructure(settings,
+                ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "abandoned_altar_03")));
+        ctx.register(ABANDONED_ALTAR_04, new AbandonedAltarStructure(settings,
+                ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "abandoned_altar_04")));
     }
 }

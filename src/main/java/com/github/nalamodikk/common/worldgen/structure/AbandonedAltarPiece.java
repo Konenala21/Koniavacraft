@@ -1,6 +1,5 @@
 package com.github.nalamodikk.common.worldgen.structure;
 
-import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.register.ModStructurePieceTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -10,19 +9,16 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
-import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSerializationContext;
 import net.minecraft.world.level.levelgen.structure.TemplateStructurePiece;
+import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSerializationContext;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 
 public class AbandonedAltarPiece extends TemplateStructurePiece {
 
-    private static final ResourceLocation TEMPLATE =
-            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "abandoned_altar_01");
-
-    public AbandonedAltarPiece(StructureTemplateManager manager, BlockPos pos) {
+    public AbandonedAltarPiece(StructureTemplateManager manager, BlockPos pos, ResourceLocation templateId) {
         super(ModStructurePieceTypes.ABANDONED_ALTAR.get(), 0, manager,
-                TEMPLATE, TEMPLATE.toString(), makeSettings(), pos);
+                templateId, templateId.toString(), makeSettings(), pos);
     }
 
     public AbandonedAltarPiece(StructureTemplateManager manager, CompoundTag tag) {
