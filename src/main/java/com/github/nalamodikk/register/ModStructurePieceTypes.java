@@ -15,7 +15,7 @@ public class ModStructurePieceTypes {
 
     public static final DeferredHolder<StructurePieceType, StructurePieceType> ABANDONED_ALTAR =
             STRUCTURE_PIECE_TYPES.register("abandoned_altar",
-                    () -> AbandonedAltarPiece::new);
+                    () -> (StructurePieceType.StructureTemplateType)(manager, tag) -> new AbandonedAltarPiece(manager, tag));
 
     public static void register(IEventBus bus) {
         STRUCTURE_PIECE_TYPES.register(bus);
