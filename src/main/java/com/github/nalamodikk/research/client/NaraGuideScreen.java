@@ -25,9 +25,10 @@ public class NaraGuideScreen extends Screen {
                     "textures/gui/nara_watch/background_2.png");
 
     // Pixel positions measured from background_2.png (512x512 texture, panel 400x252)
+    // Dark column: texture x=5..75 (w=70), y=8..218 (h=210)
     private static final int PANEL_W = 400, PANEL_H = 252;
-    private static final int CL_X = 8,  CL_Y = 10, CL_W = 70, CL_H = 208;
-    private static final int CA_X = 82, CA_Y = 10, CA_W = 314, CA_H = 208;
+    private static final int CL_X = 5,  CL_Y = 8, CL_W = 70, CL_H = 210;
+    private static final int CA_X = 79, CA_Y = 8, CA_W = 317, CA_H = 210;
 
     // ── Guide content ─────────────────────────────────────────────────────────
     // [chapter][page] = { titleKey, bodyKey }
@@ -108,6 +109,8 @@ public class NaraGuideScreen extends Screen {
 
     private void renderChapterList(GuiGraphics g, int mouseX, int mouseY) {
         int entryH = 20;
+        g.enableScissor(panelX + CL_X, panelY + CL_Y,
+                        panelX + CL_X + CL_W, panelY + CL_Y + CL_H);
         for (int i = 0; i < CHAPTER_KEYS.length; i++) {
             int ex = panelX + CL_X;
             int ey = panelY + CL_Y + i * (entryH + 2);
@@ -133,6 +136,7 @@ public class NaraGuideScreen extends Screen {
                 textY += 9;
             }
         }
+        g.disableScissor();
     }
 
     private void renderContent(GuiGraphics g) {
