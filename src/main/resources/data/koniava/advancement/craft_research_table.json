@@ -1,0 +1,20 @@
+{
+  "display": {
+    "icon": { "id": "koniava:research_table" },
+    "title": { "translate": "advancement.koniava.craft_research_table.title" },
+    "description": { "translate": "advancement.koniava.craft_research_table.description" },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "parent": "koniava:nara_welcome",
+  "criteria": {
+    "get_research_table": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [{ "items": ["koniava:research_table"] }]
+      }
+    }
+  }
+}

@@ -82,6 +82,9 @@ public class NaraWatchScreen extends Screen {
     private static final String[] TIER_LABELS   = { "全", "T1", "T2", "T3", "T4" };
     private static final String[] STATUS_LABELS = { "全部", "可解鎖", "已完成" };
 
+    private static final int GUIDE_TAB_OFFSET_Y =
+            TIER_TAB_START_Y + TIER_LABELS.length * (TIER_TAB_H + TAB_GAP) + 10;
+
     // ── State ─────────────────────────────────────────────────────────────────
 
     private final Set<ResourceLocation> completed;
@@ -249,6 +252,7 @@ public class NaraWatchScreen extends Screen {
         // === Side tabs (outside panel, in empty screen space) ===
         renderLeftTabs(g, mouseX, mouseY);
         renderRightTabs(g, mouseX, mouseY);
+        renderGuideTab(g, mouseX, mouseY);
 
         // === Description panel ===
         renderDescPanel(g, mouseX, mouseY);
@@ -325,6 +329,16 @@ public class NaraWatchScreen extends Screen {
             renderSideTab(g, tx, ty, TIER_TAB_W, TIER_TAB_H, TIER_LABELS[i],
                           active, hovered, false);
         }
+    }
+
+    private void renderGuideTab(GuiGraphics g, int mouseX, int mouseY) {
+        int tx = panelX - TIER_TAB_W;
+        int ty = panelY + GUIDE_TAB_OFFSET_Y;
+        boolean hovered = mouseX >= tx && mouseX < tx + TIER_TAB_W
+                       && mouseY >= ty && mouseY < ty + TIER_TAB_H;
+        renderSideTab(g, tx, ty, TIER_TAB_W, TIER_TAB_H,
+                Component.translatable("gui.koniava.nara_watch.guide_tab").getString(),
+                false, hovered, false);
     }
 
     // Right tabs: status filter, protrude to the RIGHT of the panel
@@ -439,6 +453,16 @@ public class NaraWatchScreen extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 0) {
+            // Guide tab
+            int gtx = panelX - TIER_TAB_W;
+            int gty = panelY + GUIDE_TAB_OFFSET_Y;
+            if (mouseX >= gtx && mouseX < gtx + TIER_TAB_W
+             && mouseY >= gty && mouseY < gty + TIER_TAB_H) {
+                assert minecraft != null;
+                minecraft.setScreen(new NaraGuideScreen(this));
+                return true;
+            }
+
             // Check left tier tabs
             for (int i = 0; i < TIER_LABELS.length; i++) {
                 int tx = panelX - TIER_TAB_W;
