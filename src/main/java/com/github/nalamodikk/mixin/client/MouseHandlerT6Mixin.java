@@ -14,7 +14,7 @@ public class MouseHandlerT6Mixin {
     // This prevents the player from accidentally rotating away from the magic circle.
     @Inject(method = "turnPlayer", at = @At("HEAD"), cancellable = true)
     private void koniava$suppressTurnForT6(double deltaTime, CallbackInfo ci) {
-        if (AltarCameraController.isCameraLocked((float) deltaTime)) {
+        if (AltarCameraController.isCameraLocked()) {
             ci.cancel();
         }
     }
