@@ -42,6 +42,8 @@ public record ToggleModePacket(BlockPos pos) implements CustomPacketPayload {
             Level level = player.level();
 
             if (!level.isLoaded(packet.pos())) return;
+            if (net.minecraft.world.phys.Vec3.atCenterOf(packet.pos())
+                    .distanceToSqr(player.position()) > 64.0) return;
 
             BlockEntity be = level.getBlockEntity(packet.pos());
             if (be instanceof ManaGeneratorBlockEntity generator) {

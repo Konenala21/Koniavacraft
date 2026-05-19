@@ -44,10 +44,12 @@ public record OpenUpgradeGuiPacket(BlockPos pos) implements CustomPacketPayload 
 
     public static void handle(OpenUpgradeGuiPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            ServerPlayer player = (ServerPlayer) context.player();
+            if (!(context.player() instanceof ServerPlayer player)) return;
             Level level = player.level();
 
             if (!level.isLoaded(packet.pos())) return;
+            if (net.minecraft.world.phys.Vec3.atCenterOf(packet.pos())
+                    .distanceToSqr(player.position()) > 64.0) return;
 
             BlockEntity be = level.getBlockEntity(packet.pos());
             if (be instanceof IUpgradeableMachine machine) {

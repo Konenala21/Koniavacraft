@@ -37,9 +37,11 @@ public class SolarManaCollectorBlock extends BaseMachineBlock {
 
     }
 
+    public static final MapCodec<SolarManaCollectorBlock> CODEC = simpleCodec(SolarManaCollectorBlock::new);
+
     @Override
     protected MapCodec<? extends BaseEntityBlock> codec() {
-        return null;
+        return CODEC;
     }
 
     private final Map<Direction, Boolean> directionConfig = new EnumMap<>(Direction.class);

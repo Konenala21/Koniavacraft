@@ -52,6 +52,13 @@ public class ModItemTagProvider extends ItemTagsProvider {
                         ModItems.DIAGNOSTIC_DISPLAY_UPGRADE.get()
                 );
 
+        // 魔杖作為扳手工具，讓其他 mod 可識別
+        tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("c", "tools/wrench")))
+                .add(
+                        ModItems.BASIC_TECH_WAND.get(),
+                        ModItems.ADVANCED_TECH_WAND.get()
+                );
+
         tag(ItemTags.SMALL_FLOWERS)
                 .add(ModBlocks.MANA_BLOOM.get().asItem());
 

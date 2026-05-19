@@ -61,6 +61,8 @@ public record ConfigDirectionBatchUpdatePacket(
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 Level level = player.level();
+                if (net.minecraft.world.phys.Vec3.atCenterOf(packet.pos())
+                        .distanceToSqr(player.position()) > 64.0) return;
                 BlockEntity be = level.getBlockEntity(packet.pos());
 
                 if (be instanceof IConfigurableBlock configurable) {

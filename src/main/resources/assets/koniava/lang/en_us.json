@@ -419,6 +419,7 @@
   "message.koniava.selected_block_unavailable": "Selected block is no longer available.",
   "message.koniava.block_selected": "Selected block at position: {0}",
   "message.koniava.block_not_configurable": "The selected block is not configurable.",
+  "message.koniava.config_save_failed": "Failed to save block configuration.",
   "message.koniava.cannot_toggle_while_working": "You cannot toggle modes while the generator is working!",
   "message.koniava.add_mana_success": "Added 10 mana!",
   "message.koniava.block_rotated_facing": "Block rotated! ",

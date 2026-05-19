@@ -211,7 +211,34 @@ public class ExtraEquipmentMenu extends AbstractContainerMenu {
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        return ItemStack.EMPTY; // TODO: shift-click 實作
+        Slot slot = this.slots.get(index);
+        if (!slot.hasItem()) return ItemStack.EMPTY;
+
+        ItemStack stack = slot.getItem();
+        ItemStack original = stack.copy();
+
+        // slot ranges: 0-35 player inv, 36-39 vanilla equipment, 40-47 extra equipment, 48-56 nine grid
+        int playerStart  = 0,  playerEnd  = 36;
+        int extraEqStart = 40, extraEqEnd = 48;
+        int nineGridStart = 48, nineGridEnd = 57;
+
+        if (index < playerEnd) {
+            // player inv → nine grid first, then extra equipment
+            if (!moveItemStackTo(stack, nineGridStart, nineGridEnd, false))
+                if (!moveItemStackTo(stack, extraEqStart, extraEqEnd, false))
+                    return ItemStack.EMPTY;
+        } else {
+            // custom slots → player inv
+            if (!moveItemStackTo(stack, playerStart, playerEnd, false))
+                return ItemStack.EMPTY;
+        }
+
+        if (stack.isEmpty()) slot.set(ItemStack.EMPTY);
+        else slot.setChanged();
+
+        if (stack.getCount() == original.getCount()) return ItemStack.EMPTY;
+        slot.onTake(player, stack);
+        return original;
     }
 
     // 🔥 新增：獲取額外裝備 handler（用於調試）

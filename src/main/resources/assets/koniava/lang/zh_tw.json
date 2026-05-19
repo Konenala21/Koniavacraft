@@ -419,6 +419,7 @@
   "message.koniava.selected_block_unavailable": "選擇的方塊已不可用。",
   "message.koniava.block_selected": "已選擇方塊於位置：{0}",
   "message.koniava.block_not_configurable": "選中的方塊不支持配置。",
+  "message.koniava.config_save_failed": "儲存方塊配置失敗。",
   "message.koniava.cannot_toggle_while_working": "發電機正在工作時無法切換模式！",
   "message.koniava.add_mana_success": "成功添加10魔力!",
   "message.koniava.block_rotated_facing": "方塊已旋轉！",

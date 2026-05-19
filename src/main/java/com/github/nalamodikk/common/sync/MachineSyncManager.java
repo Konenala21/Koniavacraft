@@ -635,11 +635,6 @@ public class MachineSyncManager implements ContainerData {
         return filtered;
     }
 
-    @Deprecated
-    public void addEnergySlot(int[] energyValueHolder) {
-        trackInt(() -> energyValueHolder[0], v -> energyValueHolder[0] = v);
-    }
-
     /**
      * 追蹤一個 DataComponent。
      */

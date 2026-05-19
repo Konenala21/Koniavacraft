@@ -30,25 +30,21 @@ public record ModeChangePacket(boolean forward) implements CustomPacketPayload {
         return TYPE;
     }
 
-    // ??甇?Ⅱ撠????剁?NeoForge 撠?蝟餌絞???撘?
     public static void handle(ModeChangePacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
                 ItemStack stack = player.getMainHandItem();
                 if (stack.getItem() instanceof ManaDebugToolItem tool) {
-                    tool.cycleMode(stack, packet.forward(), player); // ??server ?銵?
+                    tool.cycleMode(stack, packet.forward(), player);
                 }
             }
         });
     }
 
-
-    // ??閮餃??寞?嚗 ModNetworking 蝯曹?隤輻
     public static void registerTo(PayloadRegistrar registrar) {
         registrar.playToServer(TYPE, STREAM_CODEC, ModeChangePacket::handle);
     }
 
-    // ??摰Ｘ蝡臬????
     public static void sendToServer(boolean forward) {
         PacketDistributor.sendToServer(new ModeChangePacket(forward));
     }

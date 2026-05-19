@@ -43,8 +43,7 @@ public record ManaUpdatePacket(BlockPos pos, int mana) implements CustomPacketPa
                 })
         );
     }
-    // ✅ 正確範本
-    public static void registerToServer(PayloadRegistrar registrar) {
+    public static void registerToClient(PayloadRegistrar registrar) {
         registrar.playToClient(TYPE, STREAM_CODEC, (packet, context) -> {});
     }
 

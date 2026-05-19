@@ -3,6 +3,7 @@ package com.github.nalamodikk.common.block.blockentity.conduit;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.capability.IUnifiedManaHandler;
+import com.github.nalamodikk.common.item.debug.ManaDebugToolItem;
 import com.github.nalamodikk.common.item.tool.BasicTechWandItem;
 import com.github.nalamodikk.common.utils.capability.CapabilityUtils;
 import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
@@ -155,7 +156,7 @@ public class ArcaneConduitBlock extends BaseEntityBlock {
 
     @Override
     protected MapCodec<? extends BaseEntityBlock> codec() {
-        return null;
+        throw new UnsupportedOperationException("ArcaneConduitBlock cannot be serialized via codec; tier is set at registration time");
     }
 
     @Override
@@ -727,9 +728,7 @@ public class ArcaneConduitBlock extends BaseEntityBlock {
 
 
     private boolean isTechnicalTool(ItemStack stack) {
-        // 檢查是否為技術工具（除了科技魔杖之外）
-        return stack.getItem().toString().contains("debug") ||
-                stack.getItem().toString().contains("analyzer");
+        return stack.getItem() instanceof ManaDebugToolItem;
     }
 
     private InteractionResult tryManualManaTransfer(ArcaneConduitBlockEntity conduit, Player player, ItemStack heldItem) {
@@ -746,12 +745,11 @@ public class ArcaneConduitBlock extends BaseEntityBlock {
 
 
     private void showTechnicalInfo(ArcaneConduitBlockEntity conduit, Player player) {
-        // 🆕 顯示技術信息：網路ID、傳輸速率、性能統計等
         player.displayClientMessage(Component.translatable(
                 "message.koniava.conduit.technical_info",
                 conduit.getBlockPos().toString(),
                 conduit.getManaStored(),
-                "TODO: 網路統計"
+                conduit.getManaCapacity()
         ), false);
     }
 }

@@ -18,7 +18,7 @@ public class ModNetworkingServer {
     public static void register(RegisterPayloadHandlersEvent event) {
         var registrar = event.registrar("1");
 
-        ManaUpdatePacket.registerToServer(registrar);
+        ManaUpdatePacket.registerToClient(registrar);
         NaraSystemIntroMessagePacket.registerToServer(registrar);
         OpenNaraInitScreenPacket.registerToServer(registrar);
 
