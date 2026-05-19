@@ -94,7 +94,7 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         dropSelf(ModBlocks.MANA_SOIL.get());
         dropSelf(ModBlocks.CRACKED_MANA_BRICKS.get());
         dropSelf(ModBlocks.MOSSY_MANA_BRICKS.get());
-        dropSelf(ModBlocks.MANA_BRICK_PILLAR.get());
+        dropSelf(ModBlocks.RUINED_MANA_PEDESTAL.get());
         add(ModBlocks.MANA_GRASS_BLOCK.get(),
                 createSilkTouchDispatchTable(
                         ModBlocks.MANA_GRASS_BLOCK.get(),

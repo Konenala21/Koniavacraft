@@ -127,8 +127,8 @@ public class ModBlocks {
             registerBlock("mossy_mana_bricks", () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.MOSSY_STONE_BRICKS)
                     .strength(1.5f, 6.0f).sound(SoundType.STONE).requiresCorrectToolForDrops()));
 
-    public static final DeferredBlock<Block> MANA_BRICK_PILLAR =
-            registerBlock("mana_brick_pillar", () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.STONE_BRICKS)
+    public static final DeferredBlock<Block> RUINED_MANA_PEDESTAL =
+            registerBlock("ruined_mana_pedestal", () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.STONE_BRICKS)
                     .strength(1.5f, 6.0f).sound(SoundType.STONE).requiresCorrectToolForDrops().noOcclusion()));
 
     public static final DeferredBlock<Block> MANA_GRASS_BLOCK =
