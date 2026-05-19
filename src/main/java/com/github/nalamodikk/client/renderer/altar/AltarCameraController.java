@@ -33,10 +33,10 @@ public class AltarCameraController {
     }
 
     // Used by MouseHandlerT6Mixin to suppress mouse input during the climax
-    public static boolean isCameraLocked() {
+    public static boolean isCameraLocked(float partialTick) {
         AltarUpgradeAnimManager.AnimState s = AltarUpgradeAnimManager.getActiveT6State();
         if (s == null) return false;
-        float tick = s.tick() - AltarUpgradeAnimManager.T6_PHASE_OFFSET;
+        float tick = s.tick() + partialTick - AltarUpgradeAnimManager.T6_PHASE_OFFSET;
         return tick >= LOCK_START && tick < RELEASE_END;
     }
 
