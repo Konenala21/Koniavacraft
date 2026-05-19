@@ -37,9 +37,7 @@ public class AltarFadeRenderer {
             if (!initialized) return;
         }
 
-        int prevProg  = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
-        boolean wasDepth = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
-        boolean wasBlend = GL11.glIsEnabled(GL11.GL_BLEND);
+        int prevProg = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
 
         GL11.glDisable(GL11.GL_DEPTH_TEST);
         GL11.glEnable(GL11.GL_BLEND);
@@ -53,8 +51,8 @@ public class AltarFadeRenderer {
         GL30.glBindVertexArray(0);
 
         GL20.glUseProgram(prevProg);
-        if (wasDepth) GL11.glEnable(GL11.GL_DEPTH_TEST);
-        if (!wasBlend) GL11.glDisable(GL11.GL_BLEND);
+        GL11.glEnable(GL11.GL_DEPTH_TEST);
+        GL11.glDisable(GL11.GL_BLEND);
     }
 
     private static void init() {

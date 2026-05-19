@@ -194,11 +194,13 @@ public class AltarMagicCircleRenderer {
         return 1f;
     }
 
+    private static final float THREE_FULL_TURNS = (float)(Math.PI * 6.0);
+
     private static float getMagicCircleRotation(float tick) {
         if (tick < 700f) return 0f;
         // Rotation spans 700-1020t: ease-in so it accelerates as it descends (3 full turns)
         float t = Math.min(1f, (tick - 700f) / 320f);
-        return t * t * (float)(Math.PI * 6.0);
+        return t * t * THREE_FULL_TURNS;
     }
 
     // World Y position above altar: stays at 45 until descent, then falls to 1

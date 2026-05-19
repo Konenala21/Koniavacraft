@@ -117,8 +117,11 @@ public class AltarShockwaveRenderer {
 
     // ── Wave parameters (float[15] = 5 × vec3) ───────────────────────────────
 
+    private static final float[] WAVE_SCRATCH = new float[15];
+
     private static float[] computeWaves(int tier, float tick) {
-        float[] data      = new float[15]; // 5 waves × 3 floats, zeros = inactive
+        float[] data      = WAVE_SCRATCH;
+        java.util.Arrays.fill(data, 0f); // 5 waves × 3 floats, zeros = inactive
         int   waveCount   = (tier <= 3) ? 3 : 5;
         float maxRadius   = (tier <= 3) ? 14f : 18f;
 
