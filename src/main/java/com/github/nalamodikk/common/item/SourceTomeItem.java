@@ -22,10 +22,10 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * 源典 (Source Codex) — unlocks all research and sets tier to max.
+ * 源典 (Source Tome) — unlocks all research and sets tier to max.
  * Late-game item with no crafting recipe.
  */
-public class SourceCodexItem extends Item {
+public class SourceTomeItem extends Item {
 
     private static final int MAX_TIER = 12;
 

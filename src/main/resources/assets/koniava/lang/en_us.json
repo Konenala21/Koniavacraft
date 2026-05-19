@@ -717,10 +717,10 @@
   "item.koniava.consensus_glasses.sync_done": "Research consensus achieved with %s.",
   "item.koniava.consensus_glasses.sync_received": "%s has achieved research consensus with you.",
 
-  "item.koniava.source_codex": "Source Codex",
-  "item.koniava.source_codex.tooltip.1": "Right-click: unlock all research and recipes.",
-  "item.koniava.source_codex.tooltip.2": "No crafting recipe exists for this item.",
-  "item.koniava.source_codex.activated": "Source Codex activated. All mana knowledge unlocked.",
+  "item.koniava.source_tome": "Source Codex",
+  "item.koniava.source_tome.tooltip.1": "Right-click: unlock all research and recipes.",
+  "item.koniava.source_tome.tooltip.2": "No crafting recipe exists for this item.",
+  "item.koniava.source_tome.activated": "Source Codex activated. All mana knowledge unlocked.",
 
   "advancement.koniava.craft_research_table.title": "First Steps in Research",
   "advancement.koniava.craft_research_table.description": "Built a Research Table. The foundation of mana knowledge.",

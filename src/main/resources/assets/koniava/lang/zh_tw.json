@@ -717,10 +717,10 @@
   "item.koniava.consensus_glasses.sync_done": "已和 %s 完成研究共識。",
   "item.koniava.consensus_glasses.sync_received": "%s 和你完成了研究共識。",
 
-  "item.koniava.source_codex": "源典",
-  "item.koniava.source_codex.tooltip.1": "右鍵使用：解鎖所有研究與配方。",
-  "item.koniava.source_codex.tooltip.2": "此物品不存在任何合成配方。",
-  "item.koniava.source_codex.activated": "源典已激活，所有本源知識已解鎖。",
+  "item.koniava.source_tome": "源典",
+  "item.koniava.source_tome.tooltip.1": "右鍵使用：解鎖所有研究與配方。",
+  "item.koniava.source_tome.tooltip.2": "此物品不存在任何合成配方。",
+  "item.koniava.source_tome.activated": "源典已激活，所有本源知識已解鎖。",
 
   "advancement.koniava.craft_research_table.title": "研究起步",
   "advancement.koniava.craft_research_table.description": "合成了研究台，魔力知識體系的第一塊磚。",
