@@ -4,8 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+---
+
+## [0.0.1.7] - 2026-05-19
+
 ### Player Changes / 玩家更新內容
 
+- Fixed a critical bug where the Solar Mana Collector was never generating mana regardless of placement.
+- 修正太陽魔力收集器在任何情況下都無法發電的致命錯誤。
+- Fixed Mana Grinder byproducts silently disappearing when output slots were full.
+- 修正研磨機輸出槽滿時副產物靜默消失的問題，現在副產物在無空間時不會強行插入。
+- Fixed Mana Grinder with max efficiency upgrades being able to craft items for free (integer division rounding to zero).
+- 修正研磨機效率升級滿級時因整數除法歸零而免費製作物品的漏洞。
 - Fixed a bug where a fully upgraded Mana Infuser with max efficiency upgrades could craft items for free instead of consuming mana.
 - 修正 Mana Infuser 在效率升級滿級時可免費製作物品的漏洞，現在至少消耗 1 點魔力。
 - Fixed a bug where fuel items without an explicit generation interval in the data pack would generate mana every single tick instead of at the correct rate.
@@ -61,6 +71,50 @@ All notable changes to this project will be documented in this file.
 - `AltarFadeRenderer`: replaced VBO quad with `gl_VertexID` fullscreen triangle in `altar_fade.vsh`, removing vertex attribute location ambiguity that prevented the black overlay from rendering.
 - Magic circle: rotation, descent, and radius shrink now all run simultaneously from 870t; rotation extends to 1020t for 3 full turns total.
 - Magic circle shader: removed upward-ray-only restriction and geometry depth occlusion so the disc is visible from above and when overlapping the altar structure.
+
+**Security / Packet validation (2026-05-19 sweep)**
+- All server-bound packets that modify world state now validate that the sending player is within 8 blocks of the target block: `SetDeployerIntervalPacket`, `ToggleDeployerEnabledPacket`, `PriorityUpdatePacket`, `ResetPrioritiesPacket`, `ResearchCompletePacket`, `ResearchAspectPlacePacket`, `AspectSynthesisPacket`.
+- `ResearchCompletePacket`: added `isAvailableTo(knowledge)` prerequisite check so players cannot complete research they have not unlocked.
+- `ResearchAspectPlacePacket`: validates `packet.researchId()` against `table.getCurrentResearchId()` (the actual note in the slot) to prevent forged IDs from corrupting another player's puzzle.
+- `AspectSynthesisPacket`: when `aspect1 == aspect2`, now requires count >= 2 instead of 1 before consuming.
+- `NaraCreeperPunishPacket`: skips if player is already bound to Nara, preventing Warden spawn spam.
+- `NaraBindRequestPacket`: skips entire bind flow if player is already bound, preventing firework spam.
+
+**Research system**
+- `CompletedResearchItem.use()`: scroll now consumed in both the first-time and already-completed branches (was not consumed in the else branch).
+- `ResearchGate.hasCompleted()`: tick cache key now includes `dimension.location()` prefix to prevent cross-dimension result pollution in multi-world setups.
+- `ResearchTableMenu.stillValid()`: added null guard on `blockEntity.getLevel()`.
+- `ResearchScreen.init()`: wrapped `Integer.parseInt()` on `savedPlacements` keys in try/catch to prevent crash on corrupt NBT.
+
+**Mana systems**
+- `ManaStorage.setMana()`: clamps to `[0, capacity]` (was only upper-bounded; negative values were possible).
+- `ManaStorage.getFillRatio()`: returns 0f when capacity is 0 (was NaN from divide-by-zero).
+- `ManaStorage.deserializeNBT()`: clamps loaded mana to `[0, capacity]` so corrupt saves cannot produce invalid state.
+- `ManaGeneratorNbtManager`: removed duplicate mana/energy serialization; base class `AbstractManaMachineEntityBlock` already handles `"ManaStorage"`/`"EnergyStorage"` keys. Backward-compat fallback retained for saves that only have legacy `"Mana"`/`"Energy"` keys.
+- `ManaGeneratorMenu` fuel slot: `mayPlace()` now calls `fuelLogic.isValidFuel(stack)` instead of returning `true` unconditionally.
+- `ManaGrinderBlockEntity.finishGrinding()`: byproduct insertion now simulates first; if no output slot can fit the item, the byproduct is skipped instead of being silently discarded mid-insertion.
+- `ManaGrinderBlockEntity`: efficiency multiplier division uses `Math.max(1, ...)` to prevent free crafting.
+- `ManaGrinderMenu.stillValid()`: added proper 8-block distance check (was always `true`).
+- `SolarManaCollectorBlockEntity.isOpenToSky()`: fixed `canSeeSkyFromBelowWater()` -> `canSeeSky()` (critical: previous implementation always returned false outside of underwater swimming context).
+- `ManaInfuserBlockEntity.completeInfusion()`: added `setChanged()` after `currentOutput.grow()` to ensure the incremented count is saved to NBT.
+
+**Conduit / VirtualNetwork**
+- `VirtualNetwork.addConduit()`: added early-return if conduit is already in `connectedConduits`, preventing capacity inflation when a conduit is joined to the same network more than once.
+- `ArcaneConduitBlockEntity.restoreVirtualNetworkData()`: switched from master-only restore to take-max strategy. Any conduit whose `savedMana` exceeds the current network mana now updates the pool, fixing truncation when chunks load in arbitrary order and the first conduit's partial capacity caps the restore value.
+
+**Altar**
+- `AspectAltarBlockEntity.scanForPedestals()`: the `removeIf` callback now also clears `centerPedestal` when the removed pedestal is the center one, preventing stale `BlockEntity` references.
+
+**Nara system**
+- `PlayerLoginEvent`: `NaraSyncPacket` and `KnowledgeSyncPacket` now sent before the `showIntroAnimation` config check so reconnecting players always receive correct bind and research state.
+- `NaraServerEvents`: added `onPlayerLogout` handler that removes per-player state (`pendingPunishmentDialogue`, `naraPunishmentActive`, `awaitingRespawn`, `pendingResearchTableTutorial`, `tutorialLoginDelay`) to prevent stale state on reconnect.
+- `NaraDialogueManager.close()`: now resets `choiceTimerTicks` and `selectedChoiceIndex` so a forced-closed dialogue does not leave stale timer/selection state for the next dialogue.
+
+**JEI**
+- `AspectSynthesisRecipeCategory.setRecipe()`: removed duplicate output ingredient registration (output aspect and token were each added twice).
+
+**Misc**
+- `CommandRegistrationHandler`: added missing `modid = KoniavacraftMod.MOD_ID` to `@EventBusSubscriber`.
 
 ---
 
