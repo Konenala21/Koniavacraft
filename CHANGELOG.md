@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Player Changes / 玩家更新內容
+
+- Abandoned Altar structures now generate in Mana Plains biomes. Four variants exist: heavily damaged structures appear frequently on smaller terrain patches, while more intact but still ruined versions appear less often on larger Mana Plains. Variant 04 contains a chest with mana materials.
+- 廢棄祭壇結構現在會在魔力草原生物群系中生成。共有四種變體：高度損毀的版本在較小的魔力草原地形頻繁出現，而較完整但仍損毀的版本則在較大的地形低機率出現。變體 04 含有一個裝有魔力材料的箱子。
+- Added three ruin decoration blocks: Cracked Mana Bricks, Mossy Mana Bricks, and Ruined Mana Pedestal. These appear in abandoned altar structures.
+- 新增三種廢墟裝飾方塊：裂紋魔力磚、苔蘚魔力磚和損壞的魔力底座，出現在廢棄祭壇結構中。
+- Mana Grass Block now correctly drops Mana Soil when mined without Silk Touch.
+- 魔力草方塊在不使用精準採集時現在能正確掉落魔力泥土。
+- Fixed Mana Deployer and Resonance Ring not being mineable with a pickaxe.
+- 修正魔力部署器和共鳴環無法用鎬子挖掘的問題。
+
+### Developer Notes / 開發者備註
+
+- Structure templates must be placed in `data/<namespace>/structure/` (singular) and chest loot tables in `data/<namespace>/loot_table/` (singular) per 1.21 data pack path changes.
+- Chest loot injection uses a `StructureProcessor` (`ChestLootProcessor`) added to `makeSettings()` to write `LootTable`/`LootTableSeed` directly into block entity NBT at template placement time, bypassing world gen pipeline persistence issues with `postProcess` scanning.
+- `AbandonedAltarStructure.findGenerationPoint`: Y position now computed via `getFirstOccupiedHeight(..., WORLD_SURFACE_WG) + 1` instead of `getMiddleBlockPosition(0)`.
+
 ---
 
 ## [0.0.1.7] - 2026-05-19
