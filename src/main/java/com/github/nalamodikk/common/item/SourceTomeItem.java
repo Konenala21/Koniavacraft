@@ -29,7 +29,7 @@ public class SourceTomeItem extends Item {
 
     private static final int MAX_TIER = 12;
 
-    public SourceCodexItem(Properties props) {
+    public SourceTomeItem(Properties props) {
         super(props);
     }
 
