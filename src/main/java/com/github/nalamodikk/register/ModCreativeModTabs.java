@@ -8,6 +8,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -55,6 +56,11 @@ public class ModCreativeModTabs {
                                         output.accept(item.get());
                                     }
                                 });
+
+                                // 結構相關原版方塊
+                                output.accept(Items.STRUCTURE_BLOCK);
+                                output.accept(Items.STRUCTURE_VOID);
+                                output.accept(Items.JIGSAW);
                             })
                             .build());
 
