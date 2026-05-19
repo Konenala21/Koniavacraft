@@ -116,7 +116,7 @@
   "gui.koniava.nara_watch.search_hint": "搜尋研究...",
   "nara.dialogue.tutorial.research_table.line1": "喔！找到研究台了！就知道你會來這裡。",
   "nara.dialogue.tutorial.research_table.line2": "好，說正事。左槽放研究筆記，右槽放墨水羽毛筆，確認之後謎題就開始。",
-  "nara.dialogue.tutorial.research_table.line3": "謎題很直觀——把相關的本源格連成一條路就好了。連完路徑，知識解鎖，完事。",
+  "nara.dialogue.tutorial.research_table.line3": "謎題很直觀，把相關的本源格連成一條路就好了。連完路徑，知識解鎖，完事。",
   "nara.dialogue.tutorial.research_table.line4": "先從手錶的知識樹選一個研究，你會收到那個研究的筆記。去試試，我不陪你了！掰～",
   "nara.dialogue.tutorial.research_table.confirm": "好的！",
   "item.koniava.nara_watch.scan.unknown": "未找到可識別的本源。",
@@ -712,7 +712,7 @@
   "item.koniava.dev_render_test_2": "開發渲染物品2（傅立葉曲線）",
 
   "advancement.koniava.craft_research_table.title": "研究起步",
-  "advancement.koniava.craft_research_table.description": "合成了研究台——魔力知識體系的第一塊磚。",
+  "advancement.koniava.craft_research_table.description": "合成了研究台，魔力知識體系的第一塊磚。",
 
   "gui.koniava.nara_watch.guide_tab": "指引",
   "gui.koniava.nara_guide.title": "娜拉指引手冊",
@@ -733,7 +733,7 @@
   "guide.koniava.research.overview.title": "研究系統概覽",
   "guide.koniava.research.overview.body": "手持手錶對準空氣右鍵，開啟研究知識樹。節點分為三種狀態：\n\n可解鎖（藍色閃爍）：前置條件已滿足，點擊後會收到研究筆記。\n已完成（綠色）：研究已解鎖，配方和功能已開放。\n鎖定（灰色）：前置研究或本源條件未達成。",
   "guide.koniava.research.table.title": "使用研究台",
-  "guide.koniava.research.table.body": "取得研究筆記後，合成研究台並放置。打開介面：\n\n左槽：放入研究筆記\n右槽：放入墨水羽毛筆\n確認後謎題開始——把相關的本源格連成一條路徑即可完成研究。\n\n完成研究會解鎖對應的合成配方。",
+  "guide.koniava.research.table.body": "取得研究筆記後，合成研究台並放置。打開介面：\n\n左槽：放入研究筆記\n右槽：放入墨水羽毛筆\n確認後謎題開始，把相關的本源格連成一條路徑即可完成研究。\n\n完成研究會解鎖對應的合成配方。",
 
   "guide.koniava.mana.generator.title": "魔力生成器",
   "guide.koniava.mana.generator.body": "魔力生成器是整個魔力網路的起點。合成並放置後，打開介面放入燃料（類似熔爐），機器會開始燃燒並產出魔力值。\n\n魔力值存在緩衝槽中，透過導管自動推送到下游機器。",
