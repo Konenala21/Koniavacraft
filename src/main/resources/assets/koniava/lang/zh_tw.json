@@ -708,5 +708,6 @@
 
   "item.koniava.dev_render_test_1": "創造開發渲染物品1",
   "item.koniava.dev_render_test.tooltip.1": "右鍵: ManaStrike 特效，Shift 右鍵: Orbital 特效",
-  "item.koniava.dev_render_test.tooltip.2": "部分特效以 orbital-railgun 為原型設計"
+  "item.koniava.dev_render_test.tooltip.2": "部分特效以 orbital-railgun 為原型設計",
+  "item.koniava.dev_render_test_2": "開發渲染物品2（傅立葉曲線）"
 }

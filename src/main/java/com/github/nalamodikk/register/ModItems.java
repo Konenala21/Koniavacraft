@@ -8,6 +8,7 @@ import com.github.nalamodikk.common.item.research.CompletedResearchItem;
 import com.github.nalamodikk.common.item.research.InkQuillItem;
 import com.github.nalamodikk.common.item.research.ResearchNoteItem;
 import com.github.nalamodikk.common.item.DevRenderTestItem;
+import com.github.nalamodikk.common.item.DevRenderTestItem2;
 import com.github.nalamodikk.common.item.debug.ManaDebugToolItem;
 import com.github.nalamodikk.common.item.tool.AdvancedTechWandItem;
 import com.github.nalamodikk.common.item.tool.BasicTechWandItem;
@@ -88,6 +89,10 @@ public class ModItems {
 
     public static final DeferredItem<DevRenderTestItem> DEV_RENDER_TEST_1 =
             ITEMS.register("dev_render_test_1", () -> new DevRenderTestItem(
+                    new Item.Properties().stacksTo(1)));
+
+    public static final DeferredItem<DevRenderTestItem2> DEV_RENDER_TEST_2 =
+            ITEMS.register("dev_render_test_2", () -> new DevRenderTestItem2(
                     new Item.Properties().stacksTo(1)));
 
     public static void register(IEventBus eventBus){

@@ -4,6 +4,12 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.client.renderer.altar.AltarCameraController;
 import com.github.nalamodikk.client.renderer.altar.AltarFadeRenderer;
 import com.github.nalamodikk.client.renderer.altar.AltarUpgradeAnimManager;
+import com.github.nalamodikk.client.renderer.FourierCurveRenderer;
+import com.github.nalamodikk.client.renderer.FresnelSphereRenderer;
+import com.github.nalamodikk.client.renderer.LissajousRenderer;
+import com.github.nalamodikk.client.renderer.MagicCircleRenderer;
+import com.github.nalamodikk.client.renderer.RippleRenderer;
+import com.github.nalamodikk.client.renderer.SpiralCurveRenderer;
 import com.github.nalamodikk.client.renderer.ManaStrikeShaderRenderer;
 import com.github.nalamodikk.client.renderer.OrbitalTestShaderRenderer;
 import com.github.nalamodikk.research.client.ClientResearchCache;
@@ -31,6 +37,12 @@ public class ClientTickHandler {
         AltarCameraController.reset();
         ManaStrikeShaderRenderer.release();
         OrbitalTestShaderRenderer.release();
+        FourierCurveRenderer.release();
+        MagicCircleRenderer.release();
+        RippleRenderer.release();
+        SpiralCurveRenderer.release();
+        LissajousRenderer.release();
+        FresnelSphereRenderer.release();
         AltarFadeRenderer.release();
         ClientResearchCache.clear();
     }

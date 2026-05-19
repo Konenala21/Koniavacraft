@@ -21,7 +21,8 @@ public class ModCreativeModTabs {
     // 開發者專用物品的 registry path，這些會從一般欄位排除、只出現在 dev tab
     private static final Set<String> DEV_ITEM_PATHS = Set.of(
             "mana_debug_tool",
-            "dev_render_test_1"
+            "dev_render_test_1",
+            "dev_render_test_2"
     );
 
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS =

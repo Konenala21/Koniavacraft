@@ -142,3 +142,4 @@ repo/
 local.properties
 /todolist.md
 .gitnexus
+.claude/memory.jsonl
