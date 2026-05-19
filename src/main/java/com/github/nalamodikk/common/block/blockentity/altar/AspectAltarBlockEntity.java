@@ -719,6 +719,7 @@ public static final List<Vec3i> RING_T1 = List.of(
                                 .get(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, advId));
                     }
                     for (ServerPlayer sp : serverLevel.players()) {
+                        if (sp.blockPosition().distSqr(worldPosition) > 64 * 64) continue;
                         boolean triggerDialogue = false;
                         if (researchData != null) {
                             var knowledge = researchData.getOrCreate(sp.getUUID());

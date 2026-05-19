@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Player Changes / 玩家更新內容
+
+- Altar upgrade animations and tier advancements now only trigger for players within 64 blocks of the altar.
+- 祭壇升級動畫與升級成就現在只對距祭壇 64 格以內的玩家觸發。
+
+### Developer Notes / 開發者備註
+
+- `AspectAltarBlockEntity`: player loop for upgrade events now skips players beyond 64 blocks (`distSqr > 64*64 → continue`).
+
+---
+
 ## [0.0.1.7-1] - 2026-05-19
 
 ### Player Changes / 玩家更新內容
