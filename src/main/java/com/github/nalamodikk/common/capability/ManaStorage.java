@@ -225,7 +225,6 @@ public class ManaStorage implements IUnifiedManaHandler , INBTSerializable<Compo
 
     @Override
     public void deserializeNBT(HolderLookup.Provider provider, CompoundTag nbt) {
-        this.mana = nbt.getInt("Mana");
-
+        this.mana = Math.max(0, Math.min(nbt.getInt("Mana"), this.capacity));
     }
 }
