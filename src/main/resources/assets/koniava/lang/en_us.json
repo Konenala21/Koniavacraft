@@ -717,7 +717,7 @@
   "item.koniava.consensus_glasses.sync_done": "Research consensus achieved with %s.",
   "item.koniava.consensus_glasses.sync_received": "%s has achieved research consensus with you.",
 
-  "item.koniava.source_tome": "Source Codex",
+  "item.koniava.source_tome": "Source Tome",
   "item.koniava.source_tome.tooltip.1": "Right-click: unlock all research and recipes.",
   "item.koniava.source_tome.tooltip.2": "No crafting recipe exists for this item.",
   "item.koniava.source_tome.activated": "Source Codex activated. All mana knowledge unlocked.",
