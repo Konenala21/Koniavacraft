@@ -61,6 +61,7 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
 
         // 🎯 添加有自定義掉落邏輯的方塊到排除列表
         addExcludedBlock(ModBlocks.MANA_CRAFTING_TABLE_BLOCK.get()); // 魔力合成台：保存 NBT 到物品
+        addExcludedBlock(ModBlocks.MANA_FOG_BLOCK.get()); // 霧氣方塊：不可破壞、無掉落
 
         // 💡 未來如果有其他自定義掉落方塊，在這裡添加：
         // addExcludedBlock(ModBlocks.ANOTHER_CUSTOM_DROP_BLOCK.get());

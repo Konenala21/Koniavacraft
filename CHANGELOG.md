@@ -8,10 +8,14 @@ All notable changes to this project will be documented in this file.
 
 - Altar upgrade animations and tier advancements now only trigger for players within 64 blocks of the altar.
 - 祭壇升級動畫與升級成就現在只對距祭壇 64 格以內的玩家觸發。
+- Fixed JEI aspect synthesis panel crashing on load.
+- 修正 JEI 本源合成面板在載入時崩潰的問題。
 
 ### Developer Notes / 開發者備註
 
 - `AspectAltarBlockEntity`: player loop for upgrade events now skips players beyond 64 blocks (`distSqr > 64*64 → continue`).
+- `AspectSynthesisJEIPlugin`: moved `removeIngredientsAtRuntime` for token stacks from `registerRecipes()` to `onRuntimeAvailable()`. Calling runtime ingredient operations during the registration phase caused JEI to report the plugin as crashed.
+- `AspectSynthesisRecipeCategory.setRecipe()`: removed `createFocusLink` call. JEI requires all linked slots to have an equal ingredient count; input slots had 2 (first + second aspect) while output had 1 (result), causing `IllegalArgumentException` and the "This recipe crashed" overlay. Invisible ingredients are kept for search linking.
 
 ---
 

@@ -26,6 +26,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
     @Override
     protected void registerStatesAndModels() {
+        // 🌫️ 霧氣方塊（不可見，blockstate 僅為滿足資源驗證）
+        simpleBlock(ModBlocks.MANA_FOG_BLOCK.get(),
+                new ModelFile.UncheckedModelFile("minecraft:block/barrier"));
+
         // 🏗️ 基礎方塊 (六面相同材質)
         blockWithItem(ModBlocks.MANA_BLOCK);
         blockWithItem(ModBlocks.MAGIC_ORE);

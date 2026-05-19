@@ -16,7 +16,6 @@ import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import mezz.jei.api.gui.builder.ITooltipBuilder;
-import mezz.jei.api.gui.builder.IIngredientAcceptor;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -80,25 +79,18 @@ public class AspectSynthesisRecipeCategory implements IRecipeCategory<AspectSynt
 
     @Override
     public void setRecipe(@NotNull IRecipeLayoutBuilder builder, @NotNull AspectSynthesisRecipe recipe, @NotNull IFocusGroup focuses) {
-        IIngredientAcceptor<?> inputAspectIngredients = builder.addInvisibleIngredients(RecipeIngredientRole.INPUT);
-        inputAspectIngredients.addIngredients(AspectIngredientType.INSTANCE, List.of(recipe.first(), recipe.second()));
+        builder.addInvisibleIngredients(RecipeIngredientRole.INPUT)
+                .addIngredients(AspectIngredientType.INSTANCE, List.of(recipe.first(), recipe.second()));
 
-        IIngredientAcceptor<?> outputAspectIngredients = builder.addInvisibleIngredients(RecipeIngredientRole.OUTPUT);
-        outputAspectIngredients.addIngredient(AspectIngredientType.INSTANCE, recipe.result());
+        builder.addInvisibleIngredients(RecipeIngredientRole.OUTPUT)
+                .addIngredient(AspectIngredientType.INSTANCE, recipe.result());
 
-        IIngredientAcceptor<?> inputTokenIngredients = builder.addInvisibleIngredients(RecipeIngredientRole.INPUT);
-        inputTokenIngredients.addItemStack(AspectTokenItem.forAspect(recipe.first(), !recipe.first().isPrimary()));
-        inputTokenIngredients.addItemStack(AspectTokenItem.forAspect(recipe.second(), !recipe.second().isPrimary()));
+        builder.addInvisibleIngredients(RecipeIngredientRole.INPUT)
+                .addItemStack(AspectTokenItem.forAspect(recipe.first(), !recipe.first().isPrimary()))
+                .addItemStack(AspectTokenItem.forAspect(recipe.second(), !recipe.second().isPrimary()));
 
-        IIngredientAcceptor<?> outputTokenIngredients = builder.addInvisibleIngredients(RecipeIngredientRole.OUTPUT);
-        outputTokenIngredients.addItemStack(AspectTokenItem.forAspect(recipe.result(), !recipe.result().isPrimary()));
-
-        builder.createFocusLink(
-                inputAspectIngredients,
-                outputAspectIngredients,
-                inputTokenIngredients,
-                outputTokenIngredients
-        );
+        builder.addInvisibleIngredients(RecipeIngredientRole.OUTPUT)
+                .addItemStack(AspectTokenItem.forAspect(recipe.result(), !recipe.result().isPrimary()));
     }
 
     @Override

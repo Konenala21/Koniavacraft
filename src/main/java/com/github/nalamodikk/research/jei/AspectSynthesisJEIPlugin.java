@@ -94,6 +94,12 @@ public class AspectSynthesisJEIPlugin implements IModPlugin {
     public void onRuntimeAvailable(IJeiRuntime runtime) {
         jeiRuntime = runtime;
         refreshAspectIngredients();
+        List<ItemStack> hiddenTokenStacks = new ArrayList<>();
+        for (Aspect aspect : ModAspects.all()) {
+            hiddenTokenStacks.add(AspectTokenItem.forAspect(aspect, false));
+            hiddenTokenStacks.add(AspectTokenItem.forAspect(aspect, true));
+        }
+        runtime.getIngredientManager().removeIngredientsAtRuntime(VanillaTypes.ITEM_STACK, hiddenTokenStacks);
     }
 
     @Override
@@ -112,12 +118,6 @@ public class AspectSynthesisJEIPlugin implements IModPlugin {
         }
 
         registration.addRecipes(AspectSynthesisRecipeCategory.RECIPE_TYPE, recipes);
-        List<ItemStack> hiddenTokenStacks = new ArrayList<>();
-        for (Aspect aspect : ModAspects.all()) {
-            hiddenTokenStacks.add(AspectTokenItem.forAspect(aspect, false));
-            hiddenTokenStacks.add(AspectTokenItem.forAspect(aspect, true));
-        }
-        registration.getIngredientManager().removeIngredientsAtRuntime(VanillaTypes.ITEM_STACK, hiddenTokenStacks);
         LOGGER.info("[JEI] Registered {} aspect synthesis recipes.", recipes.size());
     }
 

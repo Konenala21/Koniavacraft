@@ -52,7 +52,7 @@ public class ManaSoilBlock extends Block {
 
     @Override
     public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        if (random.nextFloat() >= 0.01f) return;
+        if (random.nextFloat() >= 0.0005f) return;
 
         BlockPos abovePos = pos.above();
         BlockState aboveState = level.getBlockState(abovePos);

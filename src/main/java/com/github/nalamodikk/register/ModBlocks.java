@@ -17,6 +17,7 @@ import com.github.nalamodikk.common.block.blockentity.altar.ResonanceRingBlock;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserBlock;
 import com.github.nalamodikk.common.block.normal.DeepManaSoilBlock;
 import com.github.nalamodikk.common.block.normal.ManaBloomBlock;
+import com.github.nalamodikk.common.block.normal.ManaFogBlock;
 import com.github.nalamodikk.common.block.normal.ManaGrassBlock;
 import com.github.nalamodikk.common.block.normal.ManaSoilBlock;
 import net.minecraft.util.valueproviders.UniformInt;
@@ -118,6 +119,14 @@ public class ModBlocks {
                     .lightLevel((state) -> 1)  // 更微弱的發光
             ));
 
+    // === 🌫️ 結構霧氣（不可見、無碰撞、玩家靠近 32 格自動消失）===
+    public static final DeferredBlock<Block> MANA_FOG_BLOCK =
+            registerBlockNoItem("mana_fog", () -> new ManaFogBlock(
+                    BlockBehaviour.Properties.of()
+                            .noCollission()
+                            .noOcclusion()
+                            .strength(-1.0F, 3600000.0F)));
+
     // === 🏚️ 廢墟裝飾方塊 ===
     public static final DeferredBlock<Block> CRACKED_MANA_BRICKS =
             registerBlock("cracked_mana_bricks", () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.CRACKED_STONE_BRICKS)
@@ -179,6 +188,10 @@ public class ModBlocks {
                     .strength(3.0f).sound(SoundType.STONE).requiresCorrectToolForDrops()
                     .lightLevel(state -> 8).noOcclusion()));
 
+
+    private static <T extends Block> DeferredBlock<T> registerBlockNoItem(String name, Supplier<T> block) {
+        return BLOCKS.register(name, block);
+    }
 
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> block) {
         DeferredBlock<T> toReturn = BLOCKS.register(name, block);

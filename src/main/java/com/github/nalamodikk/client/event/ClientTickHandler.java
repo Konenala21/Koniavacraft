@@ -1,6 +1,7 @@
 package com.github.nalamodikk.client.event;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.client.ManaFogTracker;
 import com.github.nalamodikk.client.renderer.altar.AltarCameraController;
 import com.github.nalamodikk.client.renderer.altar.AltarFadeRenderer;
 import com.github.nalamodikk.client.renderer.altar.AltarUpgradeAnimManager;
@@ -45,5 +46,6 @@ public class ClientTickHandler {
         FresnelSphereRenderer.release();
         AltarFadeRenderer.release();
         ClientResearchCache.clear();
+        ManaFogTracker.clear();
     }
 }
