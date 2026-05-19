@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.0.1.7-1] - 2026-05-19
 
 ### Player Changes / 玩家更新內容
 
@@ -14,6 +14,14 @@ All notable changes to this project will be documented in this file.
 - 魔力草方塊在不使用精準採集時現在能正確掉落魔力泥土。
 - Fixed Mana Deployer and Resonance Ring not being mineable with a pickaxe.
 - 修正魔力部署器和共鳴環無法用鎬子挖掘的問題。
+- Added Nara Guide, accessible via the Guide tab in the Nara Watch screen. Covers four chapters: Aspect System, Research System, Mana Facilities, and Altar System.
+- 新增娜拉指引，可透過娜拉手錶介面的指引頁簽開啟，涵蓋四個章節：本源系統、研究系統、魔力設施、祭壇系統。
+- Added advancement for crafting the Research Table.
+- 新增合成研究台的進度成就。
+- Added Consensus Glasses: binds to the first player who uses it, snapshotting their research and aspect data. Other players can use the item to copy that knowledge to themselves.
+- 新增共識眼鏡：第一位使用的玩家將其綁定並快照研究與本源資料，其他玩家使用後可將該知識複製至自身。
+- Added Source Tome: unlocks all research, sets research tier to 12, and grants 500 points of every aspect. No crafting recipe; intended as a late-game or creative tool.
+- 新增源典：解鎖全部研究、將研究階段設為 12，並賦予每種本源 500 點，無合成配方，定位為後期或創意模式工具。
 
 ### Developer Notes / 開發者備註
 

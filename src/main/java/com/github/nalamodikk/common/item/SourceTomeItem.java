@@ -1,6 +1,7 @@
 package com.github.nalamodikk.common.item;
 
 import com.github.nalamodikk.research.aspect.ModAspects;
+import net.minecraft.resources.ResourceLocation;
 import com.github.nalamodikk.research.knowledge.ResearchSavedData;
 import com.github.nalamodikk.research.network.KnowledgeSyncPacket;
 import com.github.nalamodikk.research.template.ResearchRegistry;
@@ -56,7 +57,7 @@ public class SourceTomeItem extends Item {
             KnowledgeSyncPacket.sendTo(sp);
 
             // Award all unlocked recipes
-            Set<net.minecraft.resources.ResourceLocation> recipeIds = new HashSet<>();
+            Set<ResourceLocation> recipeIds = new HashSet<>();
             for (var r : ResearchRegistry.all()) recipeIds.addAll(r.getUnlockedRecipes());
             if (!recipeIds.isEmpty()) {
                 List<RecipeHolder<?>> holders = sp.serverLevel().getRecipeManager().getRecipes()

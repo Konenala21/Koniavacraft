@@ -103,6 +103,7 @@ public class NBodyRenderer {
     private static final List<NBodyEffect> effects = new ArrayList<>();
     private static int  prog = -1, vao = -1, vbo = -1, locProj, locMV;
     private static boolean init = false;
+    private static boolean initFailed = false;
     private static FloatBuffer buf;
 
     public static void spawnEffect(Vec3 pos, long tick) {
@@ -116,11 +117,11 @@ public class NBodyRenderer {
         if (effects.isEmpty()) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
+        if (initFailed) return;
         if (!init) { doInit(); if (!init) return; }
 
         long   gameTick = mc.level.getGameTime();
         Vec3   cam      = event.getCamera().getPosition();
-        float  partial  = event.getPartialTick().getGameTimeDeltaPartialTick(false);
 
         for (NBodyEffect eff : effects) eff.step(gameTick);
 
@@ -189,16 +190,16 @@ public class NBodyRenderer {
         if (vbo  != -1) { GL15.glDeleteBuffers(vbo);  vbo  = -1; }
         if (vao  != -1) { GL30.glDeleteVertexArrays(vao); vao = -1; }
         if (buf  != null) { MemoryUtil.memFree(buf); buf = null; }
-        init = false; effects.clear();
+        init = false; initFailed = false; effects.clear();
     }
 
     private static void doInit() {
         ResourceManager rm = Minecraft.getInstance().getResourceManager();
         try {
             prog = buildProg(read(rm, "shaders/fourier_curve.vsh"), read(rm, "shaders/fourier_curve.fsh"));
-            if (prog == -1) return;
+            if (prog == -1) { initFailed = true; return; }
             GL20.glUseProgram(prog); locProj = GL20.glGetUniformLocation(prog, "ProjMat"); locMV = GL20.glGetUniformLocation(prog, "ModelViewMat"); GL20.glUseProgram(0);
-        } catch (Exception e) { KoniavacraftMod.LOGGER.error("[NBody] Shader load failed", e); return; }
+        } catch (Exception e) { KoniavacraftMod.LOGGER.error("[NBody] Shader load failed", e); initFailed = true; return; }
         buf = MemoryUtil.memAllocFloat(FLOAT_CAP);
         vao = GL30.glGenVertexArrays(); vbo = GL15.glGenBuffers();
         GL30.glBindVertexArray(vao); GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbo);

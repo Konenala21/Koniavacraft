@@ -23,6 +23,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.level.Level;
 
 import java.util.HashSet;
@@ -56,7 +57,7 @@ public class ConsensusGlassesItem extends Item {
         if (!(player instanceof ServerPlayer sp)) return InteractionResultHolder.pass(stack);
 
         CompoundTag tag = stack.getOrDefault(
-                net.minecraft.core.component.DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+                DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
 
         if (!tag.contains(TAG_BOUND_UUID)) {
             bindToPlayer(sp, stack, tag, hand);
@@ -99,7 +100,7 @@ public class ConsensusGlassesItem extends Item {
         }
         tag.put(TAG_SNAPSHOT_ASPECTS, aspectSnap);
 
-        stack.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA, CustomData.of(tag));
+        stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
         sp.setItemInHand(hand, stack);
         sp.getInventory().setChanged();
 
@@ -156,7 +157,7 @@ public class ConsensusGlassesItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext ctx, List<Component> tips, TooltipFlag flag) {
         CompoundTag tag = stack.getOrDefault(
-                net.minecraft.core.component.DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+                DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
 
         if (!tag.contains(TAG_BOUND_UUID)) {
             tips.add(Component.translatable("item.koniava.consensus_glasses.tooltip.unbound")

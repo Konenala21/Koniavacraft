@@ -458,8 +458,7 @@ public class NaraWatchScreen extends Screen {
             int gty = panelY + GUIDE_TAB_OFFSET_Y;
             if (mouseX >= gtx && mouseX < gtx + TIER_TAB_W
              && mouseY >= gty && mouseY < gty + TIER_TAB_H) {
-                assert minecraft != null;
-                minecraft.setScreen(new NaraGuideScreen(this));
+                if (minecraft != null) minecraft.setScreen(new NaraGuideScreen(this));
                 return true;
             }
 
@@ -532,8 +531,7 @@ public class NaraWatchScreen extends Screen {
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         // When search box is focused, let it consume letter keys; only block E-close
         if (searchBox == null || !searchBox.isFocused()) {
-            assert minecraft != null;
-            if (minecraft.options.keyInventory.matches(keyCode, scanCode)) {
+            if (minecraft != null && minecraft.options.keyInventory.matches(keyCode, scanCode)) {
                 this.onClose();
                 return true;
             }
