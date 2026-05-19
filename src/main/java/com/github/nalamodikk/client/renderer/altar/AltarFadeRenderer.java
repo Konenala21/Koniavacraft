@@ -96,6 +96,7 @@ public class AltarFadeRenderer {
         if (programId != -1) { GL20.glDeleteProgram(programId);  programId = -1; }
         if (vaoId     != -1) { GL30.glDeleteVertexArrays(vaoId); vaoId     = -1; }
         initialized = false;
+        initFailed  = false;  // allow re-init on next login
     }
 
     private static String read(ResourceManager rm, String path) throws IOException {
