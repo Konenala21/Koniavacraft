@@ -388,8 +388,17 @@ public static final List<Vec3i> RING_T1 = List.of(
         if (manaStorage.getManaStored() < recipe.getManaCost()) { cancelRitual(); return; }
         manaStorage.extractMana(recipe.getManaCost(), ManaAction.EXECUTE);
 
-        for (AspectPedestalBlockEntity ped : activePedestals) {
-            if (!ped.getHeldItem().isEmpty()) ped.consumeItem();
+        // 消耗催化物
+        if (centerPedestal != null) centerPedestal.consumeItem();
+
+        // 只消耗配方實際匹配到的底座，多餘的保留
+        List<AspectPedestalBlockEntity> nonCenter = activePedestals.stream()
+                .filter(p -> p != centerPedestal).toList();
+        List<ItemStack> nonCenterItems = nonCenter.stream()
+                .map(AspectPedestalBlockEntity::getHeldItem).toList();
+        int[] matched = recipe.findMatchedIndices(nonCenterItems);
+        if (matched != null) {
+            for (int idx : matched) nonCenter.get(idx).consumeItem();
         }
 
         ItemStack result = recipe.getResult().copy();
@@ -783,8 +792,7 @@ public static final List<Vec3i> RING_T1 = List.of(
         tag.putInt("Mana", manaStorage.getManaStored());
         tag.putInt("UpgradeTier", upgradeTier);
         tag.putLong("RingPhaseStart", ringPhaseStart);
-        tag.putInt("CompletionAnimTick", completionAnimTick);
-        tag.putInt("CompletionDuration", completionDuration);
+        // CompletionAnimTick intentionally not saved — cosmetic only, resets on world load
     }
 
     @Override
@@ -797,8 +805,7 @@ public static final List<Vec3i> RING_T1 = List.of(
         manaStorage.setMana(tag.getInt("Mana"));
         upgradeTier = tag.getInt("UpgradeTier");
         ringPhaseStart = tag.getLong("RingPhaseStart");
-        completionAnimTick = tag.getInt("CompletionAnimTick");
-        completionDuration = tag.contains("CompletionDuration") ? tag.getInt("CompletionDuration") : MIN_COMPLETION_TICKS;
+        // completionAnimTick not loaded — always starts at 0 on world load
     }
 
     @Override
