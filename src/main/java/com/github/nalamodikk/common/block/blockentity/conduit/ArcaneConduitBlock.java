@@ -749,7 +749,7 @@ public class ArcaneConduitBlock extends BaseEntityBlock {
                 "message.koniava.conduit.technical_info",
                 conduit.getBlockPos().toString(),
                 conduit.getManaStored(),
-                conduit.getManaCapacity()
+                conduit.getMaxManaStored()
         ), false);
     }
 }

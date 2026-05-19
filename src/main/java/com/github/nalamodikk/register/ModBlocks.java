@@ -118,6 +118,19 @@ public class ModBlocks {
                     .lightLevel((state) -> 1)  // 更微弱的發光
             ));
 
+    // === 🏚️ 廢墟裝飾方塊 ===
+    public static final DeferredBlock<Block> CRACKED_MANA_BRICKS =
+            registerBlock("cracked_mana_bricks", () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.CRACKED_STONE_BRICKS)
+                    .strength(1.5f, 6.0f).sound(SoundType.STONE).requiresCorrectToolForDrops()));
+
+    public static final DeferredBlock<Block> MOSSY_MANA_BRICKS =
+            registerBlock("mossy_mana_bricks", () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.MOSSY_STONE_BRICKS)
+                    .strength(1.5f, 6.0f).sound(SoundType.STONE).requiresCorrectToolForDrops()));
+
+    public static final DeferredBlock<Block> MANA_BRICK_PILLAR =
+            registerBlock("mana_brick_pillar", () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.STONE_BRICKS)
+                    .strength(1.5f, 6.0f).sound(SoundType.STONE).requiresCorrectToolForDrops().noOcclusion()));
+
     public static final DeferredBlock<Block> MANA_GRASS_BLOCK =
             registerBlock("mana_grass_block", () -> new ManaGrassBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.GRASS_BLOCK)
                     .strength(0.6F)

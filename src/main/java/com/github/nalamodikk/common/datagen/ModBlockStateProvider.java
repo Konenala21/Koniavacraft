@@ -32,6 +32,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.DEEPSLATE_MAGIC_ORE);
         blockWithItem(ModBlocks.MANA_SOIL);
         blockWithItem(ModBlocks.DEEP_MANA_SOIL);
+        blockWithItem(ModBlocks.CRACKED_MANA_BRICKS);
+        blockWithItem(ModBlocks.MOSSY_MANA_BRICKS);
+        simpleBlockWithItem(ModBlocks.MANA_BRICK_PILLAR.get(),
+                new ModelFile.UncheckedModelFile(modLoc("block/mana_brick_pillar")));
 
         // 🌱 草方塊 (使用通用生成器)
         createGrassBlock(ModBlocks.MANA_GRASS_BLOCK, "mana_grass_block", "mana_soil");

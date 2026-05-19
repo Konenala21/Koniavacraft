@@ -25,6 +25,10 @@
   "item.koniava.mana_adhesive": "魔力黏膠",
   "item.koniava.mana_wafer": "魔力晶片",
   "item.koniava.basic_mana_circuit": "基礎魔力電路板",
+  "block.koniava.cracked_mana_bricks": "裂縫魔力磚",
+  "block.koniava.mossy_mana_bricks": "苔蘚魔力磚",
+  "block.koniava.mana_brick_pillar": "魔力磚柱",
+
   "block.koniava.aspect_altar": "本源聚陣核心",
   "block.koniava.altar_pillar": "聚陣柱",
   "block.koniava.resonance_ring": "共鳴環",
