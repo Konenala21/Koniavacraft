@@ -134,6 +134,8 @@ public class NaraDialogueManager {
         lineQueue.clear();
         currentLine = null;
         dialogueState = DialogueState.INACTIVE;
+        choiceTimerTicks = 0;
+        selectedChoiceIndex = 0;
     }
 
     // ── Getters ───────────────────────────────────────────────────────────────

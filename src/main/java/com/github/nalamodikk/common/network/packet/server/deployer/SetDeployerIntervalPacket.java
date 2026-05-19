@@ -36,6 +36,8 @@ public record SetDeployerIntervalPacket(BlockPos pos, int intervalTick) implemen
     public static void handle(SetDeployerIntervalPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
+            if (net.minecraft.world.phys.Vec3.atCenterOf(packet.pos())
+                    .distanceToSqr(player.position()) > 64.0) return;
             Level level = player.level();
             if (!level.isLoaded(packet.pos())) return;
             if (level.getBlockEntity(packet.pos()) instanceof ManaDeployerBlockEntity deployer) {

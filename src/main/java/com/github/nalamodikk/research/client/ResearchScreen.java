@@ -106,8 +106,10 @@ public class ResearchScreen extends Screen {
                     && template.getId().equals(table.getActiveResearchId())) {
                 for (var entry : table.getSavedPlacements().entrySet()) {
                     String[] parts = entry.getKey().split(",");
-                    int q = Integer.parseInt(parts[0]);
-                    int r = Integer.parseInt(parts[1]);
+                    if (parts.length != 2) continue;
+                    int q, r;
+                    try { q = Integer.parseInt(parts[0]); r = Integer.parseInt(parts[1]); }
+                    catch (NumberFormatException ignored) { continue; }
                     ResourceLocation aspectRl = ResourceLocation.tryParse(entry.getValue());
                     if (aspectRl == null) continue;
                     Aspect aspect = ModAspects.get(aspectRl);

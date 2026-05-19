@@ -105,7 +105,7 @@ public final class ResearchGate {
             cacheTickStamp = now;
             tickCache.clear();
         }
-        String key = playerId + ":" + required;
+        String key = serverLevel.dimension().location() + ":" + playerId + ":" + required;
         return tickCache.computeIfAbsent(key, k -> {
             ResearchSavedData data = ResearchSavedData.get(serverLevel);
             return data.getOrCreate(playerId).hasCompleted(required);

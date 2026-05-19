@@ -55,6 +55,8 @@ public record NaraBindRequestPacket(boolean bind) implements CustomPacketPayload
                 return;
             }
 
+            if (packet.bind() && NaraHelper.isBound(serverPlayer)) return;
+
             NaraHelper.setBound(serverPlayer, packet.bind());
             PacketDistributor.sendToPlayer(serverPlayer, new NaraSyncPacket(packet.bind()));
             LOGGER.debug("Updated Nara bind state: {}", packet.bind());

@@ -65,8 +65,14 @@ public record ResearchAspectPlacePacket(
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
 
+            if (net.minecraft.world.phys.Vec3.atCenterOf(packet.tablePos())
+                    .distanceToSqr(player.position()) > 64.0) return;
+
             BlockEntity be = player.serverLevel().getBlockEntity(packet.tablePos());
             if (!(be instanceof ResearchTableBlockEntity table)) return;
+
+            ResourceLocation tableResearchId = table.getCurrentResearchId();
+            if (tableResearchId == null || !tableResearchId.equals(packet.researchId())) return;
 
             PlayerKnowledge knowledge = ResearchSavedData.get(player.serverLevel()).getOrCreate(player.getUUID());
             String key = packet.q() + "," + packet.r();

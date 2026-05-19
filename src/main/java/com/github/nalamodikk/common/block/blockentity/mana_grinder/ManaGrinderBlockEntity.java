@@ -173,7 +173,7 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock imple
         boolean progressedThisTick = false;
         if (currentRecipe != null && progress < maxProgress) {
             int progressStep = scaleProgressByOwner(1) * getSpeedMultiplier();
-            int totalManaCost = currentRecipe.getManaCost() / getEfficiencyMultiplier();
+            int totalManaCost = Math.max(1, currentRecipe.getManaCost() / getEfficiencyMultiplier());
             int newProgress = Math.min(progress + progressStep, maxProgress);
             int targetSpent = maxProgress > 0
                     ? (int) Math.floor((newProgress / (double) maxProgress) * totalManaCost)
@@ -272,17 +272,21 @@ public class ManaGrinderBlockEntity extends AbstractManaMachineEntityBlock imple
             return;
         }
 
-        // 輸出概率副產物
+        // 輸出概率副產物（先 simulate 確認有空位，再實際插入）
         for (ProcessingRecipe.ChanceOutput chanceOutput : currentRecipe.getChanceOutputs()) {
             if (Math.random() < chanceOutput.getChance()) {
                 ItemStack output = chanceOutput.getOutput().copy();
+                int targetSlot = -1;
                 for (int slot = OUTPUT_SLOT_2; slot <= OUTPUT_SLOT_4; slot++) {
-                    ItemStack result = itemHandler.insertItem(slot, output, false);
-                    if (result.isEmpty()) {
+                    if (itemHandler.insertItem(slot, output, true).isEmpty()) {
+                        targetSlot = slot;
                         break;
                     }
-                    output = result;
                 }
+                if (targetSlot != -1) {
+                    itemHandler.insertItem(targetSlot, output, false);
+                }
+                // 無空位則跳過此次副產物（輸出槽已滿）
             }
         }
 

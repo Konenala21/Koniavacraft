@@ -37,6 +37,8 @@ public record ResetPrioritiesPacket(BlockPos pos) implements CustomPacketPayload
     public static void handle(ResetPrioritiesPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
+                if (net.minecraft.world.phys.Vec3.atCenterOf(packet.pos())
+                        .distanceToSqr(player.position()) > 64.0) return;
                 Level level = player.level();
                 if (level.getBlockEntity(packet.pos()) instanceof ArcaneConduitBlockEntity conduit) {
                     conduit.resetAllPriorities();

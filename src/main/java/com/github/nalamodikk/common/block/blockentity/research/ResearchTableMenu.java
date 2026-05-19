@@ -101,8 +101,10 @@ public class ResearchTableMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
+        net.minecraft.world.level.Level level = blockEntity.getLevel();
+        if (level == null) return false;
         return AbstractContainerMenu.stillValid(
-                ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos()),
+                ContainerLevelAccess.create(level, blockEntity.getBlockPos()),
                 player, blockEntity.getBlockState().getBlock());
     }
 }

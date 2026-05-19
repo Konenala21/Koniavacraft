@@ -43,24 +43,21 @@ public class PlayerLoginEvent {
             return;
         }
 
+        // 傳送同步封包（無論動畫是否開啟都需要）
+        PacketDistributor.sendToPlayer(player, new NaraSyncPacket(NaraHelper.isBound(player)));
+        KnowledgeSyncPacket.sendTo(player);
+
         // ===== 動畫相關邏輯（這部分可以被設定關閉） =====
-        // ✅ 若關閉登入動畫，不執行動畫相關封包
         if (!ModCommonConfig.INSTANCE.showIntroAnimation.get()) {
             LOGGER.debug("Login animation disabled by config. Skipping intro for player {}", player.getGameProfile().getName());
             return;
         }
-
-        // 傳送同步封包（可保留）
-        PacketDistributor.sendToPlayer(player, new NaraSyncPacket(NaraHelper.isBound(player)));
 
         // 根據綁定狀態開啟初始畫面
         if (!NaraHelper.isBound(player)) {
             PacketDistributor.sendToPlayer(player, new OpenNaraInitScreenPacket());
             LOGGER.debug("open player one login gui!");
         }
-
-        // 同步研究進度
-        KnowledgeSyncPacket.sendTo(player);
 
         // 恢復未完成的教學 pending 狀態（server 重啟後重填記憶體 Set）
         NaraServerEvents.restorePendingTutorials(player);

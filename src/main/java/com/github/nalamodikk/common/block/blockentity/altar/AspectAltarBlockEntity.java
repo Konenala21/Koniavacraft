@@ -575,6 +575,7 @@ public static final List<Vec3i> RING_T1 = List.of(
         activePedestals.removeIf(ped -> {
             if (ped.isRemoved() || level.getBlockEntity(ped.getBlockPos()) != ped) {
                 ped.removedFromController();
+                if (ped == centerPedestal) centerPedestal = null;
                 return true;
             }
             return false;

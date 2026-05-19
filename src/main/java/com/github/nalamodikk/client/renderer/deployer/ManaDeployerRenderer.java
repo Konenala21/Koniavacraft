@@ -33,11 +33,13 @@ public class ManaDeployerRenderer implements BlockEntityRenderer<ManaDeployerBlo
 
     private BedrockGeoData  model;
     private BedrockAnimData anim;
+    private boolean loadAttempted = false;
 
     public ManaDeployerRenderer(BlockEntityRendererProvider.Context ctx) {}
 
     private void ensureLoaded(Minecraft mc) {
-        if (model != null) return;
+        if (loadAttempted) return;
+        loadAttempted = true;
         var rm = mc.getResourceManager();
         model = BedrockLoader.loadModel(rm, MODEL_LOC);
         Map<String, BedrockAnimData> anims = BedrockLoader.loadAnimations(rm, ANIM_LOC);

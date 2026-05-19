@@ -85,14 +85,12 @@ public class AspectSynthesisRecipeCategory implements IRecipeCategory<AspectSynt
 
         IIngredientAcceptor<?> outputAspectIngredients = builder.addInvisibleIngredients(RecipeIngredientRole.OUTPUT);
         outputAspectIngredients.addIngredient(AspectIngredientType.INSTANCE, recipe.result());
-        outputAspectIngredients.addIngredient(AspectIngredientType.INSTANCE, recipe.result());
 
         IIngredientAcceptor<?> inputTokenIngredients = builder.addInvisibleIngredients(RecipeIngredientRole.INPUT);
         inputTokenIngredients.addItemStack(AspectTokenItem.forAspect(recipe.first(), !recipe.first().isPrimary()));
         inputTokenIngredients.addItemStack(AspectTokenItem.forAspect(recipe.second(), !recipe.second().isPrimary()));
 
         IIngredientAcceptor<?> outputTokenIngredients = builder.addInvisibleIngredients(RecipeIngredientRole.OUTPUT);
-        outputTokenIngredients.addItemStack(AspectTokenItem.forAspect(recipe.result(), !recipe.result().isPrimary()));
         outputTokenIngredients.addItemStack(AspectTokenItem.forAspect(recipe.result(), !recipe.result().isPrimary()));
 
         builder.createFocusLink(

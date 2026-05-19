@@ -20,6 +20,7 @@ public class ManaDeployerBEWLR extends BlockEntityWithoutLevelRenderer {
         KoniavacraftMod.MOD_ID, "models/block/mana_deployer.model.json");
 
     private BedrockGeoData model;
+    private boolean loadAttempted = false;
 
     public ManaDeployerBEWLR() {
         super(Minecraft.getInstance().getBlockEntityRenderDispatcher(),
@@ -30,7 +31,8 @@ public class ManaDeployerBEWLR extends BlockEntityWithoutLevelRenderer {
     public void renderByItem(ItemStack stack, ItemDisplayContext ctx,
                              PoseStack ps, MultiBufferSource buffers,
                              int light, int overlay) {
-        if (model == null) {
+        if (!loadAttempted) {
+            loadAttempted = true;
             model = BedrockLoader.loadModel(Minecraft.getInstance().getResourceManager(), MODEL_LOC);
         }
         if (model == null) return;

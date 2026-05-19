@@ -9,7 +9,7 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 /**
  */
-@EventBusSubscriber
+@EventBusSubscriber(modid = com.github.nalamodikk.KoniavacraftMod.MOD_ID)
 public class CommandRegistrationHandler {
 
     @SubscribeEvent

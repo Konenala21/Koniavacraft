@@ -42,6 +42,8 @@ public record PriorityUpdatePacket(BlockPos pos, Direction direction, int priori
     public static void handle(PriorityUpdatePacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
+                if (net.minecraft.world.phys.Vec3.atCenterOf(packet.pos())
+                        .distanceToSqr(player.position()) > 64.0) return;
                 Level level = player.level();
                 if (level.getBlockEntity(packet.pos()) instanceof ArcaneConduitBlockEntity conduit) {
                     conduit.setPriority(packet.direction(), packet.priority());

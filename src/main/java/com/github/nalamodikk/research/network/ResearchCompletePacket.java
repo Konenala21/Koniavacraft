@@ -47,6 +47,9 @@ public record ResearchCompletePacket(ResourceLocation researchId, BlockPos table
             if (!(context.player() instanceof ServerPlayer player)) return;
             if (packet.researchId() == null) return;
 
+            if (net.minecraft.world.phys.Vec3.atCenterOf(packet.tablePos())
+                    .distanceToSqr(player.position()) > 64.0) return;
+
             var template = ResearchRegistry.get(packet.researchId());
             if (template.isEmpty()) {
                 KoniavacraftMod.LOGGER.warn("ResearchCompletePacket: unknown research {}",
@@ -56,9 +59,10 @@ public record ResearchCompletePacket(ResourceLocation researchId, BlockPos table
 
             ServerLevel level = player.serverLevel();
 
-            // Guard: don't hand out a scroll if the research is already committed
             var knowledge = ResearchSavedData.get(level).getOrCreate(player.getUUID());
             if (knowledge.hasCompleted(packet.researchId())) return;
+
+            if (!template.get().isAvailableTo(knowledge)) return;
 
             KoniavacraftMod.LOGGER.info("[Research] {} solved puzzle: {}",
                     player.getName().getString(), packet.researchId());

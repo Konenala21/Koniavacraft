@@ -84,6 +84,7 @@ public class CompletedResearchItem extends Item {
                 KnowledgeSyncPacket.sendTo(sp);
             } else {
                 // Already committed before — still consume but just say so
+                stack.shrink(1);
                 sp.sendSystemMessage(Component.translatable(
                         "research.koniava.already_completed",
                         Component.translatable(ResearchRegistry.get(researchId)

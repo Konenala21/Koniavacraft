@@ -65,7 +65,11 @@ public record AspectSynthesisPacket(BlockPos tablePos, ResourceLocation aspect1,
             }
 
             PlayerKnowledge knowledge = ResearchSavedData.get(player.serverLevel()).getOrCreate(player.getUUID());
-            if (!canUse(knowledge, first) || !canUse(knowledge, second)) {
+            boolean sameAspect = first.getId().equals(second.getId());
+            boolean hasEnough = sameAspect
+                    ? knowledge.getAspectCount(first.getId()) >= 2
+                    : canUse(knowledge, first) && canUse(knowledge, second);
+            if (!hasEnough) {
                 player.sendSystemMessage(Component.translatable("message.koniava.synthesis.insufficient_knowledge"));
                 return;
             }

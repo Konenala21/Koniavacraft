@@ -27,9 +27,8 @@ public class ManaGeneratorMenu extends AbstractContainerMenu {
         this.addSlot(new SlotItemHandler(blockInventory, 0, 80, 40) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                return true; // 允許所有物品放入
+                return blockEntity.getFuelLogic().isValidFuel(stack);
             }
-
         });
 
         layoutPlayerInventorySlots(inv, 8, 84);

@@ -94,9 +94,9 @@ public class ManaStorage implements IUnifiedManaHandler , INBTSerializable<Compo
     @Override
     public void setMana(int amount) {
         int oldMana = this.mana;
-        this.mana = Math.min(amount, capacity);
+        this.mana = Math.max(0, Math.min(amount, capacity));
         if (this.mana != oldMana) {
-            onChanged(); // 設置魔力時通知變化
+            onChanged();
         }
     }
 
@@ -146,7 +146,7 @@ public class ManaStorage implements IUnifiedManaHandler , INBTSerializable<Compo
         return getMaxManaStored() - getManaStored(); // 單槽版本等同 container 0
     }
     public float getFillRatio() {
-        return (float) this.mana / this.capacity;
+        return this.capacity > 0 ? (float) this.mana / this.capacity : 0f;
     }
 
 

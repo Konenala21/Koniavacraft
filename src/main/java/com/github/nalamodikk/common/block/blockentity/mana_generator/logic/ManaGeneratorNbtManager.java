@@ -27,8 +27,7 @@ public class ManaGeneratorNbtManager {
             tag.putString("CurrentFuelId", entity.getFuelLogic().getCurrentFuelId().toString());
         }
 
-        NbtUtils.write(tag, "Mana", entity.getManaStorage(), provider);
-        NbtUtils.write(tag, "Energy", entity.getEnergyStorage(), provider);
+        // Mana/Energy 由 AbstractManaMachineEntityBlock.saveAdditional 負責（"ManaStorage"/"EnergyStorage" key）
         NbtUtils.write(tag, "FuelItems", entity.getFuelHandler(), provider);
         // 儲存升級inventory
         tag.put("UpgradeInventory", entity.getUpgradeInventory().serializeNBT(provider));
@@ -53,8 +52,14 @@ public class ManaGeneratorNbtManager {
             entity.getFuelLogic().setCurrentFuelId(id);
         }
 
-        NbtUtils.read(tag, "Mana", entity.getManaStorage(), provider);
-        NbtUtils.read(tag, "Energy", entity.getEnergyStorage(), provider);
+        // Mana/Energy 由 AbstractManaMachineEntityBlock.loadAdditional 負責（"ManaStorage"/"EnergyStorage" key）
+        // 向後相容：若舊存檔有 "Mana"/"Energy" 鍵但無 "ManaStorage"，在此補讀
+        if (!tag.contains("ManaStorage") && tag.contains("Mana")) {
+            NbtUtils.read(tag, "Mana", entity.getManaStorage(), provider);
+        }
+        if (!tag.contains("EnergyStorage") && tag.contains("Energy")) {
+            NbtUtils.read(tag, "Energy", entity.getEnergyStorage(), provider);
+        }
         NbtUtils.read(tag, "FuelItems", entity.getFuelHandler(), provider);
         // 載入升級inventory
         if (tag.contains("UpgradeInventory")) {

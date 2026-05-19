@@ -31,6 +31,7 @@ public record NaraCreeperPunishPacket() implements CustomPacketPayload {
     private static void handle(NaraCreeperPunishPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
+            if (com.github.nalamodikk.narasystem.nara.util.NaraHelper.isBound(player)) return;
             NaraCreeperSpawnPacket.spawnWardenNearPlayer(player);
             // Warden 80 ticks 消失，100 ticks 後若玩家仍存活才直接送懲罰對話
             NaraServerEvents.schedulePunishmentDialogue(player.getUUID(), 100);

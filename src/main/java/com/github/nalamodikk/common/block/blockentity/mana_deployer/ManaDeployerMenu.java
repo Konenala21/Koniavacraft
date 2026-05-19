@@ -90,7 +90,9 @@ public class ManaDeployerMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return true;
+        return blockEntity.getLevel() != null
+            && net.minecraft.world.phys.Vec3.atCenterOf(blockEntity.getBlockPos())
+                   .distanceToSqr(player.position()) < 64.0;
     }
 
     // Accessors for Screen

@@ -216,6 +216,7 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock imple
             itemHandler.setStackInSlot(OUTPUT_SLOT, result);
         } else {
             currentOutput.grow(result.getCount());
+            setChanged();
         }
         onGenerate(currentRecipe.getManaCost());
     }

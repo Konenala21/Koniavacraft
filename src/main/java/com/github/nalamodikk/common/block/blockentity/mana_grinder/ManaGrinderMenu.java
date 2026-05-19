@@ -118,7 +118,9 @@ public class ManaGrinderMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player pPlayer) {
-        return true;
+        return blockEntity.getLevel() != null
+            && net.minecraft.world.phys.Vec3.atCenterOf(blockEntity.getBlockPos())
+                   .distanceToSqr(pPlayer.position()) < 64.0;
     }
 
     private boolean hasRecipeForItem(ItemStack stack) {

@@ -55,6 +55,17 @@ public class NaraServerEvents {
         ResearchGate.clearCache();
     }
 
+    @SubscribeEvent
+    public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        UUID uuid = player.getUUID();
+        pendingPunishmentDialogue.remove(uuid);
+        naraPunishmentActive.remove(uuid);
+        awaitingRespawn.remove(uuid);
+        pendingResearchTableTutorial.remove(uuid);
+        tutorialLoginDelay.remove(uuid);
+    }
+
     public static void schedulePunishmentDialogue(UUID playerUUID, int delayTicks) {
         pendingPunishmentDialogue.put(playerUUID, delayTicks);
         naraPunishmentActive.add(playerUUID);

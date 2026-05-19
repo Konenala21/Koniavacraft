@@ -176,7 +176,7 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
 
     public float getAnimTime(float partialTick) {
         if (!hasMana || !enabled) return animTimeSec;
-        return (animTimeSec + partialTick / 20f) % 6.75f;
+        return (animTimeSec + partialTick * (1f / intervalTick)) % 6.75f;
     }
 
     public Mode      getMode()        { return mode; }

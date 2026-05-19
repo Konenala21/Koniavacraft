@@ -533,13 +533,11 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
         try {
             int savedMana = tempNetworkData.getInt("Mana");
 
-            // 🔧 關鍵：只有網路中的第一個導管負責恢復魔力
-            // 避免重複恢復
-            if (isNetworkMaster()) {
+            // 取最大值策略：若存檔魔力大於目前網路魔力則更新。
+            // 解決分批載入時容量尚未完全展開導致首次恢復被截斷的問題。
+            if (savedMana > virtualNetwork.getTotalManaStored()) {
                 virtualNetwork.setTotalManaStored(savedMana);
-                LOGGER.debug("Restored virtual network mana on network master: {}", savedMana);
-            } else {
-                LOGGER.debug("Skipped virtual network mana restore because this conduit is not the network master.");
+                LOGGER.debug("Restored virtual network mana: {} at {}", savedMana, worldPosition);
             }
 
             needsNetworkRestore = false;

@@ -53,7 +53,7 @@ public class VirtualNetwork {
      */
     public void addConduit(ArcaneConduitBlockEntity conduit) {
         BlockPos pos = conduit.getBlockPos();
-        connectedConduits.add(pos);
+        if (!connectedConduits.add(pos)) return; // 已在網路中，防止容量重複疊加
         conduitMap.put(pos, conduit);
 
         int tierCapacity = conduit.getTier().getBufferCapacity();
