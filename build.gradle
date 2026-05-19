@@ -427,7 +427,7 @@ modrinth {
     token = System.getenv("MODRINTH_TOKEN") ?: ""
     projectId = "koniavacraft"
     versionNumber = mod_version
-    versionType = "beta"
+    versionType = "release"
     uploadFile = jar
     gameVersions = [minecraft_version]
     loaders = ["neoforge"]
