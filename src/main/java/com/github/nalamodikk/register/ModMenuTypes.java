@@ -21,6 +21,8 @@ import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGenerat
 import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorMenu;
 import com.github.nalamodikk.common.block.blockentity.mana_deployer.ManaDeployerBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_deployer.ManaDeployerMenu;
+import com.github.nalamodikk.common.block.blockentity.mana_charger.ManaChargerBlockEntity;
+import com.github.nalamodikk.common.block.blockentity.mana_charger.ManaChargerMenu;
 import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderMenu;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserBlockEntity;
@@ -78,6 +80,17 @@ public class ModMenuTypes {
     public static final DeferredHolder<MenuType<?>, MenuType<ArcaneConduitConfigMenu>> CONDUIT_CONFIG_MENU =
             registerMenuType("conduit_config_menu", ArcaneConduitConfigMenu::new);
 
+
+    // === ⚡ 魔力充能台菜單 ===
+    public static final DeferredHolder<MenuType<?>, MenuType<ManaChargerMenu>> MANA_CHARGER_MENU =
+            registerMenuType("mana_charger", (id, inv, buf) -> {
+                BlockPos pos = buf.readBlockPos();
+                Level level = inv.player.level();
+                BlockEntity be = level.getBlockEntity(pos);
+                if (!(be instanceof ManaChargerBlockEntity charger))
+                    throw new IllegalStateException("Expected ManaChargerBlockEntity at " + pos);
+                return new ManaChargerMenu(id, inv, charger);
+            });
 
     // === 🔮 新增：魔力注入機菜單 ===
     public static final DeferredHolder<MenuType<?>, MenuType<ManaInfuserMenu>> MANA_INFUSER =

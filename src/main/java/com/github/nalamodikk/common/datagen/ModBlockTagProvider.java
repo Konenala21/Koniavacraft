@@ -38,7 +38,8 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(ModBlocks.ALTAR_PILLAR.get())
                 .add(ModBlocks.ASPECT_PEDESTAL.get())
                 .add(ModBlocks.MANA_DEPLOYER.get())
-                .add(ModBlocks.RESONANCE_RING.get());
+                .add(ModBlocks.RESONANCE_RING.get())
+                .add(ModBlocks.MANA_CHARGER.get());
 
 
 

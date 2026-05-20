@@ -2,6 +2,7 @@ package com.github.nalamodikk.register;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.capability.IUnifiedManaHandler;
+import com.github.nalamodikk.common.block.blockentity.manabase.AbstractManaMachineEntityBlock;
 import com.github.nalamodikk.common.coreapi.block.IConfigurableBlock;
 import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
 import com.github.nalamodikk.common.utils.capability.RestrictedManaHandler;
@@ -10,15 +11,19 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.capabilities.BlockCapability;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 
+import java.util.function.Supplier;
 
 @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID)
 public class ModCapabilities {
+
     public static final BlockCapability<IUnifiedManaHandler, Direction> MANA =
             BlockCapability.create(
                     ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "mana"),
@@ -32,124 +37,108 @@ public class ModCapabilities {
                     .networkSynchronized(ByteBufCodecs.BOOL)
                     .build();
 
+    // ── Helpers ───────────────────────────────────────────────────────────────
 
+    /** 所有面只接收魔力（INPUT only）。充能台、聚陣等純消耗機器使用。 */
+    public static <T extends AbstractManaMachineEntityBlock> void manaInput(
+            RegisterCapabilitiesEvent event, Supplier<BlockEntityType<T>> beType) {
+        event.registerBlockEntity(MANA, beType.get(),
+                (be, side) -> new RestrictedManaHandler(be.getManaStorage(), true, false));
+    }
 
-//    public static final EntityCapability<INaraData, Void> NARA =
-//            EntityCapability.createVoid(
-//                    ResourceLocation.fromNamespaceAndPath(MagicalIndustryMod.MOD_ID, "nara_data"),
-//                    INaraData.class
-//            );
+    /** 所有面只輸出魔力（OUTPUT only）。純產出機器使用。 */
+    public static <T extends AbstractManaMachineEntityBlock> void manaOutput(
+            RegisterCapabilitiesEvent event, Supplier<BlockEntityType<T>> beType) {
+        event.registerBlockEntity(MANA, beType.get(),
+                (be, side) -> new RestrictedManaHandler(be.getManaStorage(), false, true));
+    }
 
+    /**
+     * 依 IO 配置決定能力（DISABLED/INPUT/OUTPUT/BOTH）。
+     * 有 IConfigurableBlock 的機器（發電機、注入機、粉碎機等）使用。
+     */
+    public static <T extends AbstractManaMachineEntityBlock & IConfigurableBlock> void manaIO(
+            RegisterCapabilitiesEvent event, Supplier<BlockEntityType<T>> beType) {
+        event.registerBlockEntity(MANA, beType.get(), (be, side) -> {
+            if (side != null) {
+                return switch (be.getIOConfig(side)) {
+                    case DISABLED -> null;
+                    case INPUT    -> new RestrictedManaHandler(be.getManaStorage(), true, false);
+                    case OUTPUT   -> new RestrictedManaHandler(be.getManaStorage(), false, true);
+                    case BOTH     -> be.getManaStorage();
+                };
+            }
+            return be.getManaStorage();
+        });
+    }
 
+    /** 依 IO 配置暴露物品槽（DISABLED 面不提供）。有 getItemHandlerForSide 的機器使用。 */
+    public static <T extends AbstractManaMachineEntityBlock & IConfigurableBlock> void itemHandlerIO(
+            RegisterCapabilitiesEvent event, Supplier<BlockEntityType<T>> beType) {
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, beType.get(), (be, side) -> {
+            if (side != null && be.getIOConfig(side) == IOHandlerUtils.IOType.DISABLED) return null;
+            return be.getItemHandlerForSide(side);
+        });
+    }
 
+    // ── Registration ──────────────────────────────────────────────────────────
 
     @SubscribeEvent
     public static void registerCapabilities(RegisterCapabilitiesEvent event) {
-        // 方塊機器能力
-        event.registerBlockEntity(ModCapabilities.MANA, ModBlockEntities.MANA_CRAFTING_TABLE_BLOCK_BE.get(), (blockEntity, side) -> blockEntity.getManaStorage());
-        event.registerBlockEntity(ModCapabilities.MANA, ModBlockEntities.SOLAR_MANA_COLLECTOR_BE.get(), (blockEntity, side) -> blockEntity.getManaStorage());
 
-        // 魔力能力 - 根據 IO 配置決定功能
-        event.registerBlockEntity(ModCapabilities.MANA, ModBlockEntities.MANA_GENERATOR_BE.get(),
-                (blockEntity, side) -> {
-                    if (side != null && blockEntity instanceof IConfigurableBlock configurable) {
-                        IOHandlerUtils.IOType ioType = configurable.getIOConfig(side);
-
-                        return switch (ioType) {
-                            case DISABLED -> null; // 禁用面不提供能力
-                            case INPUT -> new RestrictedManaHandler(blockEntity.getManaStorage(), true, false); // 只能接收
-                            case OUTPUT -> new RestrictedManaHandler(blockEntity.getManaStorage(), false, true); // 只能被抽取
-                            case BOTH -> blockEntity.getManaStorage(); // 完整功能
-                        };
-                    }
-                    return blockEntity.getManaStorage(); // 默認完整功能
-                });
-
-        // 物品能力 - 根據 IO 配置決定功能
+        // 魔力發電機：可配置 IO + RF 能量
+        manaIO(event, ModBlockEntities.MANA_GENERATOR_BE);
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.MANA_GENERATOR_BE.get(),
-                (blockEntity, side) -> {
-                    if (side != null && blockEntity instanceof IConfigurableBlock configurable) {
-                        IOHandlerUtils.IOType ioType = configurable.getIOConfig(side);
-                        if (ioType == IOHandlerUtils.IOType.DISABLED) {
-                            return null; // 該面禁用，不提供能力
-                        }
-                    }
-                    return blockEntity.getInventory(); // 🔧 修正：使用 getInventory()
+                (be, side) -> {
+                    if (side != null && be.getIOConfig(side) == IOHandlerUtils.IOType.DISABLED) return null;
+                    return be.getInventory();
                 });
-        // 本源聚陣：只接收魔力（INPUT）
-        event.registerBlockEntity(ModCapabilities.MANA, ModBlockEntities.ASPECT_ALTAR_BE.get(),
-                (blockEntity, side) -> new RestrictedManaHandler(blockEntity.getManaStorage(), true, false));
-        // 本源基座：物品欄能力（支援漏斗/其他 mod 自動化）
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.ASPECT_PEDESTAL_BE.get(),
-                (blockEntity, side) -> blockEntity.getItemHandler());
-
-        // 導管能力
-        event.registerBlockEntity(ModCapabilities.MANA, ModBlockEntities.ARCANE_CONDUIT_BE.get(), (blockEntity, side) -> blockEntity);
-        // 物品欄能力：ManaCraftingTableBlockEntity;
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.MANA_CRAFTING_TABLE_BLOCK_BE.get(), (blockEntity, side) -> blockEntity.getItemHandler());
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.SOLAR_MANA_COLLECTOR_BE.get(), (blockEntity, side) -> blockEntity.getItemHandler());
-
-        //rf能量註冊
         event.registerBlockEntity(Capabilities.EnergyStorage.BLOCK, ModBlockEntities.MANA_GENERATOR_BE.get(),
-                (blockEntity, side) -> {
-                    if (side != null && blockEntity instanceof IConfigurableBlock configurable) {
-                        IOHandlerUtils.IOType ioType = configurable.getIOConfig(side);
-                        if (ioType == IOHandlerUtils.IOType.DISABLED) {
-                            return null; // 該面禁用，不提供能力
-                        }
-                        if (ioType == IOHandlerUtils.IOType.INPUT) {
-                            return null; // 發電機不應該從輸入面接收能量
-                        }
-                    }
-                    return blockEntity.getEnergyStorage(); // 🔧 返回你的能量儲存
-                });
-        // 實體能力
-//        event.registerEntity(ModCapability.NARA,EntityType.PLAYER, (player, ctx) -> new NaraData());
-        // 🆕 魔力注入機能力註冊
-        // 魔力能力 - 根據 IO 配置決定功能
-        event.registerBlockEntity(ModCapabilities.MANA, ModBlockEntities.MANA_INFUSER.get(),
-                (blockEntity, side) -> {
-                    if (side != null && blockEntity instanceof IConfigurableBlock configurable) {
-                        IOHandlerUtils.IOType ioType = configurable.getIOConfig(side);
-
-                        return switch (ioType) {
-                            case DISABLED -> null; // 禁用面不提供能力
-                            case INPUT -> new RestrictedManaHandler(blockEntity.getManaStorage(), true, false); // 只能接收
-                            case OUTPUT -> new RestrictedManaHandler(blockEntity.getManaStorage(), false, true); // 只能被抽取
-                            case BOTH -> blockEntity.getManaStorage(); // 完整功能
-                        };
-                    }
-                    return blockEntity.getManaStorage(); // 默認完整功能
+                (be, side) -> {
+                    if (side == null) return be.getEnergyStorage();
+                    IOHandlerUtils.IOType io = be.getIOConfig(side);
+                    if (io == IOHandlerUtils.IOType.DISABLED || io == IOHandlerUtils.IOType.INPUT) return null;
+                    return be.getEnergyStorage();
                 });
 
-        // 🆕 粉碎機魔力能力註冊（供魔力除錯工具與導管存取）
-        event.registerBlockEntity(ModCapabilities.MANA, ModBlockEntities.MANA_GRINDER_BE.get(),
-                (blockEntity, side) -> {
-                    if (side != null && blockEntity instanceof IConfigurableBlock configurable) {
-                        IOHandlerUtils.IOType ioType = configurable.getIOConfig(side);
+        // 太陽能魔力收集器：完整魔力 + 物品槽
+        event.registerBlockEntity(MANA, ModBlockEntities.SOLAR_MANA_COLLECTOR_BE.get(),
+                (be, side) -> be.getManaStorage());
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.SOLAR_MANA_COLLECTOR_BE.get(),
+                (be, side) -> be.getItemHandler());
 
-                        return switch (ioType) {
-                            case DISABLED -> null;
-                            case INPUT -> new RestrictedManaHandler(blockEntity.getManaStorage(), true, false);
-                            case OUTPUT -> new RestrictedManaHandler(blockEntity.getManaStorage(), false, true);
-                            case BOTH -> blockEntity.getManaStorage();
-                        };
-                    }
-                    return blockEntity.getManaStorage();
-                });
+        // 魔力合成台：完整魔力 + 物品槽
+        event.registerBlockEntity(MANA, ModBlockEntities.MANA_CRAFTING_TABLE_BLOCK_BE.get(),
+                (be, side) -> be.getManaStorage());
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.MANA_CRAFTING_TABLE_BLOCK_BE.get(),
+                (be, side) -> be.getItemHandler());
 
-        // 🆕 物品處理能力 - 使用機器基底側向包裝（漏斗/管線）
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.MANA_INFUSER.get(),
-                (blockEntity, side) -> blockEntity.getItemHandlerForSide(side));
+        // 魔力注入機：可配置 IO + 物品槽
+        manaIO(event, ModBlockEntities.MANA_INFUSER);
+        itemHandlerIO(event, ModBlockEntities.MANA_INFUSER);
 
-        // 🆕 粉碎機物品能力（支援漏斗依 IO 面向與槽位抽/插）
-        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.MANA_GRINDER_BE.get(),
-                (blockEntity, side) -> blockEntity.getItemHandlerForSide(side));
+        // 魔力粉碎機：可配置 IO + 物品槽
+        manaIO(event, ModBlockEntities.MANA_GRINDER_BE);
+        itemHandlerIO(event, ModBlockEntities.MANA_GRINDER_BE);
 
-        // 魔力部署器：所有面接收魔力（INPUT only）
-        event.registerBlockEntity(ModCapabilities.MANA, ModBlockEntities.MANA_DEPLOYER_BE.get(),
-                (blockEntity, side) -> new RestrictedManaHandler(blockEntity.getManaStorage(), true, false));
+        // 魔力部署器：INPUT only
+        manaInput(event, ModBlockEntities.MANA_DEPLOYER_BE);
 
+        // 本源聚陣：INPUT only
+        event.registerBlockEntity(MANA, ModBlockEntities.ASPECT_ALTAR_BE.get(),
+                (be, side) -> new RestrictedManaHandler(be.getManaStorage(), true, false));
+
+        // 本源基座：物品槽
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.ASPECT_PEDESTAL_BE.get(),
+                (be, side) -> be.getItemHandler());
+
+        // 導管：完整魔力（conduit 自身就是 handler）
+        event.registerBlockEntity(MANA, ModBlockEntities.ARCANE_CONDUIT_BE.get(),
+                (be, side) -> be);
+
+        // 魔力充能台：INPUT only + 物品槽
+        manaInput(event, ModBlockEntities.MANA_CHARGER_BE);
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.MANA_CHARGER_BE.get(),
+                (be, side) -> be.getItemHandler());
     }
-
 }

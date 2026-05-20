@@ -22,11 +22,13 @@ import net.neoforged.neoforge.network.PacketDistributor;
 public class ManaDebugToolItem extends Item {
     public static final String TAG_MODE_INDEX = "ModeIndex";
 
-    private static final int[] MANA_AMOUNTS = {10, 100, 1000};
+    private static final int[] MANA_AMOUNTS = {10, 100, 1000, 10000, 100000};
     private static final String[] MODES = {
             "message.koniava.mana_mode_add_10",
             "message.koniava.mana_mode_add_100",
-            "message.koniava.mana_mode_add_1000"
+            "message.koniava.mana_mode_add_1000",
+            "message.koniava.mana_mode_add_10000",
+            "message.koniava.mana_mode_add_100000"
     };
 
     public ManaDebugToolItem(Properties properties) {

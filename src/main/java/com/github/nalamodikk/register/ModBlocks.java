@@ -15,6 +15,7 @@ import com.github.nalamodikk.common.block.blockentity.altar.AspectAltarBlock;
 import com.github.nalamodikk.common.block.blockentity.altar.AspectPedestalBlock;
 import com.github.nalamodikk.common.block.blockentity.altar.ResonanceRingBlock;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserBlock;
+import com.github.nalamodikk.common.block.blockentity.mana_charger.ManaChargerBlock;
 import com.github.nalamodikk.common.block.normal.DeepManaSoilBlock;
 import com.github.nalamodikk.common.block.normal.ManaBloomBlock;
 import com.github.nalamodikk.common.block.normal.ManaGrassBlock;
@@ -117,6 +118,13 @@ public class ModBlocks {
                     .sound(SoundType.GRAVEL)
                     .lightLevel((state) -> 1)  // 更微弱的發光
             ));
+
+    // === ⚡ 魔力充能台 ===
+    public static final DeferredBlock<ManaChargerBlock> MANA_CHARGER =
+            registerBlock("mana_charger", () -> new ManaChargerBlock(
+                    BlockBehaviour.Properties.of().mapColor(MapColor.METAL)
+                            .strength(3.0f).sound(SoundType.METAL)
+                            .requiresCorrectToolForDrops().noOcclusion()));
 
     // === 🏚️ 廢墟裝飾方塊 ===
     public static final DeferredBlock<Block> CRACKED_MANA_BRICKS =
