@@ -96,11 +96,9 @@ public class FloatingTurretEntity extends PathfinderMob {
 
         int slotIdx = entityData.get(SLOT_INDEX_DATA);
 
-        // 手持模式（slot 2 = 主手, 3 = 副手）：確認玩家還持有浮游砲
+        // 手持模式：確認玩家還持有浮游砲
         if (slotIdx >= 2) {
-            ItemStack handItem = slotIdx == 2
-                    ? owner.getMainHandItem()
-                    : owner.getOffhandItem();
+            ItemStack handItem = slotIdx == 2 ? owner.getMainHandItem() : owner.getOffhandItem();
             if (handItem.isEmpty() || !(handItem.getItem() instanceof FloatingTurretItem)) {
                 this.discard();
                 return;
@@ -114,34 +112,30 @@ public class FloatingTurretEntity extends PathfinderMob {
         entityData.set(ORBIT_ANGLE, angle);
 
         double posX, posY, posZ;
+        float yawRad = owner.getYRot() * (float)(Math.PI / 180.0);
 
         if (slotIdx < 2) {
-            // 裝備槽：固定在玩家背後左右兩側，不遮擋第一人稱視野
-            // behindAngle = atan2(-cos(yaw), sin(yaw)) 對應 orbit XZ 的「正後方」
-            float yawRad = owner.getYRot() * (float)(Math.PI / 180.0);
+            // 裝備槽：固定在玩家背後左右兩側
             float behindAngle = (float) Math.atan2(-Math.cos(yawRad), Math.sin(yawRad));
-            float spread = (float)(Math.PI / 5); // 36° 左右展開
+            float spread = (float)(Math.PI / 5);
             float finalAngle = behindAngle + (slotIdx == 0 ? -spread : spread);
-            float bob = (float)(Math.sin(tickCount * 0.08) * 0.2); // 溫和上下浮動
+            float bob = (float)(Math.sin(tickCount * 0.08) * 0.2);
             posX = owner.getX() + Math.cos(finalAngle) * ORBIT_RADIUS;
             posY = owner.getY() + ORBIT_HEIGHT + bob;
             posZ = owner.getZ() + Math.sin(finalAngle) * ORBIT_RADIUS;
         } else {
-            // 手持：固定在玩家右上角（主手）或左上角（副手），跟著玩家朝向旋轉
-            float yawRad = owner.getYRot() * (float) (Math.PI / 180.0);
-            double rightX   = -Math.cos(yawRad);
-            double rightZ   = -Math.sin(yawRad);
+            // 手持：側邊 1.8 + 前方 1.5（與 FloatingTurretPlayerRenderer 相同的數學）
+            double rightX = -Math.cos(yawRad);
+            double rightZ = -Math.sin(yawRad);
             double forwardX = -Math.sin(yawRad);
             double forwardZ =  Math.cos(yawRad);
             boolean isLeftHanded = owner.getMainArm() == net.minecraft.world.entity.HumanoidArm.LEFT;
             double mainHandSide = isLeftHanded ? -1.0 : 1.0;
             double side = (slotIdx == 2) ? mainHandSide : -mainHandSide;
-
             posX = owner.getX() + rightX * side * 1.8 + forwardX * 1.5;
             posY = owner.getEyeY() + 0.8;
             posZ = owner.getZ() + rightZ * side * 1.8 + forwardZ * 1.5;
         }
-
         this.setPos(posX, posY, posZ);
 
         // 更新戰鬥狀態

@@ -1,6 +1,5 @@
 package com.github.nalamodikk.common.item.weapon;
 
-import com.github.nalamodikk.common.entity.FloatingTurretEntity;
 import com.github.nalamodikk.common.entity.FloatingTurretProjectile;
 import com.github.nalamodikk.common.event.FloatingTurretEventHandler;
 import com.github.nalamodikk.common.player.equipment.EquipmentType;
@@ -155,10 +154,23 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
         return stack;
     }
 
-    // 取浮游砲實體位置，找不到 fallback 到眼睛
+    // 計算手持浮游砲的世界位置（與 FloatingTurretPlayerRenderer 相同的數學）
     private static Vec3 turretPos(Player player, int slotIndex) {
-        FloatingTurretEntity turret = FloatingTurretEventHandler.getTurretEntity(player.getUUID(), slotIndex);
-        return turret != null ? turret.position() : player.getEyePosition();
+        boolean isMainHand = slotIndex == FloatingTurretEventHandler.HAND_MAIN_SLOT;
+        boolean isLeftHanded = player.getMainArm() == net.minecraft.world.entity.HumanoidArm.LEFT;
+        double mainHandSide = isLeftHanded ? -1.0 : 1.0;
+        double side = isMainHand ? mainHandSide : -mainHandSide;
+
+        float yawRad = player.getYRot() * (float) (Math.PI / 180.0);
+        double rightX = -Math.cos(yawRad);
+        double rightZ = -Math.sin(yawRad);
+        double forwardX = -Math.sin(yawRad);
+        double forwardZ = Math.cos(yawRad);
+
+        return new Vec3(
+                player.getX() + rightX * side * 1.8 + forwardX * 1.5,
+                player.getEyeY() + 0.8,
+                player.getZ() + rightZ * side * 1.8 + forwardZ * 1.5);
     }
 
     // 雙持快按：各從自己砲管位置射出，方向 raycast 自動校準準心

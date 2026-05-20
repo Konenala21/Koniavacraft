@@ -65,16 +65,12 @@ public class FloatingTurretEventHandler {
 
         ServerLevel level = player.serverLevel();
 
-        // 旁觀者模式：清除所有浮游砲 entity，不生成新的
+        // 旁觀者模式：清除裝備槽實體，不生成新的
         if (player.isSpectator()) {
             for (int i = 0; i < TURRET_SLOT_COUNT; i++) {
                 FloatingTurretEntity e = findTurretEntity(level, player, i);
                 if (e != null) e.discard();
             }
-            FloatingTurretEntity m = findTurretEntity(level, player, HAND_MAIN_SLOT);
-            if (m != null) m.discard();
-            FloatingTurretEntity o = findTurretEntity(level, player, HAND_OFF_SLOT);
-            if (o != null) o.discard();
             return;
         }
 
@@ -114,7 +110,7 @@ public class FloatingTurretEventHandler {
             player.removeEffect(ModMobEffects.COMBAT_STATE);
         }
 
-        // ── 手持模式（slot 2 = 主手, 3 = 副手）──
+        // 手持模式（slot 2 = 主手, 3 = 副手）：生成實體讓其他玩家可見
         syncHandEntity(level, player, player.getMainHandItem(), HAND_MAIN_SLOT);
         syncHandEntity(level, player, player.getOffhandItem(), HAND_OFF_SLOT);
     }

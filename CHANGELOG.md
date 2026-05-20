@@ -23,6 +23,11 @@ All notable changes to this project will be documented in this file.
 
 ### Developer Notes / 開發者備註
 
+- `FloatingTurretPlayerRenderer`: new client-only `@EventBusSubscriber` class hooked to `RenderPlayerEvent.Post`. Renders hand-mode and equipment-slot turrets directly from the player's interpolated yaw/pitch, eliminating entity sync jitter. Hand-mode turrets (slot 2/3) no longer need server entities; slot-mode turrets (slot 0/1) retain entities for server logic but are visually rendered here.
+- `FloatingTurretRenderer`: simplified to only render other players' equipment-slot turrets. Local player's turrets are fully handled by `FloatingTurretPlayerRenderer`.
+- `FloatingTurretEventHandler`: removed hand-mode entity spawning (`syncHandEntity`). `MAX_TURRETS_PER_PLAYER` reduced to 2 (slot entities only).
+- `FloatingTurretEntity.serverTick()`: removed slot >= 2 item-held check and hand-position calculation; entity type is now always equipment-slot (slot 0/1).
+- `FloatingTurretItem.turretPos()`: computes world position mathematically using player yaw instead of looking up a server entity.
 - `FloatingTurretEventHandler`: replaced per-player BBox spatial search (60-block inflate) with a static `Map<UUID, Map<Integer, FloatingTurretEntity>>` registry. `findTurretEntity` is now O(1); `spawnTurretEntity` uses registry count instead of `getEntitiesOfClass`. Player logout clears the registry entry.
 - `FloatingTurretEntity`: added `remove(RemovalReason)` override to unregister from the registry on any removal path (discard, die, chunk unload).
 - `FloatingTurretProjectile`: new entity extending `ThrowableProjectile`; no gravity, speed 1.5 b/t, max lifetime 32 ticks (~48 block range), deals 8 damage on entity hit, immune to all damage.
