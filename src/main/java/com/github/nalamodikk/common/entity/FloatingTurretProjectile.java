@@ -13,6 +13,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
@@ -133,6 +134,8 @@ public class FloatingTurretProjectile extends ThrowableProjectile {
     @Override
     protected void onHitBlock(BlockHitResult result) {
         if (level().isClientSide) return;
+        BlockState state = level().getBlockState(result.getBlockPos());
+        if (!state.getFluidState().isEmpty()) return; // 液體直接穿過
         explodeIfCharged(result.getLocation());
         this.discard();
     }
