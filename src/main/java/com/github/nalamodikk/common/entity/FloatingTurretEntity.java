@@ -229,7 +229,10 @@ public class FloatingTurretEntity extends PathfinderMob {
         Player owner = getOwnerPlayer();
         if (owner == null) return;
 
-        int dataIdx = 8 + entityData.get(SLOT_INDEX_DATA);
+        int slotIdx = entityData.get(SLOT_INDEX_DATA);
+        if (slotIdx >= 2) return; // 手持實體無裝備槽資料，不需要歸還物品
+
+        int dataIdx = 8 + slotIdx;
         NonNullList<ItemStack> equipment = owner.getData(ModDataAttachments.EXTRA_EQUIPMENT.get());
         if (dataIdx >= equipment.size()) return;
 

@@ -110,7 +110,7 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
     private static void stopChargeSound(Player player) {
         if (player instanceof ServerPlayer sp) {
             sp.connection.send(new ClientboundStopSoundPacket(
-                    ResourceLocation.withDefaultNamespace("beacon.ambient"), SoundSource.PLAYERS));
+                    ResourceLocation.withDefaultNamespace("block.beacon.ambient"), SoundSource.PLAYERS));
         }
     }
 

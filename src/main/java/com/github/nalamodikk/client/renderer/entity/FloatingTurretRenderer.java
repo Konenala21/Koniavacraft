@@ -128,6 +128,13 @@ public class FloatingTurretRenderer extends EntityRenderer<FloatingTurretEntity>
 
         float yawOffset = -player.getYRot() + 270F;
         poseStack.mulPose(Axis.YP.rotationDegrees(yawOffset));
+
+        if (!player.isUsingItem()) {
+            boolean isMainHand = (slotIdx == 2);
+            float spinDir = (isMainHand == isLeftHanded) ? 1.0F : -1.0F;
+            poseStack.mulPose(Axis.XP.rotationDegrees((player.tickCount + partialTick) * 2.0F * spinDir));
+        }
+
         poseStack.mulPose(Axis.ZP.rotationDegrees(-pitch));
         poseStack.translate(2.8125, -0.6756, 0.0843);
 
