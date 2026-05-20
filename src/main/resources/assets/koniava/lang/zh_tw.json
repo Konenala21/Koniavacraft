@@ -782,7 +782,7 @@
   "death.attack.floating_turret.player": "%1$s 被 %2$s 的浮游砲精準料理",
 
   "misc.koniava.turret_kill.pvp.0": "%1$s 製造了浮游砲，%2$s 製造了去重生點的理由",
-  "misc.koniava.turret_kill.pvp.1": "%2$s 發現 %1$s 對他閃避率的估計偏差了整整 100%",
+  "misc.koniava.turret_kill.pvp.1": "%2$s 發現 %1$s 對他閃避率的估計偏差了整整 100%%",
   "misc.koniava.turret_kill.pvp.2": "砲從沒失手。%1$s 吃了全部功勞，%2$s 吃了全部傷害。",
   "misc.koniava.turret_kill.pvp.3": "%1$s 外包了暴力行為。%2$s 的血條申請了正式抗議。",
   "misc.koniava.turret_kill.pvp.4": "%2$s 試圖用氣場擋魔法彈。%1$s 的浮游砲不接受這個理由。",

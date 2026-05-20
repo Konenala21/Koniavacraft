@@ -782,7 +782,7 @@
   "death.attack.floating_turret.player": "%1$s was efficiently eliminated by %2$s's floating turret",
 
   "misc.koniava.turret_kill.pvp.0": "%1$s built a turret. %2$s built a reason to respawn.",
-  "misc.koniava.turret_kill.pvp.1": "%2$s discovered that %1$s's dodge-rate estimate was off by exactly 100%.",
+  "misc.koniava.turret_kill.pvp.1": "%2$s discovered that %1$s's dodge-rate estimate was off by exactly 100%%.",
   "misc.koniava.turret_kill.pvp.2": "The turret never missed. %1$s takes full credit. %2$s takes full damage.",
   "misc.koniava.turret_kill.pvp.3": "%1$s outsourced their violence. %2$s's health bar filed a formal complaint.",
   "misc.koniava.turret_kill.pvp.4": "%2$s tried to fight magic with vibes. %1$s's turret did not accept that.",
