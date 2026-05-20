@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Abandoned Altar structures no longer replace surrounding terrain with air blocks when generating.
+- 廢棄祭壇結構生成時不再將周圍地形覆蓋成空氣方塊。
 - Fixed Magic Ore and Deepslate Magic Ore missing the ore tag, which prevented the Mana Pickaxe chain mining from activating on them.
 - 修正魔法礦石和深板岩魔法礦石缺少 ore tag 的問題，導致魔力鎬的連鎖挖掘無法對其觸發。
 - Magic Ore now requires at least a stone pickaxe to drop items, consistent with standard ore behavior.
@@ -30,6 +32,7 @@ All notable changes to this project will be documented in this file.
 
 ### Developer Notes / 開發者備註
 
+- `AbandonedAltarPiece`: added `BlockIgnoreProcessor(AIR, CAVE_AIR, VOID_AIR)` to `StructurePlaceSettings` so template air is skipped during placement.
 - `ModBlockTagProvider`: added `Tags.Blocks.ORES` entry for `magic_ore` and `deepslate_magic_ore` so `state.is(Tags.Blocks.ORES)` in `ManaPickaxeItem.mineBlock` correctly resolves both ores. Also added `BlockTags.NEEDS_STONE_TOOL` for `magic_ore`.
 - `ModRecipeProvider`: changed Research Table recipe `'C'` definition from `Blocks.DARK_OAK_PLANKS` to `ItemTags.PLANKS`.
 - `AspectAltarBlockEntity`: player loop for upgrade events now skips players beyond 64 blocks (`distSqr > 64*64 → continue`).
