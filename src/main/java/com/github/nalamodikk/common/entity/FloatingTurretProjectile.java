@@ -12,6 +12,10 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.entity.projectile.ThrowableProjectile;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -127,7 +131,8 @@ public class FloatingTurretProjectile extends ThrowableProjectile {
                         .getHolderOrThrow(ModDamageTypes.FLOATING_TURRET),
                 this, getOwner());
         target.hurt(source, dmg);
-        explodeIfCharged(result.getLocation()); // 蓄力彈打實體也爆炸
+        showHitEffect(result.getLocation());
+        explodeIfCharged(result.getLocation());
         this.discard();
     }
 
@@ -136,8 +141,33 @@ public class FloatingTurretProjectile extends ThrowableProjectile {
         if (level().isClientSide) return;
         BlockState state = level().getBlockState(result.getBlockPos());
         if (!state.getFluidState().isEmpty()) return; // 液體直接穿過
+        showHitEffect(result.getLocation());
         explodeIfCharged(result.getLocation());
         this.discard();
+    }
+
+    private void showHitEffect(Vec3 pos) {
+        if (!(level() instanceof ServerLevel sl)) return;
+        float ratio = getChargeRatio();
+
+        // 閃白光
+        sl.sendParticles(ParticleTypes.FLASH, pos.x, pos.y, pos.z, 1, 0, 0, 0, 0);
+
+        // 藍白碎光向外爆散
+        int rodCount = ratio > 0 ? 24 : 12;
+        sl.sendParticles(ParticleTypes.END_ROD,
+                pos.x, pos.y, pos.z, rodCount, 0.2, 0.2, 0.2, 0.25);
+
+        // 藍色電弧火花
+        int sparkCount = ratio > 0 ? 20 : 8;
+        sl.sendParticles(ParticleTypes.ELECTRIC_SPARK,
+                pos.x, pos.y, pos.z, sparkCount, 0.15, 0.15, 0.15, 0.1);
+
+        // 命中音效：短促清脆的「啪！」
+        sl.playSound(null, pos.x, pos.y, pos.z,
+                SoundEvents.AMETHYST_BLOCK_BREAK, SoundSource.PLAYERS,
+                ratio > 0 ? 1.2F : 0.7F,
+                ratio > 0 ? 1.6F : 2.0F);
     }
 
     private void explodeIfCharged(Vec3 pos) {
