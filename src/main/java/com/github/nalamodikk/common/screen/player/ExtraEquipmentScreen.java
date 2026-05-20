@@ -12,9 +12,16 @@ import net.minecraft.world.entity.player.Inventory;
 public class ExtraEquipmentScreen extends AbstractContainerScreen<ExtraEquipmentMenu> {
 
         private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/extra_equipment.png");
-        private static final int PLAYER_MODEL_X = 30;  // 人物模型X位置 (黑色區域中心)
-        private static final int PLAYER_MODEL_Y = 54;  // 人物模型Y位置
-        private static final int PLAYER_MODEL_SIZE = 30; // 人物模型大小
+        private static final int PLAYER_MODEL_X = 30;
+        private static final int PLAYER_MODEL_Y = 54;
+        private static final int PLAYER_MODEL_SIZE = 30;
+
+        private static final int SLOT_UV_X = 235;
+        private static final int SLOT_UV_Y = 1;
+        private static final int SLOT_SIZE = 18;
+        private static final int EXTRA_SLOT_BASE_X = 79;
+        private static final int EXTRA_SLOT_BASE_Y = 23;
+        private static final int EXTRA_SLOTS_PER_COL = 5;
 
         private float xMouse;
         private float yMouse;
@@ -28,6 +35,16 @@ public class ExtraEquipmentScreen extends AbstractContainerScreen<ExtraEquipment
         @Override
         protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
             graphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+
+            for (int i = 0; i < ExtraEquipmentMenu.EQUIPMENT_SLOT_COUNT; i++) {
+                int col = i / EXTRA_SLOTS_PER_COL;
+                int row = i % EXTRA_SLOTS_PER_COL;
+                graphics.blit(TEXTURE,
+                        leftPos + EXTRA_SLOT_BASE_X + col * SLOT_SIZE,
+                        topPos + EXTRA_SLOT_BASE_Y + row * SLOT_SIZE,
+                        SLOT_UV_X, SLOT_UV_Y, SLOT_SIZE, SLOT_SIZE);
+            }
+
             renderPlayerModelWithEyeTracking(graphics,
                     leftPos + PLAYER_MODEL_X,
                     topPos + PLAYER_MODEL_Y,
@@ -35,7 +52,6 @@ public class ExtraEquipmentScreen extends AbstractContainerScreen<ExtraEquipment
                     xMouse,
                     yMouse,
                     this.minecraft.player);
-
         }
 
         @Override

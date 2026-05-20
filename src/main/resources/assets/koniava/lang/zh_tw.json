@@ -1,5 +1,6 @@
 {
   "//1": "=== 物品 ===",
+  "effect.koniava.combat_state": "戰鬥狀態",
   "item.koniava.floating_turret": "娜拉・星環浮游砲",
   "item.koniava.floating_turret.tooltip.mana": "魔力: %s / %s",
   "item.koniava.floating_turret.tooltip.hint": "右鍵發射（手持）| 裝入浮游砲槽後自動守護",

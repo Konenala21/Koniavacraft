@@ -1,5 +1,6 @@
 {
   "//1": "=== ITEMS ===",
+  "effect.koniava.combat_state": "Combat State",
   "item.koniava.floating_turret": "Nara Star Ring Turret",
   "item.koniava.floating_turret.tooltip.mana": "Mana: %s / %s",
   "item.koniava.floating_turret.tooltip.hint": "Right-click to fire (hand-held) | Equip in Turret slot for passive guardian",

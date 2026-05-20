@@ -213,6 +213,7 @@ dependencies {
     testImplementation("org.joml:joml:1.10.5")
     testImplementation("org.mockito:mockito-core:5.8.0")
     testImplementation("org.mockito:mockito-junit-jupiter:5.8.0")
+    testImplementation sourceSets.main.output
 }
 
 test {

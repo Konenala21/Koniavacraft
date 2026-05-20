@@ -8,6 +8,8 @@ import com.github.nalamodikk.register.ModEntities;
 import net.minecraft.core.NonNullList;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import com.github.nalamodikk.register.ModMobEffects;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -77,7 +79,12 @@ public class FloatingTurretEventHandler {
         }
 
         // ── 裝備槽模式（slot 0, 1）──
+        long lastCombat = player.getData(ModDataAttachments.LAST_COMBAT_TIME.get());
+        boolean inCombat = lastCombat >= 0
+                && (level.getGameTime() - lastCombat) < FloatingTurretEntity.COMBAT_LINGER_TICKS;
+
         NonNullList<ItemStack> equipment = player.getData(ModDataAttachments.EXTRA_EQUIPMENT.get());
+        boolean hasSlotTurret = false;
         for (int i = 0; i < TURRET_SLOT_COUNT; i++) {
             int dataIdx = TURRET_SLOT_START + i;
             if (dataIdx >= equipment.size()) break;
@@ -86,10 +93,25 @@ public class FloatingTurretEventHandler {
             FloatingTurretEntity existing = findTurretEntity(level, player, i);
 
             if (!stack.isEmpty() && stack.getItem() instanceof FloatingTurretItem) {
-                if (existing == null) spawnTurretEntity(level, player, i);
+                hasSlotTurret = true;
+                if (inCombat) {
+                    // 戰鬥狀態才 spawn 自走砲實體
+                    if (existing == null) spawnTurretEntity(level, player, i);
+                } else {
+                    // 非戰鬥狀態：確保實體被清除（serverTick 也會自動 discard，雙重保障）
+                    if (existing != null) existing.discard();
+                }
             } else {
                 if (existing != null) existing.discard();
             }
+        }
+
+        // 戰鬥狀態指示：使用 Glowing 藥水效果顯示在 HUD（無粒子，只顯示圖示）
+        if (inCombat && hasSlotTurret) {
+            player.addEffect(new MobEffectInstance(ModMobEffects.COMBAT_STATE,
+                    SYNC_INTERVAL + 10, 0, false, false, true));
+        } else {
+            player.removeEffect(ModMobEffects.COMBAT_STATE);
         }
 
         // ── 手持模式（slot 2 = 主手, 3 = 副手）──

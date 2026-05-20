@@ -47,7 +47,7 @@ public class FloatingTurretEntity extends PathfinderMob {
     private static final float PASSIVE_RANGE = 16.0F;
     private static final int MANA_PER_ATTACK = 50;
     private static final float ATTACK_DAMAGE = 5.0F;
-    private static final long COMBAT_LINGER_TICKS = 100L;
+    public static final long COMBAT_LINGER_TICKS = 200L; // 10 秒無戰鬥後解除
 
     private int attackTimer = 0;
 
@@ -116,11 +116,16 @@ public class FloatingTurretEntity extends PathfinderMob {
         double posX, posY, posZ;
 
         if (slotIdx < 2) {
-            // 裝備槽：繞玩家軌道運轉，兩顆相差 180°
-            float slotPhase = slotIdx == 0 ? 0.0F : (float) Math.PI;
-            posX = owner.getX() + Math.cos(angle + slotPhase) * ORBIT_RADIUS;
-            posY = owner.getY() + ORBIT_HEIGHT;
-            posZ = owner.getZ() + Math.sin(angle + slotPhase) * ORBIT_RADIUS;
+            // 裝備槽：固定在玩家背後左右兩側，不遮擋第一人稱視野
+            // behindAngle = atan2(-cos(yaw), sin(yaw)) 對應 orbit XZ 的「正後方」
+            float yawRad = owner.getYRot() * (float)(Math.PI / 180.0);
+            float behindAngle = (float) Math.atan2(-Math.cos(yawRad), Math.sin(yawRad));
+            float spread = (float)(Math.PI / 5); // 36° 左右展開
+            float finalAngle = behindAngle + (slotIdx == 0 ? -spread : spread);
+            float bob = (float)(Math.sin(tickCount * 0.08) * 0.2); // 溫和上下浮動
+            posX = owner.getX() + Math.cos(finalAngle) * ORBIT_RADIUS;
+            posY = owner.getY() + ORBIT_HEIGHT + bob;
+            posZ = owner.getZ() + Math.sin(finalAngle) * ORBIT_RADIUS;
         } else {
             // 手持：固定在玩家右上角（主手）或左上角（副手），跟著玩家朝向旋轉
             float yawRad = owner.getYRot() * (float) (Math.PI / 180.0);
@@ -143,6 +148,12 @@ public class FloatingTurretEntity extends PathfinderMob {
         long lastCombat = owner.getData(ModDataAttachments.LAST_COMBAT_TIME.get());
         boolean inCombat = lastCombat >= 0 && (level().getGameTime() - lastCombat) < COMBAT_LINGER_TICKS;
         entityData.set(IN_COMBAT_DATA, inCombat);
+
+        // 自走砲型態：戰鬥結束後立刻靜默消失，不等 EventHandler 20-tick 間隔
+        if (slotIdx < 2 && !inCombat) {
+            this.discard();
+            return;
+        }
 
         // 自動攻擊：僅裝備槽模式（slot 0, 1），手持模式靠右鍵主動攻擊
         if (slotIdx < 2 && attackTimer == 0 && inCombat) {
@@ -175,17 +186,19 @@ public class FloatingTurretEntity extends PathfinderMob {
         ItemStack stack = equipment.get(dataIdx);
         if (stack.isEmpty() || !(stack.getItem() instanceof FloatingTurretItem)) return;
 
-        // 檢查魔力
         int mana = stack.getOrDefault(ModDataComponents.MANA_STORED, 0);
         if (mana < MANA_PER_ATTACK) return;
 
-        // 造成傷害
-        target.hurt(level().damageSources().mobAttack(this), ATTACK_DAMAGE);
+        // 發射砲彈，同時重設戰鬥計時器（讓攻擊中的自走砲持續維持戰鬥狀態）
+        owner.setData(ModDataAttachments.LAST_COMBAT_TIME.get(), level().getGameTime());
+        if (level() instanceof net.minecraft.server.level.ServerLevel sl) {
+            net.minecraft.world.phys.Vec3 targetPos = target.getBoundingBox().getCenter();
+            FloatingTurretProjectile proj = FloatingTurretProjectile.shootAt(
+                    sl, owner, this.position(), targetPos);
+            sl.addFreshEntity(proj);
+        }
 
-        // 消耗魔力
         stack.set(ModDataComponents.MANA_STORED, mana - MANA_PER_ATTACK);
-
-        // 消耗耐久
         consumeDurability(owner, equipment, dataIdx, stack);
     }
 

@@ -7,6 +7,8 @@ import com.github.nalamodikk.register.ModBlockEntities;
 import com.github.nalamodikk.register.ModDataComponents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -27,16 +29,14 @@ public class ManaChargerBlockEntity extends AbstractManaMachineEntityBlock {
 
     private final EnumMap<Direction, IOHandlerUtils.IOType> directionConfig = new EnumMap<>(Direction.class);
 
+    // Index 0 = mana stored, index 1 = max mana. set() must write back so the client
+    // (which calls set() on ContainerData sync) can read the correct value from get().
+    private final int[] syncData = new int[]{0, MAX_MANA_CAP};
+
     final ContainerData data = new ContainerData() {
-        @Override public int get(int i) {
-            return switch (i) {
-                case 0 -> manaStorage != null ? manaStorage.getManaStored() : 0;
-                case 1 -> MAX_MANA_CAP;
-                default -> 0;
-            };
-        }
-        @Override public void set(int i, int v) {}
-        @Override public int getCount() { return 2; }
+        @Override public int get(int i) { return i >= 0 && i < syncData.length ? syncData[i] : 0; }
+        @Override public void set(int i, int v) { if (i >= 0 && i < syncData.length) syncData[i] = v; }
+        @Override public int getCount() { return syncData.length; }
     };
 
     public ManaChargerBlockEntity(BlockPos pos, BlockState state) {
@@ -71,8 +71,15 @@ public class ManaChargerBlockEntity extends AbstractManaMachineEntityBlock {
     }
 
     @Override
+    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        syncData[0] = manaStorage != null ? manaStorage.getManaStored() : 0;
+    }
+
+    @Override
     public void tickMachine() {
         if (level == null || level.isClientSide() || itemHandler == null || manaStorage == null) return;
+        syncData[0] = manaStorage.getManaStored();
 
         ItemStack stack = itemHandler.getStackInSlot(ITEM_SLOT);
         if (stack.isEmpty() || !stack.has(ModDataComponents.MAX_MANA)) return;
@@ -125,7 +132,7 @@ public class ManaChargerBlockEntity extends AbstractManaMachineEntityBlock {
     protected boolean canGenerate() { return false; }
 
     public int getCurrentMana() {
-        return manaStorage != null ? manaStorage.getManaStored() : 0;
+        return syncData[0];
     }
 
     public static int getMaxMana() { return MAX_MANA_CAP; }

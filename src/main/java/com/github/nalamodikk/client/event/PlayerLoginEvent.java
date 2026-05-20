@@ -35,9 +35,9 @@ public class PlayerLoginEvent {
             player.setData(ModDataAttachments.NINE_GRID.get(), NonNullList.withSize(9, ItemStack.EMPTY));
         }
 
-        // 初始化玩家飾品裝備資料
+        // 初始化玩家飾品裝備資料（10格：8格一般裝備 + 2格浮游砲槽）
         if (!player.hasData(ModDataAttachments.EXTRA_EQUIPMENT.get())) {
-            player.setData(ModDataAttachments.EXTRA_EQUIPMENT.get(), NonNullList.withSize(8, ItemStack.EMPTY));
+            player.setData(ModDataAttachments.EXTRA_EQUIPMENT.get(), NonNullList.withSize(10, ItemStack.EMPTY));
         }
 
         if (player.getServer() instanceof GameTestServer) {

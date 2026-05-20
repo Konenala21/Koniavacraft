@@ -1,6 +1,7 @@
 package com.github.nalamodikk.narasystem.nara.hud;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.narasystem.nara.network.server.NaraSkipIntroPacket;
 import com.github.nalamodikk.register.ModItems;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -59,6 +60,14 @@ public class NaraDialogueOverlay {
         if (event.getAction() != GLFW.GLFW_PRESS) return;
 
         int key = event.getKey();
+
+        // ESC 鍵跳過整段對話（ESC 同時會開暫停選單，關掉即可）
+        if (key == GLFW.GLFW_KEY_ESCAPE) {
+            NaraDialogueManager.close();
+            NaraFirstLoginFlow.resetIgnoreCount();
+            NaraSkipIntroPacket.send();
+            return;
+        }
 
         // F 鍵確認選項或推進對話，同時清空副手切換的 click queue
         if (key == GLFW.GLFW_KEY_F) {
@@ -136,6 +145,11 @@ public class NaraDialogueOverlay {
         int totalW = PORTRAIT_W + PADDING + BOX_W;
         int hudX = (sw - totalW) / 2;
         int hudY = (sh - BOX_H) / 2;
+
+        // 跳過提示浮在整個對話框上方
+        Component skipHint = Component.translatable("nara.hud.hint.skip_all");
+        int hintY = hudY - mc.font.lineHeight - 4;
+        g.drawCenteredString(mc.font, skipHint, hudX + totalW / 2, hintY, COLOR_GREY);
 
         renderPortraitArea(g, hudX, hudY);
         renderTextBox(g, mc, hudX + PORTRAIT_W + PADDING, hudY);

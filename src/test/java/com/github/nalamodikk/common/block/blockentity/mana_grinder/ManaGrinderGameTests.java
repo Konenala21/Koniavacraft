@@ -106,7 +106,7 @@ public class ManaGrinderGameTests {
     // 3. 沒有魔力時，放入石頭後進度不應推進
     //    (50 tick 後 progress 應仍為 0)
     // -------------------------------------------------------------------------
-    @GameTest(template = "empty", templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 80)
+@GameTest(template = "empty", templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 80)
     public static void grinderDoesNotProgressWithoutMana(GameTestHelper helper) {
         helper.setBlock(POS, ModBlocks.MANA_GRINDER.get());
 

@@ -71,6 +71,12 @@ public class NaraServerEvents {
         naraPunishmentActive.add(playerUUID);
     }
 
+    public static void cancelPunishmentState(UUID uuid) {
+        pendingPunishmentDialogue.remove(uuid);
+        naraPunishmentActive.remove(uuid);
+        awaitingRespawn.remove(uuid);
+    }
+
     public static void scheduleWardenDespawn(UUID wardenUUID, int delayTicks) {
         pendingWardenDespawn.put(wardenUUID, delayTicks);
     }

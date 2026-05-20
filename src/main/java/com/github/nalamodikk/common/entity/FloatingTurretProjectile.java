@@ -55,6 +55,18 @@ public class FloatingTurretProjectile extends ThrowableProjectile {
         return create(level, shooter, chargeRatio, spawnPos);
     }
 
+    // 裝備槽被動攻擊用：從砲管直接瞄準目標位置，不走玩家視線 raycast
+    public static FloatingTurretProjectile shootAt(Level level, Player owner, Vec3 spawnPos, Vec3 targetPos) {
+        FloatingTurretProjectile p = new FloatingTurretProjectile(
+                ModEntities.FLOATING_TURRET_PROJECTILE.get(), level);
+        p.setOwner(owner);
+        p.setPos(spawnPos.x, spawnPos.y, spawnPos.z);
+        Vec3 dir = targetPos.subtract(spawnPos);
+        p.setDeltaMovement((dir.lengthSqr() < 0.001 ? new Vec3(0, 1, 0) : dir.normalize()).scale(BOLT_SPEED));
+        p.setChargeRatio(0.0F);
+        return p;
+    }
+
     private static FloatingTurretProjectile create(Level level, Player shooter, float chargeRatio, Vec3 spawnPos) {
         FloatingTurretProjectile p = new FloatingTurretProjectile(
                 ModEntities.FLOATING_TURRET_PROJECTILE.get(), level);
