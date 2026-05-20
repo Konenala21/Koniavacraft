@@ -776,5 +776,17 @@
   "guide.koniava.altar.usage.title": "Using the Altar",
   "guide.koniava.altar.usage.body": "1. Build the multi-block structure as shown in JEI.\n2. Place the required materials on the surrounding AspectPedestals.\n3. Right-click the core block. The altar consumes mana and the materials from the pedestals.\n4. The result item appears at the center.\n\nIf mana or materials are missing, the altar displays an error hint.",
   "guide.koniava.altar.upgrade.title": "Upgrading the Altar",
-  "guide.koniava.altar.upgrade.body": "Add Resonance Rings to the existing structure to upgrade the altar tier.\n\nT1: minimal structure\nT2-T4: progressively more pillars and rings\nT5-T6: full surrounding structure required\n\nUpgrading to T5 and T6 triggers a dedicated upgrade animation. T6 is the current maximum tier."
+  "guide.koniava.altar.upgrade.body": "Add Resonance Rings to the existing structure to upgrade the altar tier.\n\nT1: minimal structure\nT2-T4: progressively more pillars and rings\nT5-T6: full surrounding structure required\n\nUpgrading to T5 and T6 triggers a dedicated upgrade animation. T6 is the current maximum tier.",
+
+  "death.attack.floating_turret": "%1$s was automated out of existence",
+  "death.attack.floating_turret.player": "%1$s was efficiently eliminated by %2$s's floating turret",
+
+  "misc.koniava.turret_kill.pvp.0": "%1$s built a turret. %2$s built a reason to respawn.",
+  "misc.koniava.turret_kill.pvp.1": "%2$s discovered that %1$s's dodge-rate estimate was off by exactly 100%.",
+  "misc.koniava.turret_kill.pvp.2": "The turret never missed. %1$s takes full credit. %2$s takes full damage.",
+  "misc.koniava.turret_kill.pvp.3": "%1$s outsourced their violence. %2$s's health bar filed a formal complaint.",
+  "misc.koniava.turret_kill.pvp.4": "%2$s tried to fight magic with vibes. %1$s's turret did not accept that.",
+  "misc.koniava.turret_kill.solo.0": "%1$s walked straight into a turret's line of sight. Twice, probably.",
+  "misc.koniava.turret_kill.solo.1": "The floating turret never misses. %1$s is Case #[REDACTED].",
+  "misc.koniava.turret_kill.solo.2": "%1$s learned that 'automated' and 'harmless' are two very different words."
 }

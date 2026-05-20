@@ -2,10 +2,14 @@ package com.github.nalamodikk.common.event;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.entity.FloatingTurretEntity;
+import com.github.nalamodikk.common.entity.FloatingTurretProjectile;
 import com.github.nalamodikk.common.item.weapon.FloatingTurretItem;
 import com.github.nalamodikk.register.ModDataAttachments;
 import com.github.nalamodikk.register.ModEntities;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.NonNullList;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import com.github.nalamodikk.register.ModMobEffects;
@@ -15,6 +19,7 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
@@ -142,6 +147,34 @@ public class FloatingTurretEventHandler {
     public static void onPlayerAttack(AttackEntityEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         player.setData(ModDataAttachments.LAST_COMBAT_TIME.get(), player.level().getGameTime());
+    }
+
+    private static final int PVP_VARIANTS  = 5;
+    private static final int SOLO_VARIANTS = 3;
+
+    @SubscribeEvent
+    public static void onTurretKill(LivingDeathEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer victim)) return;
+        if (!(event.getSource().getDirectEntity() instanceof FloatingTurretProjectile)) return;
+
+        MinecraftServer server = victim.getServer();
+        if (server == null) return;
+
+        Component msg;
+        if (event.getSource().getEntity() instanceof ServerPlayer killer) {
+            int variant = victim.getRandom().nextInt(PVP_VARIANTS);
+            msg = Component.translatable(
+                    "misc.koniava.turret_kill.pvp." + variant,
+                    killer.getDisplayName(), victim.getDisplayName())
+                    .withStyle(ChatFormatting.GOLD);
+        } else {
+            int variant = victim.getRandom().nextInt(SOLO_VARIANTS);
+            msg = Component.translatable(
+                    "misc.koniava.turret_kill.solo." + variant,
+                    victim.getDisplayName())
+                    .withStyle(ChatFormatting.YELLOW);
+        }
+        server.getPlayerList().broadcastSystemMessage(msg, false);
     }
 
     @Nullable

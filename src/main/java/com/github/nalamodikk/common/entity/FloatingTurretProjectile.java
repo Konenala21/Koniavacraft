@@ -1,6 +1,8 @@
 package com.github.nalamodikk.common.entity;
 
+import com.github.nalamodikk.register.ModDamageTypes;
 import com.github.nalamodikk.register.ModEntities;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -119,7 +121,11 @@ public class FloatingTurretProjectile extends ThrowableProjectile {
         float dmg = ratio > 0
                 ? CHARGED_DAMAGE_MIN + (CHARGED_DAMAGE_MAX - CHARGED_DAMAGE_MIN) * ratio
                 : DAMAGE;
-        target.hurt(level().damageSources().thrown(this, getOwner()), dmg);
+        DamageSource source = new DamageSource(
+                level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE)
+                        .getHolderOrThrow(ModDamageTypes.FLOATING_TURRET),
+                this, getOwner());
+        target.hurt(source, dmg);
         explodeIfCharged(result.getLocation()); // 蓄力彈打實體也爆炸
         this.discard();
     }

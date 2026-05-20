@@ -776,5 +776,17 @@
   "guide.koniava.altar.usage.title": "如何使用祭壇",
   "guide.koniava.altar.usage.body": "1. 按照 JEI 中的多方塊結構建造祭壇。\n2. 把合成所需的材料分別放到周圍的基座（AspectPedestal）上。\n3. 右鍵核心方塊，祭壇會消耗對應的魔力和底座上的材料。\n4. 完成後中央產出物品。\n\n魔力不足或材料不對時，祭壇會顯示錯誤提示。",
   "guide.koniava.altar.upgrade.title": "升級祭壇",
-  "guide.koniava.altar.upgrade.body": "在現有祭壇結構上加裝升級環（Resonance Ring）即可升級 Tier。\n\nT1：最基本結構\nT2-T4：逐漸增加支柱和升級環\nT5-T6：需要完整環繞結構\n\n升級 T5 和 T6 會觸發專屬升級動畫。T6 是目前的最高等級。"
+  "guide.koniava.altar.upgrade.body": "在現有祭壇結構上加裝升級環（Resonance Ring）即可升級 Tier。\n\nT1：最基本結構\nT2-T4：逐漸增加支柱和升級環\nT5-T6：需要完整環繞結構\n\n升級 T5 和 T6 會觸發專屬升級動畫。T6 是目前的最高等級。",
+
+  "death.attack.floating_turret": "%1$s 被全自動消滅了",
+  "death.attack.floating_turret.player": "%1$s 被 %2$s 的浮游砲精準料理",
+
+  "misc.koniava.turret_kill.pvp.0": "%1$s 製造了浮游砲，%2$s 製造了去重生點的理由",
+  "misc.koniava.turret_kill.pvp.1": "%2$s 發現 %1$s 對他閃避率的估計偏差了整整 100%",
+  "misc.koniava.turret_kill.pvp.2": "砲從沒失手。%1$s 吃了全部功勞，%2$s 吃了全部傷害。",
+  "misc.koniava.turret_kill.pvp.3": "%1$s 外包了暴力行為。%2$s 的血條申請了正式抗議。",
+  "misc.koniava.turret_kill.pvp.4": "%2$s 試圖用氣場擋魔法彈。%1$s 的浮游砲不接受這個理由。",
+  "misc.koniava.turret_kill.solo.0": "%1$s 大搖大擺走進了浮游砲的視野。可能還走了第二次。",
+  "misc.koniava.turret_kill.solo.1": "浮游砲從不失手。%1$s 是第 [資料刪除] 號案例。",
+  "misc.koniava.turret_kill.solo.2": "%1$s 發現「自動」和「無害」是兩個完全不同的詞。"
 }
