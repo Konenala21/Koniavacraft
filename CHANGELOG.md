@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Player Changes / 玩家更新內容
+
+- Floating Turret projectiles now pass through water and lava instead of stopping on contact.
+- 浮游砲砲彈現在可以穿過水和岩漿繼續飛行，不會在液體處消失。
+
+### Developer Notes / 開發者備註
+
+- `FloatingTurretProjectile.onHitBlock()`: checks `FluidState` before processing block hit; returns early for any non-empty fluid, allowing the bolt to continue through liquids.
+
 ## [0.0.1.7-2]
 
 ### Player Changes / 玩家更新內容
