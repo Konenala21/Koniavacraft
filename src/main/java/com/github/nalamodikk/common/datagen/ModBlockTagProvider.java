@@ -57,6 +57,13 @@ public class ModBlockTagProvider extends BlockTagsProvider {
         tag(Tags.Blocks.ORES_IN_GROUND_DEEPSLATE)
                 .add(ModBlocks.DEEPSLATE_MAGIC_ORE.get());
 
+        tag(Tags.Blocks.ORES)
+                .add(ModBlocks.MAGIC_ORE.get())
+                .add(ModBlocks.DEEPSLATE_MAGIC_ORE.get());
+
+        tag(BlockTags.NEEDS_STONE_TOOL)
+                .add(ModBlocks.MAGIC_ORE.get());
+
         this.tag(BlockTags.MINEABLE_WITH_PICKAXE)
                 .add(ModBlocks.CRACKED_MANA_BRICKS.get())
                 .add(ModBlocks.MOSSY_MANA_BRICKS.get())

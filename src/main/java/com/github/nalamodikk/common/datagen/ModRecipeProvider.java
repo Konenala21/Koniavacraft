@@ -12,6 +12,7 @@ import com.github.nalamodikk.register.ModItems;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.recipes.*;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.ItemLike;
@@ -138,7 +139,7 @@ public class ModRecipeProvider extends RecipeProvider {
                 .pattern("SIS")
                 .pattern("MCM")
                 .define('M', ModItems.MANA_INGOT.get())
-                .define('C', Blocks.DARK_OAK_PLANKS)
+                .define('C', ItemTags.PLANKS)
                 .define('S', Items.STICK)
                 .define('I', Blocks.IRON_BLOCK)
                 .unlockedBy("has_mana_ingot", has(ModItems.MANA_INGOT.get()))

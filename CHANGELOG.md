@@ -6,13 +6,32 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Fixed Magic Ore and Deepslate Magic Ore missing the ore tag, which prevented the Mana Pickaxe chain mining from activating on them.
+- 修正魔法礦石和深板岩魔法礦石缺少 ore tag 的問題，導致魔力鎬的連鎖挖掘無法對其觸發。
+- Magic Ore now requires at least a stone pickaxe to drop items, consistent with standard ore behavior.
+- 魔法礦石現在至少需要石鎬才能取得掉落物，與標準礦石行為一致。
+- Research Table recipe now accepts any wood planks instead of requiring Dark Oak Planks specifically.
+- 研究台配方現在接受任何種類的木板，不再限定深色橡木板。
+
+- Added Mana Charger: accepts items with mana storage via conduit or generator, charges them at 20 mana per tick up to the item's maximum mana capacity.
+- 新增魔力充能台：透過導管或發電機接收魔力，以每 tick 20 點的速度為物品充能至其最大魔力上限。
+- Advanced Tech Wand can now store up to 8000 mana. Current mana is shown in the item tooltip.
+- 高級科技魔杖現在可儲存最多 8000 點魔力，當前魔力顯示於物品 tooltip。
+- Mana debug tool now supports +10000 and +100000 mana modes.
+- 魔力除錯工具新增 +10000 和 +100000 魔力模式。
 - Altar upgrade animations and tier advancements now only trigger for players within 64 blocks of the altar.
 - 祭壇升級動畫與升級成就現在只對距祭壇 64 格以內的玩家觸發。
 - Fixed JEI aspect synthesis panel crashing on load.
 - 修正 JEI 本源合成面板在載入時崩潰的問題。
+- Fixed Nara's intro dialogue being cut off when the player is in creative or spectator mode, because the Warden could not damage them and the apology sequence never triggered.
+- 修正玩家在創造或旁觀模式下，娜拉懲罰怪物無法傷害玩家導致道歉對話永遠不觸發的問題。
+- Added skip button to Nara's dialogue. Press Esc at any time during the intro to dismiss the dialogue.
+- 娜拉對話新增跳過功能，對話進行中隨時按 Esc 可跳過整段對話。
 
 ### Developer Notes / 開發者備註
 
+- `ModBlockTagProvider`: added `Tags.Blocks.ORES` entry for `magic_ore` and `deepslate_magic_ore` so `state.is(Tags.Blocks.ORES)` in `ManaPickaxeItem.mineBlock` correctly resolves both ores. Also added `BlockTags.NEEDS_STONE_TOOL` for `magic_ore`.
+- `ModRecipeProvider`: changed Research Table recipe `'C'` definition from `Blocks.DARK_OAK_PLANKS` to `ItemTags.PLANKS`.
 - `AspectAltarBlockEntity`: player loop for upgrade events now skips players beyond 64 blocks (`distSqr > 64*64 → continue`).
 - `AspectSynthesisJEIPlugin`: moved `removeIngredientsAtRuntime` for token stacks from `registerRecipes()` to `onRuntimeAvailable()`. Calling runtime ingredient operations during the registration phase caused JEI to report the plugin as crashed.
 - `AspectSynthesisRecipeCategory.setRecipe()`: removed `createFocusLink` call. JEI requires all linked slots to have an equal ingredient count; input slots had 2 (first + second aspect) while output had 1 (result), causing `IllegalArgumentException` and the "This recipe crashed" overlay. Invisible ingredients are kept for search linking.
