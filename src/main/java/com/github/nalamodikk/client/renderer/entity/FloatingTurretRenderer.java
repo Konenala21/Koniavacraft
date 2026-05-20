@@ -18,8 +18,11 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+
+import javax.annotation.Nullable;
 
 /**
  * Rendering split:
@@ -72,12 +75,20 @@ public class FloatingTurretRenderer extends EntityRenderer<FloatingTurretEntity>
         // Non-local player: render slot entities if in combat, hand entities always
         if (slotIdx < 2 && !entity.isInCombat()) return;
 
+        // Look up the owner in the client level to get correct yaw/pitch
+        Player owner = findOwner(entity);
+        float ownerYaw   = owner != null ? Mth.lerp(partialTick, owner.yRotO, owner.getYRot()) : entityYaw;
+        float ownerPitch = owner != null ? Mth.lerp(partialTick, owner.xRotO, owner.getXRot()) : 0F;
+
         poseStack.pushPose();
         poseStack.scale(SCALE_ENTITY, SCALE_ENTITY, SCALE_ENTITY);
-        poseStack.mulPose(Axis.YP.rotationDegrees(270F - entityYaw));
+        poseStack.mulPose(Axis.YP.rotationDegrees(270F - ownerYaw));
         if (slotIdx < 2) {
             float spin = (entity.tickCount + partialTick) * 2.0F;
             poseStack.mulPose(Axis.XP.rotationDegrees(spin));
+        } else {
+            // Hand entity: track owner's pitch so barrel faces their look direction
+            poseStack.mulPose(Axis.ZP.rotationDegrees(-ownerPitch));
         }
         poseStack.translate(2.8125, -0.6756, 0.0843);
 
@@ -139,6 +150,16 @@ public class FloatingTurretRenderer extends EntityRenderer<FloatingTurretEntity>
                 LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY,
                 poseStack, ghostSrc, entity.level(), entity.getId());
         poseStack.popPose();
+    }
+
+    @Nullable
+    private static Player findOwner(FloatingTurretEntity entity) {
+        return entity.getOwnerUUID().map(uuid -> {
+            for (Player p : entity.level().players()) {
+                if (p.getUUID().equals(uuid)) return p;
+            }
+            return null;
+        }).orElse(null);
     }
 
     private static boolean isLocalHandFirstPerson(Minecraft mc, FloatingTurretEntity entity) {
