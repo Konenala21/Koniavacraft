@@ -2,6 +2,8 @@ package com.github.nalamodikk.common.item.weapon;
 
 import com.github.nalamodikk.common.entity.FloatingTurretProjectile;
 import com.github.nalamodikk.common.event.FloatingTurretEventHandler;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.util.RandomSource;
 import com.github.nalamodikk.common.player.equipment.EquipmentType;
 import com.github.nalamodikk.common.player.equipment.ISpecificEquipment;
 import com.github.nalamodikk.register.ModDataComponents;
@@ -96,15 +98,58 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
         return MAX_CHARGE_TICKS;
     }
 
-    // 充能中每 4 tick 播一次烽火台嗡嗡音效（vanilla onUseTick 固定每 4 tick 呼叫一次）
     @Override
     public void onUseTick(Level level, LivingEntity entity, ItemStack stack, int remainingUseDuration) {
         if (level.isClientSide) return;
+        if (!(entity instanceof Player player)) return;
+        if (!(level instanceof ServerLevel sl)) return;
+
         int ticksHeld = MAX_CHARGE_TICKS - remainingUseDuration;
-        // 音調低沉，隨蓄力緩升：0.5 → 0.9
-        float pitch = 0.5F + (float) ticksHeld / MAX_CHARGE_TICKS * 0.4F;
-        level.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
+        float chargeRatio = Math.min(1.0F, (float) ticksHeld / MAX_CHARGE_TICKS);
+
+        // 音調隨蓄力緩升：0.5 → 0.9
+        float pitch = 0.5F + chargeRatio * 0.4F;
+        sl.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.BEACON_AMBIENT, SoundSource.PLAYERS, 1.8F, pitch);
+
+        // 雙持才有充能粒子（單手無蓄力狀態）
+        if (!isDualWielding(player)) return;
+        spawnChargingEffect(sl, player, FloatingTurretEventHandler.HAND_MAIN_SLOT, chargeRatio);
+        spawnChargingEffect(sl, player, FloatingTurretEventHandler.HAND_OFF_SLOT, chargeRatio);
+    }
+
+    private static void spawnChargingEffect(ServerLevel sl, Player player, int slotIndex, float ratio) {
+        Vec3 muzzle = turretPos(player, slotIndex);
+        RandomSource rng = player.getRandom();
+
+        // 砲口光球：spread 隨蓄力擴大，粒子往外微微發光
+        double spread = 0.04 + ratio * 0.10;
+        sl.sendParticles(ParticleTypes.END_ROD,
+                muzzle.x, muzzle.y, muzzle.z,
+                2 + (int)(ratio * 3), spread, spread, spread, 0.01);
+
+        // 從周圍往砲口聚集：count=0 → deltaXYZ 是精確速度方向
+        int pullCount = 2 + (int)(ratio * 3);
+        double pullRadius = 0.7 + ratio * 0.6;
+        for (int i = 0; i < pullCount; i++) {
+            double a = rng.nextDouble() * Math.PI * 2;
+            double b = rng.nextDouble() * Math.PI;
+            double ox = Math.sin(b) * Math.cos(a) * pullRadius;
+            double oy = Math.cos(b) * pullRadius * 0.6;
+            double oz = Math.sin(b) * Math.sin(a) * pullRadius;
+            Vec3 from = muzzle.add(ox, oy, oz);
+            Vec3 dir  = muzzle.subtract(from).normalize();
+            sl.sendParticles(ParticleTypes.END_ROD,
+                    from.x, from.y, from.z,
+                    0, dir.x, dir.y, dir.z, 0.10 + ratio * 0.10);
+        }
+
+        // 蓄力 70% 以上：砲口出現電弧閃爍
+        if (ratio > 0.7F) {
+            sl.sendParticles(ParticleTypes.ELECTRIC_SPARK,
+                    muzzle.x, muzzle.y, muzzle.z,
+                    3, 0.08, 0.08, 0.08, 0.04);
+        }
     }
 
     private static void stopChargeSound(Player player) {
