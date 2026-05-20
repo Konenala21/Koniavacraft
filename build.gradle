@@ -92,6 +92,14 @@ neoForge {
             jvmArgument '-XX:MaxTenuringThreshold=1'
         }
 
+        client2 {
+            client()
+            gameDirectory = project.file('run2')
+            programArguments.addAll '--username', 'Dev2'
+            jvmArgument '-Xmx2G'
+            jvmArgument '-Xms1G'
+        }
+
         server {
             server()
             programArgument '--nogui'

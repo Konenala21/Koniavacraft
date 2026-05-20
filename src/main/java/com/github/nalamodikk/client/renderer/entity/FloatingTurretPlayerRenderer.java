@@ -90,12 +90,6 @@ public class FloatingTurretPlayerRenderer {
 
         ps.mulPose(Axis.YP.rotationDegrees(-interpYaw + 270F));
 
-        // 閒置時繞砲管軸自轉：主手與副手方向相反，慣用手左撇子則整體對調
-        if (!player.isUsingItem()) {
-            float spinDir = (isMainHand == isLeftHanded) ? 1.0F : -1.0F;
-            ps.mulPose(Axis.XP.rotationDegrees((player.tickCount + pt) * 2.0F * spinDir));
-        }
-
         float interpPitch = Mth.lerp(pt, player.xRotO, player.getXRot());
         ps.mulPose(Axis.ZP.rotationDegrees(-interpPitch));
         ps.translate(2.8125, -0.6756, 0.0843);

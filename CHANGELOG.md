@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Killing a player with a Floating Turret projectile now broadcasts a random joke message to all online players. PvP kills have 5 variants, passive turret kills have 3 variants.
+- 浮游砲彈擊殺玩家時，會向全伺服器廣播隨機搞笑訊息。PvP 擊殺有 5 種台詞，自走砲擊殺有 3 種。
+- Fixed: charging sound (beacon ambient) now correctly stops on release instead of playing for an extra 2 seconds.
+- 修正：蓄力音效（烽火台嗡嗡聲）現在放開後會立即停止，不再多播 2 秒。
+- Extra equipment slot backgrounds are now correctly rendered in the Extra Equipment screen.
+- 額外裝備欄位的格子背景現在能在額外裝備介面中正確顯示。
 - Floating Turret now fires a traveling energy bolt on right-click. The bolt travels at 1.5 blocks/tick and disappears on hit or after 48 blocks.
 - 浮游砲右鍵攻擊發射飛行能量彈，以每 tick 1.5 格的速度飛行，命中或超過 48 格後消失。
 - Floating Turret energy bolt is rendered as a glowing blue orb (three-layer billboard with additive blending). Charged bolts grow larger and shift color toward white.
@@ -23,6 +29,7 @@ All notable changes to this project will be documented in this file.
 
 ### Developer Notes / 開發者備註
 
+- `ExtraEquipmentScreen`: added blit loop in `renderBg` to draw slot backgrounds from UV (235, 1) at `EXTRA_SLOT_BASE_X/Y` using `ExtraEquipmentMenu.EQUIPMENT_SLOT_COUNT`. Position and UV values extracted to constants.
 - `FloatingTurretPlayerRenderer`: new client-only `@EventBusSubscriber` class hooked to `RenderPlayerEvent.Post`. Renders hand-mode and equipment-slot turrets directly from the player's interpolated yaw/pitch, eliminating entity sync jitter. Hand-mode turrets (slot 2/3) no longer need server entities; slot-mode turrets (slot 0/1) retain entities for server logic but are visually rendered here.
 - `FloatingTurretRenderer`: simplified to only render other players' equipment-slot turrets. Local player's turrets are fully handled by `FloatingTurretPlayerRenderer`.
 - `FloatingTurretEventHandler`: removed hand-mode entity spawning (`syncHandEntity`). `MAX_TURRETS_PER_PLAYER` reduced to 2 (slot entities only).
