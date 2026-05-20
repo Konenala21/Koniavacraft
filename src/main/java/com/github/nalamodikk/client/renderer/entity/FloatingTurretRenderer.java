@@ -75,12 +75,45 @@ public class FloatingTurretRenderer extends EntityRenderer<FloatingTurretEntity>
         // Non-local player: render slot entities if in combat, hand entities always
         if (slotIdx < 2 && !entity.isInCombat()) return;
 
-        // Look up the owner in the client level to get correct yaw/pitch
+        // Look up the owner in the client level to get correct yaw/pitch/position
         Player owner = findOwner(entity);
         float ownerYaw   = owner != null ? Mth.lerp(partialTick, owner.yRotO, owner.getYRot()) : entityYaw;
         float ownerPitch = owner != null ? Mth.lerp(partialTick, owner.xRotO, owner.getXRot()) : 0F;
 
         poseStack.pushPose();
+
+        // Correct position: compute from owner's interpolated position instead of entity sync lag
+        if (owner != null) {
+            double ox = Mth.lerp(partialTick, owner.xo, owner.getX());
+            double oy = Mth.lerp(partialTick, owner.yo, owner.getY());
+            double oz = Mth.lerp(partialTick, owner.zo, owner.getZ());
+            float  yawRad = ownerYaw * (float)(Math.PI / 180.0);
+
+            double tx, ty, tz;
+            if (slotIdx >= 2) {
+                double rightX   = -Math.cos(yawRad), rightZ   = -Math.sin(yawRad);
+                double forwardX = -Math.sin(yawRad), forwardZ =  Math.cos(yawRad);
+                boolean isLeft  = owner.getMainArm() == HumanoidArm.LEFT;
+                double side     = ((slotIdx == 2) == !isLeft) ? 1.0 : -1.0;
+                tx = ox + rightX * side * 1.8 + forwardX * 1.5;
+                ty = oy + owner.getEyeHeight() + 0.8;
+                tz = oz + rightZ * side * 1.8 + forwardZ * 1.5;
+            } else {
+                float behind = (float) Math.atan2(-Math.cos(yawRad), Math.sin(yawRad));
+                float spread = (float)(Math.PI / 5);
+                float angle  = behind + (slotIdx == 0 ? -spread : spread);
+                float bob    = (float)(Math.sin(entity.tickCount * 0.08) * 0.2);
+                tx = ox + Math.cos(angle) * 1.5;
+                ty = oy + 1.0 + bob;
+                tz = oz + Math.sin(angle) * 1.5;
+            }
+
+            double ex = Mth.lerp(partialTick, entity.xo, entity.getX());
+            double ey = Mth.lerp(partialTick, entity.yo, entity.getY());
+            double ez = Mth.lerp(partialTick, entity.zo, entity.getZ());
+            poseStack.translate(tx - ex, ty - ey, tz - ez);
+        }
+
         poseStack.scale(SCALE_ENTITY, SCALE_ENTITY, SCALE_ENTITY);
         poseStack.mulPose(Axis.YP.rotationDegrees(270F - ownerYaw));
         if (slotIdx < 2) {
