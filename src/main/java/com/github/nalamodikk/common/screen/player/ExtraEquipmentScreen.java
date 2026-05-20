@@ -22,6 +22,9 @@ public class ExtraEquipmentScreen extends AbstractContainerScreen<ExtraEquipment
         private static final int EXTRA_SLOT_BASE_X = 79;
         private static final int EXTRA_SLOT_BASE_Y = 23;
         private static final int EXTRA_SLOTS_PER_COL = 5;
+        private static final int VANILLA_SLOT_BASE_X = 61;
+        private static final int VANILLA_SLOT_BASE_Y = 23;
+        private static final int VANILLA_SLOT_COUNT = 4;
 
         private float xMouse;
         private float yMouse;
@@ -35,6 +38,13 @@ public class ExtraEquipmentScreen extends AbstractContainerScreen<ExtraEquipment
         @Override
         protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
             graphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+
+            for (int i = 0; i < VANILLA_SLOT_COUNT; i++) {
+                graphics.blit(TEXTURE,
+                        leftPos + VANILLA_SLOT_BASE_X,
+                        topPos + VANILLA_SLOT_BASE_Y + i * SLOT_SIZE,
+                        SLOT_UV_X, SLOT_UV_Y, SLOT_SIZE, SLOT_SIZE);
+            }
 
             for (int i = 0; i < ExtraEquipmentMenu.EQUIPMENT_SLOT_COUNT; i++) {
                 int col = i / EXTRA_SLOTS_PER_COL;
