@@ -17,6 +17,7 @@ import com.github.nalamodikk.common.item.tool.BasicTechWandItem;
 import com.github.nalamodikk.common.item.tool.StructureBuildWandItem;
 import com.github.nalamodikk.common.item.tool.ManaPickaxeItem;
 import com.github.nalamodikk.common.item.tool.ModToolTiers;
+import com.github.nalamodikk.common.item.weapon.FloatingTurretItem;
 import com.github.nalamodikk.common.utils.upgrade.UpgradeType;
 import net.minecraft.world.item.Item;
 import net.neoforged.bus.api.IEventBus;
@@ -44,6 +45,17 @@ public class ModItems {
     public static final DeferredItem<Item> MANA_ADHESIVE     = ITEMS.register("mana_adhesive",     () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> MANA_WAFER        = ITEMS.register("mana_wafer",        () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> BASIC_MANA_CIRCUIT = ITEMS.register("basic_mana_circuit", () -> new Item(new Item.Properties()));
+
+    /***
+     * 武器
+     */
+    public static final DeferredItem<FloatingTurretItem> FLOATING_TURRET =
+            ITEMS.register("floating_turret", () -> new FloatingTurretItem(
+                    new Item.Properties()
+                            .stacksTo(1)
+                            .durability(500)
+                            .component(ModDataComponents.MANA_STORED, 0)
+                            .component(ModDataComponents.MAX_MANA,  FloatingTurretItem.DEFAULT_MAX_MANA)));
 
     /***
      * 工具

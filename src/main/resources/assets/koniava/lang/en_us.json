@@ -1,5 +1,10 @@
 {
   "//1": "=== ITEMS ===",
+  "item.koniava.floating_turret": "Nara Star Ring Turret",
+  "item.koniava.floating_turret.tooltip.mana": "Mana: %s / %s",
+  "item.koniava.floating_turret.tooltip.hint": "Right-click to fire (hand-held) | Equip in Turret slot for passive guardian",
+  "entity.koniava.floating_turret": "Nara Star Ring Turret",
+  "equipment.koniava.turret": "Turret Slot",
   "item.koniava.mana_dust": "Mana Dust",
   "item.koniava.mana_ingot": "Mana Ingot",
   "item.koniava.mana_debug_tool": "Mana Debug Tool",
@@ -268,6 +273,7 @@
   "screen.koniava.mana_deployer.speed_label": "Ticks:",
   "block.koniava.mana_infuser": "Mana Infuser",
   "block.koniava.mana_grinder": "Mana Grinder",
+  "block.koniava.mana_charger": "Mana Charger",
   "//4": "=== RPG SYSTEM ===",
   "rpg.class.none": "None",
   "rpg.class.warrior": "Warrior",
@@ -416,6 +422,9 @@
   "message.koniava.mana_mode_add_10": "Add 10 Mana",
   "message.koniava.mana_mode_add_100": "Add 100 Mana",
   "message.koniava.mana_mode_add_1000": "Add 1000 Mana",
+  "message.koniava.wand.not_enough_mana": "Not enough mana: %1$d / %2$d required",
+  "message.koniava.mana_mode_add_10000": "Add 10000 Mana",
+  "message.koniava.mana_mode_add_100000": "Add 100000 Mana",
   "message.koniava.not_enough_mana": "Not enough mana in wand!",
   "message.koniava.block_rotated": "Block rotated!",
   "message.koniava.mode_changed": "Mode: %s",
@@ -706,6 +715,7 @@
 
   "nara.hud.hint.continue": "[F] Continue",
   "nara.hud.hint.skip": "[F] Skip",
+  "nara.hud.hint.skip_all": "[Esc] Skip dialogue",
   "nara.hud.hint.choose": "↕ Scroll  [F] Confirm  [1][2] Select",
 
   "nara.hud.name": "Nara",

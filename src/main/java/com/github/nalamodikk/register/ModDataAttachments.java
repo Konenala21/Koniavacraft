@@ -30,27 +30,35 @@ public class ModDataAttachments {
                             .copyOnDeath()
                             .build());
 
-    // 飾品裝備本身的附加資料
+    // 飾品裝備本身的附加資料（10格：8格一般裝備 + 2格浮游砲槽）
     public static final Supplier<AttachmentType<NonNullList<ItemStack>>> EXTRA_EQUIPMENT =
             ATTACHMENT_TYPES.register("extra_equipment", () ->
-                    AttachmentType.<NonNullList<ItemStack>>builder(() -> NonNullList.withSize(8, ItemStack.EMPTY))
+                    AttachmentType.<NonNullList<ItemStack>>builder(() -> NonNullList.withSize(10, ItemStack.EMPTY))
                             .serialize(Codec.list(ITEMSTACK_CODEC_ALLOW_EMPTY).xmap(
                                     list -> {
-                                        NonNullList<ItemStack> result = NonNullList.withSize(8, ItemStack.EMPTY);
-                                        for (int i = 0; i < Math.min(list.size(), 8); i++) {
+                                        NonNullList<ItemStack> result = NonNullList.withSize(10, ItemStack.EMPTY);
+                                        for (int i = 0; i < Math.min(list.size(), 10); i++) {
                                             result.set(i, list.get(i));
                                         }
                                         return result;
                                     },
                                     list -> {
-                                        List<ItemStack> plain = new ArrayList<>(8);
-                                        for (int i = 0; i < 8; i++) {
+                                        List<ItemStack> plain = new ArrayList<>(10);
+                                        for (int i = 0; i < 10; i++) {
                                             plain.add(i < list.size() ? list.get(i) : ItemStack.EMPTY);
                                         }
                                         return plain;
                                     }
                             ))
                             .copyOnDeath()
+                            .build()
+            );
+
+    // 玩家最後一次進入戰鬥狀態的遊戲 tick（-1 = 未曾戰鬥）
+    public static final Supplier<AttachmentType<Long>> LAST_COMBAT_TIME =
+            ATTACHMENT_TYPES.register("last_combat_time", () ->
+                    AttachmentType.<Long>builder(() -> -1L)
+                            .serialize(Codec.LONG)
                             .build()
             );
 

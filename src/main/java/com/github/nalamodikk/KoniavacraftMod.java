@@ -7,6 +7,11 @@ import com.github.nalamodikk.client.renderer.altar.AltarMagicCircleRenderer;
 import com.github.nalamodikk.client.renderer.altar.AltarT6ClimaxRenderer;
 import com.github.nalamodikk.client.renderer.altar.AltarT45OrbRenderer;
 import com.github.nalamodikk.client.renderer.altar.AltarFadeRenderer;
+import com.github.nalamodikk.client.renderer.entity.FloatingTurretModel;
+import com.github.nalamodikk.client.renderer.entity.FloatingTurretProjectileRenderer;
+import com.github.nalamodikk.client.renderer.entity.FloatingTurretRenderer;
+import com.github.nalamodikk.client.renderer.item.FloatingTurretBEWLR;
+import com.github.nalamodikk.register.ModEntities;
 import com.github.nalamodikk.common.config.ModClientConfig;
 import com.github.nalamodikk.common.config.ModCommonConfig;
 import com.github.nalamodikk.register.*;
@@ -25,6 +30,8 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLLoader;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
@@ -72,8 +79,17 @@ public class KoniavacraftMod {
         ModCreativeModTabs.register(modEventBus);
         ModStructureTypes.register(modEventBus);
         ModStructurePieceTypes.register(modEventBus);
+        ModEntities.register(modEventBus);
         if (FMLEnvironment.dist == Dist.CLIENT) {
             modEventBus.addListener(ModKeyMappings::onRegisterKeyMappings);
+            modEventBus.addListener((EntityRenderersEvent.RegisterRenderers e) -> {
+                    e.registerEntityRenderer(ModEntities.FLOATING_TURRET.get(), FloatingTurretRenderer::new);
+                    e.registerEntityRenderer(ModEntities.FLOATING_TURRET_PROJECTILE.get(), FloatingTurretProjectileRenderer::new);
+            });
+            modEventBus.addListener((EntityRenderersEvent.RegisterLayerDefinitions e) ->
+                    e.registerLayerDefinition(FloatingTurretModel.LAYER_LOCATION, FloatingTurretModel::createBodyLayer));
+            modEventBus.addListener((ModelEvent.RegisterAdditional e) ->
+                    e.register(FloatingTurretBEWLR.GEO_MODEL_LOCATION));
             modEventBus.addListener((RegisterClientReloadListenersEvent e) ->
                     e.registerReloadListener((ResourceManagerReloadListener) rm -> {
                         ManaStrikeShaderRenderer.reload();

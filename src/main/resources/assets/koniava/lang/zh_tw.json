@@ -1,5 +1,10 @@
 {
   "//1": "=== 物品 ===",
+  "item.koniava.floating_turret": "娜拉・星環浮游砲",
+  "item.koniava.floating_turret.tooltip.mana": "魔力: %s / %s",
+  "item.koniava.floating_turret.tooltip.hint": "右鍵發射（手持）| 裝入浮游砲槽後自動守護",
+  "entity.koniava.floating_turret": "娜拉・星環浮游砲",
+  "equipment.koniava.turret": "浮游砲槽",
   "item.koniava.mana_dust": "魔力粉",
   "item.koniava.mana_ingot": "魔力錠",
   "item.koniava.mana_debug_tool": "魔力除錯工具",
@@ -268,6 +273,7 @@
   "screen.koniava.mana_deployer.speed_label": "Tick：",
   "block.koniava.mana_infuser": "魔力注入機",
   "block.koniava.mana_grinder": "魔力粉碎機",
+  "block.koniava.mana_charger": "魔力充能台",
   "//4": "=== RPG 系統 ===",
   "rpg.class.none": "無職業",
   "rpg.class.warrior": "戰士",
@@ -416,6 +422,9 @@
   "message.koniava.mana_mode_add_10": "增加 10 魔力",
   "message.koniava.mana_mode_add_100": "增加 100 魔力",
   "message.koniava.mana_mode_add_1000": "增加 1000 魔力",
+  "message.koniava.wand.not_enough_mana": "魔力不足：%1$d / 需要 %2$d",
+  "message.koniava.mana_mode_add_10000": "增加 10000 魔力",
+  "message.koniava.mana_mode_add_100000": "增加 100000 魔力",
   "message.koniava.not_enough_mana": "魔杖中的魔力不足！",
   "message.koniava.block_rotated": "方塊已旋轉！",
   "message.koniava.mode_changed": "模式: %s",
@@ -706,6 +715,7 @@
 
   "nara.hud.hint.continue": "[F] 繼續",
   "nara.hud.hint.skip": "[F] 跳過",
+  "nara.hud.hint.skip_all": "[Esc] 跳過對話",
   "nara.hud.hint.choose": "↕ 滾輪選擇  [F] 確認  [1][2] 直接選",
 
   "nara.hud.name": "娜拉",

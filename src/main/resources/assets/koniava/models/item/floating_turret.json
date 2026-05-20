@@ -1,0 +1,134 @@
+{
+	"parent": "builtin/entity",
+	"textures": {
+		"particle": "koniava:item/floating_turret_texture"
+	},
+	"display": {
+		"thirdperson_righthand": {
+			"rotation": [
+				0,
+				-90,
+				0
+			],
+			"translation": [
+				-0.25,
+				1,
+				1
+			],
+			"scale": [
+				0.05,
+				0.05,
+				0.05
+			]
+		},
+		"thirdperson_lefthand": {
+			"rotation": [
+				0,
+				-90,
+				0
+			],
+			"translation": [
+				-0.25,
+				1,
+				1
+			],
+			"scale": [
+				0.05,
+				0.05,
+				0.05
+			]
+		},
+		"firstperson_righthand": {
+			"rotation": [
+				0,
+				90,
+				-3
+			],
+			"translation": [
+				20,
+				-0.25,
+				-18.12
+			],
+			"scale": [
+				0.68,
+				0.68,
+				0.68
+			]
+		},
+		"firstperson_lefthand": {
+			"rotation": [
+				0,
+				-90,
+				-3
+			],
+			"translation": [
+				20,
+				-0.25,
+				-18.12
+			],
+			"scale": [
+				0.68,
+				0.68,
+				0.68
+			]
+		},
+		"ground": {
+			"translation": [
+				0,
+				3.75,
+				0
+			],
+			"scale": [
+				0.2,
+				0.2,
+				0.2
+			]
+		},
+		"gui": {
+			"rotation": [
+				23,
+				-58,
+				1
+			],
+			"translation": [
+				0,
+				-1,
+				0
+			],
+			"scale": [
+				0.08,
+				0.08,
+				0.08
+			]
+		},
+		"head": {
+			"rotation": [
+				0,
+				90,
+				-3
+			],
+			"translation": [
+				0.5,
+				14.5,
+				-0.62
+			],
+			"scale": [
+				0.44,
+				0.44,
+				0.44
+			]
+		},
+		"fixed": {
+			"rotation": [
+				0,
+				90,
+				0
+			],
+			"scale": [
+				0.44,
+				0.44,
+				0.44
+			]
+		}
+	}
+}

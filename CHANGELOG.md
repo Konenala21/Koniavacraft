@@ -6,6 +6,34 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Floating Turret now fires a traveling energy bolt on right-click. The bolt travels at 1.5 blocks/tick and disappears on hit or after 48 blocks.
+- 浮游砲右鍵攻擊發射飛行能量彈，以每 tick 1.5 格的速度飛行，命中或超過 48 格後消失。
+- Floating Turret energy bolt is rendered as a glowing blue orb (three-layer billboard with additive blending). Charged bolts grow larger and shift color toward white.
+- 浮游砲能量彈以三層發光藍球渲染（加法混合 billboard），蓄力彈尺寸更大並向白色偏移。
+- Dual-wielding two Floating Turrets enables a charged shot: hold right-click to charge (up to 2 seconds), release to fire. Damage scales from 16 to 24 based on charge ratio, and the bolt explodes in a small radius on block impact. Mana and durability are consumed from both hands.
+- 雙持兩把浮游砲可蓄力攻擊：長按右鍵最多 2 秒蓄力，放開發射。傷害依蓄力比例從 16 到 24，命中方塊時觸發小範圍爆炸。魔力和耐久由兩手各自扣除。
+- Floating Turret mana capacity increased from 500 to 15000.
+- 浮游砲魔力上限從 500 提升至 15000。
+- First-person floating turret now tracks the player's look direction including pitch: looking up raises the turret, looking down lowers it, matching vanilla item behavior.
+- 第一人稱浮游砲現在跟蹤玩家完整視角（含仰角）：抬頭砲往上、低頭砲往下，與原版物品持握行為一致。
+- First-person floating turret is now positioned closer (less forward offset) and further to the main hand side.
+- 第一人稱浮游砲位置調整：減少前方偏移，增加主手方向的側偏距離。
+- Floating Turret hand-held display now respects the player's dominant hand setting; left-handed players see the main turret on the left side.
+- 浮游砲手持顯示現在支援玩家慣用手設定，左撇子玩家的主手浮游砲會顯示在左側。
+
+### Developer Notes / 開發者備註
+
+- `FloatingTurretEventHandler`: replaced per-player BBox spatial search (60-block inflate) with a static `Map<UUID, Map<Integer, FloatingTurretEntity>>` registry. `findTurretEntity` is now O(1); `spawnTurretEntity` uses registry count instead of `getEntitiesOfClass`. Player logout clears the registry entry.
+- `FloatingTurretEntity`: added `remove(RemovalReason)` override to unregister from the registry on any removal path (discard, die, chunk unload).
+- `FloatingTurretProjectile`: new entity extending `ThrowableProjectile`; no gravity, speed 1.5 b/t, max lifetime 32 ticks (~48 block range), deals 8 damage on entity hit, immune to all damage.
+- `FloatingTurretProjectileRenderer`: three-layer billboard renderer using `RenderType.lightning()` (additive blending). OBJ geometry center offset `(2.8125, -0.6756, 0.0843)` applied after all rotations to keep model centered during spin.
+- `FloatingTurretRenderer`: first-person branch now uses full pitch-aware look vector for position (`lookX/Y/Z = forwardXZ * cos(pitch), -sin(pitch)`); added `Axis.ZP.rotationDegrees(-pitch)` after yaw rotation so the barrel tracks the player's exact look direction. Handedness via `HumanoidArm` check.
+- `ModEntities`: registered `floating_turret_projectile` (sized 0.3, trackingRange 10, updateInterval 2).
+- `ModItems`: added `MANA_STORED=0` and `MAX_MANA=15000` as default data components on `FLOATING_TURRET` so every new instance is recognized by the Mana Charger without needing `getDefaultInstance()`.
+- `FloatingTurretItem`: dual-wield detection via `isDualWielding(player)`; `use()` always returns CONSUME (no arm swing); `releaseUsing()` routes to normal or charged fire; `finishUsingItem()` fires at full charge ratio 1.0.
+- `FloatingTurretProjectile`: added `CHARGE_RATIO_DATA` synced float; `shootCharged()` factory sets ratio; `onHitEntity()` interpolates damage between CHARGED_DAMAGE_MIN and MAX by ratio; `onHitBlock()` calls `level().explode()` with radius 1.0–2.5 when charged.
+- `FloatingTurretProjectileRenderer`: orb scale and color (blue → blue-white) driven by `entity.getChargeRatio()`.
+
 - Abandoned Altar structures no longer replace surrounding terrain with air blocks when generating.
 - 廢棄祭壇結構生成時不再將周圍地形覆蓋成空氣方塊。
 - Fixed Magic Ore and Deepslate Magic Ore missing the ore tag, which prevented the Mana Pickaxe chain mining from activating on them.

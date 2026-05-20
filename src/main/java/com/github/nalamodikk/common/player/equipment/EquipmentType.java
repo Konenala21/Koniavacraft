@@ -22,7 +22,8 @@ public enum EquipmentType {
     GOGGLES("equipment.koniava.goggles", false, 64, 0),            // 第5個圖示
     ENGINE("equipment.koniava.engine", false, 80, 0),              // 第6個圖示
     REACTOR("equipment.koniava.reactor", false, 96, 0),            // 第7個圖示
-    EXOSKELETON("equipment.koniava.exoskeleton", false, 112, 0);   // 第8個圖示
+    EXOSKELETON("equipment.koniava.exoskeleton", false, 112, 0),   // 第8個圖示
+    TURRET("equipment.koniava.turret", false, 128, 0);             // 浮游砲槽（可放入兩個槽）
 
     private final String translationKey;
     private final boolean isVanillaSlot;

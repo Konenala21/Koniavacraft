@@ -20,7 +20,7 @@ import org.slf4j.Logger;
 
 public class ExtraEquipmentMenu extends AbstractContainerMenu {
     public static final int NINE_GRID_SLOT_COUNT = 9;
-    public static final int EQUIPMENT_SLOT_COUNT = 8;
+    public static final int EQUIPMENT_SLOT_COUNT = 10; // 8 一般裝備 + 2 浮游砲槽
     private static final Logger LOGGER = LogUtils.getLogger();
     public static final ResourceLocation BLOCK_ATLAS = ResourceLocation.withDefaultNamespace("textures/atlas/blocks.png");
     public static final ResourceLocation EMPTY_ARMOR_SLOT_HELMET = ResourceLocation.withDefaultNamespace("item/empty_armor_slot_helmet");
@@ -53,29 +53,37 @@ public class ExtraEquipmentMenu extends AbstractContainerMenu {
 
         // === 🔥 修正：飾品裝備欄位的同步機制 ===
         NonNullList<ItemStack> extraEquipment = player.getData(ModDataAttachments.EXTRA_EQUIPMENT.get());
-        if (extraEquipment == null) {
-            extraEquipment = NonNullList.withSize(EQUIPMENT_SLOT_COUNT, ItemStack.EMPTY);
+        if (extraEquipment == null || extraEquipment.size() < EQUIPMENT_SLOT_COUNT) {
+            NonNullList<ItemStack> migrated = NonNullList.withSize(EQUIPMENT_SLOT_COUNT, ItemStack.EMPTY);
+            if (extraEquipment != null) {
+                for (int i = 0; i < Math.min(extraEquipment.size(), EQUIPMENT_SLOT_COUNT); i++) {
+                    migrated.set(i, extraEquipment.get(i));
+                }
+            }
+            extraEquipment = migrated;
             player.setData(ModDataAttachments.EXTRA_EQUIPMENT.get(), extraEquipment);
         }
         this.extraEquipmentRef = extraEquipment;
 
-        // 🔥 修正：建立有同步功能的 handler
+        // 初始化期間阻止 save 觸發（setChanged 在 i=0 時會讀 handler slot8=empty 並覆蓋 DataAttachment）
+        final boolean[] initializing = {true};
+
         this.extraEquipmentHandler = new SimpleContainer(extraEquipment.size()) {
             @Override
             public void setChanged() {
-                // 立即同步到 DataAttachment
-                for (int i = 0; i < this.getContainerSize(); i++) {
-                    extraEquipmentRef.set(i, this.getItem(i));
+                if (!initializing[0] && !player.level().isClientSide) {
+                    for (int i = 0; i < this.getContainerSize(); i++) {
+                        extraEquipmentRef.set(i, this.getItem(i));
+                    }
+                    player.setData(ModDataAttachments.EXTRA_EQUIPMENT.get(), extraEquipmentRef);
                 }
-                player.setData(ModDataAttachments.EXTRA_EQUIPMENT.get(), extraEquipmentRef);
                 super.setChanged();
             }
 
             @Override
             public void setItem(int slot, ItemStack stack) {
                 super.setItem(slot, stack);
-                // 🔥 新增：每次設置物品時立即同步
-                if (slot >= 0 && slot < extraEquipmentRef.size()) {
+                if (!initializing[0] && !player.level().isClientSide && slot >= 0 && slot < extraEquipmentRef.size()) {
                     extraEquipmentRef.set(slot, stack);
                     player.setData(ModDataAttachments.EXTRA_EQUIPMENT.get(), extraEquipmentRef);
                 }
@@ -84,8 +92,7 @@ public class ExtraEquipmentMenu extends AbstractContainerMenu {
             @Override
             public ItemStack removeItem(int slot, int amount) {
                 ItemStack removed = super.removeItem(slot, amount);
-                // 🔥 新增：移除物品時立即同步
-                if (slot >= 0 && slot < extraEquipmentRef.size()) {
+                if (!initializing[0] && !player.level().isClientSide && slot >= 0 && slot < extraEquipmentRef.size()) {
                     extraEquipmentRef.set(slot, this.getItem(slot));
                     player.setData(ModDataAttachments.EXTRA_EQUIPMENT.get(), extraEquipmentRef);
                 }
@@ -93,10 +100,11 @@ public class ExtraEquipmentMenu extends AbstractContainerMenu {
             }
         };
 
-        // 🔥 修正：初始化 handler 內容
+        // 初始化 handler，阻止中途 save 覆蓋 DataAttachment
         for (int i = 0; i < extraEquipment.size(); i++) {
             this.extraEquipmentHandler.setItem(i, extraEquipment.get(i));
         }
+        initializing[0] = false;
 
         // 新增額外裝備欄位（使用修正後的 handler）
         addSpecificEquipmentSlots(this.extraEquipmentHandler, 79, 23);
@@ -153,18 +161,19 @@ public class ExtraEquipmentMenu extends AbstractContainerMenu {
                 EquipmentType.BOOTS, EMPTY_ARMOR_SLOT_BOOTS));
     }
 
-    // 在 GUI 中以兩列排列方式，加入 8 個「自訂裝備欄位」
+    // 在 GUI 中以兩列排列方式，加入 10 個「自訂裝備欄位」（含 2 個浮游砲槽）
     protected void addSpecificEquipmentSlots(Container handler, int baseX, int baseY) {
         EquipmentType[] types = {
                 EquipmentType.SHOULDER_PAD, EquipmentType.ARM_ARMOR,
                 EquipmentType.BELT, EquipmentType.GLOVES,
                 EquipmentType.GOGGLES, EquipmentType.ENGINE,
-                EquipmentType.REACTOR, EquipmentType.EXOSKELETON
+                EquipmentType.REACTOR, EquipmentType.EXOSKELETON,
+                EquipmentType.TURRET, EquipmentType.TURRET  // 索引 8 和 9：浮游砲槽
         };
 
         for (int i = 0; i < types.length; i++) {
-            int col = i / 4;  // 🔥 改：列數 = i除以4 (0,0,0,0,1,1,1,1)
-            int row = i % 4;  // 🔥 改：行數 = i模4 (0,1,2,3,0,1,2,3)
+            int col = i / 5;  // 每列 5 格：(0-4 第一列, 5-9 第二列)
+            int row = i % 5;
             this.addSlot(new SpecificEquipmentSlot(handler, i,
                     baseX + col * 18, baseY + row * 18, types[i]));
         }
@@ -181,18 +190,19 @@ public class ExtraEquipmentMenu extends AbstractContainerMenu {
         }
     }
 
-    // 🔥 修正：確保在關閉界面時保存數據
     @Override
     public void removed(Player player) {
         super.removed(player);
 
-        // 🔥 新增：強制保存額外裝備數據
+        // 只在 server 端存資料：client 的 DataAttachment 不自動同步，
+        // 若在 client 端存會用空資料覆蓋 server 剛存好的內容
+        if (player.level().isClientSide) return;
+
         for (int i = 0; i < this.extraEquipmentHandler.getContainerSize(); i++) {
             this.extraEquipmentRef.set(i, this.extraEquipmentHandler.getItem(i));
         }
         player.setData(ModDataAttachments.EXTRA_EQUIPMENT.get(), this.extraEquipmentRef);
 
-        // 🔥 新增：強制保存九宮格數據
         for (int i = 0; i < this.nineGridHandler.getContainerSize(); i++) {
             this.gridRef.set(i, this.nineGridHandler.getItem(i));
         }
@@ -217,10 +227,10 @@ public class ExtraEquipmentMenu extends AbstractContainerMenu {
         ItemStack stack = slot.getItem();
         ItemStack original = stack.copy();
 
-        // slot ranges: 0-35 player inv, 36-39 vanilla equipment, 40-47 extra equipment, 48-56 nine grid
+        // slot ranges: 0-35 player inv, 36-39 vanilla equipment, 40-49 extra equipment (10 slots), 50-58 nine grid
         int playerStart  = 0,  playerEnd  = 36;
-        int extraEqStart = 40, extraEqEnd = 48;
-        int nineGridStart = 48, nineGridEnd = 57;
+        int extraEqStart = 40, extraEqEnd = 50;
+        int nineGridStart = 50, nineGridEnd = 59;
 
         if (index < playerEnd) {
             // player inv → nine grid first, then extra equipment
