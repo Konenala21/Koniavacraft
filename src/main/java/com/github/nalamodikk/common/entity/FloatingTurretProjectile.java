@@ -1,7 +1,9 @@
 package com.github.nalamodikk.common.entity;
 
+import com.github.nalamodikk.common.network.packet.client.turret.TurretHitPacket;
 import com.github.nalamodikk.register.ModDamageTypes;
 import com.github.nalamodikk.register.ModEntities;
+import net.neoforged.neoforge.network.PacketDistributor;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -168,6 +170,10 @@ public class FloatingTurretProjectile extends ThrowableProjectile {
                 SoundEvents.AMETHYST_BLOCK_BREAK, SoundSource.PLAYERS,
                 ratio > 0 ? 1.2F : 0.7F,
                 ratio > 0 ? 1.6F : 2.0F);
+
+        // 通知附近 client 播放衝擊波特效
+        PacketDistributor.sendToPlayersNear(sl, null, pos.x, pos.y, pos.z, 64.0,
+                new TurretHitPacket(pos.x, pos.y, pos.z, ratio));
     }
 
     private void explodeIfCharged(Vec3 pos) {
