@@ -3,12 +3,21 @@ package com.github.nalamodikk.research.client;
 import com.github.nalamodikk.KoniavacraftMod;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.function.Function;
 
 /**
  * Holographic guide screen accessible from the NaraWatchScreen.
@@ -62,6 +71,12 @@ public class NaraGuideScreen extends Screen {
             {"guide.koniava.altar.usage.title",    "guide.koniava.altar.usage.body"},
             {"guide.koniava.altar.upgrade.title",  "guide.koniava.altar.upgrade.body"},
         },
+        // Chapter 4: 魔力武器（需要完成 mana_weapons 研究）
+        {
+            {"guide.koniava.weapons.overview.title", "guide.koniava.weapons.overview.body"},
+            {"guide.koniava.weapons.hand.title",     "guide.koniava.weapons.hand.body"},
+            {"guide.koniava.weapons.turret.title",   "guide.koniava.weapons.turret.body"},
+        },
     };
 
     private static final String[] CHAPTER_KEYS = {
@@ -69,7 +84,55 @@ public class NaraGuideScreen extends Screen {
         "guide.koniava.chapter.research",
         "guide.koniava.chapter.mana",
         "guide.koniava.chapter.altar",
+        "guide.koniava.chapter.weapons",
     };
+
+    // null = always visible; non-null = requires that research to be completed
+    private static final ResourceLocation[] CHAPTER_REQUIRED_RESEARCH = {
+        ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "mana_basics"),      // Ch0 本源系統
+        null,                                                                                 // Ch1 研究系統（永遠可見）
+        ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "mana_generation"),   // Ch2 魔力設施
+        ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "aspect_altar"),      // Ch3 祭壇系統
+        ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "mana_weapons"),      // Ch4 魔力武器
+    };
+
+    // ── Easter eggs ───────────────────────────────────────────────────────────
+
+    private record EasterEgg(String trigger, Function<NaraGuideScreen, Component> tooltipFn) {}
+    private record LineData(FormattedCharSequence seq, int x, int y) {}
+
+    private static final int NARA_VARIANTS = 4;
+
+    // bodyKey -> list of (trigger phrase, tooltip function)
+    private static final Map<String, List<EasterEgg>> EASTER_EGGS = new HashMap<>();
+    static {
+        EASTER_EGGS.put("guide.koniava.weapons.hand.body", List.of(
+            new EasterEgg("少量魔力",
+                s -> Component.translatable("guide.koniava.easter.hand.small_mana").withStyle(st -> st.withItalic(true))),
+            new EasterEgg("大量魔力",
+                s -> Component.translatable("guide.koniava.easter.hand.large_mana").withStyle(st -> st.withItalic(true))),
+            new EasterEgg("small amount of mana",
+                s -> Component.translatable("guide.koniava.easter.hand.small_mana").withStyle(st -> st.withItalic(true))),
+            new EasterEgg("large amount of mana",
+                s -> Component.translatable("guide.koniava.easter.hand.large_mana").withStyle(st -> st.withItalic(true)))
+        ));
+        EASTER_EGGS.put("guide.koniava.research.table.body", List.of(
+            new EasterEgg("連線規則",
+                s -> Component.empty()
+                    .append(Component.translatable("guide.koniava.easter.research_rules")
+                        .withStyle(st -> st.withItalic(true)))
+                    .append(Component.literal("\n\n"))
+                    .append(Component.translatable("guide.koniava.easter.research_rules.nara." + s.naraVariant)
+                        .withStyle(st -> st.withItalic(true).withColor(0x888888)))),
+            new EasterEgg("connection rules",
+                s -> Component.empty()
+                    .append(Component.translatable("guide.koniava.easter.research_rules")
+                        .withStyle(st -> st.withItalic(true)))
+                    .append(Component.literal("\n\n"))
+                    .append(Component.translatable("guide.koniava.easter.research_rules.nara." + s.naraVariant)
+                        .withStyle(st -> st.withItalic(true).withColor(0x888888))))
+        ));
+    }
 
     // ── State ─────────────────────────────────────────────────────────────────
 
@@ -79,10 +142,71 @@ public class NaraGuideScreen extends Screen {
     private int activePage    = 0;
     private int scrollOffset  = 0;  // pixels scrolled in content area
     private int totalContentH = 0;  // computed each frame
+    private final List<LineData> renderedBodyLines = new ArrayList<>();
+    private final int naraVariant = new Random().nextInt(NARA_VARIANTS);
 
     public NaraGuideScreen(@Nullable Screen parent) {
         super(Component.translatable("gui.koniava.nara_guide.title"));
         this.parent = parent;
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private static boolean isChapterUnlocked(int index) {
+        if (index < 0 || index >= CHAPTER_REQUIRED_RESEARCH.length) return true;
+        ResourceLocation req = CHAPTER_REQUIRED_RESEARCH[index];
+        if (req == null) return true;
+        return ClientResearchCache.hasCompleted(req);
+    }
+
+    private Component buildBodyWithEasterEggs(String bodyKey) {
+        List<EasterEgg> eggs = EASTER_EGGS.getOrDefault(bodyKey, List.of());
+        if (eggs.isEmpty()) return Component.translatable(bodyKey);
+
+        String raw = Language.getInstance().getOrDefault(bodyKey);
+        MutableComponent result = Component.empty();
+        int pos = 0;
+
+        while (pos < raw.length()) {
+            int bestIdx = raw.length();
+            EasterEgg bestEgg = null;
+            for (EasterEgg egg : eggs) {
+                int idx = raw.indexOf(egg.trigger(), pos);
+                if (idx >= 0 && idx < bestIdx) {
+                    bestIdx = idx;
+                    bestEgg = egg;
+                }
+            }
+
+            if (bestIdx > pos) result.append(raw.substring(pos, bestIdx));
+
+            if (bestEgg != null) {
+                result.append(Component.literal(bestEgg.trigger())
+                        .withStyle(Style.EMPTY
+                                .withUnderlined(true)
+                                .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, bestEgg.tooltipFn().apply(this)))));
+                pos = bestIdx + bestEgg.trigger().length();
+            } else {
+                break;
+            }
+        }
+        return result;
+    }
+
+    @Nullable
+    private Style getStyleInLine(FormattedCharSequence line, int targetX, int lineStartX) {
+        int[] x = {lineStartX};
+        Style[] found = {null};
+        line.accept((index, style, codePoint) -> {
+            int w = font.width(new String(Character.toChars(codePoint)));
+            if (targetX >= x[0] && targetX < x[0] + w) {
+                found[0] = style;
+                return false;
+            }
+            x[0] += w;
+            return true;
+        });
+        return found[0];
     }
 
     // ── Init ──────────────────────────────────────────────────────────────────
@@ -112,6 +236,20 @@ public class NaraGuideScreen extends Screen {
         renderChapterList(g, mouseX, mouseY);
         renderContent(g, mouseX, mouseY);
         renderBottomBar(g, mouseX, mouseY);
+
+        // Easter egg hover tooltips — only inside content area, rendered last so they appear on top
+        if (mouseX >= panelX + CA_X && mouseX < panelX + CA_X + CA_W
+                && mouseY >= panelY + CA_Y && mouseY < panelY + CA_Y + CA_H) {
+            for (LineData ld : renderedBodyLines) {
+                if (mouseY >= ld.y() && mouseY < ld.y() + 10) {
+                    Style style = getStyleInLine(ld.seq(), mouseX, ld.x());
+                    if (style != null && style.getHoverEvent() != null) {
+                        g.renderComponentHoverEffect(font, style, mouseX, mouseY);
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     private void renderChapterList(GuiGraphics g, int mouseX, int mouseY) {
@@ -126,9 +264,10 @@ public class NaraGuideScreen extends Screen {
             boolean hovered = !active && mouseX >= ex && mouseX < ex + CL_W
                            && mouseY >= ey && mouseY < ey + entryH;
 
+            boolean unlocked = isChapterUnlocked(i);
             int bg     = active  ? 0xCC1A2C66 : hovered ? 0xCC152150 : 0x00000000;
             int border = active  ? 0xFF6699FF : 0x00000000;
-            int col    = active  ? 0xFFFFFF   : hovered ? 0xCCDDFF   : 0x778899;
+            int col    = active  ? 0xFFFFFF   : !unlocked ? 0x667788 : hovered ? 0xCCDDFF : 0x778899;
 
             if (bg != 0) g.fill(ex, ey, ex + CL_W, ey + entryH, bg);
             if (border != 0) {
@@ -136,7 +275,9 @@ public class NaraGuideScreen extends Screen {
                 g.fill(ex, ey + entryH - 1, ex + CL_W, ey + entryH, border);
             }
 
-            Component label = Component.translatable(CHAPTER_KEYS[i]);
+            Component label = unlocked
+                    ? Component.translatable(CHAPTER_KEYS[i])
+                    : Component.literal("???");
             List<FormattedCharSequence> wrapped = font.split(label, CL_W - 6);
             int textY = ey + (entryH - wrapped.size() * 9) / 2;
             for (FormattedCharSequence line : wrapped) {
@@ -150,6 +291,12 @@ public class NaraGuideScreen extends Screen {
 
     private void renderContent(GuiGraphics g, int mouseX, int mouseY) {
         if (activeChapter >= PAGES.length) return;
+
+        if (!isChapterUnlocked(activeChapter)) {
+            renderLockedContent(g);
+            return;
+        }
+
         String[] page = PAGES[activeChapter][activePage];
 
         int clipX1 = panelX + CA_X;
@@ -162,8 +309,9 @@ public class NaraGuideScreen extends Screen {
 
         // Pre-compute line lists so we know total height before rendering
         Component titleComp = Component.translatable(page[0]);
-        Component bodyComp  = Component.translatable(page[1]);
+        Component bodyComp  = buildBodyWithEasterEggs(page[1]);
         List<FormattedCharSequence> bodyLines = font.split(bodyComp, maxW);
+        renderedBodyLines.clear();
 
         // title(9) + gap(4) + separator(1) + gap(5) = 19px header, then 10px per line
         totalContentH = 19 + bodyLines.size() * 10 + 4;
@@ -188,6 +336,7 @@ public class NaraGuideScreen extends Screen {
         // Body lines
         for (FormattedCharSequence line : bodyLines) {
             g.drawString(font, line, x, y, 0x223355, false);
+            renderedBodyLines.add(new LineData(line, x, y));
             y += 10;
         }
 
@@ -210,6 +359,28 @@ public class NaraGuideScreen extends Screen {
                             && mouseY >= thumbY  && mouseY < thumbY + thumbH;
             g.fill(trackX, thumbY, trackX + SCROLL_TRACK_W, thumbY + thumbH,
                    thumbHov ? 0xCC4455AA : 0xAA334477);
+        }
+    }
+
+    private void renderLockedContent(GuiGraphics g) {
+        int cx = panelX + CA_X + CA_W / 2;
+        int cy = panelY + CA_Y + CA_H / 2;
+
+        g.drawCenteredString(font,
+                Component.translatable("guide.koniava.locked.title"),
+                cx, cy - 16, 0x556688);
+
+        ResourceLocation req = CHAPTER_REQUIRED_RESEARCH[activeChapter];
+        if (req != null) {
+            Component reqName = Component.translatable(
+                    "research." + req.getNamespace() + "." + req.getPath());
+            Component hint = Component.translatable("guide.koniava.locked.hint", reqName);
+            List<FormattedCharSequence> lines = font.split(hint, CA_W - 24);
+            int y = cy;
+            for (FormattedCharSequence line : lines) {
+                g.drawCenteredString(font, line, cx, y, 0x334455);
+                y += 10;
+            }
         }
     }
 

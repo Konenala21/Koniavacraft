@@ -156,6 +156,36 @@ public final class ResearchRegistry {
                     .build()
     );
 
+    /**
+     * Altar ring upgrade: player studies the resonance ring upgrade structure.
+     * Resonance↔Mechanism (rings are structured resonance amplifiers), Mechanism↔Crystal (mechanical crystal mounts).
+     */
+    public static final ResearchTemplate ALTAR_RING_UPGRADE = register(
+            ResearchTemplate.builder(id("altar_ring_upgrade"))
+                    .tier(1)
+                    .aspects(ModAspects.RESONANCE, ModAspects.MECHANISM, ModAspects.CRYSTAL)
+                    .holeRatio(0.33)
+                    .prerequisites(id("aspect_altar"))
+                    .build()
+    );
+
+    // ── Tier 2 — 魔法期深化 ──────────────────────────────────────────────────
+
+    /**
+     * Mana weapons: player learns to forge mana-powered weapons.
+     * Blade↔Mechanism (weapon construction), Mechanism↔Momentum (directed force).
+     * Requires both altar knowledge and understanding of ring upgrade structures.
+     */
+    public static final ResearchTemplate MANA_WEAPONS = register(
+            ResearchTemplate.builder(id("mana_weapons"))
+                    .tier(2)
+                    .aspects(ModAspects.BLADE, ModAspects.MECHANISM, ModAspects.MOMENTUM)
+                    .holeRatio(0.38)
+                    .prerequisites(id("aspect_altar"), id("altar_ring_upgrade"))
+                    .unlocks(id("floating_turret"))
+                    .build()
+    );
+
     // Tier 3–4 entries to be added as content expands.
     // They follow the same pattern: aspects get more varied, holeRatio increases (0.30–0.45).
 

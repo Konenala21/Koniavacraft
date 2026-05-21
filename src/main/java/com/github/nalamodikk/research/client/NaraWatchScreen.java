@@ -122,7 +122,7 @@ public class NaraWatchScreen extends Screen {
 
         nodePositions.clear();
         computeLayout(ResearchRegistry.all());
-        zoom = 1.0f; offsetX = 0f; offsetY = 0f;
+        zoom = computeFitZoom(); offsetX = 0f; offsetY = 0f;
         selectedNode = null;
 
         // Search box: below the panel
@@ -159,7 +159,7 @@ public class NaraWatchScreen extends Screen {
         int maxDepth = byDepth.keySet().stream().mapToInt(i -> i).max().orElse(0);
         int padding  = 20;
         int usableH  = NA_H - 2 * padding - NODE_SIZE;
-        int rowStep  = maxDepth > 0 ? usableH / maxDepth : 0;
+        int rowStep  = maxDepth > 0 ? Math.max(26, usableH / maxDepth) : 0;
 
         for (Map.Entry<Integer, List<ResourceLocation>> e : byDepth.entrySet()) {
             int depth = e.getKey();
@@ -171,6 +171,15 @@ public class NaraWatchScreen extends Screen {
             for (int i = 0; i < count; i++)
                 nodePositions.put(ids.get(i), new int[]{ startX + i * (NODE_SIZE + 16), y });
         }
+    }
+
+    private float computeFitZoom() {
+        if (nodePositions.isEmpty()) return 1.0f;
+        int maxY = nodePositions.values().stream().mapToInt(p -> p[1]).max().orElse(0);
+        int maxX = nodePositions.values().stream().mapToInt(p -> p[0]).max().orElse(0);
+        float fitH = (float) (NA_H - NODE_SIZE) / (maxY + NODE_SIZE);
+        float fitW = (float) (NA_W - NODE_SIZE) / (maxX + NODE_SIZE);
+        return Math.min(1.0f, Math.max(ZOOM_MIN, Math.min(fitH, fitW)));
     }
 
     // ── Coordinate helpers ────────────────────────────────────────────────────
