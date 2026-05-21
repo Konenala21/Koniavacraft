@@ -46,6 +46,14 @@ public class ModItems {
     public static final DeferredItem<Item> MANA_WAFER        = ITEMS.register("mana_wafer",        () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> BASIC_MANA_CIRCUIT = ITEMS.register("basic_mana_circuit", () -> new Item(new Item.Properties()));
 
+    // ── 浮游砲中間材料 ─────────────────────────────────────────────────────
+    public static final DeferredItem<Item> MANA_BARREL =
+            ITEMS.register("mana_barrel", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> PRECISION_MANA_CIRCUIT =
+            ITEMS.register("precision_mana_circuit", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> HIGH_DENSITY_MANA_CORE =
+            ITEMS.register("high_density_mana_core", () -> new Item(new Item.Properties()));
+
     /***
      * 武器
      */

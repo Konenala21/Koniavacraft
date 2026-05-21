@@ -143,6 +143,21 @@ public final class ResearchRegistry {
     );
 
     /**
+     * Mana Charger: player learns to refill mana-powered items using a machine.
+     * Energy↔Mana (mana is a form of energy), Mechanism (the charging machine).
+     * Comes before the altar so players can charge items before attempting rituals.
+     */
+    public static final ResearchTemplate MANA_CHARGER = register(
+            ResearchTemplate.builder(id("mana_charger"))
+                    .tier(1)
+                    .aspects(ModAspects.ENERGY, ModAspects.MANA, ModAspects.MECHANISM)
+                    .holeRatio(0.30)
+                    .prerequisites(id("mana_infusion"))
+                    .unlocks(id("mana_charger"))
+                    .build()
+    );
+
+    /**
      * Altar construction: player learns to build the Aspect Altar multiblock.
      * Resonance↔Crystal (both involve structured mana), Crystal↔Mana (shared component).
      */
@@ -182,7 +197,10 @@ public final class ResearchRegistry {
                     .aspects(ModAspects.BLADE, ModAspects.MECHANISM, ModAspects.MOMENTUM)
                     .holeRatio(0.38)
                     .prerequisites(id("aspect_altar"), id("altar_ring_upgrade"))
-                    .unlocks(id("floating_turret"))
+                    .unlocks(id("floating_turret"),
+                            id("mana_barrel"),
+                            id("precision_mana_circuit"),
+                            id("high_density_mana_core"))
                     .build()
     );
 

@@ -84,6 +84,16 @@ public class ManaInfuserRecipeProvider {
                 1
         );
 
+        // 魔力晶體 → 高密度魔力核
+        createManaInfuserRecipe(output,
+                "mana_crystal_to_high_density_core",
+                Ingredient.of(ModItems.MANA_CRYSTAL.get()),
+                new ItemStack(ModItems.HIGH_DENSITY_MANA_CORE.get()),
+                8000,
+                200,
+                1
+        );
+
         // 精煉魔力粉 → 魔力水晶碎片
         createManaInfuserRecipe(output,
                 "refined_mana_dust_to_crystal_fragment",

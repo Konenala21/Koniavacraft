@@ -94,7 +94,45 @@ public class ManaCraftingRecipeProvider {
                 .save(output, "mana_infuser_machine");
 
 
-        // ✅ 有序合成配方
+        // 魔力砲管
+        ManaCraftingRecipeBuilder.create(ModItems.MANA_BARREL.get(), 2)
+                .shaped(true)
+                .pattern("IWI")
+                .pattern("W W")
+                .pattern("IWI")
+                .define('I', ModItems.MANA_INGOT.get())
+                .define('W', ModItems.MANA_WIRE.get())
+                .manaCost(1500)
+                .save(output, "mana_barrel");
+
+        // 精密魔力迴路
+        ManaCraftingRecipeBuilder.create(ModItems.PRECISION_MANA_CIRCUIT.get(), 1)
+                .shaped(true)
+                .pattern("FRF")
+                .pattern("CVC")
+                .pattern("FRF")
+                .define('F', ModItems.MANA_CRYSTAL_FRAGMENT.get())
+                .define('R', ModItems.REFINED_MANA_DUST.get())
+                .define('C', ModItems.BASIC_MANA_CIRCUIT.get())
+                .define('V', ModItems.MANA_WAFER.get())
+                .manaCost(3000)
+                .save(output, "precision_mana_circuit");
+
+        // 魔力充能台
+        ManaCraftingRecipeBuilder.create(ModBlocks.MANA_CHARGER.get(), 1)
+                .shaped(true)
+                .pattern("IMI")
+                .pattern("CVC")
+                .pattern("IFI")
+                .define('I', ModItems.MANA_INGOT.get())
+                .define('M', ModItems.MANA_CRYSTAL.get())
+                .define('C', ModItems.BASIC_MANA_CIRCUIT.get())
+                .define('V', ModItems.MANA_WAFER.get())
+                .define('F', Items.IRON_INGOT)
+                .manaCost(2000)
+                .save(output, "mana_charger");
+
+        // ✅ 有序合成配方（已移除的範例）
 //        ManaCraftingRecipeBuilder.create(ModItems.MANA_STAFF.get(), 1)
 //                .pattern(" A ")
 //                .pattern(" B ")

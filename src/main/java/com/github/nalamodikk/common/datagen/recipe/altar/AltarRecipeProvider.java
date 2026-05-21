@@ -15,6 +15,7 @@ import java.util.List;
 public class AltarRecipeProvider {
 
     public static void generate(RecipeOutput output) {
+        registerWeapons(output);
         registerCircuitMaterials(output);
         registerConduits(output);
         // 魔力水晶（催化：精煉魔力粉，底座：魔力碎片×4）
@@ -54,6 +55,25 @@ public class AltarRecipeProvider {
                 ),
                 new ItemStack(Items.GOLDEN_APPLE),
                 12000, 160
+        );
+    }
+
+    private static void registerWeapons(RecipeOutput output) {
+        // 浮游砲（T3 祭壇，min_tier=3）
+        save(output, "floating_turret",
+                Ingredient.of(ModItems.HIGH_DENSITY_MANA_CORE.get()),
+                List.of(
+                        Ingredient.of(ModItems.PRECISION_MANA_CIRCUIT.get()),
+                        Ingredient.of(ModItems.PRECISION_MANA_CIRCUIT.get()),
+                        Ingredient.of(ModItems.MANA_BARREL.get()),
+                        Ingredient.of(ModItems.MANA_BARREL.get()),
+                        Ingredient.of(ModItems.MANA_CRYSTAL.get()),
+                        Ingredient.of(ModItems.MANA_CRYSTAL.get()),
+                        Ingredient.of(ModItems.MANA_INGOT.get()),
+                        Ingredient.of(ModItems.MANA_INGOT.get())
+                ),
+                new ItemStack(ModItems.FLOATING_TURRET.get()),
+                50000, 400, 3
         );
     }
 
