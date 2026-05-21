@@ -96,23 +96,30 @@ public class FloatingTurretPlayerRenderer {
                 ? Mth.clamp(1.0F - player.getUseItemRemainingTicks() / (float) FloatingTurretItem.MAX_CHARGE_TICKS, 0F, 1F)
                 : 0F;
 
-        // Smooth the charge ratio so turrets glide back quickly instead of snapping
+        // Smooth the charge ratio.
+        // Rule: only track UP directly; any drop (release OR new-use-starting-at-0 after fire) decays.
+        // This fixes the post-charged-shot snap when player keeps holding right-click.
         int currentTick = player.tickCount;
-        if (isCharging) {
-            if (isMainHand) smoothedChargeMain = chargeRatio;
-            else smoothedChargeOff = chargeRatio;
+        float prevSmoothed = isMainHand ? smoothedChargeMain : smoothedChargeOff;
+        float target = isCharging ? chargeRatio : 0F;
+        float nextSmoothed;
+        if (target >= prevSmoothed) {
+            nextSmoothed = target; // charging up: track directly
         } else {
-            if (isMainHand && currentTick != lastDecayTickMain) {
-                smoothedChargeMain *= 0.45F;
-                if (smoothedChargeMain < 0.002F) smoothedChargeMain = 0F;
-                lastDecayTickMain = currentTick;
-            } else if (!isMainHand && currentTick != lastDecayTickOff) {
-                smoothedChargeOff *= 0.45F;
-                if (smoothedChargeOff < 0.002F) smoothedChargeOff = 0F;
-                lastDecayTickOff = currentTick;
+            // Decaying — applies whether released or re-starting charge from 0 after fire
+            int lastTick = isMainHand ? lastDecayTickMain : lastDecayTickOff;
+            if (currentTick != lastTick) {
+                nextSmoothed = prevSmoothed * 0.45F;
+                if (nextSmoothed < 0.002F) nextSmoothed = 0F;
+                if (isMainHand) lastDecayTickMain = currentTick;
+                else lastDecayTickOff = currentTick;
+            } else {
+                nextSmoothed = prevSmoothed;
             }
         }
-        float smoothed = isMainHand ? smoothedChargeMain : smoothedChargeOff;
+        if (isMainHand) smoothedChargeMain = nextSmoothed;
+        else smoothedChargeOff = nextSmoothed;
+        float smoothed = nextSmoothed;
 
         // 閒置浮動（蓄力時停止浮動，平滑插值回復）
         double bob = (1.0 - smoothed) * Math.sin((player.tickCount + pt) * 0.08) * 0.08;

@@ -30,7 +30,7 @@ public class TurretHitEffectRenderer {
     private static final int VERTS_PER_EFFECT = SEGMENTS * 12 + 6;
     // 7 floats per vertex: xyz + rgba
     private static final int FLOATS_PER_VERT = 7;
-    private static final int MAX_EFFECTS      = 16;
+    private static final int MAX_EFFECTS      = 64;
     private static final FloatBuffer BUF =
             BufferUtils.createFloatBuffer(MAX_EFFECTS * VERTS_PER_EFFECT * FLOATS_PER_VERT);
 
