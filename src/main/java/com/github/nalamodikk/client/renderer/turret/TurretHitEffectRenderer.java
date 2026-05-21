@@ -212,6 +212,9 @@ public class TurretHitEffectRenderer {
             programId = GL20.glCreateProgram();
             GL20.glAttachShader(programId, v);
             GL20.glAttachShader(programId, f);
+            // Bind attribute locations BEFORE linking (layout qualifiers require GLSL 330)
+            GL20.glBindAttribLocation(programId, 0, "Position");
+            GL20.glBindAttribLocation(programId, 1, "Color");
             GL20.glLinkProgram(programId);
             GL20.glDeleteShader(v);
             GL20.glDeleteShader(f);
