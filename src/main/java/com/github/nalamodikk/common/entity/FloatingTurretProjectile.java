@@ -171,9 +171,11 @@ public class FloatingTurretProjectile extends ThrowableProjectile {
                 ratio > 0 ? 1.2F : 0.7F,
                 ratio > 0 ? 1.6F : 2.0F);
 
-        // 通知附近 client 播放衝擊波特效
-        PacketDistributor.sendToPlayersNear(sl, null, pos.x, pos.y, pos.z, 64.0,
-                new TurretHitPacket(pos.x, pos.y, pos.z, ratio));
+        // 普通彈才送衝擊波環（蓄力彈有爆炸，不需要額外的環）
+        if (ratio == 0F) {
+            PacketDistributor.sendToPlayersNear(sl, null, pos.x, pos.y, pos.z, 64.0,
+                    new TurretHitPacket(pos.x, pos.y, pos.z, 0F));
+        }
     }
 
     private void explodeIfCharged(Vec3 pos) {

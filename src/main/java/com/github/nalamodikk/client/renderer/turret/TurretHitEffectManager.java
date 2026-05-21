@@ -8,7 +8,7 @@ import java.util.List;
 
 public class TurretHitEffectManager {
 
-    public static final int DURATION_TICKS = 20;
+    public static final int DURATION_TICKS = 12;
 
     public record HitEffect(Vec3 pos, float chargeRatio, long spawnTick) {}
 

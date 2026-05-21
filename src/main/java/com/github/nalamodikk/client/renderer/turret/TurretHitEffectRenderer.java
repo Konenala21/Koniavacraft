@@ -120,9 +120,9 @@ public class TurretHitEffectRenderer {
                                    TurretHitEffectManager.HitEffect effect,
                                    float progress, Vec3 cam) {
         float chargeRatio = effect.chargeRatio();
-        float maxRadius   = 1.8f + chargeRatio * 1.2f;
-        float expandedR   = maxRadius * (0.25f + progress * 0.75f); // start at 25%, immediately visible
-        float ringWidth   = maxRadius * 0.18f * (1.0f - progress * 0.55f);
+        float maxRadius   = 1.0f; // compact, focused hit feedback
+        float expandedR   = maxRadius * (0.30f + progress * 0.70f); // start at 30%, immediately visible
+        float ringWidth   = maxRadius * 0.20f * (1.0f - progress * 0.50f); // 20% width, thins as it expands
         float outerR      = expandedR;
         float innerR      = Math.max(0.02f, expandedR - ringWidth);
 
