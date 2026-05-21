@@ -1,6 +1,7 @@
 package com.github.nalamodikk.client.renderer.entity;
 
 import com.github.nalamodikk.common.entity.FloatingTurretEntity;
+import com.github.nalamodikk.common.item.weapon.FloatingTurretItem;
 import com.github.nalamodikk.register.ModItems;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -95,9 +96,19 @@ public class FloatingTurretRenderer extends EntityRenderer<FloatingTurretEntity>
                 double forwardX = -Math.sin(yawRad), forwardZ =  Math.cos(yawRad);
                 boolean isLeft  = owner.getMainArm() == HumanoidArm.LEFT;
                 double side     = ((slotIdx == 2) == !isLeft) ? 1.0 : -1.0;
-                tx = ox + rightX * side * 1.8 + forwardX * 1.5;
-                ty = oy + owner.getEyeHeight() + 0.8;
-                tz = oz + rightZ * side * 1.8 + forwardZ * 1.5;
+
+                boolean isCharging = owner.isUsingItem()
+                        && owner.getUseItem().getItem() instanceof FloatingTurretItem;
+                float chargeRatio = isCharging
+                        ? Mth.clamp(1.0F - owner.getUseItemRemainingTicks() / (float) FloatingTurretItem.MAX_CHARGE_TICKS, 0F, 1F)
+                        : 0F;
+                double bob     = isCharging ? 0 : Math.sin((entity.tickCount + partialTick) * 0.08) * 0.08;
+                double sideMult = 1.0 - chargeRatio * 0.9;
+                double fwdBoost = chargeRatio * 0.3;
+
+                tx = ox + rightX * side * 1.8 * sideMult + forwardX * (1.5 + fwdBoost);
+                ty = oy + owner.getEyeHeight() + 0.8 + bob;
+                tz = oz + rightZ * side * 1.8 * sideMult + forwardZ * (1.5 + fwdBoost);
             } else {
                 float behind = (float) Math.atan2(-Math.cos(yawRad), Math.sin(yawRad));
                 float spread = (float)(Math.PI / 5);

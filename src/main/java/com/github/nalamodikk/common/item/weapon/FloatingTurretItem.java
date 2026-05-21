@@ -43,7 +43,7 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
     private static final int CHARGED_MANA_COST_EACH = 500;
     private static final float CHARGED_DAMAGE_MIN = 16.0F;
     private static final float CHARGED_DAMAGE_MAX = 24.0F;
-    private static final int MAX_CHARGE_TICKS = 40;    // 2 秒滿蓄
+    public static final int MAX_CHARGE_TICKS = 40;    // 2 秒滿蓄
     private static final int QUICK_SHOT_THRESHOLD = 5; // 5 tick 內放開 = 雙普通彈
 
     public FloatingTurretItem(Properties properties) {

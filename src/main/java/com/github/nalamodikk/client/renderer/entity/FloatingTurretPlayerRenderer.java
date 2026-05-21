@@ -80,9 +80,22 @@ public class FloatingTurretPlayerRenderer {
         double forwardX = -Math.sin(yawRad);
         double forwardZ =  Math.cos(yawRad);
 
-        double offsetX = rightX * side * 1.8 + forwardX * 1.5;
-        double offsetY = player.getEyeHeight() + 0.8;
-        double offsetZ = rightZ * side * 1.8 + forwardZ * 1.5;
+        // 蓄力狀態：兩砲向前靠攏
+        boolean isCharging = player.isUsingItem()
+                && player.getUseItem().getItem() instanceof FloatingTurretItem;
+        float chargeRatio = isCharging
+                ? Mth.clamp(1.0F - player.getUseItemRemainingTicks() / (float) FloatingTurretItem.MAX_CHARGE_TICKS, 0F, 1F)
+                : 0F;
+
+        // 閒置浮動（蓄力時停止浮動）
+        double bob = isCharging ? 0 : Math.sin((player.tickCount + pt) * 0.08) * 0.08;
+
+        double sideMult = 1.0 - chargeRatio * 0.9;
+        double fwdBoost = chargeRatio * 0.3;
+
+        double offsetX = rightX * side * 1.8 * sideMult + forwardX * (1.5 + fwdBoost);
+        double offsetY = player.getEyeHeight() + 0.8 + bob;
+        double offsetZ = rightZ * side * 1.8 * sideMult + forwardZ * (1.5 + fwdBoost);
 
         ps.pushPose();
         ps.translate(offsetX, offsetY, offsetZ);
