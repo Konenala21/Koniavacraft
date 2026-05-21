@@ -70,6 +70,7 @@ public class NaraGuideScreen extends Screen {
             {"guide.koniava.altar.overview.title", "guide.koniava.altar.overview.body"},
             {"guide.koniava.altar.usage.title",    "guide.koniava.altar.usage.body"},
             {"guide.koniava.altar.upgrade.title",  "guide.koniava.altar.upgrade.body"},
+            {"guide.koniava.altar.ritual.title",   "guide.koniava.altar.ritual.body"},
         },
         // Chapter 4: 魔力武器（需要完成 mana_weapons 研究）
         {
@@ -89,7 +90,7 @@ public class NaraGuideScreen extends Screen {
 
     // null = always visible; non-null = requires that research to be completed
     private static final ResourceLocation[] CHAPTER_REQUIRED_RESEARCH = {
-        ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "mana_basics"),      // Ch0 本源系統
+        null,                                                                                 // Ch0 本源系統（永遠可見）
         null,                                                                                 // Ch1 研究系統（永遠可見）
         ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "mana_generation"),   // Ch2 魔力設施
         ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "aspect_altar"),      // Ch3 祭壇系統

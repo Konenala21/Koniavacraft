@@ -79,8 +79,20 @@ public class AspectAltarBlock extends BaseEntityBlock {
         if (level.isClientSide()) return InteractionResult.SUCCESS;
         if (!(level.getBlockEntity(pos) instanceof AspectAltarBlockEntity altar)) return InteractionResult.PASS;
 
-        Component result = altar.tryActivate(player.getUUID());
-        player.displayClientMessage(result, true);
+        // 空手右鍵只顯示狀態，不啟動儀式（需用儀式魔杖）
+        Component status;
+        if (!altar.isFormed()) {
+            status = net.minecraft.network.chat.Component.translatable("block.koniava.aspect_altar.not_formed");
+        } else if (altar.isActive()) {
+            int pct = (int)(altar.getProgress() * 100);
+            status = net.minecraft.network.chat.Component.translatable(
+                    "block.koniava.aspect_altar.status_active", pct, altar.getManaStored());
+        } else {
+            status = net.minecraft.network.chat.Component.translatable(
+                    "block.koniava.aspect_altar.status_idle",
+                    altar.getManaStored(), altar.getMaxMana());
+        }
+        player.displayClientMessage(status, true);
         return InteractionResult.SUCCESS;
     }
 

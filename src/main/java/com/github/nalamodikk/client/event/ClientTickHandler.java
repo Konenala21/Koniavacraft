@@ -4,6 +4,10 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.client.renderer.altar.AltarCameraController;
 import com.github.nalamodikk.client.renderer.altar.AltarFadeRenderer;
 import com.github.nalamodikk.client.renderer.altar.AltarUpgradeAnimManager;
+import com.github.nalamodikk.client.renderer.altar.AltarExplosionManager;
+import com.github.nalamodikk.client.renderer.altar.AltarExplosionRenderer;
+import com.github.nalamodikk.register.client.ModKeyMappings;
+import net.minecraft.client.Minecraft;
 import com.github.nalamodikk.client.renderer.FourierCurveRenderer;
 import com.github.nalamodikk.client.renderer.FresnelSphereRenderer;
 import com.github.nalamodikk.client.renderer.LissajousRenderer;
@@ -27,6 +31,14 @@ public class ClientTickHandler {
     @SubscribeEvent
     public static void onClientTickPost(ClientTickEvent.Post event) {
         AltarUpgradeAnimManager.clientTick();
+        AltarExplosionManager.clientTick();
+
+        if (ModKeyMappings.SKIP_ALTAR_ANIM.consumeClick() && AltarUpgradeAnimManager.hasAnyActive()) {
+            AltarUpgradeAnimManager.skipAll();
+            AltarCameraController.reset();
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null) mc.player.setXRot(0f);
+        }
     }
 
     @SubscribeEvent
@@ -34,6 +46,8 @@ public class ClientTickHandler {
         NaraTutorialFlow.resetSessionFlags();
         NaraFirstLoginFlow.resetIgnoreCount();
         AltarUpgradeAnimManager.clear();
+        AltarExplosionManager.clear();
+        AltarExplosionRenderer.release();
         AltarCameraController.reset();
         ManaStrikeShaderRenderer.release();
         OrbitalTestShaderRenderer.release();

@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+### Developer Notes / 開發者備註
+
+## [0.0.1.7-3]
+
+### Player Changes / 玩家更新內容
+
 - Damage dealt to enemies now shows as floating numbers above the target, visible only to the attacker. Normal hits show in white, critical hits in gold, and Floating Turret magic damage in purple. Rapid hits on the same target are merged into one number.
 - 對敵人造成的傷害現在會在目標頭頂顯示浮動數字，只有攻擊者自己看得到。普通傷害白色、暴擊金色、浮游砲魔法傷害紫色，短時間內連續命中同一目標的傷害會合併顯示。
 - Dual-wielding Floating Turrets now correctly applies damage from both shots regardless of invincibility frames; the second bolt no longer gets absorbed.

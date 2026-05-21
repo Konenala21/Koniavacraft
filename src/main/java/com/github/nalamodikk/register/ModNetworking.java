@@ -2,6 +2,8 @@ package com.github.nalamodikk.register;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.network.packet.client.altar.AltarUpgradeAnimPacket;
+import com.github.nalamodikk.common.network.packet.client.altar.RitualExplosionPacket;
+import com.github.nalamodikk.common.network.packet.client.turret.DamageNumberPacket;
 import com.github.nalamodikk.common.network.packet.client.turret.TurretHitPacket;
 import com.github.nalamodikk.common.network.packet.server.OpenUpgradeGuiPacket;
 import com.github.nalamodikk.common.network.packet.server.deployer.SetDeployerIntervalPacket;
@@ -63,6 +65,8 @@ public class ModNetworking {
         StartResearchPacket.registerTo(registrar);
         AspectSynthesisPacket.registerTo(registrar);
         AltarUpgradeAnimPacket.registerToClient(registrar);
+        RitualExplosionPacket.registerToClient(registrar);
         TurretHitPacket.registerToClient(registrar);
+        DamageNumberPacket.registerToClient(registrar);
     }
 }

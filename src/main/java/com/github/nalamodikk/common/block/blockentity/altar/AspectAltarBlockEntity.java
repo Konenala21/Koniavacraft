@@ -14,6 +14,7 @@ import com.github.nalamodikk.common.network.packet.client.altar.AltarUpgradeAnim
 import com.github.nalamodikk.narasystem.nara.hud.NaraTutorialFlow;
 import com.github.nalamodikk.research.knowledge.ResearchSavedData;
 import net.minecraft.advancements.AdvancementHolder;
+import com.github.nalamodikk.common.network.packet.client.altar.RitualExplosionPacket;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -25,8 +26,15 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
@@ -307,6 +315,10 @@ public static final List<Vec3i> RING_T1 = List.of(
 
     private static final int MIN_COMPLETION_TICKS = 320;
     private static final int MAX_COMPLETION_TICKS = 700;
+    private static final int WARNING_TICKS    = 200; // 10 秒無魔力後爆炸
+    private static final int EXPLOSION_RADIUS = 64;
+    private static final float ITEM_PERM_LOSS_CHANCE = 0.15f; // 15% 永久消失
+    private static final float ITEM_DROP_CHANCE      = 0.50f; // 50% 掉落
 
     private int ticker = 0;
     private int tickCounter = 0;
@@ -319,6 +331,11 @@ public static final List<Vec3i> RING_T1 = List.of(
     private int completionAnimTick = 0;
     private int completionDuration = MIN_COMPLETION_TICKS;
     private UUID activatorUUID = null;
+
+    // 新增：持續消耗 + 警告爆炸機制
+    private int manaConsumedSoFar = 0;
+    private int warningTick = 0;    // 0 = 正常；> 0 = 警告中
+    private AltarRecipe cachedRecipe = null;
 
     private final ManaStorage manaStorage = new ManaStorage(MAX_MANA, this::onManaChanged);
     private final EnumMap<Direction, IOHandlerUtils.IOType> directionConfig = new EnumMap<>(Direction.class);
@@ -372,6 +389,44 @@ public static final List<Vec3i> RING_T1 = List.of(
 
     private void tickRitual() {
         if (level == null || ritualMaxTick <= 0) return;
+        if (cachedRecipe == null) {
+            Optional<RecipeHolder<AltarRecipe>> holder = findMatchingRecipe();
+            if (holder.isEmpty()) { cancelRitual(); return; }
+            cachedRecipe = holder.get().value();
+        }
+
+        // 計算本 tick 應消耗的魔力
+        int totalCost  = cachedRecipe.getManaCost();
+        int remaining  = totalCost - manaConsumedSoFar;
+        int perTick    = Math.max(1, totalCost / ritualMaxTick);
+        int toExtract  = Math.min(perTick, remaining);
+
+        if (toExtract > 0) {
+            int extracted = manaStorage.extractMana(toExtract, ManaAction.EXECUTE);
+            if (extracted < toExtract) {
+                // 魔力不足，進入警告狀態，儀式暫停
+                warningTick++;
+                if (warningTick == 1 || warningTick % 20 == 0) syncToClient();
+                // 電弧警告特效：每 10 tick 噴一次電火花 + 閃電音效
+                if (level instanceof ServerLevel sl && warningTick % 10 == 0) {
+                    Vec3 wc = Vec3.atCenterOf(worldPosition);
+                    sl.sendParticles(ParticleTypes.ELECTRIC_SPARK,
+                            wc.x, wc.y + 0.5, wc.z,
+                            25, 0.4, 0.5, 0.4, 0.18);
+                    float pitch = 1.4f + level.random.nextFloat() * 0.6f;
+                    sl.playSound(null, worldPosition, SoundEvents.LIGHTNING_BOLT_THUNDER,
+                            SoundSource.BLOCKS, 0.5f, pitch);
+                }
+                if (warningTick >= WARNING_TICKS) {
+                    triggerExplosion();
+                    cancelRitual();
+                }
+                return;
+            }
+            manaConsumedSoFar += extracted;
+            warningTick = 0;
+        }
+
         ritualTick++;
         progress = (float) ritualTick / ritualMaxTick;
         if (ritualTick >= ritualMaxTick) { completeRitual(); return; }
@@ -385,7 +440,6 @@ public static final List<Vec3i> RING_T1 = List.of(
         if (holder.isEmpty()) { cancelRitual(); return; }
 
         AltarRecipe recipe = holder.get().value();
-        if (manaStorage.getManaStored() < recipe.getManaCost()) { cancelRitual(); return; }
 
         // Validate ingredient indices BEFORE consuming anything — defensive guard against
         // findMatchedIndices diverging from the earlier matches() check
@@ -396,9 +450,15 @@ public static final List<Vec3i> RING_T1 = List.of(
         int[] matched = recipe.findMatchedIndices(nonCenterItems);
         if (matched == null) { cancelRitual(); return; }
 
-        manaStorage.extractMana(recipe.getManaCost(), ManaAction.EXECUTE);
         if (centerPedestal != null) centerPedestal.consumeItem();
         for (int idx : matched) nonCenter.get(idx).consumeItem();
+
+        // 完成粒子
+        if (level instanceof ServerLevel sl) {
+            Vec3 center = Vec3.atCenterOf(worldPosition);
+            sl.sendParticles(ParticleTypes.END_ROD, center.x, center.y + 1, center.z, 40, 0.6, 0.6, 0.6, 0.12);
+            sl.sendParticles(ParticleTypes.ENCHANT, center.x, center.y + 0.5, center.z, 30, 1.0, 1.0, 1.0, 0.3);
+        }
 
         ItemStack result = recipe.getResult().copy();
 
@@ -435,6 +495,9 @@ public static final List<Vec3i> RING_T1 = List.of(
         progress = 0f;
         ritualTick = 0;
         ritualMaxTick = 0;
+        manaConsumedSoFar = 0;
+        warningTick = 0;
+        cachedRecipe = null;
         setChanged();
         syncToClient();
 
@@ -458,8 +521,57 @@ public static final List<Vec3i> RING_T1 = List.of(
         progress = 0f;
         ritualTick = 0;
         ritualMaxTick = 0;
+        manaConsumedSoFar = 0;
+        warningTick = 0;
+        cachedRecipe = null;
         setChanged();
         syncToClient();
+    }
+
+    private void triggerExplosion() {
+        if (!(level instanceof ServerLevel serverLevel)) return;
+        Vec3 center = Vec3.atCenterOf(worldPosition);
+
+        serverLevel.playSound(null, worldPosition, SoundEvents.WITHER_DEATH,
+                SoundSource.BLOCKS, 1.5f, 0.6f);
+        serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER,
+                center.x, center.y, center.z, 1, 0, 0, 0, 0);
+        serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE,
+                center.x, center.y + 1, center.z, 30, 1.5, 1.0, 1.5, 0.05);
+
+        // 傳送衝擊波封包給 64 格內所有玩家，客戶端播放紅色擴散環
+        for (ServerPlayer sp : serverLevel.players()) {
+            if (sp.blockPosition().distSqr(worldPosition) <= EXPLOSION_RADIUS * EXPLOSION_RADIUS) {
+                PacketDistributor.sendToPlayer(sp, new RitualExplosionPacket(worldPosition));
+            }
+        }
+
+        // 50% 最大 HP 魔法傷害 + 緩速 II 10 秒，只影響玩家
+        double dmgRadius = EXPLOSION_RADIUS;
+        List<ServerPlayer> nearbyPlayers = serverLevel.getEntitiesOfClass(
+                ServerPlayer.class,
+                AABB.ofSize(center, dmgRadius * 2, dmgRadius * 2, dmgRadius * 2));
+        for (ServerPlayer sp : nearbyPlayers) {
+            sp.hurt(serverLevel.damageSources().magic(), sp.getMaxHealth() * 0.5f);
+            sp.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 200, 1));
+        }
+
+        // 底座物品：15% 永久消失，50% 掉落，其餘保留
+        for (AspectPedestalBlockEntity pedestal : activePedestals) {
+            ItemStack held = pedestal.getHeldItem();
+            if (held.isEmpty()) continue;
+            float rand = level.random.nextFloat();
+            if (rand < ITEM_PERM_LOSS_CHANCE) {
+                pedestal.consumeItem();
+            } else if (rand < ITEM_PERM_LOSS_CHANCE + ITEM_DROP_CHANCE) {
+                ItemStack drop = held.copy();
+                pedestal.consumeItem();
+                Vec3 dropPos = Vec3.atCenterOf(pedestal.getBlockPos()).add(0, 0.5, 0);
+                ItemEntity ie = new ItemEntity(level, dropPos.x, dropPos.y, dropPos.z, drop);
+                ie.setDefaultPickUpDelay();
+                level.addFreshEntity(ie);
+            }
+        }
     }
 
     // ── 儀式觸發 ─────────────────────────────────────────────────────────────
@@ -477,13 +589,12 @@ public static final List<Vec3i> RING_T1 = List.of(
             return Component.translatable("block.koniava.aspect_altar.no_recipe");
 
         AltarRecipe recipe = holder.get().value();
-        if (manaStorage.getManaStored() < recipe.getManaCost())
-            return Component.translatable("block.koniava.aspect_altar.not_enough_mana",
-                    recipe.getManaCost(), manaStorage.getManaStored());
-
         active = true;
         ritualTick = 0;
         ritualMaxTick = recipe.getProcessingTime();
+        manaConsumedSoFar = 0;
+        warningTick = 0;
+        cachedRecipe = recipe;
         progress = 0f;
         activatorUUID = playerUUID;
         setChanged();
@@ -793,6 +904,8 @@ public static final List<Vec3i> RING_T1 = List.of(
         tag.putInt("Mana", manaStorage.getManaStored());
         tag.putInt("UpgradeTier", upgradeTier);
         tag.putLong("RingPhaseStart", ringPhaseStart);
+        tag.putInt("WarningTick", warningTick);
+        tag.putInt("ManaConsumedSoFar", manaConsumedSoFar);
         // CompletionAnimTick intentionally not saved — cosmetic only, resets on world load
     }
 
@@ -806,6 +919,9 @@ public static final List<Vec3i> RING_T1 = List.of(
         manaStorage.setMana(tag.getInt("Mana"));
         upgradeTier = tag.getInt("UpgradeTier");
         ringPhaseStart = tag.getLong("RingPhaseStart");
+        warningTick = tag.getInt("WarningTick");
+        manaConsumedSoFar = tag.getInt("ManaConsumedSoFar");
+        // cachedRecipe not serializable; re-resolved lazily in tickRitual() on first tick
         // completionAnimTick not loaded — always starts at 0 on world load
     }
 
