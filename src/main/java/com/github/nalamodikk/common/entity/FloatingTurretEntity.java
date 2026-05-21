@@ -132,9 +132,10 @@ public class FloatingTurretEntity extends PathfinderMob {
             boolean isLeftHanded = owner.getMainArm() == net.minecraft.world.entity.HumanoidArm.LEFT;
             double mainHandSide = isLeftHanded ? -1.0 : 1.0;
             double side = (slotIdx == 2) ? mainHandSide : -mainHandSide;
-            posX = owner.getX() + rightX * side * 1.8 + forwardX * 1.5;
+            double translateCorrect = (1.0 - 0.0843) * 0.35; // align hitbox to visual center (translate Z 0.0843→1.0)
+            posX = owner.getX() + rightX * side * 1.8 + forwardX * 1.5 + rightX * translateCorrect;
             posY = owner.getEyeY() + 0.8;
-            posZ = owner.getZ() + rightZ * side * 1.8 + forwardZ * 1.5;
+            posZ = owner.getZ() + rightZ * side * 1.8 + forwardZ * 1.5 + rightZ * translateCorrect;
         }
         this.setPos(posX, posY, posZ);
 

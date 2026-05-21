@@ -108,8 +108,8 @@ public class FloatingTurretRenderer extends EntityRenderer<FloatingTurretEntity>
                         ? Mth.clamp(1.0F - owner.getUseItemRemainingTicks() / (float) FloatingTurretItem.MAX_CHARGE_TICKS, 0F, 1F)
                         : 0F;
                 double bob     = isCharging ? 0 : Math.sin((entity.tickCount + partialTick) * 0.08) * 0.08;
-                double sideMult = 1.0 - chargeRatio * 0.9;
-                double fwdBoost = chargeRatio * 0.3;
+                double sideMult = 1.0 - chargeRatio * 0.6;
+                double fwdBoost = chargeRatio * 0.4;
 
                 handIsCharging  = isCharging;
                 handChargeRatio = chargeRatio;
@@ -153,7 +153,7 @@ public class FloatingTurretRenderer extends EntityRenderer<FloatingTurretEntity>
             // Hand entity: track owner's pitch so barrel faces their look direction
             poseStack.mulPose(Axis.ZP.rotationDegrees(-ownerPitch));
         }
-        poseStack.translate(2.8125, -0.6756, 0.0843);
+        poseStack.translate(2.8125, -0.6756, 1.0);
 
         Minecraft.getInstance().getItemRenderer().renderStatic(
                 new ItemStack(ModItems.FLOATING_TURRET.get()),
@@ -204,7 +204,7 @@ public class FloatingTurretRenderer extends EntityRenderer<FloatingTurretEntity>
         poseStack.mulPose(Axis.YP.rotationDegrees(yawOffset));
 
         poseStack.mulPose(Axis.ZP.rotationDegrees(-pitch));
-        poseStack.translate(2.8125, -0.6756, 0.0843);
+        poseStack.translate(2.8125, -0.6756, 1.0);
 
         MultiBufferSource ghostSrc = ghostSource(bufferSource, 100);
         Minecraft.getInstance().getItemRenderer().renderStatic(

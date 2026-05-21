@@ -119,7 +119,7 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
     }
 
     private static void spawnChargingEffect(ServerLevel sl, Player player, int slotIndex, float ratio) {
-        Vec3 muzzle = turretPos(player, slotIndex);
+        Vec3 muzzle = turretPos(player, slotIndex, ratio);
         RandomSource rng = player.getRandom();
 
         // 砲口光球：spread 隨蓄力擴大，粒子往外微微發光
@@ -199,8 +199,8 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
         return stack;
     }
 
-    // 計算手持浮游砲的世界位置（與 FloatingTurretPlayerRenderer 相同的數學）
-    private static Vec3 turretPos(Player player, int slotIndex) {
+    // 計算手持浮游砲的世界位置，chargeRatio 對應蓄力收攏動畫（與 FloatingTurretPlayerRenderer 相同的數學）
+    private static Vec3 turretPos(Player player, int slotIndex, float chargeRatio) {
         boolean isMainHand = slotIndex == FloatingTurretEventHandler.HAND_MAIN_SLOT;
         boolean isLeftHanded = player.getMainArm() == net.minecraft.world.entity.HumanoidArm.LEFT;
         double mainHandSide = isLeftHanded ? -1.0 : 1.0;
@@ -212,10 +212,14 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
         double forwardX = -Math.sin(yawRad);
         double forwardZ = Math.cos(yawRad);
 
+        double sideMult = 1.0 - chargeRatio * 0.6;
+        double fwdBoost = chargeRatio * 0.4;
+
+        double translateCorrect = (1.0 - 0.0843) * 0.35; // align projectile origin to visual center
         return new Vec3(
-                player.getX() + rightX * side * 1.8 + forwardX * 1.5,
+                player.getX() + rightX * side * 1.8 * sideMult + forwardX * (1.5 + fwdBoost) + rightX * translateCorrect,
                 player.getEyeY() + 0.8,
-                player.getZ() + rightZ * side * 1.8 + forwardZ * 1.5);
+                player.getZ() + rightZ * side * 1.8 * sideMult + forwardZ * (1.5 + fwdBoost) + rightZ * translateCorrect);
     }
 
     // 雙持快按：各從自己砲管位置射出，方向 raycast 自動校準準心
@@ -227,7 +231,7 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
         int mainMana = mainStack.getOrDefault(ModDataComponents.MANA_STORED, 0);
         if (mainMana >= HAND_MANA_COST) {
             level.addFreshEntity(FloatingTurretProjectile.shoot(level, player,
-                    turretPos(player, FloatingTurretEventHandler.HAND_MAIN_SLOT)));
+                    turretPos(player, FloatingTurretEventHandler.HAND_MAIN_SLOT, 0f)));
             mainStack.set(ModDataComponents.MANA_STORED, mainMana - HAND_MANA_COST);
             if (mainStack.isDamageableItem() && player instanceof ServerPlayer sp)
                 mainStack.hurtAndBreak(1, sp, EquipmentSlot.MAINHAND);
@@ -237,7 +241,7 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
         int offMana = offStack.getOrDefault(ModDataComponents.MANA_STORED, 0);
         if (offMana >= HAND_MANA_COST) {
             level.addFreshEntity(FloatingTurretProjectile.shoot(level, player,
-                    turretPos(player, FloatingTurretEventHandler.HAND_OFF_SLOT)));
+                    turretPos(player, FloatingTurretEventHandler.HAND_OFF_SLOT, 0f)));
             offStack.set(ModDataComponents.MANA_STORED, offMana - HAND_MANA_COST);
             if (offStack.isDamageableItem() && player instanceof ServerPlayer sp)
                 offStack.hurtAndBreak(1, sp, EquipmentSlot.OFFHAND);
@@ -257,7 +261,7 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
         int slotIndex = hand == InteractionHand.MAIN_HAND
                 ? FloatingTurretEventHandler.HAND_MAIN_SLOT
                 : FloatingTurretEventHandler.HAND_OFF_SLOT;
-        level.addFreshEntity(FloatingTurretProjectile.shoot(level, player, turretPos(player, slotIndex)));
+        level.addFreshEntity(FloatingTurretProjectile.shoot(level, player, turretPos(player, slotIndex, 0f)));
 
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.AMETHYST_BLOCK_HIT, SoundSource.PLAYERS, 0.6F, 1.6F);
@@ -286,9 +290,9 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
             if (offStack.isDamageableItem())  offStack.hurtAndBreak(2, sp, EquipmentSlot.OFFHAND);
         }
 
-        // 蓄力彈從兩砲中心點出發，朝準心命中點
-        Vec3 mainPos  = turretPos(player, FloatingTurretEventHandler.HAND_MAIN_SLOT);
-        Vec3 offPos   = turretPos(player, FloatingTurretEventHandler.HAND_OFF_SLOT);
+        // 蓄力彈從兩砲收攏後的中心點出發，朝準心命中點
+        Vec3 mainPos  = turretPos(player, FloatingTurretEventHandler.HAND_MAIN_SLOT, chargeRatio);
+        Vec3 offPos   = turretPos(player, FloatingTurretEventHandler.HAND_OFF_SLOT, chargeRatio);
         Vec3 spawnPos = mainPos.add(offPos).scale(0.5);
         level.addFreshEntity(FloatingTurretProjectile.shootCharged(level, player, chargeRatio, spawnPos));
 

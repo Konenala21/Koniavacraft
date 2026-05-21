@@ -40,6 +40,12 @@ public class FloatingTurretPlayerRenderer {
     private static final float ORBIT_RADIUS        = 1.5F;
     private static final float ORBIT_HEIGHT        = 1.0F;
 
+    // Per-hand smoothed charge ratio — persists between frames for release animation
+    private static float smoothedChargeMain = 0F;
+    private static float smoothedChargeOff  = 0F;
+    private static int   lastDecayTickMain  = -1;
+    private static int   lastDecayTickOff   = -1;
+
     @SubscribeEvent
     public static void onRenderPlayer(RenderPlayerEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
@@ -90,11 +96,29 @@ public class FloatingTurretPlayerRenderer {
                 ? Mth.clamp(1.0F - player.getUseItemRemainingTicks() / (float) FloatingTurretItem.MAX_CHARGE_TICKS, 0F, 1F)
                 : 0F;
 
-        // 閒置浮動（蓄力時停止浮動）
-        double bob = isCharging ? 0 : Math.sin((player.tickCount + pt) * 0.08) * 0.08;
+        // Smooth the charge ratio so turrets glide back quickly instead of snapping
+        int currentTick = player.tickCount;
+        if (isCharging) {
+            if (isMainHand) smoothedChargeMain = chargeRatio;
+            else smoothedChargeOff = chargeRatio;
+        } else {
+            if (isMainHand && currentTick != lastDecayTickMain) {
+                smoothedChargeMain *= 0.45F;
+                if (smoothedChargeMain < 0.002F) smoothedChargeMain = 0F;
+                lastDecayTickMain = currentTick;
+            } else if (!isMainHand && currentTick != lastDecayTickOff) {
+                smoothedChargeOff *= 0.45F;
+                if (smoothedChargeOff < 0.002F) smoothedChargeOff = 0F;
+                lastDecayTickOff = currentTick;
+            }
+        }
+        float smoothed = isMainHand ? smoothedChargeMain : smoothedChargeOff;
 
-        double sideMult = 1.0 - chargeRatio * 0.9;
-        double fwdBoost = chargeRatio * 0.3;
+        // 閒置浮動（蓄力時停止浮動，平滑插值回復）
+        double bob = (1.0 - smoothed) * Math.sin((player.tickCount + pt) * 0.08) * 0.08;
+
+        double sideMult = 1.0 - smoothed * 0.6;
+        double fwdBoost = smoothed * 0.4;
 
         double offsetX = rightX * side * 1.8 * sideMult + forwardX * (1.5 + fwdBoost);
         double offsetY = player.getEyeHeight() + 0.8 + bob;
@@ -117,7 +141,7 @@ public class FloatingTurretPlayerRenderer {
 
         float interpPitch = Mth.lerp(pt, player.xRotO, player.getXRot());
         ps.mulPose(Axis.ZP.rotationDegrees(-interpPitch));
-        ps.translate(2.8125, -0.6756, 0.0843);
+        ps.translate(2.8125, -0.6756, 1.0);
 
         renderModel(player, ps, buffers, light);
         ps.popPose();
@@ -161,7 +185,7 @@ public class FloatingTurretPlayerRenderer {
             ps.mulPose(Axis.YP.rotationDegrees(-interpYaw + 270F));
             float spin = (player.tickCount + pt) * 2.0F;
             ps.mulPose(Axis.XP.rotationDegrees(spin));
-            ps.translate(2.8125, -0.6756, 0.0843);
+            ps.translate(2.8125, -0.6756, 1.0);
 
             renderModel(player, ps, buffers, light);
             ps.popPose();
