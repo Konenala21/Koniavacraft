@@ -6,8 +6,11 @@ import com.github.nalamodikk.client.renderer.altar.AltarFadeRenderer;
 import com.github.nalamodikk.client.renderer.altar.AltarUpgradeAnimManager;
 import com.github.nalamodikk.client.renderer.altar.AltarExplosionManager;
 import com.github.nalamodikk.client.renderer.altar.AltarExplosionRenderer;
+import com.github.nalamodikk.client.screen.wand.WandUpgradeScreen;
+import com.github.nalamodikk.common.item.wand.WandRodItem;
 import com.github.nalamodikk.register.client.ModKeyMappings;
 import net.minecraft.client.Minecraft;
+import net.minecraft.world.InteractionHand;
 import com.github.nalamodikk.client.renderer.FourierCurveRenderer;
 import com.github.nalamodikk.client.renderer.FresnelSphereRenderer;
 import com.github.nalamodikk.client.renderer.LissajousRenderer;
@@ -32,6 +35,19 @@ public class ClientTickHandler {
     public static void onClientTickPost(ClientTickEvent.Post event) {
         AltarUpgradeAnimManager.clientTick();
         AltarExplosionManager.clientTick();
+
+        if (ModKeyMappings.OPEN_UPGRADE_GUI.consumeClick()) {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null && mc.screen == null) {
+                for (InteractionHand hand : InteractionHand.values()) {
+                    var stack = mc.player.getItemInHand(hand);
+                    if (stack.getItem() instanceof WandRodItem) {
+                        mc.setScreen(new WandUpgradeScreen(stack, hand));
+                        break;
+                    }
+                }
+            }
+        }
 
         if (ModKeyMappings.SKIP_ALTAR_ANIM.consumeClick() && AltarUpgradeAnimManager.hasAnyActive()) {
             AltarUpgradeAnimManager.skipAll();

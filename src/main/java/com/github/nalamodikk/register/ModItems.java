@@ -17,6 +17,9 @@ import com.github.nalamodikk.common.item.tool.BasicTechWandItem;
 import com.github.nalamodikk.common.item.tool.StructureBuildWandItem;
 import com.github.nalamodikk.common.item.tool.ManaPickaxeItem;
 import com.github.nalamodikk.common.item.tool.ModToolTiers;
+import com.github.nalamodikk.common.item.wand.WandRodItem;
+import com.github.nalamodikk.common.item.wand.core.WandCoreBehavior;
+import com.github.nalamodikk.common.item.wand.core.WandCoreItem;
 import com.github.nalamodikk.common.item.weapon.FloatingTurretItem;
 import com.github.nalamodikk.common.utils.upgrade.UpgradeType;
 import net.minecraft.world.item.Item;
@@ -73,6 +76,23 @@ public class ModItems {
     public static final DeferredItem<Item>  RITUAL_WAND = ITEMS.register("ritual_wand", () -> new com.github.nalamodikk.common.item.tool.RitualWandItem(new Item.Properties().stacksTo(1).durability(256)));
     public static final DeferredItem<Item>  ADVANCED_TECH_WAND = ITEMS.register("advanced_tech_wand", () -> new AdvancedTechWandItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<Item>  STRUCTURE_BUILD_WAND = ITEMS.register("structure_build_wand", () -> new StructureBuildWandItem(new Item.Properties().stacksTo(1)));
+
+    // ── 模組化魔杖系統 ────────────────────────────────────────────────────────
+    public static final DeferredItem<WandRodItem> WAND_ROD =
+            ITEMS.register("wand_rod", () -> new WandRodItem(new Item.Properties().stacksTo(1)
+                    .component(ModDataComponents.MANA_STORED, 0)
+                    .component(ModDataComponents.MAX_MANA, 8000)));
+
+    public static final DeferredItem<WandCoreItem> FORMATION_CORE =
+            ITEMS.register("formation_core", () -> new WandCoreItem(WandCoreBehavior.FORMATION, new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<WandCoreItem> ACTIVATION_CORE =
+            ITEMS.register("activation_core", () -> new WandCoreItem(WandCoreBehavior.ACTIVATION, new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<WandCoreItem> IO_CORE =
+            ITEMS.register("io_core", () -> new WandCoreItem(WandCoreBehavior.IO, new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<WandCoreItem> ROTATION_CORE =
+            ITEMS.register("rotation_core", () -> new WandCoreItem(WandCoreBehavior.ROTATION, new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<WandCoreItem> RITUAL_CORE =
+            ITEMS.register("ritual_core", () -> new WandCoreItem(WandCoreBehavior.RITUAL, new Item.Properties().stacksTo(1)));
     public static final DeferredItem<ManaPickaxeItem> MANA_PICKAXE = ITEMS.register("mana_pickaxe",
             () -> new ManaPickaxeItem(ModToolTiers.MANA, new Item.Properties().stacksTo(1)));
 

@@ -20,6 +20,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
@@ -95,8 +96,9 @@ public class FloatingTurretProjectile extends ThrowableProjectile {
         Vec3 look   = shooter.getLookAngle();
         Vec3 farPos = eyePos.add(look.scale(AIM_RANGE));
 
-        // 方塊 raycast
-        HitResult blockHit = shooter.pick(AIM_RANGE, 1.0F, false);
+        // 方塊 raycast：用 COLLIDER 形狀，忽略草/花等無碰撞箱方塊
+        HitResult blockHit = shooter.level().clip(new ClipContext(
+                eyePos, farPos, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, shooter));
         Vec3 blockTarget = blockHit.getType() != HitResult.Type.MISS
                 ? blockHit.getLocation() : farPos;
 
@@ -143,7 +145,8 @@ public class FloatingTurretProjectile extends ThrowableProjectile {
     protected void onHitBlock(BlockHitResult result) {
         if (level().isClientSide) return;
         BlockState state = level().getBlockState(result.getBlockPos());
-        if (!state.getFluidState().isEmpty()) return; // 液體直接穿過
+        if (!state.getFluidState().isEmpty()) return;
+        if (state.getCollisionShape(level(), result.getBlockPos()).isEmpty()) return;
         showHitEffect(result.getLocation());
         explodeIfCharged(result.getLocation());
         this.discard();

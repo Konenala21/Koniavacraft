@@ -30,11 +30,19 @@ public final class ModKeyMappings {
         CATEGORY_MOD
     );
 
+    public static final KeyMapping OPEN_UPGRADE_GUI = new KeyMapping(
+        "key.koniava.open_upgrade_gui",
+        InputConstants.Type.KEYSYM,
+        GLFW.GLFW_KEY_U,
+        CATEGORY_MOD
+    );
+
     private ModKeyMappings() {}
 
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         event.register(DEBUG_DETAILS);
         event.register(GHOST_LOCK);
         event.register(SKIP_ALTAR_ANIM);
+        event.register(OPEN_UPGRADE_GUI);
     }
 }

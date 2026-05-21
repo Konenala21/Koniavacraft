@@ -3,6 +3,7 @@ package com.github.nalamodikk.register;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.item.debug.ManaDebugToolItem;
 import com.github.nalamodikk.common.item.tool.BasicTechWandItem;
+import com.github.nalamodikk.common.item.wand.WandCoreData;
 import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
 import com.github.nalamodikk.common.utils.data.CodecsLibrary;
 import com.mojang.serialization.Codec;
@@ -130,6 +131,12 @@ public class ModDataComponents {
                                     ResourceLocation::toString))
                     .build();
 
+    public static final DataComponentType<WandCoreData> WAND_CORE_DATA =
+            DataComponentType.<WandCoreData>builder()
+                    .persistent(WandCoreData.CODEC)
+                    .networkSynchronized(WandCoreData.STREAM_CODEC)
+                    .build();
+
     /** Controls whether an Aspect Token should reveal the aspect's real name. */
     public static final DataComponentType<Boolean> ASPECT_HIDDEN =
             DataComponentType.<Boolean>builder()
@@ -152,6 +159,7 @@ public class ModDataComponents {
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "research_id"), RESEARCH_ID);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "aspect_id"), ASPECT_ID);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "aspect_hidden"), ASPECT_HIDDEN);
+            helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "wand_core_data"), WAND_CORE_DATA);
         });
     }
 }
