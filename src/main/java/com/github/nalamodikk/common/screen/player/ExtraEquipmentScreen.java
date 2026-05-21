@@ -37,7 +37,7 @@ public class ExtraEquipmentScreen extends AbstractContainerScreen<ExtraEquipment
 
         @Override
         protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
-            graphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+            graphics.blit(TEXTURE, leftPos, topPos, 0, 0, SLOT_UV_X - 1, imageHeight);
 
             for (int i = 0; i < VANILLA_SLOT_COUNT; i++) {
                 graphics.blit(TEXTURE,

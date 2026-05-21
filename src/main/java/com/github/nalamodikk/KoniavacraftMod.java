@@ -11,6 +11,7 @@ import com.github.nalamodikk.client.renderer.entity.FloatingTurretModel;
 import com.github.nalamodikk.client.renderer.entity.FloatingTurretProjectileRenderer;
 import com.github.nalamodikk.client.renderer.entity.FloatingTurretRenderer;
 import com.github.nalamodikk.client.renderer.item.FloatingTurretBEWLR;
+import com.github.nalamodikk.client.renderer.turret.TurretHitEffectRenderer;
 import com.github.nalamodikk.register.ModEntities;
 import com.github.nalamodikk.register.ModMobEffects;
 import com.github.nalamodikk.common.config.ModClientConfig;
@@ -100,6 +101,7 @@ public class KoniavacraftMod {
                         AltarT6ClimaxRenderer.reload();
                         AltarT45OrbRenderer.reload();
                         AltarFadeRenderer.reload();
+                        TurretHitEffectRenderer.reload();
                     }));
             // ClientEffectEvents is auto-registered by @EventBusSubscriber; no manual register needed.
         }
