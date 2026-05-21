@@ -6,11 +6,23 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Damage dealt to enemies now shows as floating numbers above the target, visible only to the attacker. Normal hits show in white, critical hits in gold, and Floating Turret magic damage in purple. Rapid hits on the same target are merged into one number.
+- 對敵人造成的傷害現在會在目標頭頂顯示浮動數字，只有攻擊者自己看得到。普通傷害白色、暴擊金色、浮游砲魔法傷害紫色，短時間內連續命中同一目標的傷害會合併顯示。
+- Dual-wielding Floating Turrets now correctly applies damage from both shots regardless of invincibility frames; the second bolt no longer gets absorbed.
+- 雙持浮游砲現在兩顆砲彈都能正確命中目標，不再因為無敵幀吃掉第二顆傷害。
+- Floating Turret charging animation now smoothly returns to idle after firing, including when the shot is auto-released at max charge.
+- 浮游砲蓄力動畫在發射後（包含滿蓄自動射出）現在能平滑回到閒置位置，不再瞬間跳回。
 - Floating Turret projectiles now pass through water and lava instead of stopping on contact.
 - 浮游砲砲彈現在可以穿過水和岩漿繼續飛行，不會在液體處消失。
 
 ### Developer Notes / 開發者備註
 
+- `DamageNumberEventHandler`: subscribes to `LivingDamageEvent.Post` on the game bus. On player-caused damage, sends a `DamageNumberPacket` (S2C) to the attacker with world position, final damage (`getNewDamage()`), damage type, and entity ID. Critical hit detection mirrors vanilla `Player.attack()` conditions.
+- `DamageNumberPacket`: S2C record packet carrying `x, y, z, damage, dmgType, entityId`. Registered via `ModNetworking`.
+- `DamageNumberRenderer`: client-only `@EventBusSubscriber`. Stores the projection and model-view matrices from `RenderLevelStageEvent.AFTER_LEVEL`. In `RenderGuiEvent.Post`, projects each entry's world position to screen via MVP multiply and draws text using `Font.drawInBatch` with ARGB alpha on `GuiGraphics.bufferSource()`. Entries for the same entity within 5 ticks are merged by accumulating damage and keeping the highest-priority color. Numbers fade out over 30 ticks.
+- `FloatingTurretProjectile.onHitEntity()`: sets `target.invulnerableTime = 0` before `hurt()` so dual-wield hits both register.
+- `FloatingTurretPlayerRenderer.renderHandTurret()`: charge smoothing now decays whenever `chargeRatio` drops (not only when `isCharging` is false), preventing the snap when a new charge starts at ratio 0 immediately after firing.
+- `TurretHitEffectRenderer`: `MAX_EFFECTS` raised from 16 to 64 to prevent `BufferOverflowException` when dual-wield generates more simultaneous hit rings.
 - `FloatingTurretProjectile.onHitBlock()`: checks `FluidState` before processing block hit; returns early for any non-empty fluid, allowing the bolt to continue through liquids.
 
 ## [0.0.1.7-2]
