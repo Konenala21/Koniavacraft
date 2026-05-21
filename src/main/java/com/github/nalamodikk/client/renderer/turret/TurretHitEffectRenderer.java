@@ -25,8 +25,9 @@ import java.util.List;
 public class TurretHitEffectRenderer {
 
     private static final int SEGMENTS = 32;
-    // Per effect: ring (SEGMENTS quads × 4 verts) + flash quad (4 verts) + trail ring (SEGMENTS quads × 4)
-    private static final int VERTS_PER_EFFECT = SEGMENTS * 4 * 2 + 4;
+    // GL_TRIANGLES: each quad = 2 triangles = 6 verts
+    // Per effect: ring (SEGMENTS * 6) + trail (SEGMENTS * 6) + flash (6) = SEGMENTS*12 + 6
+    private static final int VERTS_PER_EFFECT = SEGMENTS * 12 + 6;
     // 7 floats per vertex: xyz + rgba
     private static final int FLOATS_PER_VERT = 7;
     private static final int MAX_EFFECTS      = 16;
@@ -102,7 +103,7 @@ public class TurretHitEffectRenderer {
         GL15.glBufferData(GL15.GL_ARRAY_BUFFER, BUF, GL15.GL_STREAM_DRAW);
 
         int vertexCount = BUF.limit() / FLOATS_PER_VERT;
-        GL11.glDrawArrays(GL11.GL_QUADS, 0, vertexCount);
+        GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, vertexCount);
 
         GL30.glBindVertexArray(0);
         GL20.glUseProgram(prevProg);
@@ -138,49 +139,55 @@ public class TurretHitEffectRenderer {
         float cy = (float)(effect.pos().y - cam.y);
         float cz = (float)(effect.pos().z - cam.z);
 
-        // Main ring: SEGMENTS quads
+        // Main ring: SEGMENTS × 2 triangles each
         for (int i = 0; i < SEGMENTS; i++) {
             float a1 = (float)(i       * 2 * Math.PI / SEGMENTS);
             float a2 = (float)((i + 1) * 2 * Math.PI / SEGMENTS);
             float c1 = (float) Math.cos(a1), s1 = (float) Math.sin(a1);
             float c2 = (float) Math.cos(a2), s2 = (float) Math.sin(a2);
 
+            // Triangle 1: inner1, outer1, outer2
             putVert(buf, cx + innerR * c1, cy, cz + innerR * s1, r, g, b, ai);
             putVert(buf, cx + outerR * c1, cy, cz + outerR * s1, r, g, b, ao);
+            putVert(buf, cx + outerR * c2, cy, cz + outerR * s2, r, g, b, ao);
+            // Triangle 2: inner1, outer2, inner2
+            putVert(buf, cx + innerR * c1, cy, cz + innerR * s1, r, g, b, ai);
             putVert(buf, cx + outerR * c2, cy, cz + outerR * s2, r, g, b, ao);
             putVert(buf, cx + innerR * c2, cy, cz + innerR * s2, r, g, b, ai);
         }
 
         // Trail ring: slightly smaller, dimmer
-        if (progress > 0.08f) {
-            float tOuter = innerR;
-            float tInner = Math.max(0.01f, innerR * 0.82f);
-            float tai    = fadeAlpha * 0.40f;
-            for (int i = 0; i < SEGMENTS; i++) {
-                float a1 = (float)(i       * 2 * Math.PI / SEGMENTS);
-                float a2 = (float)((i + 1) * 2 * Math.PI / SEGMENTS);
-                float c1 = (float) Math.cos(a1), s1 = (float) Math.sin(a1);
-                float c2 = (float) Math.cos(a2), s2 = (float) Math.sin(a2);
+        float tOuter = innerR;
+        float tInner = Math.max(0.01f, innerR * 0.82f);
+        float tai    = progress > 0.08f ? fadeAlpha * 0.40f : 0f;
+        for (int i = 0; i < SEGMENTS; i++) {
+            float a1 = (float)(i       * 2 * Math.PI / SEGMENTS);
+            float a2 = (float)((i + 1) * 2 * Math.PI / SEGMENTS);
+            float c1 = (float) Math.cos(a1), s1 = (float) Math.sin(a1);
+            float c2 = (float) Math.cos(a2), s2 = (float) Math.sin(a2);
 
-                putVert(buf, cx + tInner * c1, cy, cz + tInner * s1, r, g, b, tai);
-                putVert(buf, cx + tOuter * c1, cy, cz + tOuter * s1, r, g, b, 0f);
-                putVert(buf, cx + tOuter * c2, cy, cz + tOuter * s2, r, g, b, 0f);
-                putVert(buf, cx + tInner * c2, cy, cz + tInner * s2, r, g, b, tai);
-            }
+            putVert(buf, cx + tInner * c1, cy, cz + tInner * s1, r, g, b, tai);
+            putVert(buf, cx + tOuter * c1, cy, cz + tOuter * s1, r, g, b, 0f);
+            putVert(buf, cx + tOuter * c2, cy, cz + tOuter * s2, r, g, b, 0f);
+            putVert(buf, cx + tInner * c1, cy, cz + tInner * s1, r, g, b, tai);
+            putVert(buf, cx + tOuter * c2, cy, cz + tOuter * s2, r, g, b, 0f);
+            putVert(buf, cx + tInner * c2, cy, cz + tInner * s2, r, g, b, tai);
         }
 
-        // Centre flash (first 15% only)
+        // Centre flash (first 15%): 2 triangles
         if (progress < 0.15f) {
-            float ft  = 1.0f - progress / 0.15f;
-            float fa  = ft * ft * 0.70f;
-            float fr  = maxRadius * 0.35f * (1.0f - ft * 0.5f);
+            float ft = 1.0f - progress / 0.15f;
+            float fa = ft * ft * 0.70f;
+            float fr = maxRadius * 0.35f * (1.0f - ft * 0.5f);
             putVert(buf, cx - fr, cy, cz - fr, 0.82f, 0.92f, 1f, fa);
             putVert(buf, cx + fr, cy, cz - fr, 0.82f, 0.92f, 1f, fa);
             putVert(buf, cx + fr, cy, cz + fr, 0.82f, 0.92f, 1f, fa);
+            putVert(buf, cx - fr, cy, cz - fr, 0.82f, 0.92f, 1f, fa);
+            putVert(buf, cx + fr, cy, cz + fr, 0.82f, 0.92f, 1f, fa);
             putVert(buf, cx - fr, cy, cz + fr, 0.82f, 0.92f, 1f, fa);
         } else {
-            // Pad with a degenerate invisible quad so vertex count stays predictable
-            for (int v = 0; v < 4; v++) putVert(buf, cx, cy, cz, 0, 0, 0, 0);
+            // Degenerate triangles to keep count predictable
+            for (int v = 0; v < 6; v++) putVert(buf, cx, cy, cz, 0, 0, 0, 0);
         }
     }
 
