@@ -55,7 +55,7 @@ public enum WandCoreBehavior {
         }
 
         @Override
-        public int getColor() { return 0x5599FF; } // 藍
+        public int getColor() { return 0xFF5599FF; } // 藍
     },
 
     ACTIVATION {
@@ -79,7 +79,7 @@ public enum WandCoreBehavior {
         }
 
         @Override
-        public int getColor() { return 0x44DD88; } // 綠
+        public int getColor() { return 0xFF44DD88; } // 綠
     },
 
     IO {
@@ -123,7 +123,7 @@ public enum WandCoreBehavior {
         }
 
         @Override
-        public int getColor() { return 0xFFCC44; } // 黃
+        public int getColor() { return 0xFFFFCC44; } // 黃
     },
 
     ROTATION {
@@ -161,7 +161,7 @@ public enum WandCoreBehavior {
         }
 
         @Override
-        public int getColor() { return 0x44DDEE; } // 青
+        public int getColor() { return 0xFF44DDEE; } // 青
     },
 
     RITUAL {
@@ -184,7 +184,7 @@ public enum WandCoreBehavior {
         }
 
         @Override
-        public int getColor() { return 0xFF5577; } // 紅粉
+        public int getColor() { return 0xFFFF5577; } // 紅粉
     };
 
     public abstract InteractionResult useOn(UseOnContext ctx, ItemStack wand);

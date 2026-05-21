@@ -85,6 +85,7 @@ public class KoniavacraftMod {
         ModMobEffects.register(modEventBus);
         if (FMLEnvironment.dist == Dist.CLIENT) {
             modEventBus.addListener(ModKeyMappings::onRegisterKeyMappings);
+            modEventBus.addListener(com.github.nalamodikk.register.client.ModColorHandlers::onRegisterItemColors);
             modEventBus.addListener((EntityRenderersEvent.RegisterRenderers e) -> {
                     e.registerEntityRenderer(ModEntities.FLOATING_TURRET.get(), FloatingTurretRenderer::new);
                     e.registerEntityRenderer(ModEntities.FLOATING_TURRET_PROJECTILE.get(), FloatingTurretProjectileRenderer::new);

@@ -46,16 +46,19 @@ public class WandUpgradeScreen extends Screen {
     // 右列表面板顯示高度（在 RIGHT 面板內）
     private static final int LIST_ITEM_H = 20;
 
-    private final ItemStack wandStack;
     private final InteractionHand hand;
 
     // -1 = none, -2 = core slot, 0-3 = upgrade slots
     private int selectedWandSlot = -1;
 
-    public WandUpgradeScreen(ItemStack wandStack, InteractionHand hand) {
+    public WandUpgradeScreen(InteractionHand hand) {
         super(Component.translatable("screen.koniava.wand_upgrade"));
-        this.wandStack = wandStack;
         this.hand = hand;
+    }
+
+    private ItemStack wand() {
+        Minecraft mc = Minecraft.getInstance();
+        return mc.player != null ? mc.player.getItemInHand(hand) : ItemStack.EMPTY;
     }
 
     // ── 座標計算 ──────────────────────────────────────────────────────────
@@ -103,7 +106,7 @@ public class WandUpgradeScreen extends Screen {
 
         Minecraft mc = Minecraft.getInstance();
         mc.getItemRenderer().renderStatic(
-                wandStack,
+                wand(),
                 ItemDisplayContext.FIXED,
                 15728880,
                 OverlayTexture.NO_OVERLAY,
@@ -118,7 +121,7 @@ public class WandUpgradeScreen extends Screen {
     // ── 左側：槽位面板 ────────────────────────────────────────────────────
 
     private void renderLeftPanel(GuiGraphics g, int x, int y, int mx, int my) {
-        WandCoreData data = WandRodItem.getData(wandStack);
+        WandCoreData data = WandRodItem.getData(wand());
 
         // 核心槽（置中）
         int coreX = x + LEFT_W / 2 - SLOT_SIZE / 2;
@@ -131,7 +134,7 @@ public class WandUpgradeScreen extends Screen {
         int[] ux = {x + 10, x + 10 + spacing, x + 10, x + 10 + spacing};
         int[] uy = {y + 60, y + 60, y + 60 + spacing, y + 60 + spacing};
         for (int i = 0; i < WandCoreData.UPGRADE_SLOTS; i++) {
-            ItemStack upg = i < data.upgrades().size() ? data.upgrades().get(i) : ItemStack.EMPTY;
+            ItemStack upg = data.getUpgrade(i);
             renderWandSlot(g, ux[i], uy[i], upg, selectedWandSlot == i, mx, my,
                     Component.translatable("screen.koniava.wand_upgrade.upgrade_slot", i + 1));
         }
@@ -175,7 +178,7 @@ public class WandUpgradeScreen extends Screen {
         Component header = selectedWandSlot == -2
                 ? Component.translatable("screen.koniava.wand_upgrade.compatible_cores")
                 : Component.translatable("screen.koniava.wand_upgrade.compatible_upgrades");
-        int listY = drawWrapped(g, header, x + 5, y + 5, RIGHT_W - 10, 0x222222) + 2;
+        int listY = drawWrapped(g, header, x + 5, y + 8, RIGHT_W - 10, 0x222222) + 2;
 
         List<ItemStack> compatible = getCompatibleItems();
         if (compatible.isEmpty()) {
@@ -202,7 +205,7 @@ public class WandUpgradeScreen extends Screen {
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
         int sy = startY();
-        WandCoreData data = WandRodItem.getData(wandStack);
+        WandCoreData data = WandRodItem.getData(wand());
 
         // 左面板：核心槽
         int coreX = leftX() + LEFT_W / 2 - SLOT_SIZE / 2;
@@ -215,7 +218,7 @@ public class WandUpgradeScreen extends Screen {
         int[] uy = {sy + 60, sy + 60, sy + 60 + spacing, sy + 60 + spacing};
         for (int i = 0; i < WandCoreData.UPGRADE_SLOTS; i++) {
             if (isInSlot(mx, my, ux[i], uy[i])) {
-                ItemStack upg = i < data.upgrades().size() ? data.upgrades().get(i) : ItemStack.EMPTY;
+                ItemStack upg = data.getUpgrade(i);
                 handleWandSlotClick(i, upg);
                 return true;
             }

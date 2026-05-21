@@ -8,29 +8,59 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.ItemStack;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
-public record WandCoreData(ItemStack core, List<ItemStack> upgrades) {
+/**
+ * Stores the installed core plugin and up to UPGRADE_SLOTS upgrade items.
+ * Empty slots are absent from the map — ItemStack.EMPTY is never serialized.
+ */
+public record WandCoreData(ItemStack core, Map<Integer, ItemStack> upgrades) {
 
     public static final int UPGRADE_SLOTS = 4;
 
+    // Upgrades 序列化：Integer key → String（NBT map 只支援 String key）
+    private static final Codec<Map<Integer, ItemStack>> UPGRADES_CODEC =
+            Codec.unboundedMap(Codec.STRING, ItemStack.CODEC).xmap(
+                    raw -> {
+                        Map<Integer, ItemStack> m = new HashMap<>();
+                        raw.forEach((k, v) -> { if (!v.isEmpty()) m.put(Integer.parseInt(k), v); });
+                        return m;
+                    },
+                    map -> {
+                        Map<String, ItemStack> raw = new HashMap<>();
+                        map.forEach((k, v) -> { if (!v.isEmpty()) raw.put(String.valueOf(k), v); });
+                        return raw;
+                    }
+            );
+
+    // Core 序列化：存在時序列化，不存在時省略
+    private static final Codec<ItemStack> CORE_CODEC =
+            ItemStack.CODEC.optionalFieldOf("_core").codec().xmap(
+                    opt -> opt.orElse(ItemStack.EMPTY),
+                    stack -> stack.isEmpty() ? Optional.empty() : Optional.of(stack)
+            );
+
     public static final Codec<WandCoreData> CODEC = RecordCodecBuilder.create(inst -> inst.group(
-            ItemStack.CODEC.fieldOf("core").forGetter(WandCoreData::core),
-            ItemStack.CODEC.listOf().fieldOf("upgrades").forGetter(WandCoreData::upgrades)
+            CORE_CODEC.optionalFieldOf("core", ItemStack.EMPTY).forGetter(WandCoreData::core),
+            UPGRADES_CODEC.optionalFieldOf("upgrades", new HashMap<>()).forGetter(WandCoreData::upgrades)
     ).apply(inst, WandCoreData::new));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, WandCoreData> STREAM_CODEC = StreamCodec.composite(
-            ItemStack.STREAM_CODEC, WandCoreData::core,
-            ItemStack.STREAM_CODEC.apply(ByteBufCodecs.list(UPGRADE_SLOTS)), WandCoreData::upgrades,
+            ItemStack.OPTIONAL_STREAM_CODEC, WandCoreData::core,
+            ByteBufCodecs.map(HashMap::new, ByteBufCodecs.VAR_INT, ItemStack.STREAM_CODEC),
+            WandCoreData::upgrades,
             WandCoreData::new
     );
 
+    // ── Factory ───────────────────────────────────────────────────────────
+
     public static WandCoreData empty() {
-        List<ItemStack> slots = new ArrayList<>(UPGRADE_SLOTS);
-        for (int i = 0; i < UPGRADE_SLOTS; i++) slots.add(ItemStack.EMPTY);
-        return new WandCoreData(ItemStack.EMPTY, slots);
+        return new WandCoreData(ItemStack.EMPTY, new HashMap<>());
     }
+
+    // ── Queries ───────────────────────────────────────────────────────────
 
     public boolean hasCore() {
         return !core.isEmpty() && core.getItem() instanceof IWandCore;
@@ -40,14 +70,20 @@ public record WandCoreData(ItemStack core, List<ItemStack> upgrades) {
         return core.getItem() instanceof IWandCore c ? c : null;
     }
 
+    public ItemStack getUpgrade(int slot) {
+        return upgrades.getOrDefault(slot, ItemStack.EMPTY);
+    }
+
+    // ── Mutators ──────────────────────────────────────────────────────────
+
     public WandCoreData withCore(ItemStack newCore) {
-        return new WandCoreData(newCore.copy(), new ArrayList<>(upgrades));
+        return new WandCoreData(newCore.isEmpty() ? ItemStack.EMPTY : newCore.copy(), new HashMap<>(upgrades));
     }
 
     public WandCoreData withUpgrade(int slot, ItemStack item) {
-        List<ItemStack> copy = new ArrayList<>(upgrades);
-        while (copy.size() <= slot) copy.add(ItemStack.EMPTY);
-        copy.set(slot, item.copy());
-        return new WandCoreData(core.copy(), copy);
+        Map<Integer, ItemStack> copy = new HashMap<>(upgrades);
+        if (item.isEmpty()) copy.remove(slot);
+        else copy.put(slot, item.copy());
+        return new WandCoreData(core.isEmpty() ? ItemStack.EMPTY : core.copy(), copy);
     }
 }

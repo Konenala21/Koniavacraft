@@ -25,10 +25,20 @@ public class ModItemModelProvider extends ItemModelProvider {
             "formation_core", "activation_core", "io_core", "rotation_core", "ritual_core"
     };
 
+    private static final String[] UPGRADE_NAMES = {
+            "wand_upgrade_capacity", "wand_upgrade_efficiency",
+            "wand_upgrade_range", "wand_upgrade_cooldown"
+    };
+
     @Override
     protected void registerModels() {
-        // 核心插件：全部 parent 指向自訂 wand_core 模型
+        // 核心插件：parent 指向自訂 wand_core 模型
         for (String name : CORE_NAMES) {
+            withExistingParent(name, modLoc("item/wand_core"));
+        }
+
+        // 升級物品：同樣 parent 指向 wand_core
+        for (String name : UPGRADE_NAMES) {
             withExistingParent(name, modLoc("item/wand_core"));
         }
         // 研究系統物品：借用 vanilla 貼圖
@@ -63,10 +73,9 @@ public class ModItemModelProvider extends ItemModelProvider {
                 return;
             }
 
-            // ❌ 跳過核心插件（已用 wand_core parent 處理）
-            for (String coreName : CORE_NAMES) {
-                if (name.equals(coreName)) return;
-            }
+            // ❌ 跳過核心插件與升級物品（已用 wand_core parent 處理）
+            for (String coreName : CORE_NAMES) { if (name.equals(coreName)) return; }
+            for (String upgName : UPGRADE_NAMES) { if (name.equals(upgName)) return; }
 
             // ❌ 若對應貼圖不存在，也跳過（避免崩潰）
             ResourceLocation texture = modLoc("item/" + name);

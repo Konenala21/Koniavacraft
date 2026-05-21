@@ -20,6 +20,8 @@ import com.github.nalamodikk.common.item.tool.ModToolTiers;
 import com.github.nalamodikk.common.item.wand.WandRodItem;
 import com.github.nalamodikk.common.item.wand.core.WandCoreBehavior;
 import com.github.nalamodikk.common.item.wand.core.WandCoreItem;
+import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeBehavior;
+import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeItem;
 import com.github.nalamodikk.common.item.weapon.FloatingTurretItem;
 import com.github.nalamodikk.common.utils.upgrade.UpgradeType;
 import net.minecraft.world.item.Item;
@@ -93,6 +95,15 @@ public class ModItems {
             ITEMS.register("rotation_core", () -> new WandCoreItem(WandCoreBehavior.ROTATION, new Item.Properties().stacksTo(1)));
     public static final DeferredItem<WandCoreItem> RITUAL_CORE =
             ITEMS.register("ritual_core", () -> new WandCoreItem(WandCoreBehavior.RITUAL, new Item.Properties().stacksTo(1)));
+
+    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_CAPACITY =
+            ITEMS.register("wand_upgrade_capacity", () -> new WandUpgradeItem(WandUpgradeBehavior.CAPACITY, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_EFFICIENCY =
+            ITEMS.register("wand_upgrade_efficiency", () -> new WandUpgradeItem(WandUpgradeBehavior.EFFICIENCY, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_RANGE =
+            ITEMS.register("wand_upgrade_range", () -> new WandUpgradeItem(WandUpgradeBehavior.RANGE, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_COOLDOWN =
+            ITEMS.register("wand_upgrade_cooldown", () -> new WandUpgradeItem(WandUpgradeBehavior.COOLDOWN, new Item.Properties().stacksTo(4)));
     public static final DeferredItem<ManaPickaxeItem> MANA_PICKAXE = ITEMS.register("mana_pickaxe",
             () -> new ManaPickaxeItem(ModToolTiers.MANA, new Item.Properties().stacksTo(1)));
 

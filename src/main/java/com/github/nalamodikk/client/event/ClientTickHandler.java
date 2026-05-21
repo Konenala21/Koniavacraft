@@ -42,7 +42,7 @@ public class ClientTickHandler {
                 for (InteractionHand hand : InteractionHand.values()) {
                     var stack = mc.player.getItemInHand(hand);
                     if (stack.getItem() instanceof WandRodItem) {
-                        mc.setScreen(new WandUpgradeScreen(stack, hand));
+                        mc.setScreen(new WandUpgradeScreen(hand));
                         break;
                     }
                 }

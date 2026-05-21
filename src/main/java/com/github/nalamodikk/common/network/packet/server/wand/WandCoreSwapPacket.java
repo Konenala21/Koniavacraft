@@ -75,9 +75,9 @@ public record WandCoreSwapPacket(InteractionHand hand, int slot, int inventorySl
             toReturn = data.core().copy();
             updated = data.withCore(ItemStack.EMPTY);
         } else {
-            List<ItemStack> upgrades = new ArrayList<>(data.upgrades());
-            if (slot >= upgrades.size() || upgrades.get(slot).isEmpty()) return;
-            toReturn = upgrades.get(slot).copy();
+            ItemStack current = data.getUpgrade(slot);
+            if (current.isEmpty()) return;
+            toReturn = current.copy();
             updated = data.withUpgrade(slot, ItemStack.EMPTY);
         }
 
@@ -107,9 +107,7 @@ public record WandCoreSwapPacket(InteractionHand hand, int slot, int inventorySl
             WandRodItem.setData(wand, updated);
         } else {
             if (!(fromInv.getItem() instanceof IWandUpgrade)) return;
-            List<ItemStack> upgrades = new ArrayList<>(data.upgrades());
-            while (upgrades.size() <= wandSlot) upgrades.add(ItemStack.EMPTY);
-            ItemStack current = upgrades.get(wandSlot);
+            ItemStack current = data.getUpgrade(wandSlot);
             if (!current.isEmpty() && !player.addItem(current.copy())) {
                 player.drop(current.copy(), false);
             }
