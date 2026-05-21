@@ -16,7 +16,7 @@ import java.util.function.Supplier;
 
 import static net.minecraft.core.registries.Registries.ENTITY_TYPE;
 
-@EventBusSubscriber(modid = KoniavacraftMod.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = KoniavacraftMod.MOD_ID)
 public class ModEntities {
 
     public static final DeferredRegister<EntityType<?>> ENTITY_TYPES =

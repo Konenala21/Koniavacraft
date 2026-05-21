@@ -107,6 +107,9 @@ public class ResearchCommand {
                                 .then(Commands.literal("unlock_all")
                                         .then(Commands.argument("targets", EntityArgument.players())
                                                 .executes(ResearchCommand::unlockAllResearch)))
+                                .then(Commands.literal("lock_all")
+                                        .then(Commands.argument("targets", EntityArgument.players())
+                                                .executes(ResearchCommand::lockAllResearch)))
                                 .then(Commands.literal("clear")
                                         .then(Commands.argument("targets", EntityArgument.players())
                                                 .executes(ResearchCommand::clearResearch)))));
@@ -355,6 +358,29 @@ public class ResearchCommand {
                 () -> Component.translatable("commands.koniava.research.unlock_all.success", researchCount, playerCount),
                 true);
         return total;
+    }
+
+    private static int lockAllResearch(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Collection<ServerPlayer> players = EntityArgument.getPlayers(context, "targets");
+        int locked = 0;
+
+        for (ServerPlayer player : players) {
+            PlayerKnowledge knowledge = ResearchSavedData.get(player.serverLevel()).getOrCreate(player.getUUID());
+            for (var research : ResearchRegistry.all()) {
+                if (!research.isInnate()) {
+                    knowledge.setResearchState(research.getId(), PlayerKnowledge.ResearchState.LOCKED);
+                    locked++;
+                }
+            }
+            syncKnowledge(player);
+        }
+
+        int lockedCount = locked / Math.max(1, players.size());
+        int playerCount = players.size();
+        context.getSource().sendSuccess(
+                () -> Component.translatable("commands.koniava.research.lock_all.success", lockedCount, playerCount),
+                true);
+        return locked;
     }
 
     private static int clearResearch(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {

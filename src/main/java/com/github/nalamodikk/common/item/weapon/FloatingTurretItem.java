@@ -9,15 +9,12 @@ import com.github.nalamodikk.common.player.equipment.ISpecificEquipment;
 import com.github.nalamodikk.register.ModDataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundStopSoundPacket;
-import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 
-import java.util.function.Consumer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -53,16 +50,6 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
     @Override
     public EquipmentType getEquipmentType() {
         return EquipmentType.TURRET;
-    }
-
-    @Override
-    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
-        consumer.accept(new IClientItemExtensions() {
-            @Override
-            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
-                return com.github.nalamodikk.client.renderer.item.FloatingTurretBEWLR.getInstance();
-            }
-        });
     }
 
     private static boolean isDualWielding(Player player) {

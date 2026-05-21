@@ -70,6 +70,7 @@ public class ModItems {
      */
     public static final DeferredItem<Item>  MANA_DEBUG_TOOL = ITEMS.register("mana_debug_tool",() ->  new ManaDebugToolItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<Item>  BASIC_TECH_WAND = ITEMS.register("basic_tech_wand",() ->  new BasicTechWandItem(new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<Item>  RITUAL_WAND = ITEMS.register("ritual_wand", () -> new com.github.nalamodikk.common.item.tool.RitualWandItem(new Item.Properties().stacksTo(1).durability(256)));
     public static final DeferredItem<Item>  ADVANCED_TECH_WAND = ITEMS.register("advanced_tech_wand", () -> new AdvancedTechWandItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<Item>  STRUCTURE_BUILD_WAND = ITEMS.register("structure_build_wand", () -> new StructureBuildWandItem(new Item.Properties().stacksTo(1)));
     public static final DeferredItem<ManaPickaxeItem> MANA_PICKAXE = ITEMS.register("mana_pickaxe",

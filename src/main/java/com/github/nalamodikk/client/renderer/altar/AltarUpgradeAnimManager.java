@@ -124,6 +124,30 @@ public class AltarUpgradeAnimManager {
         };
     }
 
+    public static boolean hasAnyActive() {
+        for (AnimState s : ACTIVE.values()) {
+            if (!s.isDone()) return true;
+        }
+        return false;
+    }
+
+    public static void skipAll() {
+        Minecraft mc = Minecraft.getInstance();
+        for (Map.Entry<BlockPos, AnimState> entry : ACTIVE.entrySet()) {
+            AnimState s = entry.getValue();
+            if (s.isDone()) continue;
+            BlockPos p = entry.getKey();
+            if (mc.level != null) {
+                mc.level.playLocalSound(p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5,
+                        SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 1.0f, 1.2f, false);
+            }
+            if (s.tier() == 6 && s.triggerDialogue() && s.tick() < 1630f) {
+                NaraTutorialFlow.start(NaraTutorialFlow.ALTAR_T6);
+            }
+        }
+        ACTIVE.clear();
+    }
+
     public static void clear() { ACTIVE.clear(); }
 
     // 回傳目前畫面應有的黑幕 alpha（0.0 = 無遮蔽，1.0 = 全黑）

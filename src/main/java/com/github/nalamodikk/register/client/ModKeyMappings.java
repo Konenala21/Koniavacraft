@@ -23,10 +23,18 @@ public final class ModKeyMappings {
         CATEGORY_MOD
     );
 
+    public static final KeyMapping SKIP_ALTAR_ANIM = new KeyMapping(
+        "key.koniava.skip_altar_anim",
+        InputConstants.Type.KEYSYM,
+        GLFW.GLFW_KEY_R,
+        CATEGORY_MOD
+    );
+
     private ModKeyMappings() {}
 
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         event.register(DEBUG_DETAILS);
         event.register(GHOST_LOCK);
+        event.register(SKIP_ALTAR_ANIM);
     }
 }

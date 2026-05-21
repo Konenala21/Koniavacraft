@@ -3,6 +3,8 @@ package com.github.nalamodikk.register.event;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.client.renderer.deployer.ManaDeployerBEWLR;
 import com.github.nalamodikk.client.renderer.deployer.ManaDeployerRenderer;
+import com.github.nalamodikk.client.renderer.item.FloatingTurretBEWLR;
+import com.github.nalamodikk.register.ModItems;
 import com.github.nalamodikk.common.block.blockentity.altar.AltarPillarRenderer;
 import com.github.nalamodikk.common.block.blockentity.altar.AspectAltarRenderer;
 import com.github.nalamodikk.common.block.blockentity.altar.AspectPedestalRenderer;
@@ -47,6 +49,13 @@ public class ModRenderLayers {
             @Override
             public BlockEntityWithoutLevelRenderer getCustomRenderer() { return renderer; }
         }, ModBlocks.MANA_DEPLOYER.get().asItem());
+
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return FloatingTurretBEWLR.getInstance();
+            }
+        }, ModItems.FLOATING_TURRET.get());
     }
 
     @SubscribeEvent
