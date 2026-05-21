@@ -42,6 +42,7 @@
   "block.koniava.aspect_altar.status_active": "Ritual in progress: %s%% complete. Mana: %s",
   "block.koniava.aspect_altar.status_idle": "Altar idle. Mana: %s / %s. Use a Ritual Wand to start.",
   "config.jade.plugin_koniava.aspect_altar": "Aspect Convergence Array",
+  "config.jade.plugin_koniava.mana_storage": "Mana Display",
   "jade.koniava.altar.formed": "§aStructure: Formed",
   "jade.koniava.altar.not_formed": "§cStructure: Incomplete",
   "jade.koniava.altar.catalyst": "Catalyst: %s",

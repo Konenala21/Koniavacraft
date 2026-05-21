@@ -52,6 +52,7 @@
   "block.koniava.aspect_altar.status_active": "儀式進行中：%s%% 完成。魔力：%s",
   "block.koniava.aspect_altar.status_idle": "祭壇待機中。魔力：%s / %s。使用儀式魔杖啟動。",
   "config.jade.plugin_koniava.aspect_altar": "本源聚陣",
+  "config.jade.plugin_koniava.mana_storage": "魔力顯示",
   "jade.koniava.altar.formed": "§a結構：已成立",
   "jade.koniava.altar.not_formed": "§c結構：不完整",
   "jade.koniava.altar.catalyst": "催化物品：%s",
