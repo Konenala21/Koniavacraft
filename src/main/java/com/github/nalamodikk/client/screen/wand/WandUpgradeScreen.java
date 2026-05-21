@@ -1,26 +1,49 @@
 package com.github.nalamodikk.client.screen.wand;
 
+import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.item.wand.WandCoreData;
 import com.github.nalamodikk.common.item.wand.WandRodItem;
 import com.github.nalamodikk.common.item.wand.core.IWandCore;
 import com.github.nalamodikk.common.item.wand.upgrade.IWandUpgrade;
 import com.github.nalamodikk.common.network.packet.server.wand.WandCoreSwapPacket;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import com.mojang.math.Axis;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class WandUpgradeScreen extends Screen {
 
-    private static final int SLOT_SIZE = 18;
-    private static final int PANEL_W = 120;
-    private static final int PANEL_H = 140;
+    private static final ResourceLocation TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/wand_upgrade_gui.png");
+    private static final int TEXTURE_W = 512;
+    private static final int TEXTURE_H = 512;
+
+    // 整張背景（0,0 起，涵蓋三個區域）
+    private static final int BG_W = 473, BG_H = 210;
+
+    // 三個區域在貼圖裡的 x 起點（用來計算螢幕位置）
+    private static final int LEFT_X  = 5;
+    private static final int LEFT_W  = 93;   // 5→98
+    private static final int CTR_X   = 99;
+    private static final int CTR_W   = 241;  // 99→340 (3D 預覽)
+    private static final int RIGHT_X = 341;
+    private static final int RIGHT_W = 132;  // 341→473
+
+    // 槽格 UV
+    private static final int SLOT_UV_X = 485, SLOT_UV_Y = 5, SLOT_SIZE = 24;
+
+    // 右列表面板顯示高度（在 RIGHT 面板內）
     private static final int LIST_ITEM_H = 20;
 
     private final ItemStack wandStack;
@@ -35,128 +58,161 @@ public class WandUpgradeScreen extends Screen {
         this.hand = hand;
     }
 
+    // ── 座標計算 ──────────────────────────────────────────────────────────
+
+    private int startX() { return width  / 2 - BG_W / 2; }
+    private int startY() { return height / 2 - BG_H / 2; }
+    private int leftX()  { return startX() + LEFT_X; }
+    private int ctrX()   { return startX() + CTR_X; }
+    private int rightX() { return startX() + RIGHT_X; }
+
+    // ── Render ────────────────────────────────────────────────────────────
+
     @Override
-    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        renderBackground(g, mouseX, mouseY, partialTick);
-
-        int lx = width / 2 - PANEL_W - 4;
-        int rx = width / 2 + 4;
-        int py = height / 2 - PANEL_H / 2;
-
-        renderWandPanel(g, lx, py, mouseX, mouseY);
-        renderListPanel(g, rx, py, mouseX, mouseY);
-
-        super.render(g, mouseX, mouseY, partialTick);
+    public void renderBackground(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        g.fill(0, 0, width, height, 0x55000000);
     }
 
-    // ── 左側：杖柄槽位面板 ─────────────────────────────────────────────────
+    @Override
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        super.render(g, mouseX, mouseY, partialTick);
 
-    private void renderWandPanel(GuiGraphics g, int x, int y, int mx, int my) {
-        g.fill(x, y, x + PANEL_W, y + PANEL_H, 0xCC222222);
-        g.renderOutline(x, y, PANEL_W, PANEL_H, 0xFF666666);
-        g.drawString(font, title, x + 5, y + 5, 0xFFFFFF, false);
+        int sy = startY();
 
+        // 整張背景一次 blit
+        g.blit(TEXTURE, startX(), sy, 0, 0, BG_W, BG_H, TEXTURE_W, TEXTURE_H);
+
+        render3DWand(g);
+        renderLeftPanel(g, leftX(), sy, mouseX, mouseY);
+        renderRightPanel(g, rightX(), sy, mouseX, mouseY);
+    }
+
+    // ── 中間：3D 模型 ─────────────────────────────────────────────────────
+
+    private void render3DWand(GuiGraphics g) {
+        int cx = ctrX() + CTR_W / 2;
+        int cy = startY() + BG_H / 2;
+
+        float angle = (System.currentTimeMillis() / 20f) % 360f;
+
+        PoseStack pose = g.pose();
+        pose.pushPose();
+        pose.translate(cx, cy, 200);
+        pose.scale(48f, -48f, 48f);
+        pose.mulPose(Axis.YP.rotationDegrees(angle));
+
+        Minecraft mc = Minecraft.getInstance();
+        mc.getItemRenderer().renderStatic(
+                wandStack,
+                ItemDisplayContext.FIXED,
+                15728880,
+                OverlayTexture.NO_OVERLAY,
+                pose,
+                mc.renderBuffers().bufferSource(),
+                mc.level,
+                0);
+        mc.renderBuffers().bufferSource().endBatch();
+        pose.popPose();
+    }
+
+    // ── 左側：槽位面板 ────────────────────────────────────────────────────
+
+    private void renderLeftPanel(GuiGraphics g, int x, int y, int mx, int my) {
         WandCoreData data = WandRodItem.getData(wandStack);
 
-        // 核心槽 (置中)
-        int coreX = x + PANEL_W / 2 - SLOT_SIZE / 2;
-        int coreY = y + 25;
-        boolean coreSelected = selectedWandSlot == -2;
-        renderWandSlot(g, coreX, coreY, data.core(), coreSelected, mx, my,
+        // 核心槽（置中）
+        int coreX = x + LEFT_W / 2 - SLOT_SIZE / 2;
+        int coreY = y + 20;
+        renderWandSlot(g, coreX, coreY, data.core(), selectedWandSlot == -2, mx, my,
                 Component.translatable("screen.koniava.wand_upgrade.core_slot"));
 
-        // 升級槽 (2x2)
-        int[] ux = {x + 20, x + 20 + SLOT_SIZE + 8, x + 20, x + 20 + SLOT_SIZE + 8};
-        int[] uy = {y + 60, y + 60, y + 60 + SLOT_SIZE + 8, y + 60 + SLOT_SIZE + 8};
+        // 4 個升級槽（2x2）
+        int spacing = SLOT_SIZE + 6;
+        int[] ux = {x + 10, x + 10 + spacing, x + 10, x + 10 + spacing};
+        int[] uy = {y + 60, y + 60, y + 60 + spacing, y + 60 + spacing};
         for (int i = 0; i < WandCoreData.UPGRADE_SLOTS; i++) {
             ItemStack upg = i < data.upgrades().size() ? data.upgrades().get(i) : ItemStack.EMPTY;
-            boolean sel = selectedWandSlot == i;
-            renderWandSlot(g, ux[i], uy[i], upg, sel, mx, my,
+            renderWandSlot(g, ux[i], uy[i], upg, selectedWandSlot == i, mx, my,
                     Component.translatable("screen.koniava.wand_upgrade.upgrade_slot", i + 1));
         }
 
-        // 提示
-        g.drawString(font, Component.translatable("screen.koniava.wand_upgrade.hint"),
-                x + 5, y + PANEL_H - 12, 0x888888, false);
+        var hintLines = font.split(
+                Component.translatable("screen.koniava.wand_upgrade.hint"), LEFT_W - 6);
+        int lineH = font.lineHeight + 1;
+        int hintY = y + BG_H - 4 - hintLines.size() * lineH;
+        for (var line : hintLines) {
+            g.drawString(font, line, x + 3, hintY, 0x444444, false);
+            hintY += lineH;
+        }
+
     }
 
     private void renderWandSlot(GuiGraphics g, int x, int y, ItemStack stack,
                                  boolean selected, int mx, int my, Component label) {
         boolean hovered = mx >= x && mx < x + SLOT_SIZE && my >= y && my < y + SLOT_SIZE;
-        int bg = selected ? 0xFF446688 : (hovered ? 0xFF444444 : 0xFF333333);
-        g.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, bg);
-        g.renderOutline(x, y, SLOT_SIZE, SLOT_SIZE, selected ? 0xFF88BBFF : 0xFF888888);
+
+        g.blit(TEXTURE, x, y, SLOT_UV_X, SLOT_UV_Y, SLOT_SIZE, SLOT_SIZE, TEXTURE_W, TEXTURE_H);
+
+        if (selected)      g.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, 0x664488FF);
+        else if (hovered)  g.fill(x, y, x + SLOT_SIZE, y + SLOT_SIZE, 0x33FFFFFF);
 
         if (!stack.isEmpty()) {
-            g.renderItem(stack, x + 1, y + 1);
-            g.renderItemDecorations(font, stack, x + 1, y + 1);
+            g.renderItem(stack, x + 4, y + 4);
+            g.renderItemDecorations(font, stack, x + 4, y + 4);
         }
-        if (hovered) {
-            g.renderTooltip(font, label, mx, my);
-        }
+        if (hovered) g.renderTooltip(font, label, mx, my);
     }
 
-    // ── 右側：相容物品列表面板 ──────────────────────────────────────────────
+    // ── 右側：相容物品列表 ────────────────────────────────────────────────
 
-    private void renderListPanel(GuiGraphics g, int x, int y, int mx, int my) {
-        g.fill(x, y, x + PANEL_W, y + PANEL_H, 0xCC1A1A1A);
-        g.renderOutline(x, y, PANEL_W, PANEL_H, 0xFF555555);
-
+    private void renderRightPanel(GuiGraphics g, int x, int y, int mx, int my) {
         if (selectedWandSlot == -1) {
-            g.drawString(font,
-                    Component.translatable("screen.koniava.wand_upgrade.select_slot"),
-                    x + 5, y + 5, 0x888888, false);
+            drawWrapped(g, Component.translatable("screen.koniava.wand_upgrade.select_slot"),
+                    x + 5, y + 8, RIGHT_W - 10, 0x333333);
             return;
         }
 
         Component header = selectedWandSlot == -2
                 ? Component.translatable("screen.koniava.wand_upgrade.compatible_cores")
                 : Component.translatable("screen.koniava.wand_upgrade.compatible_upgrades");
-        g.drawString(font, header, x + 5, y + 5, 0xCCCCCC, false);
+        int listY = drawWrapped(g, header, x + 5, y + 5, RIGHT_W - 10, 0x222222) + 2;
 
         List<ItemStack> compatible = getCompatibleItems();
         if (compatible.isEmpty()) {
-            g.drawString(font,
-                    Component.translatable("screen.koniava.wand_upgrade.none_in_inventory"),
-                    x + 5, y + 20, 0x666666, false);
+            drawWrapped(g, Component.translatable("screen.koniava.wand_upgrade.none_in_inventory"),
+                    x + 5, listY + 3, RIGHT_W - 10, 0x555555);
             return;
         }
 
-        int listY = y + 18;
-        for (int i = 0; i < compatible.size(); i++) {
-            if (listY + LIST_ITEM_H > y + PANEL_H - 5) break;
-            ItemStack item = compatible.get(i);
-            boolean hovered = mx >= x + 2 && mx < x + PANEL_W - 2
+        for (ItemStack item : compatible) {
+            if (listY + LIST_ITEM_H > y + BG_H - 5) break;
+            boolean hovered = mx >= x + 2 && mx < x + RIGHT_W - 2
                     && my >= listY && my < listY + LIST_ITEM_H;
 
-            if (hovered) g.fill(x + 2, listY, x + PANEL_W - 2, listY + LIST_ITEM_H, 0xFF334455);
+            if (hovered) g.fill(x + 2, listY, x + RIGHT_W - 2, listY + LIST_ITEM_H, 0x33000066);
 
             g.renderItem(item, x + 4, listY + 1);
-            g.drawString(font, item.getHoverName(), x + 24, listY + 6, 0xFFFFFF, false);
+            drawWrapped(g, item.getHoverName(), x + 24, listY + 4, RIGHT_W - 30, 0x111111);
             listY += LIST_ITEM_H;
         }
     }
 
-    // ── 點擊處理 ───────────────────────────────────────────────────────────
+    // ── 點擊處理 ──────────────────────────────────────────────────────────
 
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
-        int lx = width / 2 - PANEL_W - 4;
-        int rx = width / 2 + 4;
-        int py = height / 2 - PANEL_H / 2;
-
+        int sy = startY();
         WandCoreData data = WandRodItem.getData(wandStack);
 
-        // 左面板：點擊槽位
-        int coreX = lx + PANEL_W / 2 - SLOT_SIZE / 2;
-        int coreY = py + 25;
-        if (isInSlot(mx, my, coreX, coreY)) {
-            handleWandSlotClick(-2, data.core());
-            return true;
-        }
+        // 左面板：核心槽
+        int coreX = leftX() + LEFT_W / 2 - SLOT_SIZE / 2;
+        int coreY = sy + 20;
+        if (isInSlot(mx, my, coreX, coreY)) { handleWandSlotClick(-2, data.core()); return true; }
 
-        int[] ux = {lx + 20, lx + 20 + SLOT_SIZE + 8, lx + 20, lx + 20 + SLOT_SIZE + 8};
-        int[] uy = {py + 60, py + 60, py + 60 + SLOT_SIZE + 8, py + 60 + SLOT_SIZE + 8};
+        // 左面板：升級槽
+        int spacing = SLOT_SIZE + 6;
+        int[] ux = {leftX() + 10, leftX() + 10 + spacing, leftX() + 10, leftX() + 10 + spacing};
+        int[] uy = {sy + 60, sy + 60, sy + 60 + spacing, sy + 60 + spacing};
         for (int i = 0; i < WandCoreData.UPGRADE_SLOTS; i++) {
             if (isInSlot(mx, my, ux[i], uy[i])) {
                 ItemStack upg = i < data.upgrades().size() ? data.upgrades().get(i) : ItemStack.EMPTY;
@@ -165,17 +221,16 @@ public class WandUpgradeScreen extends Screen {
             }
         }
 
-        // 右面板：點擊列表項目
+        // 右面板：列表項目
         if (selectedWandSlot != -1) {
-            int listY = py + 18;
-            List<ItemStack> compatible = getCompatibleItems();
-            for (ItemStack item : compatible) {
-                if (listY + LIST_ITEM_H > py + PANEL_H - 5) break;
-                if (mx >= rx + 2 && mx < rx + PANEL_W - 2 && my >= listY && my < listY + LIST_ITEM_H) {
+            int listY = sy + 18;
+            for (ItemStack item : getCompatibleItems()) {
+                if (listY + LIST_ITEM_H > sy + BG_H - 5) break;
+                if (mx >= rightX() + 2 && mx < rightX() + RIGHT_W - 2
+                        && my >= listY && my < listY + LIST_ITEM_H) {
                     int invSlot = findInventorySlot(item);
                     if (invSlot >= 0) {
-                        int wandSlot = selectedWandSlot == -2 ? -1 : selectedWandSlot;
-                        WandCoreSwapPacket.sendInstall(hand, wandSlot, invSlot);
+                        WandCoreSwapPacket.sendInstall(hand, selectedWandSlot == -2 ? -1 : selectedWandSlot, invSlot);
                         selectedWandSlot = -1;
                     }
                     return true;
@@ -187,20 +242,18 @@ public class WandUpgradeScreen extends Screen {
         return super.mouseClicked(mx, my, button);
     }
 
-    private void handleWandSlotClick(int wandSlotId, ItemStack current) {
-        if (selectedWandSlot == wandSlotId) {
-            // 再次點擊已選槽位：如果有物品則取出
+    private void handleWandSlotClick(int slotId, ItemStack current) {
+        if (selectedWandSlot == slotId) {
             if (!current.isEmpty()) {
-                int packetSlot = wandSlotId == -2 ? -1 : wandSlotId;
-                WandCoreSwapPacket.sendRemove(hand, packetSlot);
+                WandCoreSwapPacket.sendRemove(hand, slotId == -2 ? -1 : slotId);
             }
             selectedWandSlot = -1;
         } else {
-            selectedWandSlot = wandSlotId;
+            selectedWandSlot = slotId;
         }
     }
 
-    // ── 工具 ───────────────────────────────────────────────────────────────
+    // ── 工具 ──────────────────────────────────────────────────────────────
 
     private List<ItemStack> getCompatibleItems() {
         List<ItemStack> result = new ArrayList<>();
@@ -208,10 +261,10 @@ public class WandUpgradeScreen extends Screen {
         for (int i = 0; i < inv.getContainerSize(); i++) {
             ItemStack s = inv.getItem(i);
             if (s.isEmpty()) continue;
-            boolean compatible = selectedWandSlot == -2
+            boolean ok = selectedWandSlot == -2
                     ? s.getItem() instanceof IWandCore
                     : s.getItem() instanceof IWandUpgrade;
-            if (compatible) result.add(s);
+            if (ok) result.add(s);
         }
         return result;
     }
@@ -222,6 +275,16 @@ public class WandUpgradeScreen extends Screen {
             if (inv.getItem(i) == match) return i;
         }
         return -1;
+    }
+
+    private int drawWrapped(GuiGraphics g, Component text, int x, int y, int maxWidth, int color) {
+        var lines = font.split(text, maxWidth);
+        int lineH = font.lineHeight + 1;
+        for (var line : lines) {
+            g.drawString(font, line, x, y, color, false);
+            y += lineH;
+        }
+        return y;
     }
 
     private boolean isInSlot(double mx, double my, int x, int y) {

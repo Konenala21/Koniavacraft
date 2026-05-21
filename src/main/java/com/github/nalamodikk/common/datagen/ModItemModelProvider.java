@@ -21,8 +21,16 @@ public class ModItemModelProvider extends ItemModelProvider {
         super(output, KoniavacraftMod.MOD_ID, helper);
     }
 
+    private static final String[] CORE_NAMES = {
+            "formation_core", "activation_core", "io_core", "rotation_core", "ritual_core"
+    };
+
     @Override
     protected void registerModels() {
+        // 核心插件：全部 parent 指向自訂 wand_core 模型
+        for (String name : CORE_NAMES) {
+            withExistingParent(name, modLoc("item/wand_core"));
+        }
         // 研究系統物品：借用 vanilla 貼圖
         withExistingParent(ModItems.RESEARCH_NOTE.getId().getPath(),
                 ResourceLocation.withDefaultNamespace("item/paper"));
@@ -53,6 +61,11 @@ public class ModItemModelProvider extends ItemModelProvider {
             if (name.equals("research_note") || name.equals("nara_watch")
                     || name.equals("completed_research") || name.equals("mana_crystal")) {
                 return;
+            }
+
+            // ❌ 跳過核心插件（已用 wand_core parent 處理）
+            for (String coreName : CORE_NAMES) {
+                if (name.equals(coreName)) return;
             }
 
             // ❌ 若對應貼圖不存在，也跳過（避免崩潰）

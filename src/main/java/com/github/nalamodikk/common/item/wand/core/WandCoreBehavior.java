@@ -53,6 +53,9 @@ public enum WandCoreBehavior {
         public Component getDisplayName() {
             return Component.translatable("item.koniava.formation_core");
         }
+
+        @Override
+        public int getColor() { return 0x5599FF; } // 藍
     },
 
     ACTIVATION {
@@ -74,6 +77,9 @@ public enum WandCoreBehavior {
         public Component getDisplayName() {
             return Component.translatable("item.koniava.activation_core");
         }
+
+        @Override
+        public int getColor() { return 0x44DD88; } // 綠
     },
 
     IO {
@@ -115,6 +121,9 @@ public enum WandCoreBehavior {
         public Component getDisplayName() {
             return Component.translatable("item.koniava.io_core");
         }
+
+        @Override
+        public int getColor() { return 0xFFCC44; } // 黃
     },
 
     ROTATION {
@@ -150,6 +159,9 @@ public enum WandCoreBehavior {
         public Component getDisplayName() {
             return Component.translatable("item.koniava.rotation_core");
         }
+
+        @Override
+        public int getColor() { return 0x44DDEE; } // 青
     },
 
     RITUAL {
@@ -170,9 +182,14 @@ public enum WandCoreBehavior {
         public Component getDisplayName() {
             return Component.translatable("item.koniava.ritual_core");
         }
+
+        @Override
+        public int getColor() { return 0xFF5577; } // 紅粉
     };
 
     public abstract InteractionResult useOn(UseOnContext ctx, ItemStack wand);
 
     public abstract Component getDisplayName();
+
+    public abstract int getColor();
 }
