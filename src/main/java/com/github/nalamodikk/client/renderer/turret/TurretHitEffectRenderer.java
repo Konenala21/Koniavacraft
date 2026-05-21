@@ -91,8 +91,8 @@ public class TurretHitEffectRenderer {
 
         GL11.glEnable(GL11.GL_BLEND);
         GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-        GL11.glDisable(GL11.GL_DEPTH_TEST);
-        GL11.glDepthMask(false);
+        GL11.glEnable(GL11.GL_DEPTH_TEST); // keep depth test — ring blends naturally with scene
+        GL11.glDepthMask(false); // don't write to depth buffer (ring is translucent)
 
         GL20.glUseProgram(programId);
         GL20.glUniformMatrix4fv(locProj,      false, PROJ_ARR);
@@ -121,7 +121,7 @@ public class TurretHitEffectRenderer {
                                    float progress, Vec3 cam) {
         float chargeRatio = effect.chargeRatio();
         float maxRadius   = 1.8f + chargeRatio * 1.2f;
-        float expandedR   = maxRadius * progress;
+        float expandedR   = maxRadius * (0.25f + progress * 0.75f); // start at 25%, immediately visible
         float ringWidth   = maxRadius * 0.18f * (1.0f - progress * 0.55f);
         float outerR      = expandedR;
         float innerR      = Math.max(0.02f, expandedR - ringWidth);
