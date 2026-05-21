@@ -81,6 +81,11 @@ public class FloatingTurretRenderer extends EntityRenderer<FloatingTurretEntity>
         float ownerYaw   = owner != null ? Mth.lerp(partialTick, owner.yRotO, owner.getYRot()) : entityYaw;
         float ownerPitch = owner != null ? Mth.lerp(partialTick, owner.xRotO, owner.getXRot()) : 0F;
 
+        // Hoist hand-entity charging state so orb renderer can access it after delta correction
+        boolean handIsCharging = false;
+        float   handChargeRatio = 0F;
+        double  handFwdX = 0, handFwdZ = 0;
+
         poseStack.pushPose();
 
         // Correct position: compute from owner's interpolated position instead of entity sync lag
@@ -106,6 +111,11 @@ public class FloatingTurretRenderer extends EntityRenderer<FloatingTurretEntity>
                 double sideMult = 1.0 - chargeRatio * 0.9;
                 double fwdBoost = chargeRatio * 0.3;
 
+                handIsCharging  = isCharging;
+                handChargeRatio = chargeRatio;
+                handFwdX = forwardX;
+                handFwdZ = forwardZ;
+
                 tx = ox + rightX * side * 1.8 * sideMult + forwardX * (1.5 + fwdBoost);
                 ty = oy + owner.getEyeHeight() + 0.8 + bob;
                 tz = oz + rightZ * side * 1.8 * sideMult + forwardZ * (1.5 + fwdBoost);
@@ -123,6 +133,15 @@ public class FloatingTurretRenderer extends EntityRenderer<FloatingTurretEntity>
             double ey = Mth.lerp(partialTick, entity.yo, entity.getY());
             double ez = Mth.lerp(partialTick, entity.zo, entity.getZ());
             poseStack.translate(tx - ex, ty - ey, tz - ez);
+        }
+
+        // 充能光球（非本地玩家手持砲）
+        if (slotIdx >= 2 && handIsCharging && handChargeRatio > 0) {
+            poseStack.pushPose();
+            poseStack.translate(handFwdX * 0.15, 0, handFwdZ * 0.15);
+            poseStack.mulPose(Minecraft.getInstance().gameRenderer.getMainCamera().rotation());
+            FloatingTurretPlayerRenderer.renderChargingOrb(poseStack, bufferSource, handChargeRatio);
+            poseStack.popPose();
         }
 
         poseStack.scale(SCALE_ENTITY, SCALE_ENTITY, SCALE_ENTITY);

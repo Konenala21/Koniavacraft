@@ -6,7 +6,10 @@ import com.github.nalamodikk.common.item.weapon.FloatingTurretItem;
 import com.github.nalamodikk.register.ModMobEffects;
 import com.github.nalamodikk.register.ModItems;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+import net.minecraft.client.renderer.RenderType;
+import org.joml.Matrix4f;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -99,8 +102,17 @@ public class FloatingTurretPlayerRenderer {
 
         ps.pushPose();
         ps.translate(offsetX, offsetY, offsetZ);
-        ps.scale(SCALE_THIRD_PERSON, SCALE_THIRD_PERSON, SCALE_THIRD_PERSON);
 
+        // 充能光球：billboard 貼鏡頭，隨蓄力比例成長
+        if (isCharging && chargeRatio > 0) {
+            ps.pushPose();
+            ps.translate(forwardX * 0.15, 0, forwardZ * 0.15); // 稍微往砲口偏
+            ps.mulPose(Minecraft.getInstance().gameRenderer.getMainCamera().rotation());
+            renderChargingOrb(ps, buffers, chargeRatio);
+            ps.popPose();
+        }
+
+        ps.scale(SCALE_THIRD_PERSON, SCALE_THIRD_PERSON, SCALE_THIRD_PERSON);
         ps.mulPose(Axis.YP.rotationDegrees(-interpYaw + 270F));
 
         float interpPitch = Mth.lerp(pt, player.xRotO, player.getXRot());
@@ -157,6 +169,32 @@ public class FloatingTurretPlayerRenderer {
     }
 
     // ── Shared helpers ──────────────────────────────────────────────────────
+
+    // Package-private: also used by FloatingTurretRenderer for non-local players
+    static void renderChargingOrb(PoseStack ps, MultiBufferSource buffers, float ratio) {
+        Matrix4f pose = ps.last().pose();
+        VertexConsumer vc = buffers.getBuffer(RenderType.lightning());
+        float s = 0.05F + ratio * 0.13F;
+        // 外層光暈
+        addOrbQuad(vc, pose, s * 3.0F,  30, 100, 255,  35);
+        // 中層
+        addOrbQuad(vc, pose, s * 1.8F,  80, 170, 255,  90);
+        // 亮核心
+        addOrbQuad(vc, pose, s,         200, 230, 255, 220);
+        // 白芯（滿蓄才出現）
+        if (ratio > 0.85F) {
+            float t = (ratio - 0.85F) / 0.15F;
+            addOrbQuad(vc, pose, s * 0.5F, 255, 255, 255, (int)(180 * t));
+        }
+    }
+
+    private static void addOrbQuad(VertexConsumer vc, Matrix4f pose,
+                                    float size, int r, int g, int b, int a) {
+        vc.addVertex(pose, -size, -size, 0).setColor(r, g, b, a);
+        vc.addVertex(pose,  size, -size, 0).setColor(r, g, b, a);
+        vc.addVertex(pose,  size,  size, 0).setColor(r, g, b, a);
+        vc.addVertex(pose, -size,  size, 0).setColor(r, g, b, a);
+    }
 
     private static void renderModel(Player player, PoseStack ps,
                                      MultiBufferSource buffers, int light) {
