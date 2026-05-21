@@ -132,6 +132,7 @@ public class FloatingTurretProjectile extends ThrowableProjectile {
                 level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE)
                         .getHolderOrThrow(ModDamageTypes.FLOATING_TURRET),
                 this, getOwner());
+        target.invulnerableTime = 0; // bypass hurt cooldown so dual-wield hits both register
         target.hurt(source, dmg);
         showHitEffect(result.getLocation());
         explodeIfCharged(result.getLocation());
