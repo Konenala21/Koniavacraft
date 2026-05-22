@@ -71,6 +71,19 @@ public class WandRodItem extends Item {
 
     @Override
     public boolean isBarVisible(ItemStack stack) {
-        return false; // suppressed — ring drawn by WandManaRingRenderer, mana shown in tooltip
+        return true;
+    }
+
+    @Override
+    public int getBarWidth(ItemStack stack) {
+        int current = stack.getOrDefault(ModDataComponents.MANA_STORED, 0);
+        int max     = stack.getOrDefault(ModDataComponents.MAX_MANA, BASE_MAX_MANA);
+        if (max <= 0) return 0;
+        return Math.round(13.0f * current / max);
+    }
+
+    @Override
+    public int getBarColor(ItemStack stack) {
+        return 0x4488FF;
     }
 }
