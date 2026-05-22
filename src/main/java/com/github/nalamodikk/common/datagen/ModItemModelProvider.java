@@ -22,7 +22,8 @@ public class ModItemModelProvider extends ItemModelProvider {
     }
 
     private static final String[] CORE_NAMES = {
-            "formation_core", "activation_core", "io_core", "rotation_core", "ritual_core"
+            "formation_core", "activation_core", "io_core", "rotation_core", "ritual_core",
+            "blank_core"
     };
 
     private static final String[] UPGRADE_NAMES = {
@@ -69,7 +70,8 @@ public class ModItemModelProvider extends ItemModelProvider {
 
             // ❌ 跳過已在上方明確處理的物品
             if (name.equals("research_note") || name.equals("nara_watch")
-                    || name.equals("completed_research") || name.equals("mana_crystal")) {
+                    || name.equals("completed_research") || name.equals("mana_crystal")
+                    || name.equals("basic_upgrade_casing")) {
                 return;
             }
 
