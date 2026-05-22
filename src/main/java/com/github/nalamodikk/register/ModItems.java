@@ -80,6 +80,11 @@ public class ModItems {
     public static final DeferredItem<Item>  STRUCTURE_BUILD_WAND = ITEMS.register("structure_build_wand", () -> new StructureBuildWandItem(new Item.Properties().stacksTo(1)));
 
     // ── 模組化魔杖系統 ────────────────────────────────────────────────────────
+    public static final DeferredItem<Item> BLANK_CORE =
+            ITEMS.registerSimpleItem("blank_core", new Item.Properties().stacksTo(16));
+    public static final DeferredItem<Item> BASIC_UPGRADE_CASING =
+            ITEMS.registerSimpleItem("basic_upgrade_casing", new Item.Properties().stacksTo(16));
+
     public static final DeferredItem<WandRodItem> WAND_ROD =
             ITEMS.register("wand_rod", () -> new WandRodItem(new Item.Properties().stacksTo(1)
                     .component(ModDataComponents.MANA_STORED, 0)

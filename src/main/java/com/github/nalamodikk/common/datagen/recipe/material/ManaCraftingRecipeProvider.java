@@ -132,6 +132,32 @@ public class ManaCraftingRecipeProvider {
                 .manaCost(2000)
                 .save(output, "mana_charger");
 
+        // === 中間材料 ===
+        // 空白核心（所有核心插件的前置）
+        ManaCraftingRecipeBuilder.create(ModItems.BLANK_CORE.get(), 1)
+                .shaped(true)
+                .pattern(" W ")
+                .pattern("CIC")
+                .pattern(" W ")
+                .define('W', ModItems.MANA_WIRE.get())
+                .define('C', ModItems.MANA_CRYSTAL.get())
+                .define('I', ModItems.MANA_INGOT.get())
+                .manaCost(600)
+                .save(output, "blank_core");
+
+        // 基礎升級外殼（所有升級插件的前置）
+        ManaCraftingRecipeBuilder.create(ModItems.BASIC_UPGRADE_CASING.get(), 1)
+                .shaped(true)
+                .pattern("IMI")
+                .pattern("SWS")
+                .pattern("IMI")
+                .define('I', Items.IRON_INGOT)
+                .define('M', ModItems.MANA_INGOT.get())
+                .define('S', ModItems.MANA_SUBSTRATE.get())
+                .define('W', ModItems.MANA_WIRE.get())
+                .manaCost(800)
+                .save(output, "basic_upgrade_casing");
+
         // === 術式脈衝調制器 (法杖杆) ===
         ManaCraftingRecipeBuilder.create(ModItems.WAND_ROD.get(), 1)
                 .shaped(true)
@@ -144,116 +170,118 @@ public class ManaCraftingRecipeProvider {
                 .manaCost(2000)
                 .save(output, "wand_rod");
 
-        // 構成核心（祭壇前可做，不可用 circuit 材料）
+        // 構成核心（祭壇前可做）
         ManaCraftingRecipeBuilder.create(ModItems.FORMATION_CORE.get(), 1)
                 .shaped(true)
                 .pattern("CWC")
-                .pattern("WIW")
+                .pattern("WBW")
                 .pattern("CWC")
                 .define('C', ModItems.MANA_CRYSTAL.get())
                 .define('W', ModItems.MANA_WIRE.get())
-                .define('I', ModItems.MANA_INGOT.get())
-                .manaCost(1200)
+                .define('B', ModItems.BLANK_CORE.get())
+                .manaCost(800)
                 .save(output, "formation_core");
 
-        // 啟動核心（祭壇前可做，不可用 circuit 材料）
+        // 啟動核心（祭壇前可做）
         ManaCraftingRecipeBuilder.create(ModItems.ACTIVATION_CORE.get(), 1)
                 .shaped(true)
                 .pattern("SWS")
-                .pattern("CIC")
+                .pattern("CBC")
                 .pattern("SWS")
                 .define('S', ModItems.MANA_SUBSTRATE.get())
                 .define('W', ModItems.MANA_WIRE.get())
                 .define('C', ModItems.MANA_CRYSTAL.get())
-                .define('I', ModItems.MANA_INGOT.get())
-                .manaCost(800)
+                .define('B', ModItems.BLANK_CORE.get())
+                .manaCost(600)
                 .save(output, "activation_core");
 
         // IO 核心
         ManaCraftingRecipeBuilder.create(ModItems.IO_CORE.get(), 1)
                 .shaped(true)
-                .pattern(" W ")
-                .pattern("SCS")
-                .pattern(" W ")
+                .pattern("WCW")
+                .pattern("SBS")
+                .pattern("WCW")
                 .define('W', ModItems.MANA_WIRE.get())
-                .define('S', ModItems.MANA_SUBSTRATE.get())
                 .define('C', Items.COMPARATOR)
-                .manaCost(1000)
+                .define('S', ModItems.MANA_SUBSTRATE.get())
+                .define('B', ModItems.BLANK_CORE.get())
+                .manaCost(800)
                 .save(output, "io_core");
 
         // 旋轉核心
         ManaCraftingRecipeBuilder.create(ModItems.ROTATION_CORE.get(), 1)
                 .shaped(true)
                 .pattern(" S ")
-                .pattern("DID")
+                .pattern("DBD")
                 .pattern(" S ")
                 .define('S', Items.STICK)
                 .define('D', ModItems.MANA_DUST.get())
-                .define('I', ModItems.MANA_INGOT.get())
-                .manaCost(500)
+                .define('B', ModItems.BLANK_CORE.get())
+                .manaCost(400)
                 .save(output, "rotation_core");
 
         // 儀式核心
         ManaCraftingRecipeBuilder.create(ModItems.RITUAL_CORE.get(), 1)
                 .shaped(true)
                 .pattern(" C ")
-                .pattern("GCB")
+                .pattern("GKN")
                 .pattern(" C ")
                 .define('C', ModItems.MANA_CRYSTAL.get())
                 .define('G', Items.GOLD_INGOT)
-                .define('B', Items.BLAZE_ROD)
-                .manaCost(2000)
+                .define('K', ModItems.BLANK_CORE.get())
+                .define('N', Items.BLAZE_ROD)
+                .manaCost(1500)
                 .save(output, "ritual_core");
 
         // 容量升級插件（擴充儲量）
         ManaCraftingRecipeBuilder.create(ModItems.WAND_UPGRADE_CAPACITY.get(), 1)
                 .shaped(true)
                 .pattern("CHC")
-                .pattern("WBW")
+                .pattern("WUW")
                 .pattern("CHC")
                 .define('C', ModItems.MANA_CRYSTAL.get())
                 .define('H', ModItems.HIGH_DENSITY_MANA_CORE.get())
                 .define('W', ModItems.MANA_WAFER.get())
-                .define('B', ModItems.BASIC_MANA_CIRCUIT.get())
-                .manaCost(3000)
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(2500)
                 .save(output, "wand_upgrade_capacity");
 
         // 效率升級插件（精密流量最佳化）
         ManaCraftingRecipeBuilder.create(ModItems.WAND_UPGRADE_EFFICIENCY.get(), 1)
                 .shaped(true)
-                .pattern("RPR")
-                .pattern("WQW")
-                .pattern("RPR")
-                .define('R', ModItems.REFINED_MANA_DUST.get())
-                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
-                .define('W', ModItems.MANA_WIRE.get())
+                .pattern("QPQ")
+                .pattern("RUR")
+                .pattern("QPQ")
                 .define('Q', ModItems.MANA_WAFER.get())
-                .manaCost(3000)
+                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('R', ModItems.REFINED_MANA_DUST.get())
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(2500)
                 .save(output, "wand_upgrade_efficiency");
 
         // 範圍升級插件（空間延伸場）
         ManaCraftingRecipeBuilder.create(ModItems.WAND_UPGRADE_RANGE.get(), 1)
                 .shaped(true)
                 .pattern("WEW")
-                .pattern("CPC")
+                .pattern("PUP")
                 .pattern("WEW")
                 .define('W', ModItems.MANA_WIRE.get())
                 .define('E', Items.ENDER_PEARL)
-                .define('C', ModItems.MANA_CRYSTAL.get())
                 .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
-                .manaCost(2500)
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(2000)
                 .save(output, "wand_upgrade_range");
 
         // 冷卻升級插件（快速循環模組）
         ManaCraftingRecipeBuilder.create(ModItems.WAND_UPGRADE_COOLDOWN.get(), 1)
                 .shaped(true)
                 .pattern("QRQ")
-                .pattern("RBR")
+                .pattern("RUR")
                 .pattern("QRQ")
                 .define('Q', ModItems.MANA_WAFER.get())
                 .define('R', Items.REDSTONE)
-                .define('B', ModItems.BASIC_MANA_CIRCUIT.get())
-                .manaCost(2000)
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(1500)
                 .save(output, "wand_upgrade_cooldown");
 
     }
