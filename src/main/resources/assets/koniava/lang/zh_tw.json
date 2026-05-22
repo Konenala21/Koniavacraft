@@ -100,6 +100,7 @@
   "item.koniava.rotation_core": "旋轉核心插件",
   "item.koniava.ritual_core": "儀式核心插件",
   "tooltip.koniava.wand_core.type": "核心插件：%s",
+  "tooltip.koniava.wand.mana": "魔力：%s / %s",
   "tooltip.koniava.wand.core": "核心插件：%s",
   "tooltip.koniava.wand.no_core": "未安裝核心插件",
   "message.koniava.wand.no_core": "此魔杖尚未安裝核心插件。",

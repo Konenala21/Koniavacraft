@@ -101,6 +101,7 @@
   "item.koniava.rotation_core": "Rotation Core Plugin",
   "item.koniava.ritual_core": "Ritual Core Plugin",
   "tooltip.koniava.wand_core.type": "Core: %s",
+  "tooltip.koniava.wand.mana": "Mana: %s / %s",
   "tooltip.koniava.wand.core": "Core: %s",
   "tooltip.koniava.wand.no_core": "No core installed",
   "message.koniava.wand.no_core": "No core installed in this wand.",

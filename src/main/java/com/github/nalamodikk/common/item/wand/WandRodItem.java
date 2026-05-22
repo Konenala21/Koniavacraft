@@ -37,6 +37,10 @@ public class WandRodItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext ctx, List<Component> lines, TooltipFlag flag) {
+        int stored = stack.getOrDefault(ModDataComponents.MANA_STORED, 0);
+        int max    = stack.getOrDefault(ModDataComponents.MAX_MANA, BASE_MAX_MANA);
+        lines.add(Component.translatable("tooltip.koniava.wand.mana", stored, max));
+
         WandCoreData data = stack.getOrDefault(ModDataComponents.WAND_CORE_DATA, WandCoreData.empty());
         if (data.hasCore()) {
             lines.add(Component.translatable("tooltip.koniava.wand.core",
@@ -67,13 +71,6 @@ public class WandRodItem extends Item {
 
     @Override
     public boolean isBarVisible(ItemStack stack) {
-        int current = stack.getOrDefault(ModDataComponents.MANA_STORED, 0);
-        int max     = stack.getOrDefault(ModDataComponents.MAX_MANA, BASE_MAX_MANA);
-        return current < max;
-    }
-
-    @Override
-    public int getBarWidth(ItemStack stack) {
-        return 0; // suppressed — custom ring drawn by WandManaRingRenderer
+        return false; // suppressed — ring drawn by WandManaRingRenderer, mana shown in tooltip
     }
 }
