@@ -40,11 +40,12 @@ public enum WandCoreBehavior {
 
             BlockEntity be = level.getBlockEntity(ctx.getClickedPos());
             if (!(be instanceof IWandActivatable activatable)) return InteractionResult.PASS;
-            if (level.isClientSide) return InteractionResult.SUCCESS;
 
-            if (player.getCooldowns().isOnCooldown(wand.getItem())) {
-                return InteractionResult.FAIL;
-            }
+            // 客戶端先做基本前置檢查，避免魔力不足時仍播揮手動畫
+            if (player.getCooldowns().isOnCooldown(wand.getItem())) return InteractionResult.FAIL;
+            int storedClient = wand.getOrDefault(ModDataComponents.MANA_STORED, 0);
+            if (storedClient <= 0) return InteractionResult.FAIL;
+            if (level.isClientSide) return InteractionResult.SUCCESS;
 
             WandCoreData data = WandRodItem.getData(wand);
             int stored = wand.getOrDefault(ModDataComponents.MANA_STORED, 0);
