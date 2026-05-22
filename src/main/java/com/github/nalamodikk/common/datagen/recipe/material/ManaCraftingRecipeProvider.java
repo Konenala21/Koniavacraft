@@ -203,49 +203,55 @@ public class ManaCraftingRecipeProvider {
                 .manaCost(2000)
                 .save(output, "ritual_core");
 
-        // 容量升級插件
+        // 容量升級插件（擴充儲量）
         ManaCraftingRecipeBuilder.create(ModItems.WAND_UPGRADE_CAPACITY.get(), 1)
                 .shaped(true)
-                .pattern(" C ")
-                .pattern("S S")
-                .pattern(" C ")
+                .pattern("CHC")
+                .pattern("WBW")
+                .pattern("CHC")
                 .define('C', ModItems.MANA_CRYSTAL.get())
-                .define('S', ModItems.MANA_SUBSTRATE.get())
-                .manaCost(1000)
+                .define('H', ModItems.HIGH_DENSITY_MANA_CORE.get())
+                .define('W', ModItems.MANA_WAFER.get())
+                .define('B', ModItems.BASIC_MANA_CIRCUIT.get())
+                .manaCost(3000)
                 .save(output, "wand_upgrade_capacity");
 
-        // 效率升級插件
+        // 效率升級插件（精密流量最佳化）
         ManaCraftingRecipeBuilder.create(ModItems.WAND_UPGRADE_EFFICIENCY.get(), 1)
                 .shaped(true)
-                .pattern(" W ")
-                .pattern("R R")
-                .pattern(" W ")
-                .define('W', ModItems.MANA_WAFER.get())
+                .pattern("RPR")
+                .pattern("WQW")
+                .pattern("RPR")
                 .define('R', ModItems.REFINED_MANA_DUST.get())
-                .manaCost(1200)
+                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('W', ModItems.MANA_WIRE.get())
+                .define('Q', ModItems.MANA_WAFER.get())
+                .manaCost(3000)
                 .save(output, "wand_upgrade_efficiency");
 
-        // 範圍升級插件
+        // 範圍升級插件（空間延伸場）
         ManaCraftingRecipeBuilder.create(ModItems.WAND_UPGRADE_RANGE.get(), 1)
                 .shaped(true)
-                .pattern(" W ")
-                .pattern("CEC")
-                .pattern(" W ")
+                .pattern("WEW")
+                .pattern("CPC")
+                .pattern("WEW")
                 .define('W', ModItems.MANA_WIRE.get())
-                .define('C', ModItems.MANA_CRYSTAL.get())
                 .define('E', Items.ENDER_PEARL)
-                .manaCost(1000)
+                .define('C', ModItems.MANA_CRYSTAL.get())
+                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .manaCost(2500)
                 .save(output, "wand_upgrade_range");
 
-        // 冷卻升級插件
-        ManaCraftingRecipeBuilder.shapeless(ModItems.WAND_UPGRADE_COOLDOWN.get(), 1)
-                .addIngredient(Ingredient.of(Items.REDSTONE))
-                .addIngredient(Ingredient.of(Items.REDSTONE))
-                .addIngredient(Ingredient.of(Items.REDSTONE))
-                .addIngredient(Ingredient.of(Items.REDSTONE))
-                .addIngredient(Ingredient.of(ModItems.MANA_DUST.get()))
-                .addIngredient(Ingredient.of(ModItems.MANA_DUST.get()))
-                .manaCost(500)
+        // 冷卻升級插件（快速循環模組）
+        ManaCraftingRecipeBuilder.create(ModItems.WAND_UPGRADE_COOLDOWN.get(), 1)
+                .shaped(true)
+                .pattern("QRQ")
+                .pattern("RBR")
+                .pattern("QRQ")
+                .define('Q', ModItems.MANA_WAFER.get())
+                .define('R', Items.REDSTONE)
+                .define('B', ModItems.BASIC_MANA_CIRCUIT.get())
+                .manaCost(2000)
                 .save(output, "wand_upgrade_cooldown");
 
     }
