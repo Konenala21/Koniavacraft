@@ -1,6 +1,9 @@
 package com.github.nalamodikk.common.item.wand.core;
 
 import com.github.nalamodikk.common.block.blockentity.altar.AspectAltarBlockEntity;
+import com.github.nalamodikk.common.item.wand.WandCoreData;
+import com.github.nalamodikk.common.item.wand.WandRodItem;
+import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeBehavior;
 import com.github.nalamodikk.common.coreapi.block.IConfigurableBlock;
 import com.github.nalamodikk.common.multiblock.api.IWandActivatable;
 import com.github.nalamodikk.common.screen.block.shared.UniversalConfigMenu;
@@ -27,6 +30,8 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 public enum WandCoreBehavior {
 
     FORMATION {
+        private static final int BASE_COOLDOWN = 20;
+
         @Override
         public InteractionResult useOn(UseOnContext ctx, ItemStack wand) {
             Level level = ctx.getLevel();
@@ -37,8 +42,15 @@ public enum WandCoreBehavior {
             if (!(be instanceof IWandActivatable activatable)) return InteractionResult.PASS;
             if (level.isClientSide) return InteractionResult.SUCCESS;
 
+            if (player.getCooldowns().isOnCooldown(wand.getItem())) {
+                return InteractionResult.FAIL;
+            }
+
+            WandCoreData data = WandRodItem.getData(wand);
             int stored = wand.getOrDefault(ModDataComponents.MANA_STORED, 0);
-            int cost = 500 + level.random.nextInt(1501);
+            int efficiencyCount = data.countUpgrade(WandUpgradeBehavior.EFFICIENCY);
+            float costMult = Math.max(0.4f, 1.0f - efficiencyCount * WandUpgradeBehavior.EFFICIENCY.bonusPerSlot / 100f);
+            int cost = Math.round((500 + level.random.nextInt(1501)) * costMult);
             if (stored < cost) {
                 player.displayClientMessage(
                         Component.translatable("message.koniava.wand.not_enough_mana", stored, cost), true);
@@ -46,6 +58,11 @@ public enum WandCoreBehavior {
             }
             wand.set(ModDataComponents.MANA_STORED, stored - cost);
             player.displayClientMessage(activatable.onWandActivate(player), true);
+
+            int cooldownCount = data.countUpgrade(WandUpgradeBehavior.COOLDOWN);
+            int cooldownTicks = Math.max(5, BASE_COOLDOWN - cooldownCount * WandUpgradeBehavior.COOLDOWN.bonusPerSlot);
+            player.getCooldowns().addCooldown(wand.getItem(), cooldownTicks);
+
             return InteractionResult.SUCCESS;
         }
 

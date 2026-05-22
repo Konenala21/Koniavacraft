@@ -86,6 +86,7 @@ public record WandCoreSwapPacket(InteractionHand hand, int slot, int inventorySl
                 player.drop(toReturn, false);
             }
             WandRodItem.setData(wand, updated);
+            WandRodItem.recalculateMaxMana(wand, updated);
         }
     }
 
@@ -114,6 +115,7 @@ public record WandCoreSwapPacket(InteractionHand hand, int slot, int inventorySl
             WandCoreData updated = data.withUpgrade(wandSlot, fromInv.copyWithCount(1));
             fromInv.shrink(1);
             WandRodItem.setData(wand, updated);
+            WandRodItem.recalculateMaxMana(wand, updated);
         }
     }
 

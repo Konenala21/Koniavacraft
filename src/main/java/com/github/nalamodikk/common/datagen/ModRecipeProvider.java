@@ -260,42 +260,6 @@ public class ModRecipeProvider extends RecipeProvider {
                 .unlockedBy("has_mana_crystal", has(ModItems.MANA_CRYSTAL.get()))
                 .save(output, "mana_pickaxe");
 
-        // 🛠️ 基礎科技魔杖
-        ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, ModItems.BASIC_TECH_WAND.get())
-                .pattern("RMR")
-                .pattern("CIC")
-                .pattern(" S ")
-                .define('R', Items.REDSTONE)
-                .define('M', ModItems.MANA_DUST.get())
-                .define('C', Items.COPPER_INGOT)
-                .define('I', Items.IRON_INGOT)
-                .define('S', Items.STICK)
-                .unlockedBy("has_mana_dust", has(ModItems.MANA_DUST.get()))
-                .save(output, "basic_tech_wand");
-
-        // 🔮 進階科技魔杖（基礎法杖 + 4 魔力水晶 + 4 金錠）
-        ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, ModItems.ADVANCED_TECH_WAND.get())
-                .pattern("GCG")
-                .pattern("CWC")
-                .pattern("GCG")
-                .define('G', Items.GOLD_INGOT)
-                .define('C', ModItems.MANA_CRYSTAL.get())
-                .define('W', ModItems.BASIC_TECH_WAND.get())
-                .unlockedBy("has_basic_tech_wand", has(ModItems.BASIC_TECH_WAND.get()))
-                .save(output, "advanced_tech_wand");
-
-        // 🏗️ 結構建造法杖（基礎法杖 + 魔力方塊 + 魔力水晶）
-        ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, ModItems.STRUCTURE_BUILD_WAND.get())
-                .pattern("BCB")
-                .pattern("CWC")
-                .pattern(" S ")
-                .define('B', ModBlocks.MANA_BLOCK.get())
-                .define('C', ModItems.MANA_CRYSTAL.get())
-                .define('W', ModItems.BASIC_TECH_WAND.get())
-                .define('S', Items.STICK)
-                .unlockedBy("has_basic_tech_wand", has(ModItems.BASIC_TECH_WAND.get()))
-                .save(output, "structure_build_wand");
-
         // 🖊️ 墨水羽毛筆
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.INK_QUILL.get())
                 .pattern(" F ")

@@ -1,6 +1,7 @@
 package com.github.nalamodikk.common.item.wand;
 
 import com.github.nalamodikk.common.item.wand.core.IWandCore;
+import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeBehavior;
 import com.github.nalamodikk.register.ModDataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
@@ -51,5 +52,28 @@ public class WandRodItem extends Item {
 
     public static void setData(ItemStack stack, WandCoreData data) {
         stack.set(ModDataComponents.WAND_CORE_DATA, data);
+    }
+
+    /** Recomputes MAX_MANA from base + installed capacity upgrades, clamps MANA_STORED. */
+    public static void recalculateMaxMana(ItemStack stack, WandCoreData data) {
+        int capacityCount = data.countUpgrade(WandUpgradeBehavior.CAPACITY);
+        int newMax = BASE_MAX_MANA + capacityCount * WandUpgradeBehavior.CAPACITY.bonusPerSlot;
+        stack.set(ModDataComponents.MAX_MANA, newMax);
+        int stored = stack.getOrDefault(ModDataComponents.MANA_STORED, 0);
+        if (stored > newMax) stack.set(ModDataComponents.MANA_STORED, newMax);
+    }
+
+    public static final int BASE_MAX_MANA = 8000;
+
+    @Override
+    public boolean isBarVisible(ItemStack stack) {
+        int current = stack.getOrDefault(ModDataComponents.MANA_STORED, 0);
+        int max     = stack.getOrDefault(ModDataComponents.MAX_MANA, BASE_MAX_MANA);
+        return current < max;
+    }
+
+    @Override
+    public int getBarWidth(ItemStack stack) {
+        return 0; // suppressed — custom ring drawn by WandManaRingRenderer
     }
 }

@@ -1,6 +1,8 @@
 package com.github.nalamodikk.common.item.wand;
 
 import com.github.nalamodikk.common.item.wand.core.IWandCore;
+import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeBehavior;
+import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeItem;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -72,6 +74,14 @@ public record WandCoreData(ItemStack core, Map<Integer, ItemStack> upgrades) {
 
     public ItemStack getUpgrade(int slot) {
         return upgrades.getOrDefault(slot, ItemStack.EMPTY);
+    }
+
+    public int countUpgrade(WandUpgradeBehavior type) {
+        int count = 0;
+        for (ItemStack upg : upgrades.values()) {
+            if (upg.getItem() instanceof WandUpgradeItem wu && wu.getBehavior() == type) count++;
+        }
+        return count;
     }
 
     // ── Mutators ──────────────────────────────────────────────────────────

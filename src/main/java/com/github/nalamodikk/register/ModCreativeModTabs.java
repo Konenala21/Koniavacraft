@@ -23,7 +23,12 @@ public class ModCreativeModTabs {
     private static final Set<String> DEV_ITEM_PATHS = Set.of(
             "mana_debug_tool",
             "dev_render_test_1",
-            "dev_render_test_2"
+            "dev_render_test_2",
+            // deprecated wands — replaced by wand_rod modular system
+            "basic_tech_wand",
+            "advanced_tech_wand",
+            "ritual_wand",
+            "structure_build_wand"
     );
 
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS =

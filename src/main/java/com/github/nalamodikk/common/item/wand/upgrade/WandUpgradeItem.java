@@ -24,5 +24,6 @@ public class WandUpgradeItem extends Item implements IWandUpgrade {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext ctx, List<Component> lines, TooltipFlag flag) {
         lines.add(Component.translatable("tooltip.koniava.wand_upgrade.type", behavior.getDisplayName()));
+        lines.add(behavior.getEffectTooltip());
     }
 }
