@@ -13,6 +13,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemDisplayContext;
@@ -50,6 +51,12 @@ public class WandUpgradeScreen extends Screen {
 
     // -1 = none, -2 = core slot, 0-3 = upgrade slots
     private int selectedWandSlot = -1;
+
+    // 3D 預覽旋轉 + 縮放狀態
+    private float previewRotY = 30f;
+    private float previewRotX = -15f;
+    private float previewScale = 48f;
+    private boolean draggingPreview = false;
 
     public WandUpgradeScreen(InteractionHand hand) {
         super(Component.translatable("screen.koniava.wand_upgrade"));
@@ -96,13 +103,12 @@ public class WandUpgradeScreen extends Screen {
         int cx = ctrX() + CTR_W / 2;
         int cy = startY() + BG_H / 2;
 
-        float angle = (System.currentTimeMillis() / 20f) % 360f;
-
         PoseStack pose = g.pose();
         pose.pushPose();
         pose.translate(cx, cy, 200);
-        pose.scale(48f, -48f, 48f);
-        pose.mulPose(Axis.YP.rotationDegrees(angle));
+        pose.scale(previewScale, -previewScale, previewScale);
+        pose.mulPose(Axis.YP.rotationDegrees(previewRotY));
+        pose.mulPose(Axis.XP.rotationDegrees(previewRotX));
 
         Minecraft mc = Minecraft.getInstance();
         mc.getItemRenderer().renderStatic(
@@ -245,7 +251,32 @@ public class WandUpgradeScreen extends Screen {
             }
         }
 
+        // 任何未被攔截的左鍵都可以開始拖曳預覽
+        if (button == 0) draggingPreview = true;
+
         return super.mouseClicked(mx, my, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mx, double my, int button, double deltaX, double deltaY) {
+        if (draggingPreview && button == 0) {
+            previewRotY += (float) (deltaX * 0.8f);
+            previewRotX = Mth.clamp(previewRotX + (float) (deltaY * 0.8f), -85f, 85f);
+            return true;
+        }
+        return super.mouseDragged(mx, my, button, deltaX, deltaY);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mx, double my, double scrollX, double scrollY) {
+        previewScale = Mth.clamp(previewScale + (float) (scrollY * 5f), 12f, 120f);
+        return true;
+    }
+
+    @Override
+    public boolean mouseReleased(double mx, double my, int button) {
+        if (button == 0) draggingPreview = false;
+        return super.mouseReleased(mx, my, button);
     }
 
     private void handleWandSlotClick(int slotId, ItemStack current) {
