@@ -39,6 +39,8 @@ All notable changes to this project will be documented in this file.
 - Jade 懸停提示現在對所有魔力機器和奧術導管顯示當前及最大魔力量。
 - Added R key binding to skip the altar upgrade animation.
 - 新增 R 鍵快捷鍵可跳過祭壇升級動畫。
+- Nara dialogue now plays voice acting for all 18 dialogue lines in both Traditional Chinese and English. The correct audio is selected automatically based on the player's in-game language setting.
+- 娜拉對話現在對全部 18 條台詞播放配音，繁體中文與英文各一套，根據玩家遊戲內語言自動選擇。
 
 ### Developer Notes / 開發者備註
 
@@ -54,6 +56,10 @@ All notable changes to this project will be documented in this file.
 - `AltarExplosionRenderer` and `AltarExplosionManager`: client-side GLSL depth-buffer ring renderer using `common_explosion.glsl` (red/orange palette) and `stage_altar_explosion.fsh`. Three waves expand to 64-block radius over 80 ticks. Triggered via `RitualExplosionPacket`.
 - `ManaJadeProvider`: reads `ModCapabilities.MANA` at the hovered block position server-side; packs `manaStored` and `maxMana` into NBT. Registered for `AbstractManaMachineEntityBlock`, `AspectAltarBlockEntity`, and `ArcaneConduitBlockEntity`.
 - `RitualWandItem`: `useOn()` calls `altar.tryActivate(playerUUID)` and displays the result component as an action bar message.
+- `ModSounds`: `DeferredRegister<SoundEvent>` with 36 programmatically registered Nara dialogue sound events (18 zh_tw + 18 en), keyed as `nara.{locale}.{group}.{line}`.
+- `NaraSoundHelper`: client-only utility that resolves the player's Minecraft language code to `zh_tw` or `en` (fallback), plays the matching `SimpleSoundInstance`, and exposes `stopCurrent()` to halt playback mid-line.
+- `NaraDialogueManager.advanceLine()` and `close()` now call `NaraSoundHelper.stopCurrent()` before transitioning, ensuring the previous voice clip stops when the player skips or dialogue ends.
+- OGG files at 5x normalized volume are committed under `assets/koniava/sounds/nara/{locale}/`. Generated from Alibaba Cloud Qwen3-TTS VoiceDesign API with per-line emotion instructions.
 
 ## [0.0.1.7-2]
 
