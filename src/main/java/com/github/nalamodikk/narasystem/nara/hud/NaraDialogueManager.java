@@ -3,6 +3,7 @@ package com.github.nalamodikk.narasystem.nara.hud;
 import net.minecraft.network.chat.Component;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import com.github.nalamodikk.narasystem.nara.hud.NaraSoundHelper;
 
 import java.util.ArrayDeque;
 import java.util.List;
@@ -111,6 +112,7 @@ public class NaraDialogueManager {
     public static int getSelectedChoiceIndex() { return selectedChoiceIndex; }
 
     private static void advanceLine() {
+        NaraSoundHelper.stopCurrent();
         if (lineQueue.isEmpty()) {
             currentLine = null;
             dialogueState = DialogueState.INACTIVE;
@@ -131,6 +133,7 @@ public class NaraDialogueManager {
     }
 
     public static void close() {
+        NaraSoundHelper.stopCurrent();
         lineQueue.clear();
         currentLine = null;
         dialogueState = DialogueState.INACTIVE;

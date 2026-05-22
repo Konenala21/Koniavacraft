@@ -1,0 +1,290 @@
+{
+  "nara.zh_tw.first_login.line1": {
+    "sounds": [
+      {
+        "name": "koniava:nara/zh_tw/first_login_line1",
+        "stream": false
+      }
+    ]
+  },
+  "nara.zh_tw.first_login.line2": {
+    "sounds": [
+      {
+        "name": "koniava:nara/zh_tw/first_login_line2",
+        "stream": false
+      }
+    ]
+  },
+  "nara.zh_tw.first_login.line3": {
+    "sounds": [
+      {
+        "name": "koniava:nara/zh_tw/first_login_line3",
+        "stream": false
+      }
+    ]
+  },
+  "nara.zh_tw.first_login.line4": {
+    "sounds": [
+      {
+        "name": "koniava:nara/zh_tw/first_login_line4",
+        "stream": false
+      }
+    ]
+  },
+  "nara.zh_tw.first_login.line5": {
+    "sounds": [
+      {
+        "name": "koniava:nara/zh_tw/first_login_line5",
+        "stream": false
+      }
+    ]
+  },
+  "nara.zh_tw.first_login.line6": {
+    "sounds": [
+      {
+        "name": "koniava:nara/zh_tw/first_login_line6",
+        "stream": false
+      }
+    ]
+  },
+  "nara.zh_tw.first_login.line7": {
+    "sounds": [
+      {
+        "name": "koniava:nara/zh_tw/first_login_line7",
+        "stream": false
+      }
+    ]
+  },
+  "nara.zh_tw.first_login.line8": {
+    "sounds": [
+      {
+        "name": "koniava:nara/zh_tw/first_login_line8",
+        "stream": false
+      }
+    ]
+  },
+  "nara.zh_tw.research_table.line1": {
+    "sounds": [
+      {
+        "name": "koniava:nara/zh_tw/research_table_line1",
+        "stream": false
+      }
+    ]
+  },
+  "nara.zh_tw.research_table.line2": {
+    "sounds": [
+      {
+        "name": "koniava:nara/zh_tw/research_table_line2",
+        "stream": false
+      }
+    ]
+  },
+  "nara.zh_tw.research_table.line3": {
+    "sounds": [
+      {
+        "name": "koniava:nara/zh_tw/research_table_line3",
+        "stream": false
+      }
+    ]
+  },
+  "nara.zh_tw.research_table.line4": {
+    "sounds": [
+      {
+        "name": "koniava:nara/zh_tw/research_table_line4",
+        "stream": false
+      }
+    ]
+  },
+  "nara.zh_tw.punishment.line1": {
+    "sounds": [
+      {
+        "name": "koniava:nara/zh_tw/punishment_line1",
+        "stream": false
+      }
+    ]
+  },
+  "nara.zh_tw.punishment.line2": {
+    "sounds": [
+      {
+        "name": "koniava:nara/zh_tw/punishment_line2",
+        "stream": false
+      }
+    ]
+  },
+  "nara.zh_tw.punishment.forgiven": {
+    "sounds": [
+      {
+        "name": "koniava:nara/zh_tw/punishment_forgiven",
+        "stream": false
+      }
+    ]
+  },
+  "nara.zh_tw.angry.line1": {
+    "sounds": [
+      {
+        "name": "koniava:nara/zh_tw/angry_line1",
+        "stream": false
+      }
+    ]
+  },
+  "nara.zh_tw.altar_t6.line1": {
+    "sounds": [
+      {
+        "name": "koniava:nara/zh_tw/altar_t6_line1",
+        "stream": false
+      }
+    ]
+  },
+  "nara.zh_tw.altar_t6.line2": {
+    "sounds": [
+      {
+        "name": "koniava:nara/zh_tw/altar_t6_line2",
+        "stream": false
+      }
+    ]
+  },
+  "nara.en.first_login.line1": {
+    "sounds": [
+      {
+        "name": "koniava:nara/en/first_login_line1",
+        "stream": false
+      }
+    ]
+  },
+  "nara.en.first_login.line2": {
+    "sounds": [
+      {
+        "name": "koniava:nara/en/first_login_line2",
+        "stream": false
+      }
+    ]
+  },
+  "nara.en.first_login.line3": {
+    "sounds": [
+      {
+        "name": "koniava:nara/en/first_login_line3",
+        "stream": false
+      }
+    ]
+  },
+  "nara.en.first_login.line4": {
+    "sounds": [
+      {
+        "name": "koniava:nara/en/first_login_line4",
+        "stream": false
+      }
+    ]
+  },
+  "nara.en.first_login.line5": {
+    "sounds": [
+      {
+        "name": "koniava:nara/en/first_login_line5",
+        "stream": false
+      }
+    ]
+  },
+  "nara.en.first_login.line6": {
+    "sounds": [
+      {
+        "name": "koniava:nara/en/first_login_line6",
+        "stream": false
+      }
+    ]
+  },
+  "nara.en.first_login.line7": {
+    "sounds": [
+      {
+        "name": "koniava:nara/en/first_login_line7",
+        "stream": false
+      }
+    ]
+  },
+  "nara.en.first_login.line8": {
+    "sounds": [
+      {
+        "name": "koniava:nara/en/first_login_line8",
+        "stream": false
+      }
+    ]
+  },
+  "nara.en.research_table.line1": {
+    "sounds": [
+      {
+        "name": "koniava:nara/en/research_table_line1",
+        "stream": false
+      }
+    ]
+  },
+  "nara.en.research_table.line2": {
+    "sounds": [
+      {
+        "name": "koniava:nara/en/research_table_line2",
+        "stream": false
+      }
+    ]
+  },
+  "nara.en.research_table.line3": {
+    "sounds": [
+      {
+        "name": "koniava:nara/en/research_table_line3",
+        "stream": false
+      }
+    ]
+  },
+  "nara.en.research_table.line4": {
+    "sounds": [
+      {
+        "name": "koniava:nara/en/research_table_line4",
+        "stream": false
+      }
+    ]
+  },
+  "nara.en.punishment.line1": {
+    "sounds": [
+      {
+        "name": "koniava:nara/en/punishment_line1",
+        "stream": false
+      }
+    ]
+  },
+  "nara.en.punishment.line2": {
+    "sounds": [
+      {
+        "name": "koniava:nara/en/punishment_line2",
+        "stream": false
+      }
+    ]
+  },
+  "nara.en.punishment.forgiven": {
+    "sounds": [
+      {
+        "name": "koniava:nara/en/punishment_forgiven",
+        "stream": false
+      }
+    ]
+  },
+  "nara.en.angry.line1": {
+    "sounds": [
+      {
+        "name": "koniava:nara/en/angry_line1",
+        "stream": false
+      }
+    ]
+  },
+  "nara.en.altar_t6.line1": {
+    "sounds": [
+      {
+        "name": "koniava:nara/en/altar_t6_line1",
+        "stream": false
+      }
+    ]
+  },
+  "nara.en.altar_t6.line2": {
+    "sounds": [
+      {
+        "name": "koniava:nara/en/altar_t6_line2",
+        "stream": false
+      }
+    ]
+  }
+}

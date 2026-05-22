@@ -5,6 +5,7 @@ import com.github.nalamodikk.narasystem.nara.hud.NaraChoice;
 import com.github.nalamodikk.narasystem.nara.hud.NaraDialogueManager;
 import com.github.nalamodikk.narasystem.nara.hud.NaraDialogueLine;
 import com.github.nalamodikk.narasystem.nara.hud.NaraFirstLoginFlow;
+import com.github.nalamodikk.narasystem.nara.hud.NaraSoundHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.network.FriendlyByteBuf;
@@ -58,14 +59,17 @@ public record NaraStartDialoguePacket() implements CustomPacketPayload {
             context.enqueueWork(() -> {
                 NaraDialogueManager.setPortraitShown();
                 NaraDialogueManager.startDialogue(List.of(
-                        NaraDialogueLine.simple(Component.translatable("nara.dialogue.punishment.line1")),
+                        NaraDialogueLine.simple(Component.translatable("nara.dialogue.punishment.line1"))
+                                .withOnStart(() -> NaraSoundHelper.play("punishment", "line1")),
                         NaraDialogueLine.withChoices(
                                 Component.translatable("nara.dialogue.punishment.line2"),
                                 List.of(new NaraChoice(Component.translatable("nara.dialogue.punishment.choice_sorry"), () -> {})),
                                 NaraFirstLoginFlow.currentTimeout(), NaraFirstLoginFlow::onIgnoreTimeout
-                        ),
-                        NaraDialogueLine.simple(Component.translatable("nara.dialogue.punishment.forgiven")),
+                        ).withOnStart(() -> NaraSoundHelper.play("punishment", "line2")),
+                        NaraDialogueLine.simple(Component.translatable("nara.dialogue.punishment.forgiven"))
+                                .withOnStart(() -> NaraSoundHelper.play("punishment", "forgiven")),
                         NaraDialogueLine.simple(Component.translatable("nara.dialogue.first_login.line8"))
+                                .withOnStart(() -> NaraSoundHelper.play("first_login", "line8"))
                 ));
             });
         }

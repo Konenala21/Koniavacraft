@@ -14,6 +14,7 @@ import com.github.nalamodikk.client.renderer.item.FloatingTurretBEWLR;
 import com.github.nalamodikk.client.renderer.turret.TurretHitEffectRenderer;
 import com.github.nalamodikk.register.ModEntities;
 import com.github.nalamodikk.register.ModMobEffects;
+import com.github.nalamodikk.register.ModSounds;
 import com.github.nalamodikk.common.config.ModClientConfig;
 import com.github.nalamodikk.common.config.ModCommonConfig;
 import com.github.nalamodikk.register.*;
@@ -83,6 +84,7 @@ public class KoniavacraftMod {
         ModStructurePieceTypes.register(modEventBus);
         ModEntities.register(modEventBus);
         ModMobEffects.register(modEventBus);
+        ModSounds.register(modEventBus);
         if (FMLEnvironment.dist == Dist.CLIENT) {
             modEventBus.addListener(ModKeyMappings::onRegisterKeyMappings);
             modEventBus.addListener(com.github.nalamodikk.register.client.ModColorHandlers::onRegisterItemColors);

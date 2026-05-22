@@ -31,29 +31,34 @@ public class NaraFirstLoginFlow {
                         new NaraChoice(Component.translatable("nara.dialogue.first_login.choice1b"), () -> {})
                 ),
                 0, null
-        );
+        ).withOnStart(() -> NaraSoundHelper.play("first_login", "line1"));
 
-        var line2 = NaraDialogueLine.simple(Component.translatable("nara.dialogue.first_login.line2"));
-        var line3 = NaraDialogueLine.simple(Component.translatable("nara.dialogue.first_login.line3"));
+        var line2 = NaraDialogueLine.simple(Component.translatable("nara.dialogue.first_login.line2"))
+                .withOnStart(() -> NaraSoundHelper.play("first_login", "line2"));
+        var line3 = NaraDialogueLine.simple(Component.translatable("nara.dialogue.first_login.line3"))
+                .withOnStart(() -> NaraSoundHelper.play("first_login", "line3"));
 
         var line4 = NaraDialogueLine.withChoices(
                 Component.translatable("nara.dialogue.first_login.line4"),
                 List.of(new NaraChoice(Component.translatable("nara.dialogue.first_login.choice4a"), () -> {})),
                 currentTimeout(),
                 NaraFirstLoginFlow::onIgnoreTimeout
-        );
+        ).withOnStart(() -> NaraSoundHelper.play("first_login", "line4"));
 
-        var line5 = NaraDialogueLine.reveal(Component.translatable("nara.dialogue.first_login.line5"));
+        var line5 = NaraDialogueLine.reveal(Component.translatable("nara.dialogue.first_login.line5"))
+                .withOnStart(() -> NaraSoundHelper.play("first_login", "line5"));
 
         var line6 = NaraDialogueLine.withChoices(
                 Component.translatable("nara.dialogue.first_login.line6"),
                 List.of(new NaraChoice(Component.translatable("nara.dialogue.first_login.choice6a"), () -> {})),
                 currentTimeout(),
                 () -> {}
-        ).withOnStart(NaraWatchHighlight::show);
+        ).withOnStart(() -> { NaraWatchHighlight.show(); NaraSoundHelper.play("first_login", "line6"); });
 
-        var line7 = NaraDialogueLine.simple(Component.translatable("nara.dialogue.first_login.line7"));
-        var line8 = NaraDialogueLine.simple(Component.translatable("nara.dialogue.first_login.line8"));
+        var line7 = NaraDialogueLine.simple(Component.translatable("nara.dialogue.first_login.line7"))
+                .withOnStart(() -> NaraSoundHelper.play("first_login", "line7"));
+        var line8 = NaraDialogueLine.simple(Component.translatable("nara.dialogue.first_login.line8"))
+                .withOnStart(() -> NaraSoundHelper.play("first_login", "line8"));
 
         NaraDialogueManager.startDialogue(List.of(line1, line2, line3, line4, line5, line6, line7, line8));
     }
@@ -77,6 +82,7 @@ public class NaraFirstLoginFlow {
         NaraDialogueManager.setPortraitMad();
         NaraDialogueManager.startDialogue(List.of(
                 NaraDialogueLine.simple(Component.translatable("nara.dialogue.angry.line1"))
+                        .withOnStart(() -> NaraSoundHelper.play("angry", "line1"))
         ));
         NaraAngryPacket.send();
     }
