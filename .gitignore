@@ -144,3 +144,4 @@ local.properties
 .gitnexus
 .claude/memory.jsonl
 /run2/
+/tools/
