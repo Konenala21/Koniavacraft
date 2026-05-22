@@ -35,5 +35,6 @@ public class WandCoreItem extends Item implements IWandCore {
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext ctx, List<Component> lines, TooltipFlag flag) {
         lines.add(Component.translatable("tooltip.koniava.wand_core.type", behavior.getDisplayName()));
+        lines.add(behavior.getDescription());
     }
 }

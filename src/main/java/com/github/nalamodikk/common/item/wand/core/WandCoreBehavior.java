@@ -30,6 +30,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 public enum WandCoreBehavior {
 
     FORMATION {
+        @Override public Component getDescription() { return Component.translatable("tooltip.koniava.core.formation.desc"); }
         private static final int BASE_COOLDOWN = 20;
 
         @Override
@@ -77,6 +78,7 @@ public enum WandCoreBehavior {
     },
 
     ACTIVATION {
+        @Override public Component getDescription() { return Component.translatable("tooltip.koniava.core.activation.desc"); }
         @Override
         public InteractionResult useOn(UseOnContext ctx, ItemStack wand) {
             Level level = ctx.getLevel();
@@ -101,6 +103,7 @@ public enum WandCoreBehavior {
     },
 
     IO {
+        @Override public Component getDescription() { return Component.translatable("tooltip.koniava.core.io.desc"); }
         @Override
         public InteractionResult useOn(UseOnContext ctx, ItemStack wand) {
             Level level = ctx.getLevel();
@@ -145,6 +148,7 @@ public enum WandCoreBehavior {
     },
 
     ROTATION {
+        @Override public Component getDescription() { return Component.translatable("tooltip.koniava.core.rotation.desc"); }
         @Override
         public InteractionResult useOn(UseOnContext ctx, ItemStack wand) {
             Level level = ctx.getLevel();
@@ -183,6 +187,7 @@ public enum WandCoreBehavior {
     },
 
     RITUAL {
+        @Override public Component getDescription() { return Component.translatable("tooltip.koniava.core.ritual.desc"); }
         @Override
         public InteractionResult useOn(UseOnContext ctx, ItemStack wand) {
             Level level = ctx.getLevel();
@@ -210,4 +215,6 @@ public enum WandCoreBehavior {
     public abstract Component getDisplayName();
 
     public abstract int getColor();
+
+    public abstract Component getDescription();
 }
