@@ -34,12 +34,12 @@ public class WandRangeEventHandler {
         if (!(mainHand.getItem() instanceof WandRodItem)) return;
 
         WandCoreData data = WandRodItem.getData(mainHand);
-        int rangeCount = data.countUpgrade(WandUpgradeBehavior.RANGE);
-        if (rangeCount <= 0) return;
+        int rangeBonus = data.sumUpgradeBonus(WandUpgradeBehavior.RANGE);
+        if (rangeBonus <= 0) return;
 
         rangeAttr.addTransientModifier(new AttributeModifier(
                 WAND_RANGE_ID,
-                (double) rangeCount * WandUpgradeBehavior.RANGE.bonusPerSlot,
+                (double) rangeBonus,
                 AttributeModifier.Operation.ADD_VALUE
         ));
     }

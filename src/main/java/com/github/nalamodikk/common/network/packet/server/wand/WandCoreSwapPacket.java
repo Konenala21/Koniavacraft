@@ -5,10 +5,12 @@ import com.github.nalamodikk.common.item.wand.WandCoreData;
 import com.github.nalamodikk.common.item.wand.WandRodItem;
 import com.github.nalamodikk.common.item.wand.core.IWandCore;
 import com.github.nalamodikk.common.item.wand.upgrade.IWandUpgrade;
+import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeItem;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -17,8 +19,6 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * C2S: install or remove a core/upgrade from the wand.
@@ -108,6 +108,13 @@ public record WandCoreSwapPacket(InteractionHand hand, int slot, int inventorySl
             WandRodItem.setData(wand, updated);
         } else {
             if (!(fromInv.getItem() instanceof IWandUpgrade)) return;
+            WandRodItem rod = (WandRodItem) wand.getItem();
+            if (wandSlot >= rod.getMaxUpgradeSlots()) return;
+            if (fromInv.getItem() instanceof WandUpgradeItem wu && wu.getMk() > rod.getMaxUpgradeMk()) {
+                player.displayClientMessage(
+                        Component.translatable("message.koniava.wand.upgrade_mk_too_high"), true);
+                return;
+            }
             ItemStack current = data.getUpgrade(wandSlot);
             if (!current.isEmpty() && !player.addItem(current.copy())) {
                 player.drop(current.copy(), false);

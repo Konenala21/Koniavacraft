@@ -27,8 +27,10 @@ public class ModItemModelProvider extends ItemModelProvider {
     };
 
     private static final String[] UPGRADE_NAMES = {
-            "wand_upgrade_capacity", "wand_upgrade_efficiency",
-            "wand_upgrade_range", "wand_upgrade_cooldown"
+            "wand_upgrade_capacity_mk0",  "wand_upgrade_capacity_mk1",  "wand_upgrade_capacity_mk2",  "wand_upgrade_capacity_mk3",
+            "wand_upgrade_efficiency_mk0","wand_upgrade_efficiency_mk1","wand_upgrade_efficiency_mk2","wand_upgrade_efficiency_mk3",
+            "wand_upgrade_range_mk0",     "wand_upgrade_range_mk1",     "wand_upgrade_range_mk2",     "wand_upgrade_range_mk3",
+            "wand_upgrade_cooldown_mk0",  "wand_upgrade_cooldown_mk1",  "wand_upgrade_cooldown_mk2",  "wand_upgrade_cooldown_mk3"
     };
 
     @Override

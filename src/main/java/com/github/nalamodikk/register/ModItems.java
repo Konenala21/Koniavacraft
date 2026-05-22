@@ -86,7 +86,11 @@ public class ModItems {
             ITEMS.registerSimpleItem("basic_upgrade_casing", new Item.Properties().stacksTo(16));
 
     public static final DeferredItem<WandRodItem> WAND_ROD =
-            ITEMS.register("wand_rod", () -> new WandRodItem(new Item.Properties().stacksTo(1)
+            ITEMS.register("wand_rod", () -> new WandRodItem(1, 4, new Item.Properties().stacksTo(1)
+                    .component(ModDataComponents.MANA_STORED, 0)
+                    .component(ModDataComponents.MAX_MANA, 8000)));
+    public static final DeferredItem<WandRodItem> WAND_ROD_ADVANCED =
+            ITEMS.register("wand_rod_advanced", () -> new WandRodItem(3, 6, new Item.Properties().stacksTo(1)
                     .component(ModDataComponents.MANA_STORED, 0)
                     .component(ModDataComponents.MAX_MANA, 8000)));
 
@@ -103,14 +107,41 @@ public class ModItems {
     public static final DeferredItem<WandCoreItem> STRUCTURE_BUILD_CORE =
             ITEMS.register("structure_build_core", () -> new WandCoreItem(WandCoreBehavior.STRUCTURE_BUILD, new Item.Properties().stacksTo(1)));
 
-    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_CAPACITY =
-            ITEMS.register("wand_upgrade_capacity", () -> new WandUpgradeItem(WandUpgradeBehavior.CAPACITY, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_EFFICIENCY =
-            ITEMS.register("wand_upgrade_efficiency", () -> new WandUpgradeItem(WandUpgradeBehavior.EFFICIENCY, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_RANGE =
-            ITEMS.register("wand_upgrade_range", () -> new WandUpgradeItem(WandUpgradeBehavior.RANGE, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_COOLDOWN =
-            ITEMS.register("wand_upgrade_cooldown", () -> new WandUpgradeItem(WandUpgradeBehavior.COOLDOWN, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_CAPACITY_MK0 =
+            ITEMS.register("wand_upgrade_capacity_mk0", () -> new WandUpgradeItem(WandUpgradeBehavior.CAPACITY, 0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_CAPACITY_MK1 =
+            ITEMS.register("wand_upgrade_capacity_mk1", () -> new WandUpgradeItem(WandUpgradeBehavior.CAPACITY, 1, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_CAPACITY_MK2 =
+            ITEMS.register("wand_upgrade_capacity_mk2", () -> new WandUpgradeItem(WandUpgradeBehavior.CAPACITY, 2, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_CAPACITY_MK3 =
+            ITEMS.register("wand_upgrade_capacity_mk3", () -> new WandUpgradeItem(WandUpgradeBehavior.CAPACITY, 3, new Item.Properties().stacksTo(4)));
+
+    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_EFFICIENCY_MK0 =
+            ITEMS.register("wand_upgrade_efficiency_mk0", () -> new WandUpgradeItem(WandUpgradeBehavior.EFFICIENCY, 0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_EFFICIENCY_MK1 =
+            ITEMS.register("wand_upgrade_efficiency_mk1", () -> new WandUpgradeItem(WandUpgradeBehavior.EFFICIENCY, 1, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_EFFICIENCY_MK2 =
+            ITEMS.register("wand_upgrade_efficiency_mk2", () -> new WandUpgradeItem(WandUpgradeBehavior.EFFICIENCY, 2, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_EFFICIENCY_MK3 =
+            ITEMS.register("wand_upgrade_efficiency_mk3", () -> new WandUpgradeItem(WandUpgradeBehavior.EFFICIENCY, 3, new Item.Properties().stacksTo(4)));
+
+    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_RANGE_MK0 =
+            ITEMS.register("wand_upgrade_range_mk0", () -> new WandUpgradeItem(WandUpgradeBehavior.RANGE, 0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_RANGE_MK1 =
+            ITEMS.register("wand_upgrade_range_mk1", () -> new WandUpgradeItem(WandUpgradeBehavior.RANGE, 1, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_RANGE_MK2 =
+            ITEMS.register("wand_upgrade_range_mk2", () -> new WandUpgradeItem(WandUpgradeBehavior.RANGE, 2, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_RANGE_MK3 =
+            ITEMS.register("wand_upgrade_range_mk3", () -> new WandUpgradeItem(WandUpgradeBehavior.RANGE, 3, new Item.Properties().stacksTo(4)));
+
+    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_COOLDOWN_MK0 =
+            ITEMS.register("wand_upgrade_cooldown_mk0", () -> new WandUpgradeItem(WandUpgradeBehavior.COOLDOWN, 0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_COOLDOWN_MK1 =
+            ITEMS.register("wand_upgrade_cooldown_mk1", () -> new WandUpgradeItem(WandUpgradeBehavior.COOLDOWN, 1, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_COOLDOWN_MK2 =
+            ITEMS.register("wand_upgrade_cooldown_mk2", () -> new WandUpgradeItem(WandUpgradeBehavior.COOLDOWN, 2, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_COOLDOWN_MK3 =
+            ITEMS.register("wand_upgrade_cooldown_mk3", () -> new WandUpgradeItem(WandUpgradeBehavior.COOLDOWN, 3, new Item.Properties().stacksTo(4)));
     public static final DeferredItem<ManaPickaxeItem> MANA_PICKAXE = ITEMS.register("mana_pickaxe",
             () -> new ManaPickaxeItem(ModToolTiers.MANA, new Item.Properties().stacksTo(1)));
 

@@ -135,11 +135,12 @@ public class WandUpgradeScreen extends Screen {
         renderWandSlot(g, coreX, coreY, data.core(), selectedWandSlot == -2, mx, my,
                 Component.translatable("screen.koniava.wand_upgrade.core_slot"));
 
-        // 6 個升級槽（2x3）
+        // 升級槽（2 欄，列數依杖柄等級）
+        int slotCount = wand().getItem() instanceof WandRodItem rod ? rod.getMaxUpgradeSlots() : 4;
         int spacing = SLOT_SIZE + 6;
         int[] ux = {x + 10, x + 10 + spacing, x + 10, x + 10 + spacing, x + 10, x + 10 + spacing};
         int[] uy = {y + 60, y + 60, y + 60 + spacing, y + 60 + spacing, y + 60 + spacing * 2, y + 60 + spacing * 2};
-        for (int i = 0; i < WandCoreData.UPGRADE_SLOTS; i++) {
+        for (int i = 0; i < slotCount; i++) {
             ItemStack upg = data.getUpgrade(i);
             renderWandSlot(g, ux[i], uy[i], upg, selectedWandSlot == i, mx, my,
                     Component.translatable("screen.koniava.wand_upgrade.upgrade_slot", i + 1));
@@ -222,10 +223,11 @@ public class WandUpgradeScreen extends Screen {
         if (isInSlot(mx, my, coreX, coreY)) { handleWandSlotClick(-2, data.core()); return true; }
 
         // 左面板：升級槽
+        int slotCount = wand().getItem() instanceof WandRodItem rod ? rod.getMaxUpgradeSlots() : 4;
         int spacing = SLOT_SIZE + 6;
         int[] ux = {leftX() + 10, leftX() + 10 + spacing, leftX() + 10, leftX() + 10 + spacing, leftX() + 10, leftX() + 10 + spacing};
         int[] uy = {sy + 60, sy + 60, sy + 60 + spacing, sy + 60 + spacing, sy + 60 + spacing * 2, sy + 60 + spacing * 2};
-        for (int i = 0; i < WandCoreData.UPGRADE_SLOTS; i++) {
+        for (int i = 0; i < slotCount; i++) {
             if (isInSlot(mx, my, ux[i], uy[i])) {
                 ItemStack upg = data.getUpgrade(i);
                 handleWandSlotClick(i, upg);

@@ -14,9 +14,19 @@ import java.util.List;
 
 public class WandRodItem extends Item {
 
-    public WandRodItem(Properties properties) {
+    public static final int BASE_MAX_MANA = 8000;
+
+    private final int maxUpgradeMk;
+    private final int maxUpgradeSlots;
+
+    public WandRodItem(int maxUpgradeMk, int maxUpgradeSlots, Properties properties) {
         super(properties.component(ModDataComponents.WAND_CORE_DATA, WandCoreData.empty()));
+        this.maxUpgradeMk = maxUpgradeMk;
+        this.maxUpgradeSlots = maxUpgradeSlots;
     }
+
+    public int getMaxUpgradeMk() { return maxUpgradeMk; }
+    public int getMaxUpgradeSlots() { return maxUpgradeSlots; }
 
     @Override
     public InteractionResult useOn(UseOnContext ctx) {
@@ -48,6 +58,9 @@ public class WandRodItem extends Item {
         } else {
             lines.add(Component.translatable("tooltip.koniava.wand.no_core"));
         }
+
+        lines.add(Component.translatable("tooltip.koniava.wand.tier",
+                maxUpgradeSlots, maxUpgradeMk));
     }
 
     public static WandCoreData getData(ItemStack stack) {
@@ -58,16 +71,13 @@ public class WandRodItem extends Item {
         stack.set(ModDataComponents.WAND_CORE_DATA, data);
     }
 
-    /** Recomputes MAX_MANA from base + installed capacity upgrades, clamps MANA_STORED. */
     public static void recalculateMaxMana(ItemStack stack, WandCoreData data) {
-        int capacityCount = data.countUpgrade(WandUpgradeBehavior.CAPACITY);
-        int newMax = BASE_MAX_MANA + capacityCount * WandUpgradeBehavior.CAPACITY.bonusPerSlot;
+        int bonus = data.sumUpgradeBonus(WandUpgradeBehavior.CAPACITY);
+        int newMax = BASE_MAX_MANA + bonus;
         stack.set(ModDataComponents.MAX_MANA, newMax);
         int stored = stack.getOrDefault(ModDataComponents.MANA_STORED, 0);
         if (stored > newMax) stack.set(ModDataComponents.MANA_STORED, newMax);
     }
-
-    public static final int BASE_MAX_MANA = 8000;
 
     @Override
     public boolean isBarVisible(ItemStack stack) {

@@ -85,6 +85,16 @@ public record WandCoreData(ItemStack core, Map<Integer, ItemStack> upgrades) {
         return count;
     }
 
+    public int sumUpgradeBonus(WandUpgradeBehavior type) {
+        int total = 0;
+        for (ItemStack upg : upgrades.values()) {
+            if (upg.getItem() instanceof WandUpgradeItem wu && wu.getBehavior() == type) {
+                total += type.getBonusForMk(wu.getMk());
+            }
+        }
+        return total;
+    }
+
     // ── Mutators ──────────────────────────────────────────────────────────
 
     public WandCoreData withCore(ItemStack newCore) {

@@ -57,8 +57,8 @@ public enum WandCoreBehavior {
 
             WandCoreData data = WandRodItem.getData(wand);
             int stored = wand.getOrDefault(ModDataComponents.MANA_STORED, 0);
-            int efficiencyCount = data.countUpgrade(WandUpgradeBehavior.EFFICIENCY);
-            float costMult = Math.max(0.4f, 1.0f - efficiencyCount * WandUpgradeBehavior.EFFICIENCY.bonusPerSlot / 100f);
+            int totalEfficiency = data.sumUpgradeBonus(WandUpgradeBehavior.EFFICIENCY);
+            float costMult = Math.max(0.4f, 1.0f - totalEfficiency / 100f);
             int cost = Math.round((500 + level.random.nextInt(1501)) * costMult);
             if (stored < cost) {
                 player.displayClientMessage(
@@ -68,8 +68,8 @@ public enum WandCoreBehavior {
             wand.set(ModDataComponents.MANA_STORED, stored - cost);
             player.displayClientMessage(activatable.onWandActivate(player), true);
 
-            int cooldownCount = data.countUpgrade(WandUpgradeBehavior.COOLDOWN);
-            int cooldownTicks = Math.max(5, BASE_COOLDOWN - cooldownCount * WandUpgradeBehavior.COOLDOWN.bonusPerSlot);
+            int totalCooldown = data.sumUpgradeBonus(WandUpgradeBehavior.COOLDOWN);
+            int cooldownTicks = Math.max(5, BASE_COOLDOWN - totalCooldown);
             player.getCooldowns().addCooldown(wand.getItem(), cooldownTicks);
 
             return InteractionResult.SUCCESS;
