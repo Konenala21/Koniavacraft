@@ -87,10 +87,11 @@ public class ManaCraftingTableCategory implements IRecipeCategory<ManaCraftingTa
                 builder.addSlot(RecipeIngredientRole.INPUT, xPos, yPos).addIngredients(ingredients.get(i));
             }
         } else {
-            // 無序合成：橫向擺放
-            for (int i = 0; i < ingredients.size(); i++) {
-                int xPos = 30 + i * 18;
-                builder.addSlot(RecipeIngredientRole.INPUT, xPos, 17).addIngredients(ingredients.get(i));
+            // 無序合成：3x3 格擺放（最多 9 種原料）
+            for (int i = 0; i < Math.min(ingredients.size(), 9); i++) {
+                int xPos = 30 + (i % 3) * 18;
+                int yPos = 17 + (i / 3) * 18;
+                builder.addSlot(RecipeIngredientRole.INPUT, xPos, yPos).addIngredients(ingredients.get(i));
             }
         }
 
