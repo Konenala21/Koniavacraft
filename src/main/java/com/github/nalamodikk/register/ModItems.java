@@ -100,6 +100,8 @@ public class ModItems {
             ITEMS.register("rotation_core", () -> new WandCoreItem(WandCoreBehavior.ROTATION, new Item.Properties().stacksTo(1)));
     public static final DeferredItem<WandCoreItem> RITUAL_CORE =
             ITEMS.register("ritual_core", () -> new WandCoreItem(WandCoreBehavior.RITUAL, new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<WandCoreItem> STRUCTURE_BUILD_CORE =
+            ITEMS.register("structure_build_core", () -> new WandCoreItem(WandCoreBehavior.STRUCTURE_BUILD, new Item.Properties().stacksTo(1)));
 
     public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_CAPACITY =
             ITEMS.register("wand_upgrade_capacity", () -> new WandUpgradeItem(WandUpgradeBehavior.CAPACITY, new Item.Properties().stacksTo(4)));

@@ -23,7 +23,7 @@ public class ModItemModelProvider extends ItemModelProvider {
 
     private static final String[] CORE_NAMES = {
             "formation_core", "activation_core", "io_core", "rotation_core", "ritual_core",
-            "blank_core"
+            "structure_build_core", "blank_core"
     };
 
     private static final String[] UPGRADE_NAMES = {

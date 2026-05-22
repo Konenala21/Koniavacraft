@@ -106,6 +106,8 @@
   "tooltip.koniava.core.io.desc": "Opens the IO configuration panel for a machine block.",
   "tooltip.koniava.core.rotation.desc": "Rotates the facing direction of a block.",
   "tooltip.koniava.core.ritual.desc": "Triggers a ritual on the Aspect Convergence Altar.",
+  "item.koniava.structure_build_core": "Structure Build Core Plugin",
+  "tooltip.koniava.core.structure_build.desc": "Places missing altar blocks from inventory. Costs 100 mana per block.",
   "tooltip.koniava.wand.mana": "Mana: %s / %s",
   "tooltip.koniava.wand.core": "Core: %s",
   "tooltip.koniava.wand.no_core": "No core installed",

@@ -105,6 +105,8 @@
   "tooltip.koniava.core.io.desc": "開啟方塊的 IO 設定介面。",
   "tooltip.koniava.core.rotation.desc": "旋轉方塊的面向方向。",
   "tooltip.koniava.core.ritual.desc": "對本源匯聚陣施放儀式啟動。",
+  "item.koniava.structure_build_core": "結構建造核心插件",
+  "tooltip.koniava.core.structure_build.desc": "從背包取出方塊自動填入祭壇缺少的位置。每放一塊消耗 100 魔力。",
   "tooltip.koniava.wand.mana": "魔力：%s / %s",
   "tooltip.koniava.wand.core": "核心插件：%s",
   "tooltip.koniava.wand.no_core": "未安裝核心插件",

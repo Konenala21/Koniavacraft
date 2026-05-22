@@ -220,6 +220,19 @@ public class ManaCraftingRecipeProvider {
                 .manaCost(400)
                 .save(output, "rotation_core");
 
+        // 結構建造核心
+        ManaCraftingRecipeBuilder.create(ModItems.STRUCTURE_BUILD_CORE.get(), 1)
+                .shaped(true)
+                .pattern("CMC")
+                .pattern("WKW")
+                .pattern("CMC")
+                .define('C', ModItems.MANA_CRYSTAL.get())
+                .define('M', ModBlocks.MANA_BLOCK.get())
+                .define('W', ModItems.MANA_WIRE.get())
+                .define('K', ModItems.BLANK_CORE.get())
+                .manaCost(1000)
+                .save(output, "structure_build_core");
+
         // 儀式核心
         ManaCraftingRecipeBuilder.create(ModItems.RITUAL_CORE.get(), 1)
                 .shaped(true)

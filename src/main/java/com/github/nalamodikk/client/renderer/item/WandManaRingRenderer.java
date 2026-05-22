@@ -3,12 +3,14 @@ package com.github.nalamodikk.client.renderer.item;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.item.wand.WandRodItem;
 import com.github.nalamodikk.register.ModDataComponents;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 
 @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID, value = Dist.CLIENT)
@@ -37,6 +39,33 @@ public class WandManaRingRenderer {
 
             int cx = guiLeft + slot.x + 8;
             int cy = guiTop  + slot.y + 12;
+            drawRing(g, cx, cy, fill);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onHudRender(RenderGuiEvent.Post event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.screen != null) return;
+
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
+        int hotbarLeft = sw / 2 - 91;
+        int hotbarTop  = sh - 22;
+
+        var inv = mc.player.getInventory();
+        var g   = event.getGuiGraphics();
+
+        for (int i = 0; i < 9; i++) {
+            ItemStack stack = inv.getItem(i);
+            if (!(stack.getItem() instanceof WandRodItem)) continue;
+
+            int current = stack.getOrDefault(ModDataComponents.MANA_STORED, 0);
+            int max     = stack.getOrDefault(ModDataComponents.MAX_MANA, 8000);
+            float fill  = max > 0 ? (float) current / max : 0f;
+
+            int cx = hotbarLeft + 3 + i * 20 + 8;
+            int cy = hotbarTop  + 3 + 12;
             drawRing(g, cx, cy, fill);
         }
     }
