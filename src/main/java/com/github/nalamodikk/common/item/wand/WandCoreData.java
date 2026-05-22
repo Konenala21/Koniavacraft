@@ -21,7 +21,7 @@ import java.util.Optional;
  */
 public record WandCoreData(ItemStack core, Map<Integer, ItemStack> upgrades) {
 
-    public static final int UPGRADE_SLOTS = 6;
+    public static final int UPGRADE_SLOTS = 4;
 
     // Upgrades 序列化：Integer key → String（NBT map 只支援 String key）
     private static final Codec<Map<Integer, ItemStack>> UPGRADES_CODEC =
