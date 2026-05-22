@@ -39,7 +39,10 @@ public class WandManaRingRenderer {
 
             int cx = guiLeft + slot.x + 8;
             int cy = guiTop  + slot.y + 12;
+            g.pose().pushPose();
+            g.pose().translate(0, 0, 300);
             drawRing(g, cx, cy, fill);
+            g.pose().popPose();
         }
     }
 

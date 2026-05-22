@@ -12,6 +12,7 @@ import net.minecraft.world.item.ItemStack;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -95,5 +96,30 @@ public record WandCoreData(ItemStack core, Map<Integer, ItemStack> upgrades) {
         if (item.isEmpty()) copy.remove(slot);
         else copy.put(slot, item.copy());
         return new WandCoreData(core.isEmpty() ? ItemStack.EMPTY : core.copy(), copy);
+    }
+
+    // ── equals / hashCode ─────────────────────────────────────────────────────
+    // ItemStack has no equals() override — we must provide content-based comparison
+    // to prevent equip animation from firing on every inventory sync.
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof WandCoreData other)) return false;
+        if (!ItemStack.isSameItemSameComponents(this.core, other.core)) return false;
+        if (this.upgrades.size() != other.upgrades.size()) return false;
+        for (Map.Entry<Integer, ItemStack> entry : this.upgrades.entrySet()) {
+            ItemStack otherStack = other.upgrades.get(entry.getKey());
+            if (otherStack == null) return false;
+            if (!ItemStack.isSameItemSameComponents(entry.getValue(), otherStack)) return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int h = core.isEmpty() ? 0 : Objects.hashCode(core.getItem());
+        h = 31 * h + upgrades.size();
+        return h;
     }
 }
