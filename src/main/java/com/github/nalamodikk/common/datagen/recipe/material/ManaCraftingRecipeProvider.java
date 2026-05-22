@@ -144,25 +144,27 @@ public class ManaCraftingRecipeProvider {
                 .manaCost(2000)
                 .save(output, "wand_rod");
 
-        // 構成核心
+        // 構成核心（祭壇前可做，不可用 circuit 材料）
         ManaCraftingRecipeBuilder.create(ModItems.FORMATION_CORE.get(), 1)
                 .shaped(true)
-                .pattern("CIC")
-                .pattern("BIB")
-                .pattern(" C ")
+                .pattern("CWC")
+                .pattern("WIW")
+                .pattern("CWC")
                 .define('C', ModItems.MANA_CRYSTAL.get())
+                .define('W', ModItems.MANA_WIRE.get())
                 .define('I', ModItems.MANA_INGOT.get())
-                .define('B', ModItems.BASIC_MANA_CIRCUIT.get())
-                .manaCost(1500)
+                .manaCost(1200)
                 .save(output, "formation_core");
 
-        // 啟動核心
+        // 啟動核心（祭壇前可做，不可用 circuit 材料）
         ManaCraftingRecipeBuilder.create(ModItems.ACTIVATION_CORE.get(), 1)
                 .shaped(true)
-                .pattern(" B ")
-                .pattern("SIS")
-                .define('B', ModItems.BASIC_MANA_CIRCUIT.get())
+                .pattern("SWS")
+                .pattern("CIC")
+                .pattern("SWS")
                 .define('S', ModItems.MANA_SUBSTRATE.get())
+                .define('W', ModItems.MANA_WIRE.get())
+                .define('C', ModItems.MANA_CRYSTAL.get())
                 .define('I', ModItems.MANA_INGOT.get())
                 .manaCost(800)
                 .save(output, "activation_core");
