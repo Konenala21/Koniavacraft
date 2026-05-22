@@ -19,7 +19,9 @@ public class WandManaRingRenderer {
     private static final int COLOR_FILL  = 0xFF4488FF;
     private static final int COLOR_EMPTY = 0xFF334455;
     private static final int COLOR_RING  = 0xFFAABBCC;
-    private static final int RADIUS = 4;
+    private static final int R_OUTER = 7;
+    private static final int R_INNER = 5;
+    private static final double ARC_HALF = 2 * Math.PI / 3; // 240-degree arc (120 each side from top)
 
     @SubscribeEvent
     public static void onScreenRender(ScreenEvent.Render.Post event) {
@@ -74,20 +76,21 @@ public class WandManaRingRenderer {
     }
 
     private static void drawRing(net.minecraft.client.gui.GuiGraphics g, int cx, int cy, float fill) {
-        for (int dx = -RADIUS; dx <= RADIUS; dx++) {
-            for (int dy = -RADIUS; dy <= RADIUS; dy++) {
+        for (int dx = -R_OUTER - 1; dx <= R_OUTER + 1; dx++) {
+            for (int dy = -R_OUTER - 1; dy <= R_OUTER + 1; dy++) {
                 double dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist > RADIUS) continue;
+                if (dist > R_OUTER || dist < R_INNER) continue;
 
-                if (dist >= RADIUS - 1.0) {
-                    g.fill(cx + dx, cy + dy, cx + dx + 1, cy + dy + 1, COLOR_RING);
-                } else {
-                    // angle: 0 = top, clockwise
-                    double angle = Math.atan2(dx, -dy);
-                    float normalized = (float) ((angle + Math.PI) / (2 * Math.PI));
-                    int color = normalized <= fill ? COLOR_FILL : COLOR_EMPTY;
-                    g.fill(cx + dx, cy + dy, cx + dx + 1, cy + dy + 1, color);
-                }
+                // angle: 0 = top, clockwise positive
+                double angle = Math.atan2(dx, -dy);
+                if (Math.abs(angle) > ARC_HALF) continue;
+
+                // 0 = left endpoint, 1 = right endpoint
+                double normalized = (angle + ARC_HALF) / (2 * ARC_HALF);
+
+                boolean isEdge = dist >= R_OUTER - 1.0 || dist <= R_INNER + 0.5;
+                int color = isEdge ? COLOR_RING : (normalized <= fill ? COLOR_FILL : COLOR_EMPTY);
+                g.fill(cx + dx, cy + dy, cx + dx + 1, cy + dy + 1, color);
             }
         }
     }
