@@ -163,7 +163,10 @@ public class WandUpgradeScreen extends Screen {
             g.renderItem(stack, x + 4, y + 4);
             g.renderItemDecorations(font, stack, x + 4, y + 4);
         }
-        if (hovered) g.renderTooltip(font, label, mx, my);
+        if (hovered) {
+            Component tooltip = stack.isEmpty() ? label : stack.getHoverName();
+            g.renderTooltip(font, tooltip, mx, my);
+        }
     }
 
     // ── 右側：相容物品列表 ────────────────────────────────────────────────
@@ -292,6 +295,15 @@ public class WandUpgradeScreen extends Screen {
 
     private boolean isInSlot(double mx, double my, int x, int y) {
         return mx >= x && mx < x + SLOT_SIZE && my >= y && my < y + SLOT_SIZE;
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (Minecraft.getInstance().options.keyInventory.matches(keyCode, scanCode)) {
+            this.onClose();
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override

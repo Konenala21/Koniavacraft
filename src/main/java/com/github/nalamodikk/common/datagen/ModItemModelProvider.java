@@ -37,9 +37,9 @@ public class ModItemModelProvider extends ItemModelProvider {
             withExistingParent(name, modLoc("item/wand_core"));
         }
 
-        // 升級物品：同樣 parent 指向 wand_core
+        // 升級物品：parent 指向 wand_upgrade 模型
         for (String name : UPGRADE_NAMES) {
-            withExistingParent(name, modLoc("item/wand_core"));
+            withExistingParent(name, modLoc("item/wand_upgrade"));
         }
         // 研究系統物品：借用 vanilla 貼圖
         withExistingParent(ModItems.RESEARCH_NOTE.getId().getPath(),

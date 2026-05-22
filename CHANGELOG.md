@@ -6,11 +6,14 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
-### Developer Notes / 開發者備註
-
-## [0.0.1.7-3]
-
-### Player Changes / 玩家更新內容
+- Arcane Pulse Modulator (wand rod) now renders installed core and upgrade plugins visually on the model: the core appears near the wrench head, and up to four upgrade USB-shaped plugins appear on the four side prongs. First-person view shows two slots; third-person shows all four.
+- 術式脈衝調制器現在會在模型上視覺化顯示已安裝的核心與升級插件：核心顯示在板手頭部，最多四個 USB 形狀的升級插件顯示在四個側齒上。第一人稱顯示兩個槽位，第三人稱顯示全部四個。
+- Upgrade GUI slots now show the installed item's name as a tooltip on hover, instead of always showing the slot label.
+- 升級 GUI 槽位懸停時現在顯示已安裝物品的名稱，而非永遠顯示槽位標籤。
+- Upgrade GUI can now be closed with the inventory key (default E).
+- 升級 GUI 現在可以用背包鍵（預設 E）關閉。
+- Added wand_upgrade model: USB-shaped upgrade plugin with outer housing tinted by upgrade type color; metal connector interior retains original texture.
+- 新增升級插件 USB 建模：外殼根據升級類型染色，金屬接口內部保持原始貼圖。
 
 - Damage dealt to enemies now shows as floating numbers above the target, visible only to the attacker. Normal hits show in white, critical hits in gold, and Floating Turret magic damage in purple. Rapid hits on the same target are merged into one number.
 - 對敵人造成的傷害現在會在目標頭頂顯示浮動數字，只有攻擊者自己看得到。普通傷害白色、暴擊金色、浮游砲魔法傷害紫色，短時間內連續命中同一目標的傷害會合併顯示。
@@ -20,6 +23,22 @@ All notable changes to this project will be documented in this file.
 - 浮游砲蓄力動畫在發射後（包含滿蓄自動射出）現在能平滑回到閒置位置，不再瞬間跳回。
 - Floating Turret projectiles now pass through water and lava instead of stopping on contact.
 - 浮游砲砲彈現在可以穿過水和岩漿繼續飛行，不會在液體處消失。
+- Added Floating Turret crafting: three new intermediate items (Mana Barrel, Precision Mana Circuit, High-Density Mana Core) and an Aspect Altar T3 recipe. Unlocked via the Mana Weapons research node.
+- 新增浮游砲合成路線：三個中間物品（魔力砲管、精密魔力迴路、高密度魔力核）以及本源矩陣 T3 祭壇配方，透過魔力武器研究節點解鎖。
+- Added Mana Charger research node, unlocking the Mana Charger block recipe.
+- 新增魔力充能台研究節點，解鎖魔力充能台配方。
+- Aspect Altar rituals now require a Ritual Wand to start. Right-clicking the altar with an empty hand shows the current mana level and ritual status instead.
+- 本源矩陣祭壇儀式現在需要手持儀式魔杖才能啟動。空手右鍵改為顯示當前魔力量和儀式狀態。
+- Altar rituals now consume mana continuously throughout the process instead of all at once at completion. If mana supply is interrupted, electric sparks appear on the altar core as a warning; the ritual collapses after 10 seconds with no supply, triggering an explosion.
+- 祭壇儀式現在持續消耗魔力而非完成時一次扣除。魔力中斷時核心方塊出現電弧警告，10 秒內未恢復則儀式失控爆炸。
+- Ritual failure explosion: red shockwave visual effect expands outward; players within 64 blocks lose 50% max HP and receive Slowness II; items on pedestals may scatter (50%) or vanish permanently (15%).
+- 儀式失控爆炸：紅色衝擊波向外擴散；64 格內玩家損失 50% 最大 HP 並受到緩速 II；底座物品有機率散落（50%）或永久消失（15%）。
+- Nara Guide (watch UI) Altar chapter now includes a dedicated page explaining the ritual wand, continuous mana requirement, warning mechanic, and explosion consequences.
+- 娜拉指引介面的祭壇章節新增儀式機制說明頁，說明儀式魔杖用法、持續魔力需求、警告機制與爆炸後果。
+- Jade tooltip now shows current and maximum mana for all mana machines and the Arcane Conduit when hovering over them.
+- Jade 懸停提示現在對所有魔力機器和奧術導管顯示當前及最大魔力量。
+- Added R key binding to skip the altar upgrade animation.
+- 新增 R 鍵快捷鍵可跳過祭壇升級動畫。
 
 ### Developer Notes / 開發者備註
 
@@ -30,6 +49,11 @@ All notable changes to this project will be documented in this file.
 - `FloatingTurretPlayerRenderer.renderHandTurret()`: charge smoothing now decays whenever `chargeRatio` drops (not only when `isCharging` is false), preventing the snap when a new charge starts at ratio 0 immediately after firing.
 - `TurretHitEffectRenderer`: `MAX_EFFECTS` raised from 16 to 64 to prevent `BufferOverflowException` when dual-wield generates more simultaneous hit rings.
 - `FloatingTurretProjectile.onHitBlock()`: checks `FluidState` before processing block hit; returns early for any non-empty fluid, allowing the bolt to continue through liquids.
+- `AspectAltarBlockEntity`: added per-tick mana drain (`cachedRecipe`, `manaConsumedSoFar`, `warningTick`). `tryActivate()` no longer pre-checks mana; ritual is started only via `RitualWandItem`. `tickRitual()` extracts mana each tick; on insufficient mana increments `warningTick` and spawns `ELECTRIC_SPARK` particles every 10 ticks; at `WARNING_TICKS=200` calls `triggerExplosion()`.
+- `triggerExplosion()`: sends `RitualExplosionPacket` to players within 64 blocks, deals 50% max HP magic damage and Slowness II to nearby `ServerPlayer` instances, and rolls per-pedestal item scatter/vanish.
+- `AltarExplosionRenderer` and `AltarExplosionManager`: client-side GLSL depth-buffer ring renderer using `common_explosion.glsl` (red/orange palette) and `stage_altar_explosion.fsh`. Three waves expand to 64-block radius over 80 ticks. Triggered via `RitualExplosionPacket`.
+- `ManaJadeProvider`: reads `ModCapabilities.MANA` at the hovered block position server-side; packs `manaStored` and `maxMana` into NBT. Registered for `AbstractManaMachineEntityBlock`, `AspectAltarBlockEntity`, and `ArcaneConduitBlockEntity`.
+- `RitualWandItem`: `useOn()` calls `altar.tryActivate(playerUUID)` and displays the result component as an action bar message.
 
 ## [0.0.1.7-2]
 

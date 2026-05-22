@@ -4,6 +4,7 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.client.renderer.deployer.ManaDeployerBEWLR;
 import com.github.nalamodikk.client.renderer.deployer.ManaDeployerRenderer;
 import com.github.nalamodikk.client.renderer.item.FloatingTurretBEWLR;
+import com.github.nalamodikk.client.renderer.item.WandRodBEWLR;
 import com.github.nalamodikk.register.ModItems;
 import com.github.nalamodikk.common.block.blockentity.altar.AltarPillarRenderer;
 import com.github.nalamodikk.common.block.blockentity.altar.AspectAltarRenderer;
@@ -56,6 +57,13 @@ public class ModRenderLayers {
                 return FloatingTurretBEWLR.getInstance();
             }
         }, ModItems.FLOATING_TURRET.get());
+
+        event.registerItem(new IClientItemExtensions() {
+            @Override
+            public BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return WandRodBEWLR.getInstance();
+            }
+        }, ModItems.WAND_ROD.get());
     }
 
     @SubscribeEvent
@@ -63,5 +71,6 @@ public class ModRenderLayers {
         event.register(new ModelResourceLocation(
                 ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "block/resonance_ring"),
                 "standalone"));
+        event.register(WandRodBEWLR.MODEL_LOCATION);
     }
 }
