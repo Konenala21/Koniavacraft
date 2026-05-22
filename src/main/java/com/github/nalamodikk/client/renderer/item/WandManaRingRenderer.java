@@ -17,9 +17,9 @@ import net.neoforged.neoforge.client.event.ScreenEvent;
 public class WandManaRingRenderer {
 
     private static final int COLOR_FILL  = 0xFF4488FF;
-    private static final int COLOR_EMPTY = 0xFF222222;
-    private static final int COLOR_RING  = 0xFF000000;
-    private static final int RADIUS = 3;
+    private static final int COLOR_EMPTY = 0xFF334455;
+    private static final int COLOR_RING  = 0xFFAABBCC;
+    private static final int RADIUS = 4;
 
     @SubscribeEvent
     public static void onScreenRender(ScreenEvent.Render.Post event) {
