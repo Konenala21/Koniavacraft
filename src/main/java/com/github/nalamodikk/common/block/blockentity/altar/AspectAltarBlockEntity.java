@@ -11,6 +11,7 @@ import com.github.nalamodikk.register.ModBlockEntities;
 import com.github.nalamodikk.register.ModBlocks;
 import com.github.nalamodikk.register.ModRecipes;
 import com.github.nalamodikk.common.network.packet.client.altar.AltarUpgradeAnimPacket;
+import com.github.nalamodikk.narasystem.nara.event.NaraServerEvents;
 import com.github.nalamodikk.narasystem.nara.hud.NaraTutorialFlow;
 import com.github.nalamodikk.research.knowledge.ResearchSavedData;
 import net.minecraft.advancements.AdvancementHolder;
@@ -653,6 +654,13 @@ public static final List<Vec3i> RING_T1 = List.of(
         level.playSound(null, worldPosition, net.minecraft.sounds.SoundEvents.NOTE_BLOCK_HARP.value(),
                 net.minecraft.sounds.SoundSource.BLOCKS, 0.6f, 1.26f);
         syncToClient();
+        if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            net.minecraft.world.entity.player.Player nearest = serverLevel.getNearestPlayer(
+                    worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5, 16.0, false);
+            if (nearest instanceof net.minecraft.server.level.ServerPlayer sp) {
+                NaraServerEvents.scheduleFirstAltarFormedTutorial(sp);
+            }
+        }
     }
 
     @Override

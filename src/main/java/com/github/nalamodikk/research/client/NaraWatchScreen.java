@@ -1,6 +1,7 @@
 package com.github.nalamodikk.research.client;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.narasystem.nara.hud.NaraDialogueManager;
 import com.github.nalamodikk.research.aspect.Aspect;
 import com.github.nalamodikk.research.network.StartResearchPacket;
 import com.github.nalamodikk.research.template.ResearchRegistry;
@@ -538,7 +539,24 @@ public class NaraWatchScreen extends Screen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        // When search box is focused, let it consume letter keys; only block E-close
+        if (NaraDialogueManager.isActive() && NaraDialogueManager.isOverlayOnScreen()) {
+            if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_F) {
+                if (NaraDialogueManager.getDialogueState() == NaraDialogueManager.DialogueState.CHOOSING) {
+                    NaraDialogueManager.confirmSelectedChoice();
+                } else {
+                    NaraDialogueManager.onPlayerClick();
+                }
+                return true;
+            }
+            if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER) {
+                NaraDialogueManager.onPlayerClick();
+                return true;
+            }
+            if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
+                NaraDialogueManager.close();
+                return true;
+            }
+        }
         if (searchBox == null || !searchBox.isFocused()) {
             if (minecraft != null && minecraft.options.keyInventory.matches(keyCode, scanCode)) {
                 this.onClose();

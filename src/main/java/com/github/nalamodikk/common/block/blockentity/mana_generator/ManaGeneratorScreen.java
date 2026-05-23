@@ -1,6 +1,7 @@
 package com.github.nalamodikk.common.block.blockentity.mana_generator;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.narasystem.nara.hud.NaraDialogueManager;
 import com.github.nalamodikk.client.screenAPI.component.BurnProgressWidget;
 import com.github.nalamodikk.client.screenAPI.component.EnergyBarWidget;
 import com.github.nalamodikk.client.screenAPI.component.ManaBarWidget;
@@ -160,5 +161,28 @@ public class ManaGeneratorScreen extends AutoSizedModularScreen<ManaGeneratorMen
                 .withStyle(ChatFormatting.RED), warningX, warningY, 0xFF0000);
 
         poseStack.popPose();
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (NaraDialogueManager.isActive() && NaraDialogueManager.isOverlayOnScreen()) {
+            if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_F) {
+                if (NaraDialogueManager.getDialogueState() == NaraDialogueManager.DialogueState.CHOOSING) {
+                    NaraDialogueManager.confirmSelectedChoice();
+                } else {
+                    NaraDialogueManager.onPlayerClick();
+                }
+                return true;
+            }
+            if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ENTER) {
+                NaraDialogueManager.onPlayerClick();
+                return true;
+            }
+            if (keyCode == org.lwjgl.glfw.GLFW.GLFW_KEY_ESCAPE) {
+                NaraDialogueManager.close();
+                return true;
+            }
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 }

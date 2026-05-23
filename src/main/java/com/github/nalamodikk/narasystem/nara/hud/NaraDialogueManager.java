@@ -22,6 +22,7 @@ public class NaraDialogueManager {
     private static NaraDialogueLine currentLine = null;
     private static DialogueState dialogueState = DialogueState.INACTIVE;
     private static PortraitState portraitState = PortraitState.HIDDEN;
+    private static boolean overlayOnScreen = false;
 
     private static Component displayName = Component.translatable("nara.hud.name.unknown");
     private static boolean portraitMad = false;
@@ -139,11 +140,14 @@ public class NaraDialogueManager {
         dialogueState = DialogueState.INACTIVE;
         choiceTimerTicks = 0;
         selectedChoiceIndex = 0;
+        overlayOnScreen = false;
     }
 
     // ── Getters ───────────────────────────────────────────────────────────────
 
     public static boolean isActive() { return dialogueState != DialogueState.INACTIVE; }
+    public static boolean isOverlayOnScreen() { return overlayOnScreen; }
+    public static void setOverlayOnScreen(boolean value) { overlayOnScreen = value; }
     public static DialogueState getDialogueState() { return dialogueState; }
     public static PortraitState getPortraitState() { return portraitState; }
     public static Component getDisplayName() { return displayName; }

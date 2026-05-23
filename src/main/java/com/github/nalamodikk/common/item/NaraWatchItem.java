@@ -31,6 +31,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import com.github.nalamodikk.narasystem.nara.event.NaraServerEvents;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.util.TriState;
@@ -130,6 +131,7 @@ public class NaraWatchItem extends Item {
             WatchSyncPacket.sendTo(serverPlayer, knowledge.getCompletedResearch(), knowledge.getAvailableResearchOverrides(),
                     knowledge.getLockedResearch(), knowledge.getCurrentTier(),
                     knowledge.getDiscoveredAspectsMap());
+            NaraServerEvents.scheduleFirstWatchOpenTutorial(serverPlayer);
         }
     }
 
@@ -171,6 +173,7 @@ public class NaraWatchItem extends Item {
             playSuccessEffects(player.level(), target.pos());
             savedData.setDirty();
             AspectSyncPacket.sendTo(player);
+            NaraServerEvents.scheduleFirstScanTutorial(player);
         } else {
             player.sendSystemMessage(Component.translatable("item.koniava.nara_watch.scan.duplicate")
                     .withStyle(ChatFormatting.YELLOW));

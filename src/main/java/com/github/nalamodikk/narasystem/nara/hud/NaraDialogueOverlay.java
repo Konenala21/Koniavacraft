@@ -13,6 +13,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.sounds.SoundEvents;
@@ -137,16 +138,26 @@ public class NaraDialogueOverlay {
         if (!NaraDialogueManager.isActive()) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc.screen != null) return;
+        renderDialogue(event.getGuiGraphics(), mc,
+                mc.getWindow().getGuiScaledWidth(),
+                mc.getWindow().getGuiScaledHeight());
+    }
 
-        GuiGraphics g = event.getGuiGraphics();
-        int sw = mc.getWindow().getGuiScaledWidth();
-        int sh = mc.getWindow().getGuiScaledHeight();
+    @SubscribeEvent
+    public static void onRenderScreen(ScreenEvent.Render.Post event) {
+        if (!NaraDialogueManager.isActive()) return;
+        if (!NaraDialogueManager.isOverlayOnScreen()) return;
+        Minecraft mc = Minecraft.getInstance();
+        renderDialogue(event.getGuiGraphics(), mc,
+                mc.getWindow().getGuiScaledWidth(),
+                mc.getWindow().getGuiScaledHeight());
+    }
 
+    private static void renderDialogue(GuiGraphics g, Minecraft mc, int sw, int sh) {
         int totalW = PORTRAIT_W + PADDING + BOX_W;
         int hudX = (sw - totalW) / 2;
         int hudY = (sh - BOX_H) / 2;
 
-        // 跳過提示浮在整個對話框上方
         Component skipHint = Component.translatable("nara.hud.hint.skip_all");
         int hintY = hudY - mc.font.lineHeight - 4;
         g.drawCenteredString(mc.font, skipHint, hudX + totalW / 2, hintY, COLOR_GREY);

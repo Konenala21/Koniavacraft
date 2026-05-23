@@ -1,5 +1,6 @@
 package com.github.nalamodikk.common.item.research;
 
+import com.github.nalamodikk.narasystem.nara.event.NaraServerEvents;
 import com.github.nalamodikk.research.knowledge.ResearchSavedData;
 import com.github.nalamodikk.research.network.KnowledgeSyncPacket;
 import com.github.nalamodikk.research.template.ResearchRegistry;
@@ -65,7 +66,10 @@ public class CompletedResearchItem extends Item {
                 // First time committing — trigger ceremony
                 boolean isVeryFirst = data.getOrCreate(sp.getUUID())
                         .getCompletedResearch().size() == 1;
-                if (isVeryFirst) spawnFirstResearchCelebration(sp, serverLevel);
+                if (isVeryFirst) {
+                    spawnFirstResearchCelebration(sp, serverLevel);
+                    NaraServerEvents.scheduleFirstResearchTutorial(sp);
+                }
 
                 ResearchRegistry.get(researchId).ifPresent(t -> {
                     sp.sendSystemMessage(Component.translatable(
