@@ -6,6 +6,7 @@
   "item.koniava.floating_turret.tooltip.hint": "右鍵發射（手持）| 裝入浮游砲槽後自動守護",
   "entity.koniava.floating_turret": "娜拉・星環浮游砲",
   "equipment.koniava.turret": "浮游砲槽",
+  "tooltip.koniava.equipment.slot_install_hint": "可安裝對應類型的裝備",
   "item.koniava.mana_dust": "魔力粉",
   "item.koniava.mana_ingot": "魔力錠",
   "item.koniava.mana_debug_tool": "魔力除錯工具",

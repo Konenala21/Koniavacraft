@@ -54,6 +54,12 @@ All notable changes to this project will be documented in this file.
 - 基礎術式脈衝調制器支援 4 個升級槽，最高可裝 Mk1 升級。嘗試安裝更高等級的升級會顯示拒絕訊息。
 - Upgrade GUI now shows the correct number of slots based on the held wand tier: 4 slots for the basic rod, 6 slots for the resonator.
 - 升級 GUI 現在根據手持調制器等級顯示正確槽位數量：基礎版 4 個槽，諧振器 6 個槽。
+- Wand upgrade 3D preview can now rotate freely in all directions (X axis no longer clamped). Drag to spin, scroll to zoom.
+- 魔杖升級 3D 預覽現在可以往任意方向自由旋轉（X 軸不再限制角度）。拖曳旋轉，滾輪縮放。
+- Wand upgrade Mk1-Mk3 recipes now require the previous tier item in the center slot, preventing tier skipping.
+- 魔杖升級 Mk1-Mk3 配方現在需要將前一等級物品放在中心格，無法跨等級製作。
+- Extra equipment slots now show a tooltip describing what item type can be installed in each slot.
+- 額外裝備欄位現在顯示工具提示，說明各槽位可安裝的物品類型。
 
 ### Developer Notes / 開發者備註
 

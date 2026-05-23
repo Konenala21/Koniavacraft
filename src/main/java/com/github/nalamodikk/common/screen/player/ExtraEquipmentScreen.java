@@ -1,6 +1,9 @@
 package com.github.nalamodikk.common.screen.player;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.player.equipment.EquipmentType;
+import com.github.nalamodikk.common.player.equipment.slot.SpecificEquipmentSlot;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
@@ -8,6 +11,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Inventory;
+import java.util.List;
 
 public class ExtraEquipmentScreen extends AbstractContainerScreen<ExtraEquipmentMenu> {
 
@@ -72,13 +76,26 @@ public class ExtraEquipmentScreen extends AbstractContainerScreen<ExtraEquipment
 
         @Override
         public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-            // 先更新滑鼠位置
             this.xMouse = (float)mouseX;
             this.yMouse = (float)mouseY;
 
             this.renderBackground(graphics, mouseX, mouseY, partialTick);
             super.render(graphics, mouseX, mouseY, partialTick);
             this.renderTooltip(graphics, mouseX, mouseY);
+        }
+
+        @Override
+        protected void renderTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+            if (hoveredSlot instanceof SpecificEquipmentSlot equipSlot && !equipSlot.hasItem()) {
+                EquipmentType type = equipSlot.getAllowedType();
+                graphics.renderComponentTooltip(this.font, List.of(
+                        type.getDisplayName().copy().withStyle(ChatFormatting.WHITE),
+                        Component.translatable("tooltip.koniava.equipment.slot_install_hint")
+                                 .withStyle(ChatFormatting.GRAY)
+                ), mouseX, mouseY);
+                return;
+            }
+            super.renderTooltip(graphics, mouseX, mouseY);
         }
 
 
