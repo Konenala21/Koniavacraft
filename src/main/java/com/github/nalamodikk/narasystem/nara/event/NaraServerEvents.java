@@ -452,7 +452,13 @@ public class NaraServerEvents {
 
     // Tutorials that fire immediately when the machine GUI opens (not on close)
     private static final Set<String> FIRE_ON_GUI_OPEN = Set.of(
-            NaraTutorialFlow.MANA_GEN_PLACED
+            NaraTutorialFlow.MANA_GEN_PLACED,
+            NaraTutorialFlow.MANA_GEN_CRAFT,
+            NaraTutorialFlow.MANA_GRINDER_CRAFT,
+            NaraTutorialFlow.MANA_INFUSER_CRAFT,
+            NaraTutorialFlow.MANA_CRAFTING_CRAFT,
+            NaraTutorialFlow.RESEARCH_TABLE,
+            NaraTutorialFlow.FIRST_RESEARCH
     );
 
     public static void scheduleTestTutorial(ServerPlayer player, String tutorialId) {
