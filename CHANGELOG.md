@@ -41,6 +41,8 @@ All notable changes to this project will be documented in this file.
 - 新增 R 鍵快捷鍵可跳過祭壇升級動畫。
 - Nara dialogue now plays voice acting for all 18 dialogue lines in both Traditional Chinese and English. The correct audio is selected automatically based on the player's in-game language setting.
 - 娜拉對話現在對全部 18 條台詞播放配音，繁體中文與英文各一套，根據玩家遊戲內語言自動選擇。
+- Nara Guide screen (watch UI) can now be closed with the inventory key (default E).
+- 娜拉指引介面（手錶 UI）現在可以用背包鍵（預設 E）關閉。
 
 ### Developer Notes / 開發者備註
 

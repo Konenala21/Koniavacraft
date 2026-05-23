@@ -508,6 +508,15 @@ public class NaraGuideScreen extends Screen {
     }
 
     @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (minecraft != null && minecraft.options.keyInventory.matches(keyCode, scanCode)) {
+            this.onClose();
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
     public void onClose() {
         if (minecraft != null) minecraft.setScreen(parent);
     }
