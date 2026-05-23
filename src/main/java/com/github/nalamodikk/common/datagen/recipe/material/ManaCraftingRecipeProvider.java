@@ -259,40 +259,40 @@ public class ManaCraftingRecipeProvider {
                 .manaCost(2500)
                 .save(output, "wand_upgrade_capacity_mk0");
 
-        // 容量升級 Mk1
+        // 容量升級 Mk1（中心放 Mk0）
         ManaCraftingRecipeBuilder.create(ModItems.WAND_UPGRADE_CAPACITY_MK1.get(), 1)
                 .shaped(true)
                 .pattern("CHC")
-                .pattern("WPW")
+                .pattern("PAP")
                 .pattern("CHC")
                 .define('C', ModItems.MANA_CRYSTAL.get())
                 .define('H', ModItems.HIGH_DENSITY_MANA_CORE.get())
-                .define('W', ModItems.MANA_WAFER.get())
                 .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('A', ModItems.WAND_UPGRADE_CAPACITY_MK0.get())
                 .manaCost(4000)
                 .save(output, "wand_upgrade_capacity_mk1");
 
-        // 容量升級 Mk2
+        // 容量升級 Mk2（中心放 Mk1）
         ManaCraftingRecipeBuilder.create(ModItems.WAND_UPGRADE_CAPACITY_MK2.get(), 1)
                 .shaped(true)
-                .pattern("HCH")
-                .pattern("CPC")
-                .pattern("HCH")
-                .define('C', ModItems.MANA_CRYSTAL.get())
+                .pattern("HPH")
+                .pattern("PAP")
+                .pattern("HPH")
                 .define('H', ModItems.HIGH_DENSITY_MANA_CORE.get())
                 .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('A', ModItems.WAND_UPGRADE_CAPACITY_MK1.get())
                 .manaCost(6000)
                 .save(output, "wand_upgrade_capacity_mk2");
 
-        // 容量升級 Mk3
+        // 容量升級 Mk3（中心放 Mk2）
         ManaCraftingRecipeBuilder.create(ModItems.WAND_UPGRADE_CAPACITY_MK3.get(), 1)
                 .shaped(true)
-                .pattern("HMH")
-                .pattern("MPM")
-                .pattern("HMH")
-                .define('H', ModItems.HIGH_DENSITY_MANA_CORE.get())
-                .define('M', Items.NETHERITE_INGOT)
+                .pattern("NPN")
+                .pattern("PAP")
+                .pattern("NPN")
+                .define('N', Items.NETHERITE_INGOT)
                 .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('A', ModItems.WAND_UPGRADE_CAPACITY_MK2.get())
                 .manaCost(10000)
                 .save(output, "wand_upgrade_capacity_mk3");
 
@@ -309,38 +309,40 @@ public class ManaCraftingRecipeProvider {
                 .manaCost(2500)
                 .save(output, "wand_upgrade_efficiency_mk0");
 
-        // 效率升級 Mk1
+        // 效率升級 Mk1（中心放 Mk0）
         ManaCraftingRecipeBuilder.create(ModItems.WAND_UPGRADE_EFFICIENCY_MK1.get(), 1)
                 .shaped(true)
                 .pattern("QPQ")
-                .pattern("PHP")
+                .pattern("HAH")
                 .pattern("QPQ")
                 .define('Q', ModItems.MANA_WAFER.get())
                 .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
                 .define('H', ModItems.HIGH_DENSITY_MANA_CORE.get())
+                .define('A', ModItems.WAND_UPGRADE_EFFICIENCY_MK0.get())
                 .manaCost(4000)
                 .save(output, "wand_upgrade_efficiency_mk1");
 
-        // 效率升級 Mk2
+        // 效率升級 Mk2（中心放 Mk1）
         ManaCraftingRecipeBuilder.create(ModItems.WAND_UPGRADE_EFFICIENCY_MK2.get(), 1)
                 .shaped(true)
-                .pattern("PHP")
                 .pattern("HPH")
-                .pattern("PHP")
-                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .pattern("PAP")
+                .pattern("HPH")
                 .define('H', ModItems.HIGH_DENSITY_MANA_CORE.get())
+                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('A', ModItems.WAND_UPGRADE_EFFICIENCY_MK1.get())
                 .manaCost(6000)
                 .save(output, "wand_upgrade_efficiency_mk2");
 
-        // 效率升級 Mk3
+        // 效率升級 Mk3（中心放 Mk2）
         ManaCraftingRecipeBuilder.create(ModItems.WAND_UPGRADE_EFFICIENCY_MK3.get(), 1)
                 .shaped(true)
-                .pattern("PHP")
-                .pattern("PNP")
-                .pattern("PHP")
-                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
-                .define('H', ModItems.HIGH_DENSITY_MANA_CORE.get())
+                .pattern("NPN")
+                .pattern("PAP")
+                .pattern("NPN")
                 .define('N', Items.NETHERITE_INGOT)
+                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('A', ModItems.WAND_UPGRADE_EFFICIENCY_MK2.get())
                 .manaCost(10000)
                 .save(output, "wand_upgrade_efficiency_mk3");
 
@@ -357,39 +359,40 @@ public class ManaCraftingRecipeProvider {
                 .manaCost(2000)
                 .save(output, "wand_upgrade_range_mk0");
 
-        // 範圍升級 Mk1
+        // 範圍升級 Mk1（中心放 Mk0）
         ManaCraftingRecipeBuilder.create(ModItems.WAND_UPGRADE_RANGE_MK1.get(), 1)
                 .shaped(true)
                 .pattern("WEW")
-                .pattern("EPE")
+                .pattern("EAE")
                 .pattern("WEW")
                 .define('W', ModItems.MANA_WIRE.get())
                 .define('E', Items.ENDER_PEARL)
-                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('A', ModItems.WAND_UPGRADE_RANGE_MK0.get())
                 .manaCost(3500)
                 .save(output, "wand_upgrade_range_mk1");
 
-        // 範圍升級 Mk2
+        // 範圍升級 Mk2（中心放 Mk1）
         ManaCraftingRecipeBuilder.create(ModItems.WAND_UPGRADE_RANGE_MK2.get(), 1)
                 .shaped(true)
                 .pattern("EHE")
-                .pattern("HPH")
+                .pattern("HAH")
                 .pattern("EHE")
                 .define('E', Items.ENDER_PEARL)
                 .define('H', ModItems.HIGH_DENSITY_MANA_CORE.get())
-                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('A', ModItems.WAND_UPGRADE_RANGE_MK1.get())
                 .manaCost(5500)
                 .save(output, "wand_upgrade_range_mk2");
 
-        // 範圍升級 Mk3
+        // 範圍升級 Mk3（中心放 Mk2）
         ManaCraftingRecipeBuilder.create(ModItems.WAND_UPGRADE_RANGE_MK3.get(), 1)
                 .shaped(true)
                 .pattern("EHE")
-                .pattern("HNH")
+                .pattern("NAN")
                 .pattern("EHE")
                 .define('E', Items.ENDER_EYE)
                 .define('H', ModItems.HIGH_DENSITY_MANA_CORE.get())
                 .define('N', Items.NETHERITE_INGOT)
+                .define('A', ModItems.WAND_UPGRADE_RANGE_MK2.get())
                 .manaCost(9000)
                 .save(output, "wand_upgrade_range_mk3");
 
@@ -405,39 +408,39 @@ public class ManaCraftingRecipeProvider {
                 .manaCost(1500)
                 .save(output, "wand_upgrade_cooldown_mk0");
 
-        // 冷卻升級 Mk1
+        // 冷卻升級 Mk1（中心放 Mk0）
         ManaCraftingRecipeBuilder.create(ModItems.WAND_UPGRADE_COOLDOWN_MK1.get(), 1)
                 .shaped(true)
                 .pattern("QRQ")
-                .pattern("RPR")
+                .pattern("RAR")
                 .pattern("QRQ")
                 .define('Q', ModItems.MANA_WAFER.get())
                 .define('R', Items.REDSTONE)
-                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('A', ModItems.WAND_UPGRADE_COOLDOWN_MK0.get())
                 .manaCost(2500)
                 .save(output, "wand_upgrade_cooldown_mk1");
 
-        // 冷卻升級 Mk2
+        // 冷卻升級 Mk2（中心放 Mk1）
         ManaCraftingRecipeBuilder.create(ModItems.WAND_UPGRADE_COOLDOWN_MK2.get(), 1)
                 .shaped(true)
                 .pattern("PRP")
-                .pattern("RHR")
+                .pattern("RAR")
                 .pattern("PRP")
                 .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
                 .define('R', Items.REDSTONE)
-                .define('H', ModItems.HIGH_DENSITY_MANA_CORE.get())
+                .define('A', ModItems.WAND_UPGRADE_COOLDOWN_MK1.get())
                 .manaCost(4500)
                 .save(output, "wand_upgrade_cooldown_mk2");
 
-        // 冷卻升級 Mk3
+        // 冷卻升級 Mk3（中心放 Mk2）
         ManaCraftingRecipeBuilder.create(ModItems.WAND_UPGRADE_COOLDOWN_MK3.get(), 1)
                 .shaped(true)
-                .pattern("PRP")
-                .pattern("RNR")
-                .pattern("PRP")
+                .pattern("PBP")
+                .pattern("BAB")
+                .pattern("PBP")
                 .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
-                .define('R', Items.REDSTONE_BLOCK)
-                .define('N', Items.NETHERITE_INGOT)
+                .define('B', Items.REDSTONE_BLOCK)
+                .define('A', ModItems.WAND_UPGRADE_COOLDOWN_MK2.get())
                 .manaCost(8000)
                 .save(output, "wand_upgrade_cooldown_mk3");
 
