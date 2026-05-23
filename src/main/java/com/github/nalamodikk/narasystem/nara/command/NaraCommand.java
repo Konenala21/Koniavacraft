@@ -61,7 +61,7 @@ public class NaraCommand {
             source.sendFailure(Component.translatable("command.koniava.nara.player_only"));
             return 0;
         }
-        NaraTutorialPacket.send(player, id);
+        NaraServerEvents.scheduleTestTutorial(player, id);
         source.sendSuccess(() -> Component.translatable("command.koniava.nara.tutorial_success", id), false);
         return 1;
     }

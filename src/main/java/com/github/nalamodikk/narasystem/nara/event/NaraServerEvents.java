@@ -4,6 +4,8 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitBlock;
 import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorBlockEntity;
+import com.github.nalamodikk.common.block.blockentity.research.ResearchTableBlockEntity;
+import com.github.nalamodikk.common.block.blockentity.research.ResearchTableMenu;
 import com.github.nalamodikk.common.item.wand.WandRodItem;
 import com.github.nalamodikk.common.item.wand.core.WandCoreItem;
 import com.github.nalamodikk.narasystem.nara.hud.NaraTutorialFlow;
@@ -13,12 +15,16 @@ import com.github.nalamodikk.narasystem.nara.network.server.NaraCloseDialoguePac
 import com.github.nalamodikk.register.ModBlocks;
 import com.github.nalamodikk.research.ResearchGate;
 import com.github.nalamodikk.research.knowledge.ResearchSavedData;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
@@ -67,6 +73,10 @@ public class NaraServerEvents {
     private static final Map<UUID, Integer> pendingManaGrinderCraft = new HashMap<>();
     private static final Map<UUID, Integer> pendingManaInfuserCraft = new HashMap<>();
     private static final Map<UUID, Integer> pendingManaCraftingCraft = new HashMap<>();
+    // Dev test tutorial (ghost block)
+    private static final Map<UUID, Integer> pendingTestTutorial = new HashMap<>();
+    private static final Map<UUID, String> pendingTestTutorialId = new HashMap<>();
+    private static final Map<UUID, BlockPos> ghostBlocks = new HashMap<>();
 
     @SubscribeEvent
     public static void onServerStopping(ServerStoppingEvent event) {
@@ -87,6 +97,13 @@ public class NaraServerEvents {
         pendingManaGrinderCraft.clear();
         pendingManaInfuserCraft.clear();
         pendingManaCraftingCraft.clear();
+        for (Map.Entry<UUID, BlockPos> e : ghostBlocks.entrySet()) {
+            ServerPlayer p = event.getServer().getPlayerList().getPlayer(e.getKey());
+            if (p != null) p.serverLevel().removeBlock(e.getValue(), false);
+        }
+        ghostBlocks.clear();
+        pendingTestTutorial.clear();
+        pendingTestTutorialId.clear();
         ArcaneConduitBlockEntity.clearAllStaticCachesGracefully();
         ArcaneConduitBlock.clearStaticCaches();
         ResearchGate.clearCache();
@@ -112,6 +129,10 @@ public class NaraServerEvents {
         pendingManaGrinderCraft.remove(uuid);
         pendingManaInfuserCraft.remove(uuid);
         pendingManaCraftingCraft.remove(uuid);
+        BlockPos ghostPos = ghostBlocks.remove(uuid);
+        if (ghostPos != null) player.serverLevel().removeBlock(ghostPos, false);
+        pendingTestTutorial.remove(uuid);
+        pendingTestTutorialId.remove(uuid);
     }
 
     public static void scheduleFirstScanTutorial(ServerPlayer player) {
@@ -347,6 +368,36 @@ public class NaraServerEvents {
         tickWhenGuiClosed(pendingManaInfuserCraft, NaraTutorialFlow.MANA_INFUSER_CRAFT, event);
         tickWhenGuiClosed(pendingManaCraftingCraft, NaraTutorialFlow.MANA_CRAFTING_CRAFT, event);
 
+        if (!pendingTestTutorial.isEmpty()) {
+            Iterator<Map.Entry<UUID, Integer>> tit = pendingTestTutorial.entrySet().iterator();
+            while (tit.hasNext()) {
+                Map.Entry<UUID, Integer> entry = tit.next();
+                UUID uuid = entry.getKey();
+                ServerPlayer player = event.getServer().getPlayerList().getPlayer(uuid);
+                if (player == null) {
+                    tit.remove();
+                    pendingTestTutorialId.remove(uuid);
+                    BlockPos gp = ghostBlocks.remove(uuid);
+                    if (gp != null) {
+                        for (ServerLevel lvl : event.getServer().getAllLevels())
+                            if (!lvl.isEmptyBlock(gp)) { lvl.removeBlock(gp, false); break; }
+                    }
+                    continue;
+                }
+                int remaining = entry.getValue() - 1;
+                boolean timeout = remaining <= 0;
+                if (timeout || player.containerMenu == player.inventoryMenu) {
+                    tit.remove();
+                    String tid = pendingTestTutorialId.remove(uuid);
+                    BlockPos gp = ghostBlocks.remove(uuid);
+                    if (gp != null) player.serverLevel().removeBlock(gp, false);
+                    if (tid != null) NaraTutorialPacket.send(player, tid);
+                } else {
+                    entry.setValue(remaining);
+                }
+            }
+        }
+
         Iterator<Map.Entry<UUID, Integer>> it = pendingPunishmentDialogue.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<UUID, Integer> entry = it.next();
@@ -397,6 +448,79 @@ public class NaraServerEvents {
         UUID uuid = player.getUUID();
         if (!awaitingRespawn.remove(uuid)) return;
         pendingPunishmentDialogue.put(uuid, 20);
+    }
+
+    // Tutorials that fire immediately when the machine GUI opens (not on close)
+    private static final Set<String> FIRE_ON_GUI_OPEN = Set.of(
+            NaraTutorialFlow.MANA_GEN_PLACED
+    );
+
+    public static void scheduleTestTutorial(ServerPlayer player, String tutorialId) {
+        BlockState ghostState = getGhostBlockState(tutorialId);
+        if (ghostState == null) {
+            NaraTutorialPacket.send(player, tutorialId);
+            return;
+        }
+        BlockPos ghostPos = findAirPos(player);
+        if (ghostPos == null) {
+            NaraTutorialPacket.send(player, tutorialId);
+            return;
+        }
+        ServerLevel level = player.serverLevel();
+        level.setBlock(ghostPos, ghostState, 3);
+        BlockEntity be = level.getBlockEntity(ghostPos);
+        boolean opened = false;
+        if (be instanceof MenuProvider mp) {
+            player.openMenu(mp, ghostPos);
+            opened = true;
+        } else if (be instanceof ResearchTableBlockEntity rbe) {
+            player.openMenu(new SimpleMenuProvider(
+                    (id, inv, p) -> new ResearchTableMenu(id, inv, rbe),
+                    Component.translatable(ghostState.getBlock().getDescriptionId())), ghostPos);
+            opened = true;
+        }
+        if (opened) {
+            UUID uuid = player.getUUID();
+            ghostBlocks.put(uuid, ghostPos);
+            pendingTestTutorial.put(uuid, GUI_CLOSE_TIMEOUT_TICKS);
+            if (FIRE_ON_GUI_OPEN.contains(tutorialId)) {
+                NaraTutorialPacket.send(player, tutorialId);
+                pendingTestTutorialId.put(uuid, null); // null = cleanup only, already fired
+            } else {
+                pendingTestTutorialId.put(uuid, tutorialId);
+            }
+        } else {
+            level.removeBlock(ghostPos, false);
+            NaraTutorialPacket.send(player, tutorialId);
+        }
+    }
+
+    private static BlockState getGhostBlockState(String id) {
+        return switch (id) {
+            case NaraTutorialFlow.RESEARCH_TABLE, NaraTutorialFlow.FIRST_RESEARCH ->
+                    ModBlocks.RESEARCH_TABLE.get().defaultBlockState();
+            case NaraTutorialFlow.MANA_GEN_CRAFT, NaraTutorialFlow.MANA_GEN_PLACED ->
+                    ModBlocks.MANA_GENERATOR.get().defaultBlockState();
+            case NaraTutorialFlow.MANA_GRINDER_CRAFT ->
+                    ModBlocks.MANA_GRINDER.get().defaultBlockState();
+            case NaraTutorialFlow.MANA_INFUSER_CRAFT ->
+                    ModBlocks.MANA_INFUSER.get().defaultBlockState();
+            case NaraTutorialFlow.MANA_CRAFTING_CRAFT ->
+                    ModBlocks.MANA_CRAFTING_TABLE_BLOCK.get().defaultBlockState();
+            default -> null;
+        };
+    }
+
+    private static BlockPos findAirPos(ServerPlayer player) {
+        ServerLevel level = player.serverLevel();
+        BlockPos base = player.blockPosition().above(2);
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+                BlockPos pos = base.offset(dx, 0, dz);
+                if (level.isEmptyBlock(pos)) return pos;
+            }
+        }
+        return null;
     }
 
     private static void tickWhenGuiClosed(Map<UUID, Integer> pending, String tutorialId,
