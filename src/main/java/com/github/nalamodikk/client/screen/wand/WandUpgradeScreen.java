@@ -263,7 +263,7 @@ public class WandUpgradeScreen extends Screen {
     public boolean mouseDragged(double mx, double my, int button, double deltaX, double deltaY) {
         if (draggingPreview && button == 0) {
             previewRotY += (float) (deltaX * 0.8f);
-            previewRotX = Mth.clamp(previewRotX + (float) (deltaY * 0.8f), -85f, 85f);
+            previewRotX += (float) (deltaY * 0.8f);
             return true;
         }
         return super.mouseDragged(mx, my, button, deltaX, deltaY);
