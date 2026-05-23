@@ -70,6 +70,10 @@ public record ResearchCompletePacket(ResourceLocation researchId, BlockPos table
             // Transform note → completed scroll, consume quill charge.
             // Knowledge is saved later when the player right-clicks the scroll.
             if (level.getBlockEntity(packet.tablePos()) instanceof ResearchTableBlockEntity table) {
+                if (!table.isNoteOwner(player.getUUID())) {
+                    player.sendSystemMessage(Component.translatable("message.koniava.research.table_in_use"));
+                    return;
+                }
                 table.onResearchComplete(player);
             }
 

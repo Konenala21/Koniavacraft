@@ -16,20 +16,35 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 public class ResearchTableMenu extends AbstractContainerMenu {
 
     private final ResearchTableBlockEntity blockEntity;
+    private final Inventory playerInv;
 
     // ── Server-side constructor ───────────────────────────────────────────────
 
     public ResearchTableMenu(int id, Inventory playerInv, ResearchTableBlockEntity be) {
         super(ModMenuTypes.RESEARCH_TABLE_MENU.get(), id);
         this.blockEntity = be;
+        this.playerInv = playerInv;
 
         var inv = be.getInventory();
 
-        // Slot 0 — Research Note (left slot, 16×16 item centred in 23×23 interior at texture x=44,y=30)
+        // Slot 0 — Research Note
         this.addSlot(new SlotItemHandler(inv, ResearchTableBlockEntity.NOTE_SLOT, 47, 33) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return stack.getItem() instanceof ResearchNoteItem;
+            }
+
+            @Override
+            public void set(ItemStack stack) {
+                super.set(stack);
+                var level = be.getLevel();
+                if (level != null && !level.isClientSide()) {
+                    if (stack.isEmpty()) {
+                        be.clearGridState();
+                    } else if (be.getNoteOwner() == null) {
+                        be.setNoteOwner(playerInv.player.getUUID());
+                    }
+                }
             }
         });
 

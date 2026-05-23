@@ -71,15 +71,28 @@ public record ResearchAspectPlacePacket(
             BlockEntity be = player.serverLevel().getBlockEntity(packet.tablePos());
             if (!(be instanceof ResearchTableBlockEntity table)) return;
 
+            // Only the note owner may modify the grid
+            if (!table.isNoteOwner(player.getUUID())) {
+                player.sendSystemMessage(Component.translatable("message.koniava.research.table_in_use"));
+                return;
+            }
+
             ResourceLocation tableResearchId = table.getCurrentResearchId();
             if (tableResearchId == null || !tableResearchId.equals(packet.researchId())) return;
+
+            // Quill check BEFORE any aspect changes
+            ItemStack quill = table.getInventory().getStackInSlot(ResearchTableBlockEntity.QUILL_SLOT);
+            if (quill.isEmpty() || !(quill.getItem() instanceof InkQuillItem)) return;
+            if (InkQuillItem.isOutOfInk(quill)) {
+                player.sendSystemMessage(Component.translatable("item.koniava.ink_quill.out_of_ink_prompt"));
+                return;
+            }
 
             PlayerKnowledge knowledge = ResearchSavedData.get(player.serverLevel()).getOrCreate(player.getUUID());
             String key = packet.q() + "," + packet.r();
             String previousAspectId = table.getSavedPlacements().get(key);
             ResourceLocation newAspectId = packet.aspectId().orElse(null);
 
-            // Persist cell state
             if (newAspectId != null) {
                 Aspect aspect = com.github.nalamodikk.research.aspect.ModAspects.get(newAspectId);
                 if (aspect == null) {
@@ -106,13 +119,7 @@ public record ResearchAspectPlacePacket(
             ResearchSavedData.get(player.serverLevel()).setDirty();
             AspectSyncPacket.sendTo(player);
 
-            // Every click on the hex puzzle consumes quill durability, including cancel/removal.
-            ItemStack quill = table.getInventory().getStackInSlot(ResearchTableBlockEntity.QUILL_SLOT);
-            if (!quill.isEmpty() && quill.getItem() instanceof InkQuillItem) {
-                if (InkQuillItem.isOutOfInk(quill)) {
-                    player.sendSystemMessage(Component.translatable("item.koniava.ink_quill.out_of_ink_prompt"));
-                    return;
-                }
+            {
                 int damage = 1 + RandomGenerator.getDefault().nextInt(5);
                 ItemStack updated = quill.copy();
                 boolean justLocked = InkQuillItem.applyDamage(updated, damage);

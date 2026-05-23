@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class ResearchTableBlockEntity extends BlockEntity {
 
@@ -29,6 +30,7 @@ public class ResearchTableBlockEntity extends BlockEntity {
 
     @Nullable private ResourceLocation activeResearchId;
     private final Map<String, String> savedPlacements = new LinkedHashMap<>();
+    @Nullable private UUID noteOwner;
 
     private final ItemStackHandler inventory = new ItemStackHandler(2) {
         @Override
@@ -55,6 +57,21 @@ public class ResearchTableBlockEntity extends BlockEntity {
 
     public ItemStackHandler getInventory() {
         return inventory;
+    }
+
+    // ── Note owner ────────────────────────────────────────────────────────
+
+    @Nullable
+    public UUID getNoteOwner() { return noteOwner; }
+
+    public void setNoteOwner(@Nullable UUID uuid) {
+        noteOwner = uuid;
+        setChanged();
+        sync();
+    }
+
+    public boolean isNoteOwner(UUID playerUUID) {
+        return noteOwner == null || noteOwner.equals(playerUUID);
     }
 
     @Nullable
@@ -116,6 +133,7 @@ public class ResearchTableBlockEntity extends BlockEntity {
     public void clearGridState() {
         activeResearchId = null;
         savedPlacements.clear();
+        noteOwner = null;
         sync();
     }
 
@@ -144,6 +162,9 @@ public class ResearchTableBlockEntity extends BlockEntity {
             savedPlacements.forEach(placements::putString);
             tag.put("Placements", placements);
         }
+        if (noteOwner != null) {
+            tag.putUUID("NoteOwner", noteOwner);
+        }
     }
 
     @Override
@@ -154,6 +175,10 @@ public class ResearchTableBlockEntity extends BlockEntity {
         }
         savedPlacements.clear();
         activeResearchId = null;
+        noteOwner = null;
+        if (tag.contains("NoteOwner")) {
+            noteOwner = tag.getUUID("NoteOwner");
+        }
         if (tag.contains("ActiveResearch")) {
             activeResearchId = ResourceLocation.tryParse(tag.getString("ActiveResearch"));
             if (tag.contains("Placements")) {
