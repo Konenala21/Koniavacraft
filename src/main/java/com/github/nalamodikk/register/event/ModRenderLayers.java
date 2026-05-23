@@ -63,7 +63,7 @@ public class ModRenderLayers {
             public BlockEntityWithoutLevelRenderer getCustomRenderer() {
                 return WandRodBEWLR.getInstance();
             }
-        }, ModItems.WAND_ROD.get());
+        }, ModItems.WAND_ROD.get(), ModItems.WAND_ROD_ADVANCED.get());
     }
 
     @SubscribeEvent
