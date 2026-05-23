@@ -67,6 +67,7 @@ public class WandUpgradeScreen extends Screen {
     @Override
     public void init() {
         super.init();
+        if (!NaraTutorialFlow.isWandRodCraftShown()) return;
         ItemStack wand = wand();
         if (wand.getItem() instanceof WandRodItem) {
             WandCoreData data = WandRodItem.getData(wand);
@@ -252,7 +253,10 @@ public class WandUpgradeScreen extends Screen {
 
         // 右面板：列表項目
         if (selectedWandSlot != -1) {
-            int listY = sy + 18;
+            Component listHeader = selectedWandSlot == -2
+                    ? Component.translatable("screen.koniava.wand_upgrade.compatible_cores")
+                    : Component.translatable("screen.koniava.wand_upgrade.compatible_upgrades");
+            int listY = sy + 8 + font.split(listHeader, RIGHT_W - 10).size() * (font.lineHeight + 1) + 2;
             for (ItemStack item : getCompatibleItems()) {
                 if (listY + LIST_ITEM_H > sy + BG_H - 5) break;
                 if (mx >= rightX() + 2 && mx < rightX() + RIGHT_W - 2

@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Player Changes / 玩家更新內容
+
+- Fixed Mana Deployer consuming mana even when the interaction was explicitly rejected (e.g. right-clicking a locked block or an item that refuses activation).
+- 修復魔力部署器在互動明確被拒絕時（例如右鍵已鎖定的方塊，或物品拒絕啟用）仍然消耗魔力的問題。
+- Fixed Mana Charger IO direction config being lost on world reload; all faces previously set to non-default now correctly persist.
+- 修復魔力充能台的 IO 方向設定在世界重載後遺失的問題，非預設面的設定現在能正確保留。
+
+### Developer Notes / 開發者備註
+
+- Fixed `doRightClick` in `ManaDeployerBlockEntity` treating `InteractionResult.FAIL` as a successful activation; now uses `consumesAction()` to correctly distinguish PASS, FAIL, and SUCCESS.
+- Fixed `ManaChargerBlockEntity.saveAdditional`/`loadAdditional` not serializing `directionConfig`; added IO config NBT round-trip matching the deployer pattern.
+
 ## [0.0.1.8] - 2026-05-23
 
 ### Player Changes / 玩家更新內容

@@ -71,9 +71,27 @@ public class ManaChargerBlockEntity extends AbstractManaMachineEntityBlock {
     }
 
     @Override
+    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        CompoundTag ioTag = new CompoundTag();
+        directionConfig.forEach((dir, type) -> ioTag.putString(dir.getName(), type.name()));
+        tag.put("IOConfig", ioTag);
+    }
+
+    @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         syncData[0] = manaStorage != null ? manaStorage.getManaStored() : 0;
+        if (tag.contains("IOConfig")) {
+            CompoundTag ioTag = tag.getCompound("IOConfig");
+            for (Direction dir : Direction.values()) {
+                String key = dir.getName();
+                if (ioTag.contains(key)) {
+                    try { directionConfig.put(dir, IOHandlerUtils.IOType.valueOf(ioTag.getString(key))); }
+                    catch (Exception ignored) {}
+                }
+            }
+        }
     }
 
     @Override

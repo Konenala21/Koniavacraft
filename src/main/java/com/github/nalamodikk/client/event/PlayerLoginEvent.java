@@ -3,6 +3,8 @@ package com.github.nalamodikk.client.event;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.config.ModCommonConfig;
 import com.github.nalamodikk.narasystem.nara.event.NaraServerEvents;
+import com.github.nalamodikk.narasystem.nara.hud.NaraTutorialFlow;
+import com.github.nalamodikk.narasystem.nara.network.client.NaraTutorialPacket;
 import com.github.nalamodikk.narasystem.nara.network.client.OpenNaraInitScreenPacket;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraSyncPacket;
 import com.github.nalamodikk.narasystem.nara.util.NaraHelper;
@@ -70,6 +72,18 @@ public class PlayerLoginEvent {
 
         KnowledgeSyncPacket.sendTo(player);
 
+        // 同步 session flag（無論動畫是否開啟都需要恢復，否則 WandUpgradeScreen 等邏輯會誤判）
+        var wandData = ResearchSavedData.get(player.serverLevel());
+        if (wandData.getOrCreate(player.getUUID()).hasSeenTutorial(NaraTutorialFlow.WAND_ROD_CRAFT)) {
+            NaraTutorialPacket.send(player, NaraTutorialFlow.WAND_ROD_CRAFT_SEEN);
+        }
+        if (wandData.getOrCreate(player.getUUID()).hasSeenTutorial(NaraTutorialFlow.ASPECT_SYNTHESIS_OPEN)) {
+            NaraTutorialPacket.send(player, NaraTutorialFlow.ASPECT_SYNTHESIS_OPEN_SEEN);
+        }
+
+        // 恢復未完成的教學 pending 狀態（server 重啟後重填記憶體 Set，無論動畫是否開啟都需要）
+        NaraServerEvents.restorePendingTutorials(player);
+
         // ===== 動畫相關邏輯（這部分可以被設定關閉） =====
         if (!ModCommonConfig.INSTANCE.showIntroAnimation.get()) {
             LOGGER.debug("Login animation disabled by config. Skipping intro for player {}", player.getGameProfile().getName());
@@ -81,8 +95,5 @@ public class PlayerLoginEvent {
             PacketDistributor.sendToPlayer(player, new OpenNaraInitScreenPacket());
             LOGGER.debug("open player one login gui!");
         }
-
-        // 恢復未完成的教學 pending 狀態（server 重啟後重填記憶體 Set）
-        NaraServerEvents.restorePendingTutorials(player);
     }
 }

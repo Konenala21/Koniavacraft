@@ -34,6 +34,7 @@ public record NaraSkipIntroPacket() implements CustomPacketPayload {
     }
 
     public static void send() {
+        if (net.minecraft.client.Minecraft.getInstance().getConnection() == null) return;
         PacketDistributor.sendToServer(new NaraSkipIntroPacket());
     }
 }

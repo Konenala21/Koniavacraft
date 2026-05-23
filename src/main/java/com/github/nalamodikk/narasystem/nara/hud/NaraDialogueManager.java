@@ -117,6 +117,7 @@ public class NaraDialogueManager {
         if (lineQueue.isEmpty()) {
             currentLine = null;
             dialogueState = DialogueState.INACTIVE;
+            overlayOnScreen = false;
             return;
         }
         currentLine = lineQueue.poll();

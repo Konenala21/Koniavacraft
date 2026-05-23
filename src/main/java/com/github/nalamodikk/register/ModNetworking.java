@@ -24,6 +24,7 @@ import com.github.nalamodikk.narasystem.nara.network.client.NaraTutorialPacket;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraBindRequestPacket;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraCloseDialoguePacket;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraSkipIntroPacket;
+import com.github.nalamodikk.narasystem.nara.network.server.NaraTutorialSeenPacket;
 import com.github.nalamodikk.research.network.AspectSynthesisPacket;
 import com.github.nalamodikk.research.network.ResearchAspectPlacePacket;
 import com.github.nalamodikk.research.network.ResearchCompletePacket;
@@ -57,6 +58,7 @@ public class ModNetworking {
         NaraCreeperPunishPacket.registerTo(registrar);
         NaraAngryPacket.registerTo(registrar);
         NaraSkipIntroPacket.registerTo(registrar);
+        NaraTutorialSeenPacket.registerTo(registrar);
 
         SetDeployerIntervalPacket.registerTo(registrar);
         ToggleDeployerEnabledPacket.registerTo(registrar);

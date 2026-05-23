@@ -26,18 +26,24 @@ public class NaraTutorialFlow {
     public static final String MANA_INFUSER_CRAFT    = "mana_infuser_craft";
     public static final String MANA_CRAFTING_CRAFT   = "mana_crafting_craft";
     public static final String ASPECT_SYNTHESIS_OPEN = "aspect_synthesis_open";
+    public static final String WAND_ROD_CRAFT_SEEN        = "wand_rod_craft_seen";
+    public static final String ASPECT_SYNTHESIS_OPEN_SEEN = "aspect_synthesis_open_seen";
 
     private static boolean altarT6Shown = false;
     private static boolean aspectSynthesisShown = false;
     private static boolean wandRodNoItemsShown = false;
     private static boolean wandRodReadyShown = false;
+    private static boolean wandRodCraftShown = false;
 
     public static void resetSessionFlags() {
         altarT6Shown = false;
         aspectSynthesisShown = false;
         wandRodNoItemsShown = false;
         wandRodReadyShown = false;
+        wandRodCraftShown = false;
     }
+
+    public static boolean isWandRodCraftShown() { return wandRodCraftShown; }
 
     public static boolean claimAspectSynthesisShown() {
         if (aspectSynthesisShown) return false;
@@ -75,10 +81,13 @@ public class NaraTutorialFlow {
             case MANA_INFUSER_CRAFT  -> startManaInfuserCraft();
             case MANA_CRAFTING_CRAFT -> startManaCraftingCraft();
             case ASPECT_SYNTHESIS_OPEN -> startAspectSynthesisOpen();
+            case WAND_ROD_CRAFT_SEEN        -> wandRodCraftShown = true;
+            case ASPECT_SYNTHESIS_OPEN_SEEN -> aspectSynthesisShown = true;
         }
     }
 
     private static void startResearchTable() {
+        if (Minecraft.getInstance().screen != null) NaraDialogueManager.setOverlayOnScreen(true);
         NaraDialogueManager.setPortraitShown();
         NaraDialogueManager.startDialogue(List.of(
                 NaraDialogueLine.simple(
@@ -138,7 +147,7 @@ public class NaraTutorialFlow {
     }
 
     private static void startFirstWatchOpen() {
-        NaraDialogueManager.setOverlayOnScreen(true);
+        if (Minecraft.getInstance().screen != null) NaraDialogueManager.setOverlayOnScreen(true);
         NaraDialogueManager.setPortraitShown();
         NaraDialogueManager.startDialogue(List.of(
                 NaraDialogueLine.simple(
@@ -158,6 +167,7 @@ public class NaraTutorialFlow {
     }
 
     private static void startManaGenCraft() {
+        if (Minecraft.getInstance().screen != null) NaraDialogueManager.setOverlayOnScreen(true);
         NaraDialogueManager.setPortraitShown();
         NaraDialogueManager.startDialogue(List.of(
                 NaraDialogueLine.simple(
@@ -204,6 +214,7 @@ public class NaraTutorialFlow {
     }
 
     private static void startFirstResearch() {
+        if (Minecraft.getInstance().screen != null) NaraDialogueManager.setOverlayOnScreen(true);
         NaraDialogueManager.setPortraitShown();
         NaraDialogueManager.startDialogue(List.of(
                 NaraDialogueLine.simple(
@@ -236,6 +247,7 @@ public class NaraTutorialFlow {
     }
 
     private static void startWandRodCraft() {
+        wandRodCraftShown = true;
         NaraDialogueManager.setPortraitShown();
         NaraDialogueManager.startDialogue(List.of(
                 NaraDialogueLine.simple(
@@ -252,6 +264,7 @@ public class NaraTutorialFlow {
     }
 
     private static void startWandRodNoItems() {
+        claimWandRodNoItemsShown();
         NaraDialogueManager.setPortraitShown();
         NaraDialogueManager.startDialogue(List.of(
                 NaraDialogueLine.simple(
@@ -269,6 +282,7 @@ public class NaraTutorialFlow {
     }
 
     private static void startWandRodReady() {
+        claimWandRodReadyShown();
         NaraDialogueManager.setPortraitShown();
         NaraDialogueManager.startDialogue(List.of(
                 NaraDialogueLine.withChoices(
@@ -297,6 +311,7 @@ public class NaraTutorialFlow {
     }
 
     private static void startManaGrinderCraft() {
+        if (Minecraft.getInstance().screen != null) NaraDialogueManager.setOverlayOnScreen(true);
         NaraDialogueManager.setPortraitShown();
         boolean hasJei = ModList.get().isLoaded("jei");
         List<NaraDialogueLine> lines = new ArrayList<>();
@@ -327,6 +342,7 @@ public class NaraTutorialFlow {
     }
 
     private static void startManaInfuserCraft() {
+        if (Minecraft.getInstance().screen != null) NaraDialogueManager.setOverlayOnScreen(true);
         NaraDialogueManager.setPortraitShown();
         boolean hasJei = ModList.get().isLoaded("jei");
         List<NaraDialogueLine> lines = new ArrayList<>();
@@ -357,6 +373,7 @@ public class NaraTutorialFlow {
     }
 
     private static void startManaCraftingCraft() {
+        if (Minecraft.getInstance().screen != null) NaraDialogueManager.setOverlayOnScreen(true);
         NaraDialogueManager.setPortraitShown();
         boolean hasJei = ModList.get().isLoaded("jei");
         List<NaraDialogueLine> lines = new ArrayList<>();
@@ -387,7 +404,8 @@ public class NaraTutorialFlow {
     }
 
     private static void startAspectSynthesisOpen() {
-        NaraDialogueManager.setOverlayOnScreen(true);
+        claimAspectSynthesisShown();
+        if (Minecraft.getInstance().screen != null) NaraDialogueManager.setOverlayOnScreen(true);
         NaraDialogueManager.setPortraitShown();
         boolean hasJei = ModList.get().isLoaded("jei");
         List<NaraDialogueLine> lines = new ArrayList<>();

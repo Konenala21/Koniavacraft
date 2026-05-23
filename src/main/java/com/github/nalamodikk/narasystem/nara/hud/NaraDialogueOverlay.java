@@ -2,6 +2,7 @@ package com.github.nalamodikk.narasystem.nara.hud;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraSkipIntroPacket;
+import com.github.nalamodikk.narasystem.nara.network.server.NaraTutorialSeenPacket;
 import com.github.nalamodikk.register.ModItems;
 import com.github.nalamodikk.research.client.AspectSynthesisScreen;
 import net.minecraft.client.Minecraft;
@@ -137,6 +138,7 @@ public class NaraDialogueOverlay {
             if (aspectSynthesisCountdown == 0) {
                 aspectSynthesisCountdown = -1;
                 NaraTutorialFlow.start(NaraTutorialFlow.ASPECT_SYNTHESIS_OPEN);
+                NaraTutorialSeenPacket.send(NaraTutorialFlow.ASPECT_SYNTHESIS_OPEN);
             }
         }
     }

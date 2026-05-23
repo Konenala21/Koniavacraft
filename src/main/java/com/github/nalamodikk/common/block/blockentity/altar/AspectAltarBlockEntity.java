@@ -656,7 +656,7 @@ public static final List<Vec3i> RING_T1 = List.of(
         syncToClient();
         if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
             net.minecraft.world.entity.player.Player nearest = serverLevel.getNearestPlayer(
-                    worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5, 16.0, false);
+                    worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5, 64.0, false);
             if (nearest instanceof net.minecraft.server.level.ServerPlayer sp) {
                 NaraServerEvents.scheduleFirstAltarFormedTutorial(sp);
             }

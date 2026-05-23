@@ -158,12 +158,13 @@ public class ManaDeployerBlockEntity extends AbstractManaMachineEntityBlock {
         if (!hand.isEmpty()) {
             UseOnContext ctx = new UseOnContext(level, fp, InteractionHand.MAIN_HAND, hand, hit);
             var result = hand.useOn(ctx);
-            if (result != net.minecraft.world.InteractionResult.PASS) return true;
+            if (result.consumesAction()) return true;
+            if (result != net.minecraft.world.InteractionResult.PASS) return false;
         }
 
         // 2. 嘗試方塊本身的互動（開門、按鈕、祭壇等）
         var result = level.getBlockState(target).useWithoutItem(level, fp, hit);
-        return result != net.minecraft.world.InteractionResult.PASS;
+        return result.consumesAction();
     }
 
     private boolean doLeftClick(ServerLevel level, FakePlayer fp, BlockPos target) {

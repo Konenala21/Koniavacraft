@@ -196,6 +196,8 @@ public class PlayerKnowledge {
         availableResearchOverrides.clear();
         lockedResearch.clear();
         scannedItems.clear();
+        seenTutorials.clear();
+        pendingTutorials.clear();
         currentTier = MIN_TIER;
         addPrimaryAspects();
     }
