@@ -30,6 +30,17 @@ public class UpgradeInventory implements Container , INBTSerializable<CompoundTa
                 .sum();
     }
 
+    public int getTotalMkBonus(UpgradeType type, int[] bonusPerMk) {
+        int total = 0;
+        for (ItemStack stack : slots) {
+            if (stack.isEmpty() || !(stack.getItem() instanceof UpgradeItem upg)) continue;
+            if (upg.getUpgradeType() != type) continue;
+            int mk = net.minecraft.util.Mth.clamp(upg.getMk(), 0, bonusPerMk.length - 1);
+            total += bonusPerMk[mk] * stack.getCount();
+        }
+        return total;
+    }
+
     public void setItem(int index, ItemStack stack) {
         if (index >= 0 && index < maxSlots) {
             slots.set(index, stack);

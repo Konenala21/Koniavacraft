@@ -444,6 +444,54 @@ public class ManaCraftingRecipeProvider {
                 .manaCost(8000)
                 .save(output, "wand_upgrade_cooldown_mk3");
 
+        // 魔力輸出升級 Mk0
+        ManaCraftingRecipeBuilder.create(ModItems.MANA_OUTPUT_UPGRADE_MK0.get(), 1)
+                .shaped(true)
+                .pattern("WCW")
+                .pattern("CUC")
+                .pattern("WCW")
+                .define('W', ModItems.MANA_WIRE.get())
+                .define('C', ModItems.BASIC_MANA_CIRCUIT.get())
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(2500)
+                .save(output, "mana_output_upgrade_mk0");
+
+        // 魔力輸出升級 Mk1（中心放 Mk0）
+        ManaCraftingRecipeBuilder.create(ModItems.MANA_OUTPUT_UPGRADE_MK1.get(), 1)
+                .shaped(true)
+                .pattern("WCW")
+                .pattern("CAC")
+                .pattern("WCW")
+                .define('W', ModItems.MANA_WIRE.get())
+                .define('C', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('A', ModItems.MANA_OUTPUT_UPGRADE_MK0.get())
+                .manaCost(4000)
+                .save(output, "mana_output_upgrade_mk1");
+
+        // 魔力輸出升級 Mk2（中心放 Mk1）
+        ManaCraftingRecipeBuilder.create(ModItems.MANA_OUTPUT_UPGRADE_MK2.get(), 1)
+                .shaped(true)
+                .pattern("HCH")
+                .pattern("CAC")
+                .pattern("HCH")
+                .define('H', ModItems.HIGH_DENSITY_MANA_CORE.get())
+                .define('C', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('A', ModItems.MANA_OUTPUT_UPGRADE_MK1.get())
+                .manaCost(6500)
+                .save(output, "mana_output_upgrade_mk2");
+
+        // 魔力輸出升級 Mk3（中心放 Mk2）
+        ManaCraftingRecipeBuilder.create(ModItems.MANA_OUTPUT_UPGRADE_MK3.get(), 1)
+                .shaped(true)
+                .pattern("NHN")
+                .pattern("HAH")
+                .pattern("NHN")
+                .define('N', Items.NETHERITE_INGOT)
+                .define('H', ModItems.HIGH_DENSITY_MANA_CORE.get())
+                .define('A', ModItems.MANA_OUTPUT_UPGRADE_MK2.get())
+                .manaCost(10000)
+                .save(output, "mana_output_upgrade_mk3");
+
     }
 
 }

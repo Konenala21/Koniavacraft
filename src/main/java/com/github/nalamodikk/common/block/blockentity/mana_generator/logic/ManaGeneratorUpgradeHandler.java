@@ -2,6 +2,7 @@ package com.github.nalamodikk.common.block.blockentity.mana_generator.logic;
 
 import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
 import com.github.nalamodikk.common.utils.upgrade.UpgradeType;
+import net.minecraft.util.Mth;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,6 +81,19 @@ public class ManaGeneratorUpgradeHandler {
         return (int) (baseOutput * outputMultiplier);
     }
     
+    private static final int[] MANA_OUTPUT_BONUS_PER_MK = {25, 50, 80, 120};
+
+    /**
+     * Returns the generation multiplier from MANA_OUTPUT Mk upgrades.
+     * Stacks additively: each installed slot adds its Mk bonus (%).
+     * Capped at 5x total.
+     */
+    public double getManaOutputMultiplier() {
+        int totalBonus = upgradeInventory.getTotalMkBonus(UpgradeType.MANA_OUTPUT, MANA_OUTPUT_BONUS_PER_MK);
+        double multiplier = 1.0 + totalBonus / 100.0;
+        return Mth.clamp(multiplier, 1.0, 5.0);
+    }
+
     /**
      * 📊 獲取升級統計信息（用於診斷顯示升級）
      */

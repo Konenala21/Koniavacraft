@@ -257,6 +257,11 @@ import java.util.Optional;
         }
 
         @Override
+        public float getOwnerGenerationMultiplier() {
+            return (float) upgradeHandler.getManaOutputMultiplier();
+        }
+
+        @Override
         public void setLevel(Level level) {
             super.setLevel(level);
             this.access = ContainerLevelAccess.create(level, this.worldPosition);

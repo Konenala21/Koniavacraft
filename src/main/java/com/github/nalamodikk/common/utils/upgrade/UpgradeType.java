@@ -7,7 +7,8 @@ public enum UpgradeType {
     ACCELERATED_PROCESSING("accelerated_processing"),
     EXPANDED_FUEL_CHAMBER("expanded_fuel_chamber"),
     CATALYTIC_CONVERTER("catalytic_converter"),
-    DIAGNOSTIC_DISPLAY("diagnostic_display");
+    DIAGNOSTIC_DISPLAY("diagnostic_display"),
+    MANA_OUTPUT("mana_output");
 
     private final String name;
 
