@@ -147,7 +147,8 @@ public class ManaInfuserBlock extends BaseMachineBlock {
 
             String modeName = infuser.getIOMode(hitSide).name(); // 使用 .name() 而不是 .getDisplayName()
             player.sendSystemMessage(Component.translatable("message.koniava.io_mode_changed")
-                    .append(Component.literal(": " + modeName))
+                    .append(Component.literal(": "))
+                    .append(Component.translatable("mode.koniava." + modeName.toLowerCase()))
                     .withStyle(ChatFormatting.GREEN));
         }
 

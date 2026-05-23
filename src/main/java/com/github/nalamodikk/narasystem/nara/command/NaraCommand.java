@@ -22,23 +22,23 @@ public class NaraCommand {
                         .then(Commands.literal("replay")
                                 .executes(ctx -> {
                                     if (!(ctx.getSource().getEntity() instanceof ServerPlayer player)) {
-                                        ctx.getSource().sendFailure(Component.literal("必須由玩家執行"));
+                                        ctx.getSource().sendFailure(Component.translatable("command.koniava.nara.player_only"));
                                         return 0;
                                     }
                                     PacketDistributor.sendToPlayer(player, new NaraStartDialoguePacket());
-                                    ctx.getSource().sendSuccess(() -> Component.literal("重新播放娜拉對話"), false);
+                                    ctx.getSource().sendSuccess(() -> Component.translatable("command.koniava.nara.replay_success"), false);
                                     return 1;
                                 })
                         )
                         .then(Commands.literal("test_bind")
                                 .executes(ctx -> {
                                     if (!(ctx.getSource().getEntity() instanceof ServerPlayer player)) {
-                                        ctx.getSource().sendFailure(Component.literal("必須由玩家執行"));
+                                        ctx.getSource().sendFailure(Component.translatable("command.koniava.nara.player_only"));
                                         return 0;
                                     }
                                     NaraServerEvents.grantWelcomeAdvancement(player);
                                     NaraBindRequestPacket.spawnWelcomeFireworksPublic(player);
-                                    ctx.getSource().sendSuccess(() -> Component.literal("測試：成就 + 煙火"), false);
+                                    ctx.getSource().sendSuccess(() -> Component.translatable("command.koniava.nara.test_bind_success"), false);
                                     return 1;
                                 })
                         )
@@ -48,20 +48,22 @@ public class NaraCommand {
                                             for (String id : TUTORIAL_IDS) builder.suggest(id);
                                             return builder.buildFuture();
                                         })
-                                        .executes(ctx -> {
-                                            if (!(ctx.getSource().getEntity() instanceof ServerPlayer player)) {
-                                                ctx.getSource().sendFailure(Component.literal("必須由玩家執行"));
-                                                return 0;
-                                            }
-                                            String id = StringArgumentType.getString(ctx, "id");
-                                            NaraTutorialPacket.send(player, id);
-                                            ctx.getSource().sendSuccess(() -> Component.literal("重播教學：" + id), false);
-                                            return 1;
-                                        })
+                                        .executes(ctx -> triggerTutorial(ctx.getSource(),
+                                                StringArgumentType.getString(ctx, "id")))
                                 )
                         )
                 )
         );
+    }
+
+    private static int triggerTutorial(CommandSourceStack source, String id) {
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.translatable("command.koniava.nara.player_only"));
+            return 0;
+        }
+        NaraTutorialPacket.send(player, id);
+        source.sendSuccess(() -> Component.translatable("command.koniava.nara.tutorial_success", id), false);
+        return 1;
     }
 
     private static final String[] TUTORIAL_IDS = {

@@ -41,8 +41,8 @@ All notable changes to this project will be documented in this file.
 - Jade 懸停提示現在對所有魔力機器和奧術導管顯示當前及最大魔力量。
 - Added R key binding to skip the altar upgrade animation.
 - 新增 R 鍵快捷鍵可跳過祭壇升級動畫。
-- Nara dialogue now plays voice acting for all 18 dialogue lines in both Traditional Chinese and English. The correct audio is selected automatically based on the player's in-game language setting.
-- 娜拉對話現在對全部 18 條台詞播放配音，繁體中文與英文各一套，根據玩家遊戲內語言自動選擇。
+- Nara dialogue now plays voice acting for all 48 dialogue lines in both Traditional Chinese and English, covering every tutorial trigger including first scan, watch open, mana generator, wand rod, first research, altar formation, mana grinder, mana infuser, mana crafting table, and aspect synthesis. The correct audio is selected automatically based on the player's in-game language setting.
+- 娜拉對話現在對全部 48 條台詞播放配音，涵蓋所有教學觸發點，包括初次掃描、手錶開啟、魔力發電機、魔杖杖柄、首次研究、祭壇成形、魔力粉碎機、魔力灌注機、魔力合成台與本源合成介面。繁體中文與英文各一套，根據玩家遊戲內語言自動選擇。
 - Nara Guide screen (watch UI) can now be closed with the inventory key (default E).
 - 娜拉指引介面（手錶 UI）現在可以用背包鍵（預設 E）關閉。
 
@@ -85,10 +85,10 @@ All notable changes to this project will be documented in this file.
 - `AltarExplosionRenderer` and `AltarExplosionManager`: client-side GLSL depth-buffer ring renderer using `common_explosion.glsl` (red/orange palette) and `stage_altar_explosion.fsh`. Three waves expand to 64-block radius over 80 ticks. Triggered via `RitualExplosionPacket`.
 - `ManaJadeProvider`: reads `ModCapabilities.MANA` at the hovered block position server-side; packs `manaStored` and `maxMana` into NBT. Registered for `AbstractManaMachineEntityBlock`, `AspectAltarBlockEntity`, and `ArcaneConduitBlockEntity`.
 - `RitualWandItem`: `useOn()` calls `altar.tryActivate(playerUUID)` and displays the result component as an action bar message.
-- `ModSounds`: `DeferredRegister<SoundEvent>` with 36 programmatically registered Nara dialogue sound events (18 zh_tw + 18 en), keyed as `nara.{locale}.{group}.{line}`.
+- `ModSounds`: `DeferredRegister<SoundEvent>` now has 96 programmatically registered Nara dialogue sound events (48 zh_tw + 48 en), keyed as `nara.{locale}.{group}.{line}`. Added 30 new keys covering all tutorial triggers: first_scan, first_watch_open, mana_gen_craft, mana_gen_placed, wand_rod (no_items/ready/got_core variants), first_research, first_altar_formed, mana_grinder, mana_infuser, mana_crafting, aspect_synthesis.
 - `NaraSoundHelper`: client-only utility that resolves the player's Minecraft language code to `zh_tw` or `en` (fallback), plays the matching `SimpleSoundInstance`, and exposes `stopCurrent()` to halt playback mid-line.
 - `NaraDialogueManager.advanceLine()` and `close()` now call `NaraSoundHelper.stopCurrent()` before transitioning, ensuring the previous voice clip stops when the player skips or dialogue ends.
-- OGG files at 5x normalized volume are committed under `assets/koniava/sounds/nara/{locale}/`. Generated from Alibaba Cloud Qwen3-TTS VoiceDesign API with per-line emotion instructions.
+- OGG files at 5x normalized volume are committed under `assets/koniava/sounds/nara/{locale}/` (96 total). Generated from Alibaba Cloud Qwen3-TTS VoiceDesign API (voice: qwen-tts-vd-nara-voice-20260523011917858-3c21) with per-line emotion instructions. Converted from WAV via ffmpeg `-af volume=5 -c:a libvorbis -q:a 4`.
 - Added Nara tutorial dialogues for Mana Grinder, Mana Infuser, Mana Crafting Table (craft-triggered), and Aspect Synthesis Screen (client screen-open-triggered). Each has JEI-conditional lines. Mana Grinder and Mana Infuser share identical JEI click area coords (149,4,21,15).
 - `NaraTutorialFlow`: added `MANA_GRINDER_CRAFT`, `MANA_INFUSER_CRAFT`, `MANA_CRAFTING_CRAFT`, `ASPECT_SYNTHESIS_OPEN` constants and corresponding dialogue methods. `claimAspectSynthesisShown()` replaces server-side tracking for the client-only screen.
 - `NaraDialogueOverlay`: added `ScreenEvent.Opening` handler to detect first `AspectSynthesisScreen` open. Dialogue box uses compact mode (BOX_W=180, left-anchored) when `overlayOnScreen` is true, to avoid overlap with JEI's right-side item list.

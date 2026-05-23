@@ -939,5 +939,15 @@
   "misc.koniava.turret_kill.pvp.4": "%2$s tried to fight magic with vibes. %1$s's turret did not accept that.",
   "misc.koniava.turret_kill.solo.0": "%1$s walked straight into a turret's line of sight. Twice, probably.",
   "misc.koniava.turret_kill.solo.1": "The floating turret never misses. %1$s is Case #[REDACTED].",
-  "misc.koniava.turret_kill.solo.2": "%1$s learned that 'automated' and 'harmless' are two very different words."
+  "misc.koniava.turret_kill.solo.2": "%1$s learned that 'automated' and 'harmless' are two very different words.",
+
+  "//24": "=== GUI AND COMMAND LITERALS ===",
+  "gui.koniava.on": "ON",
+  "gui.koniava.off": "OFF",
+  "gui.koniava.conduit.config.precision_hint": "(±2B)",
+  "tooltip.koniava.bar_stat": "%s / %s",
+  "command.koniava.nara.player_only": "Must be executed by a player",
+  "command.koniava.nara.replay_success": "Replaying Nara dialogue",
+  "command.koniava.nara.test_bind_success": "Test: advancement + fireworks",
+  "command.koniava.nara.tutorial_success": "Replaying tutorial: %s"
 }

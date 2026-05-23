@@ -157,7 +157,8 @@ public class ManaGrinderBlock extends BaseMachineBlock {
 
             String modeName = nextMode.name();
             player.sendSystemMessage(Component.translatable("message.koniava.io_mode_changed")
-                    .append(Component.literal(": " + modeName))
+                    .append(Component.literal(": "))
+                    .append(Component.translatable("mode.koniava." + modeName.toLowerCase()))
                     .withStyle(ChatFormatting.GREEN));
         }
 

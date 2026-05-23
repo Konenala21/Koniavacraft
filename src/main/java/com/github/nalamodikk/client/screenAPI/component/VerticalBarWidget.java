@@ -91,7 +91,7 @@ public abstract class VerticalBarWidget extends AbstractWidget {
         int val = valueSupplier.getAsInt();
         int max = maxSupplier.getAsInt();
         return Collections.singletonList(
-            Component.literal(getTooltipPrefix() + ": " + FORMAT.format(val) + " / " + FORMAT.format(max))
+            Component.translatable("tooltip.koniava.bar_stat", FORMAT.format(val), FORMAT.format(max))
         );
     }
     

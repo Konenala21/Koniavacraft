@@ -37,6 +37,11 @@ public class UpgradeItem extends Item {
                     "tooltip.koniava.mana_output_upgrade.effect.mk" + mk)
                     .withStyle(ChatFormatting.GREEN));
         }
+        if (type == com.github.nalamodikk.common.utils.upgrade.UpgradeType.ENERGY_OUTPUT) {
+            tooltipComponents.add(Component.translatable(
+                    "tooltip.koniava.energy_output_upgrade.effect.mk" + mk)
+                    .withStyle(ChatFormatting.YELLOW));
+        }
         super.appendHoverText(stack, context, tooltipComponents, tooltipFlag);
     }
 }

@@ -37,10 +37,10 @@ public final class UpgradeItemTooltipEvent {
     }
 
     private static MutableComponent getCompatibleMachinesText(UpgradeType type) {
-        return switch (type) {
+    return switch (type) {
             case SPEED, EFFICIENCY ->
                     Component.translatable("tooltip.koniava.upgrade.compat.solar_mana_collector");
-            case ACCELERATED_PROCESSING, EXPANDED_FUEL_CHAMBER, CATALYTIC_CONVERTER, DIAGNOSTIC_DISPLAY ->
+            case ACCELERATED_PROCESSING, EXPANDED_FUEL_CHAMBER, CATALYTIC_CONVERTER, DIAGNOSTIC_DISPLAY, MANA_OUTPUT, ENERGY_OUTPUT ->
                     Component.translatable("tooltip.koniava.upgrade.compat.mana_generator");
         };
     }

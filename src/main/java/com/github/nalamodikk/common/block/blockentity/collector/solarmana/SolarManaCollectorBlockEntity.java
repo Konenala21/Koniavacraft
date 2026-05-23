@@ -235,7 +235,7 @@ import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
 
         // 🔌 魔力輸出處理
         private void handleManaOutput(ServerLevel server) {
-            boolean didOutput = OutputHandler.tryOutput(server, worldPosition, manaStorage, null, ioMap, manaCaches, energyCaches);
+            boolean didOutput = OutputHandler.tryOutput(server, worldPosition, manaStorage, null, ioMap, manaCaches, energyCaches, OutputHandler.getBaseManaOutputPerTick());
 
             // 診斷邏輯
             if (!didOutput && !hasLoggedOutputFailure) {

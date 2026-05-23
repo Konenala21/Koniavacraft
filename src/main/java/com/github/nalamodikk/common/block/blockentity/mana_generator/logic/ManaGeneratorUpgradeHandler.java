@@ -84,7 +84,8 @@ public class ManaGeneratorUpgradeHandler {
     private static final int[] MANA_OUTPUT_BONUS_PER_MK = {25, 50, 80, 120};
 
     /**
-     * Returns the generation multiplier from MANA_OUTPUT Mk upgrades.
+     * Returns the mana generation/push multiplier from MANA_OUTPUT Mk upgrades.
+     * Does NOT affect energy generation.
      * Stacks additively: each installed slot adds its Mk bonus (%).
      * Capped at 5x total.
      */
@@ -92,6 +93,18 @@ public class ManaGeneratorUpgradeHandler {
         int totalBonus = upgradeInventory.getTotalMkBonus(UpgradeType.MANA_OUTPUT, MANA_OUTPUT_BONUS_PER_MK);
         double multiplier = 1.0 + totalBonus / 100.0;
         return Mth.clamp(multiplier, 1.0, 5.0);
+    }
+
+    private static final int[] ENERGY_OUTPUT_BONUS_PER_MK = {60, 130, 220, 350};
+
+    /**
+     * Returns the energy generation multiplier from ENERGY_OUTPUT Mk upgrades.
+     * Independent from mana output. Capped at 10x.
+     */
+    public double getEnergyOutputMultiplier() {
+        int totalBonus = upgradeInventory.getTotalMkBonus(UpgradeType.ENERGY_OUTPUT, ENERGY_OUTPUT_BONUS_PER_MK);
+        double multiplier = 1.0 + totalBonus / 100.0;
+        return Mth.clamp(multiplier, 1.0, 10.0);
     }
 
     /**

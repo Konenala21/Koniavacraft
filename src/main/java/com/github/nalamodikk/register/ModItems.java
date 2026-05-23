@@ -160,6 +160,10 @@ public class ModItems {
     public static final DeferredItem<UpgradeItem> MANA_OUTPUT_UPGRADE_MK1 = ITEMS.register("mana_output_upgrade_mk1", () -> new UpgradeItem(UpgradeType.MANA_OUTPUT, 1, new Item.Properties().stacksTo(1)));
     public static final DeferredItem<UpgradeItem> MANA_OUTPUT_UPGRADE_MK2 = ITEMS.register("mana_output_upgrade_mk2", () -> new UpgradeItem(UpgradeType.MANA_OUTPUT, 2, new Item.Properties().stacksTo(1)));
     public static final DeferredItem<UpgradeItem> MANA_OUTPUT_UPGRADE_MK3 = ITEMS.register("mana_output_upgrade_mk3", () -> new UpgradeItem(UpgradeType.MANA_OUTPUT, 3, new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<UpgradeItem> ENERGY_OUTPUT_UPGRADE_MK0 = ITEMS.register("energy_output_upgrade_mk0", () -> new UpgradeItem(UpgradeType.ENERGY_OUTPUT, 0, new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<UpgradeItem> ENERGY_OUTPUT_UPGRADE_MK1 = ITEMS.register("energy_output_upgrade_mk1", () -> new UpgradeItem(UpgradeType.ENERGY_OUTPUT, 1, new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<UpgradeItem> ENERGY_OUTPUT_UPGRADE_MK2 = ITEMS.register("energy_output_upgrade_mk2", () -> new UpgradeItem(UpgradeType.ENERGY_OUTPUT, 2, new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<UpgradeItem> ENERGY_OUTPUT_UPGRADE_MK3 = ITEMS.register("energy_output_upgrade_mk3", () -> new UpgradeItem(UpgradeType.ENERGY_OUTPUT, 3, new Item.Properties().stacksTo(1)));
 
 
     // 研究系統

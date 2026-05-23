@@ -148,7 +148,7 @@ import java.util.Optional;
                 energyGenHandler = new EnergyGenerationHandler(this.energyStorage, () -> {
                     Optional<ManaGenFuelRateLoader.FuelRate> rate = getCurrentFuelRate();
                     int baseRate = rate.map(ManaGenFuelRateLoader.FuelRate::getEnergyRate).orElse(DEFAULT_ENERGY_PER_TICK);
-                    return scaleByOwner(baseRate);
+                    return (int) (baseRate * upgradeHandler.getEnergyOutputMultiplier());
                 });
             }
             return energyGenHandler;
@@ -259,6 +259,10 @@ import java.util.Optional;
         @Override
         public float getOwnerGenerationMultiplier() {
             return (float) upgradeHandler.getManaOutputMultiplier();
+        }
+
+        public int getManaOutputCapPerTick() {
+            return (int) (OutputHandler.getBaseManaOutputPerTick() * upgradeHandler.getManaOutputMultiplier());
         }
 
         @Override

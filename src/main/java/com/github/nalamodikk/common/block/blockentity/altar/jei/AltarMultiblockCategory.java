@@ -197,12 +197,11 @@ public class AltarMultiblockCategory implements IRecipeCategory<AltarStructureIn
 
         // Slider: show snap label on hover
         if (mouseY >= 0 && mouseY < SLIDER_H) {
-            String label = sliderTier == 0
-                    ? Component.translatable("jei.koniava.altar_multiblock.base_only").getString()
-                    : "T" + sliderTier + ": +"
-                      + cumulativeManaCount() + " "
-                      + Component.translatable("jei.koniava.altar_multiblock.tip.mana_blocks").getString();
-            tooltip.add(Component.literal(label));
+            Component label = sliderTier == 0
+                    ? Component.translatable("jei.koniava.altar_multiblock.base_only")
+                    : Component.literal("T" + sliderTier + ": +" + cumulativeManaCount() + " ")
+                          .append(Component.translatable("jei.koniava.altar_multiblock.tip.mana_blocks"));
+            tooltip.add(label);
             return;
         }
 

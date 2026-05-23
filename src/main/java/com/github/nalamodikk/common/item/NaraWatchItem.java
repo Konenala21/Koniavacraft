@@ -299,6 +299,12 @@ public class NaraWatchItem extends Item {
             public List<Aspect> aspects(ServerLevel level) {
                 return AspectScanner.getAspectsForItem(entity.getItem().getItem(), level);
             }
+
+            @Override
+            public Component scanHeader(ServerPlayer scanner) {
+                return Component.translatable("item.koniava.nara_watch.scan.first_time_named",
+                        entity.getItem().getHoverName()).withStyle(ChatFormatting.GOLD);
+            }
         }
 
         record EntityTarget(Entity entity) implements ScanTarget {
@@ -315,6 +321,12 @@ public class NaraWatchItem extends Item {
             @Override
             public List<Aspect> aspects(ServerLevel level) {
                 return AspectScanner.getAspectsForEntity(entity, level);
+            }
+
+            @Override
+            public Component scanHeader(ServerPlayer scanner) {
+                return Component.translatable("item.koniava.nara_watch.scan.first_time_named",
+                        entity.getDisplayName()).withStyle(ChatFormatting.GOLD);
             }
         }
 
@@ -333,6 +345,12 @@ public class NaraWatchItem extends Item {
             public List<Aspect> aspects(ServerLevel level) {
                 return AspectScanner.getAspectsFor(level.getBlockState(hit.getBlockPos()), level);
             }
+
+            @Override
+            public Component scanHeader(ServerPlayer scanner) {
+                return Component.translatable("item.koniava.nara_watch.scan.first_time_named",
+                        targetLevel.getBlockState(hit.getBlockPos()).getBlock().getName()).withStyle(ChatFormatting.GOLD);
+            }
         }
 
         record FluidTarget(BlockHitResult hit, Level targetLevel) implements ScanTarget {
@@ -349,6 +367,12 @@ public class NaraWatchItem extends Item {
             @Override
             public List<Aspect> aspects(ServerLevel level) {
                 return AspectScanner.getAspectsForFluid(level.getFluidState(hit.getBlockPos()), level);
+            }
+
+            @Override
+            public Component scanHeader(ServerPlayer scanner) {
+                return Component.translatable("item.koniava.nara_watch.scan.first_time_named",
+                        targetLevel.getFluidState(hit.getBlockPos()).getType().getFluidType().getDescription()).withStyle(ChatFormatting.GOLD);
             }
         }
 

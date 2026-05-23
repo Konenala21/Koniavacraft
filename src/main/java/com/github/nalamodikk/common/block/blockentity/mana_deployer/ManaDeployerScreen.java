@@ -77,7 +77,7 @@ public class ManaDeployerScreen extends AutoSizedModularScreen<ManaDeployerMenu>
                 // Inner highlight border
                 g.fill(1, 1, width - 1, height - 1, en ? 0xFF3DB347 : 0xFFB33D3D);
                 if (isMouseOver(sx, sy)) g.fill(1, 1, width - 1, height - 1, 0x22FFFFFF);
-                Component lbl = Component.literal(en ? "ON" : "OFF");
+                Component lbl = Component.translatable(en ? "gui.koniava.on" : "gui.koniava.off");
                 g.drawString(ManaDeployerScreen.this.font, lbl,
                         (width - ManaDeployerScreen.this.font.width(lbl)) / 2,
                         (height - 8) / 2, 0xFFFFFF, false);

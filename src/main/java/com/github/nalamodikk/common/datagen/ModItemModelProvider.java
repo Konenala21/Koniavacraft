@@ -61,10 +61,16 @@ public class ModItemModelProvider extends ItemModelProvider {
         // 研究台：BlockItem 但需要手動指定（createManaModel 不生成物品模型）
         withExistingParent("research_table", modLoc("block/research_table"));
 
-        // 魔力發電機輸出升級（共用 catalytic_converter 貼圖，待美術替換）
+        // 魔力發電機輸出升級
         for (int mk = 0; mk <= 3; mk++) {
             withExistingParent("mana_output_upgrade_mk" + mk, ResourceLocation.parse("item/generated"))
-                    .texture("layer0", modLoc("item/catalytic_converter_upgrade"));
+                    .texture("layer0", modLoc("item/mana_output_upgrade_mk" + mk));
+        }
+
+        // 能量輸出升級
+        for (int mk = 0; mk <= 3; mk++) {
+            withExistingParent("energy_output_upgrade_mk" + mk, ResourceLocation.parse("item/generated"))
+                    .texture("layer0", modLoc("item/energy_output_upgrade_mk" + mk));
         }
 
         ModItems.ITEMS.getEntries().forEach(item -> {
@@ -87,6 +93,7 @@ public class ModItemModelProvider extends ItemModelProvider {
             for (String coreName : CORE_NAMES) { if (name.equals(coreName)) return; }
             for (String upgName : UPGRADE_NAMES) { if (name.equals(upgName)) return; }
             if (name.startsWith("mana_output_upgrade_mk")) return;
+            if (name.startsWith("energy_output_upgrade_mk")) return;
 
             // ❌ 若對應貼圖不存在，也跳過（避免崩潰）
             ResourceLocation texture = modLoc("item/" + name);

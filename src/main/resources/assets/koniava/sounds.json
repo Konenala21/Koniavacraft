@@ -280,11 +280,186 @@
     ]
   },
   "nara.en.altar_t6.line2": {
-    "sounds": [
-      {
-        "name": "koniava:nara/en/altar_t6_line2",
-        "stream": false
-      }
-    ]
+    "sounds": [{"name": "koniava:nara/en/altar_t6_line2", "stream": false}]
+  },
+  "nara.zh_tw.first_scan.line1": {
+    "sounds": [{"name": "koniava:nara/zh_tw/first_scan_line1", "stream": false}]
+  },
+  "nara.zh_tw.first_scan.line2": {
+    "sounds": [{"name": "koniava:nara/zh_tw/first_scan_line2", "stream": false}]
+  },
+  "nara.zh_tw.first_watch_open.line1": {
+    "sounds": [{"name": "koniava:nara/zh_tw/first_watch_open_line1", "stream": false}]
+  },
+  "nara.zh_tw.first_watch_open.line2": {
+    "sounds": [{"name": "koniava:nara/zh_tw/first_watch_open_line2", "stream": false}]
+  },
+  "nara.zh_tw.first_watch_open.line3": {
+    "sounds": [{"name": "koniava:nara/zh_tw/first_watch_open_line3", "stream": false}]
+  },
+  "nara.zh_tw.mana_gen_craft.line1": {
+    "sounds": [{"name": "koniava:nara/zh_tw/mana_gen_craft_line1", "stream": false}]
+  },
+  "nara.zh_tw.mana_gen_craft.line2": {
+    "sounds": [{"name": "koniava:nara/zh_tw/mana_gen_craft_line2", "stream": false}]
+  },
+  "nara.zh_tw.mana_gen_placed.line1": {
+    "sounds": [{"name": "koniava:nara/zh_tw/mana_gen_placed_line1", "stream": false}]
+  },
+  "nara.zh_tw.mana_gen_placed.line2": {
+    "sounds": [{"name": "koniava:nara/zh_tw/mana_gen_placed_line2", "stream": false}]
+  },
+  "nara.zh_tw.mana_gen_placed.line3": {
+    "sounds": [{"name": "koniava:nara/zh_tw/mana_gen_placed_line3", "stream": false}]
+  },
+  "nara.zh_tw.wand_rod.no_items_line1": {
+    "sounds": [{"name": "koniava:nara/zh_tw/wand_rod_no_items_line1", "stream": false}]
+  },
+  "nara.zh_tw.wand_rod.no_items_line2": {
+    "sounds": [{"name": "koniava:nara/zh_tw/wand_rod_no_items_line2", "stream": false}]
+  },
+  "nara.zh_tw.wand_rod.ready_line1": {
+    "sounds": [{"name": "koniava:nara/zh_tw/wand_rod_ready_line1", "stream": false}]
+  },
+  "nara.zh_tw.wand_rod.got_core_line1": {
+    "sounds": [{"name": "koniava:nara/zh_tw/wand_rod_got_core_line1", "stream": false}]
+  },
+  "nara.zh_tw.first_research.line1": {
+    "sounds": [{"name": "koniava:nara/zh_tw/first_research_line1", "stream": false}]
+  },
+  "nara.zh_tw.first_research.line2": {
+    "sounds": [{"name": "koniava:nara/zh_tw/first_research_line2", "stream": false}]
+  },
+  "nara.zh_tw.first_altar_formed.line1": {
+    "sounds": [{"name": "koniava:nara/zh_tw/first_altar_formed_line1", "stream": false}]
+  },
+  "nara.zh_tw.first_altar_formed.line2": {
+    "sounds": [{"name": "koniava:nara/zh_tw/first_altar_formed_line2", "stream": false}]
+  },
+  "nara.zh_tw.mana_grinder.line1": {
+    "sounds": [{"name": "koniava:nara/zh_tw/mana_grinder_line1", "stream": false}]
+  },
+  "nara.zh_tw.mana_grinder.line2": {
+    "sounds": [{"name": "koniava:nara/zh_tw/mana_grinder_line2", "stream": false}]
+  },
+  "nara.zh_tw.mana_grinder.line3": {
+    "sounds": [{"name": "koniava:nara/zh_tw/mana_grinder_line3", "stream": false}]
+  },
+  "nara.zh_tw.mana_infuser.line1": {
+    "sounds": [{"name": "koniava:nara/zh_tw/mana_infuser_line1", "stream": false}]
+  },
+  "nara.zh_tw.mana_infuser.line2": {
+    "sounds": [{"name": "koniava:nara/zh_tw/mana_infuser_line2", "stream": false}]
+  },
+  "nara.zh_tw.mana_infuser.line3": {
+    "sounds": [{"name": "koniava:nara/zh_tw/mana_infuser_line3", "stream": false}]
+  },
+  "nara.zh_tw.mana_crafting.line1": {
+    "sounds": [{"name": "koniava:nara/zh_tw/mana_crafting_line1", "stream": false}]
+  },
+  "nara.zh_tw.mana_crafting.line2": {
+    "sounds": [{"name": "koniava:nara/zh_tw/mana_crafting_line2", "stream": false}]
+  },
+  "nara.zh_tw.mana_crafting.line3": {
+    "sounds": [{"name": "koniava:nara/zh_tw/mana_crafting_line3", "stream": false}]
+  },
+  "nara.zh_tw.aspect_synthesis.line1": {
+    "sounds": [{"name": "koniava:nara/zh_tw/aspect_synthesis_line1", "stream": false}]
+  },
+  "nara.zh_tw.aspect_synthesis.line2": {
+    "sounds": [{"name": "koniava:nara/zh_tw/aspect_synthesis_line2", "stream": false}]
+  },
+  "nara.zh_tw.aspect_synthesis.line3": {
+    "sounds": [{"name": "koniava:nara/zh_tw/aspect_synthesis_line3", "stream": false}]
+  },
+  "nara.en.first_scan.line1": {
+    "sounds": [{"name": "koniava:nara/en/first_scan_line1", "stream": false}]
+  },
+  "nara.en.first_scan.line2": {
+    "sounds": [{"name": "koniava:nara/en/first_scan_line2", "stream": false}]
+  },
+  "nara.en.first_watch_open.line1": {
+    "sounds": [{"name": "koniava:nara/en/first_watch_open_line1", "stream": false}]
+  },
+  "nara.en.first_watch_open.line2": {
+    "sounds": [{"name": "koniava:nara/en/first_watch_open_line2", "stream": false}]
+  },
+  "nara.en.first_watch_open.line3": {
+    "sounds": [{"name": "koniava:nara/en/first_watch_open_line3", "stream": false}]
+  },
+  "nara.en.mana_gen_craft.line1": {
+    "sounds": [{"name": "koniava:nara/en/mana_gen_craft_line1", "stream": false}]
+  },
+  "nara.en.mana_gen_craft.line2": {
+    "sounds": [{"name": "koniava:nara/en/mana_gen_craft_line2", "stream": false}]
+  },
+  "nara.en.mana_gen_placed.line1": {
+    "sounds": [{"name": "koniava:nara/en/mana_gen_placed_line1", "stream": false}]
+  },
+  "nara.en.mana_gen_placed.line2": {
+    "sounds": [{"name": "koniava:nara/en/mana_gen_placed_line2", "stream": false}]
+  },
+  "nara.en.mana_gen_placed.line3": {
+    "sounds": [{"name": "koniava:nara/en/mana_gen_placed_line3", "stream": false}]
+  },
+  "nara.en.wand_rod.no_items_line1": {
+    "sounds": [{"name": "koniava:nara/en/wand_rod_no_items_line1", "stream": false}]
+  },
+  "nara.en.wand_rod.no_items_line2": {
+    "sounds": [{"name": "koniava:nara/en/wand_rod_no_items_line2", "stream": false}]
+  },
+  "nara.en.wand_rod.ready_line1": {
+    "sounds": [{"name": "koniava:nara/en/wand_rod_ready_line1", "stream": false}]
+  },
+  "nara.en.wand_rod.got_core_line1": {
+    "sounds": [{"name": "koniava:nara/en/wand_rod_got_core_line1", "stream": false}]
+  },
+  "nara.en.first_research.line1": {
+    "sounds": [{"name": "koniava:nara/en/first_research_line1", "stream": false}]
+  },
+  "nara.en.first_research.line2": {
+    "sounds": [{"name": "koniava:nara/en/first_research_line2", "stream": false}]
+  },
+  "nara.en.first_altar_formed.line1": {
+    "sounds": [{"name": "koniava:nara/en/first_altar_formed_line1", "stream": false}]
+  },
+  "nara.en.first_altar_formed.line2": {
+    "sounds": [{"name": "koniava:nara/en/first_altar_formed_line2", "stream": false}]
+  },
+  "nara.en.mana_grinder.line1": {
+    "sounds": [{"name": "koniava:nara/en/mana_grinder_line1", "stream": false}]
+  },
+  "nara.en.mana_grinder.line2": {
+    "sounds": [{"name": "koniava:nara/en/mana_grinder_line2", "stream": false}]
+  },
+  "nara.en.mana_grinder.line3": {
+    "sounds": [{"name": "koniava:nara/en/mana_grinder_line3", "stream": false}]
+  },
+  "nara.en.mana_infuser.line1": {
+    "sounds": [{"name": "koniava:nara/en/mana_infuser_line1", "stream": false}]
+  },
+  "nara.en.mana_infuser.line2": {
+    "sounds": [{"name": "koniava:nara/en/mana_infuser_line2", "stream": false}]
+  },
+  "nara.en.mana_infuser.line3": {
+    "sounds": [{"name": "koniava:nara/en/mana_infuser_line3", "stream": false}]
+  },
+  "nara.en.mana_crafting.line1": {
+    "sounds": [{"name": "koniava:nara/en/mana_crafting_line1", "stream": false}]
+  },
+  "nara.en.mana_crafting.line2": {
+    "sounds": [{"name": "koniava:nara/en/mana_crafting_line2", "stream": false}]
+  },
+  "nara.en.mana_crafting.line3": {
+    "sounds": [{"name": "koniava:nara/en/mana_crafting_line3", "stream": false}]
+  },
+  "nara.en.aspect_synthesis.line1": {
+    "sounds": [{"name": "koniava:nara/en/aspect_synthesis_line1", "stream": false}]
+  },
+  "nara.en.aspect_synthesis.line2": {
+    "sounds": [{"name": "koniava:nara/en/aspect_synthesis_line2", "stream": false}]
+  },
+  "nara.en.aspect_synthesis.line3": {
+    "sounds": [{"name": "koniava:nara/en/aspect_synthesis_line3", "stream": false}]
   }
 }

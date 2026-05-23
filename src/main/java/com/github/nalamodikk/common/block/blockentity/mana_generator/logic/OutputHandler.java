@@ -17,19 +17,20 @@ import java.util.List;
 
 public class OutputHandler {
 
-    private static final int MAX_MANA_OUTPUT_PER_TICK = 40;
+    private static final int BASE_MANA_OUTPUT_PER_TICK = 40;
     private static final int MAX_ENERGY_OUTPUT_PER_TICK = 1000;
 
-    // 新增這個方法到 OutputHandler 類別中
+    public static int getBaseManaOutputPerTick() { return BASE_MANA_OUTPUT_PER_TICK; }
+
     public static boolean tryOutput(
             ServerLevel level,
             BlockPos pos,
             ManaStorage manaStorage,
             IEnergyStorage energyStorage,
             EnumMap<Direction, IOHandlerUtils.IOType> ioMap,
-            // 新增這兩個參數
             EnumMap<Direction, BlockCapabilityCache<IUnifiedManaHandler, Direction>> manaCaches,
-            EnumMap<Direction, BlockCapabilityCache<IEnergyStorage, Direction>> energyCaches
+            EnumMap<Direction, BlockCapabilityCache<IEnergyStorage, Direction>> energyCaches,
+            int maxManaPerTick
     ) {
         List<IUnifiedManaHandler> manaTargets = new ArrayList<>();
         List<Integer> manaDemands = new ArrayList<>();
@@ -84,7 +85,7 @@ public class OutputHandler {
 
         // 魔力輸出
         if (manaStorage != null && totalManaDemand > 0 && manaStorage.getManaStored() > 0) {
-            int totalToSend = Math.min(manaStorage.getManaStored(), MAX_MANA_OUTPUT_PER_TICK);
+            int totalToSend = Math.min(manaStorage.getManaStored(), maxManaPerTick);
             int sentTotal = 0; // 實際送出的總和
 
             for (int i = 0; i < manaTargets.size(); i++) {

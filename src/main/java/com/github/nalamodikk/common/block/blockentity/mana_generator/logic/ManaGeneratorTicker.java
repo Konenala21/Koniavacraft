@@ -100,7 +100,8 @@ public class ManaGeneratorTicker {
                         machine.getEnergyStorage(),
                         machine.getIOMap(),
                         machine.getManaOutputCaches(),
-                        machine.getEnergyOutputCaches()
+                        machine.getEnergyOutputCaches(),
+                        machine.getManaOutputCapPerTick()
                 );
                 machine.getOutputThrottle().recordOutputResult(outputSuccess);
             }

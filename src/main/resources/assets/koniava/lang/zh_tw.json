@@ -960,5 +960,15 @@
   "misc.koniava.turret_kill.pvp.4": "%2$s 試圖用氣場擋魔法彈。%1$s 的浮游砲不接受這個理由。",
   "misc.koniava.turret_kill.solo.0": "%1$s 大搖大擺走進了浮游砲的視野。可能還走了第二次。",
   "misc.koniava.turret_kill.solo.1": "浮游砲從不失手。%1$s 是第 [資料刪除] 號案例。",
-  "misc.koniava.turret_kill.solo.2": "%1$s 發現「自動」和「無害」是兩個完全不同的詞。"
+  "misc.koniava.turret_kill.solo.2": "%1$s 發現「自動」和「無害」是兩個完全不同的詞。",
+
+  "//24": "=== 介面文字與指令翻譯 ===",
+  "gui.koniava.on": "開",
+  "gui.koniava.off": "關",
+  "gui.koniava.conduit.config.precision_hint": "(±2B)",
+  "tooltip.koniava.bar_stat": "%s / %s",
+  "command.koniava.nara.player_only": "必須由玩家執行",
+  "command.koniava.nara.replay_success": "重新播放娜拉對話",
+  "command.koniava.nara.test_bind_success": "測試：成就 + 煙火",
+  "command.koniava.nara.tutorial_success": "重播教學：%s"
 }
