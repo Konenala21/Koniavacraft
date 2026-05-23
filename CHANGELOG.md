@@ -44,8 +44,27 @@ All notable changes to this project will be documented in this file.
 - Nara Guide screen (watch UI) can now be closed with the inventory key (default E).
 - 娜拉指引介面（手錶 UI）現在可以用背包鍵（預設 E）關閉。
 
+- Wand mana is now displayed as a blue bar (same position and size as the durability bar) instead of the custom arc ring. Visible in hotbar, inventory, and all container screens.
+- 魔杖魔力現在以藍色條狀顯示（與耐久條相同位置和大小），取代自訂弧形圓環，在快捷欄、背包和所有容器介面均可見。
+- Wand upgrade system now uses Mk tiers: each of the 4 upgrade types (Capacity, Efficiency, Range, Cooldown) has Mk0 through Mk3 variants with progressively stronger effects.
+- 魔杖升級系統新增 Mk 等級：4 種升級類型（容量、效率、範圍、冷卻）各有 Mk0 到 Mk3 四個等級，效果隨等級遞增。
+- Added Arcane Pulse Resonator (術式脈衝諧振器): an advanced wand rod with 6 upgrade slots and support for up to Mk3 upgrades. Crafted via altar infusion.
+- 新增術式脈衝諧振器：高階魔杖，擁有 6 個升級槽，支援最高 Mk3 升級，透過祭壇灌注製作。
+- Basic wand rod (術式脈衝調制器) supports 4 upgrade slots and up to Mk1 upgrades. Installing a higher-Mk upgrade shows a rejection message.
+- 基礎術式脈衝調制器支援 4 個升級槽，最高可裝 Mk1 升級。嘗試安裝更高等級的升級會顯示拒絕訊息。
+- Upgrade GUI now shows the correct number of slots based on the held wand tier: 4 slots for the basic rod, 6 slots for the resonator.
+- 升級 GUI 現在根據手持調制器等級顯示正確槽位數量：基礎版 4 個槽，諧振器 6 個槽。
+
 ### Developer Notes / 開發者備註
 
+- `WandUpgradeBehavior`: replaced single `bonusPerSlot` with `int[] bonusPerMk` (4 values per type). `getBonusForMk(int mk)` clamps and returns the appropriate value. `bonusPerSlot` retained as Mk0 alias. Stats: CAPACITY 2000/3500/5000/7000, EFFICIENCY 15/20/27/35%, RANGE 2/3/4/6, COOLDOWN 3/5/7/10 ticks.
+- `WandUpgradeItem`: added `int mk` field. Tooltip shows Mk level for Mk1+.
+- `WandCoreData`: added `sumUpgradeBonus(WandUpgradeBehavior type)` which sums `getBonusForMk(wu.getMk())` across all matching slots. Replaces `countUpgrade * bonusPerSlot` in all call sites (recalculateMaxMana, FORMATION core, WandRangeEventHandler).
+- `WandRodItem`: added `maxUpgradeMk` and `maxUpgradeSlots` constructor parameters. `wand_rod`: maxUpgradeMk=1, maxUpgradeSlots=4. `wand_rod_advanced`: maxUpgradeMk=3, maxUpgradeSlots=6.
+- `WandCoreSwapPacket.installToWand()`: rejects if `wandSlot >= rod.getMaxUpgradeSlots()` or `upgrade.getMk() > rod.getMaxUpgradeMk()`.
+- `WandUpgradeScreen`: slot count now read from `rod.getMaxUpgradeSlots()` at render and click time instead of `WandCoreData.UPGRADE_SLOTS`.
+- `ModColorHandlers`: updated upgrade item color registration from 4 to 16 items (Mk0-Mk3 for each type).
+- `WandManaRingRenderer` removed. `WandRodItem` now overrides `isBarVisible/getBarWidth/getBarColor` (color 0x4488FF) for built-in mana bar rendering.
 - `DamageNumberEventHandler`: subscribes to `LivingDamageEvent.Post` on the game bus. On player-caused damage, sends a `DamageNumberPacket` (S2C) to the attacker with world position, final damage (`getNewDamage()`), damage type, and entity ID. Critical hit detection mirrors vanilla `Player.attack()` conditions.
 - `DamageNumberPacket`: S2C record packet carrying `x, y, z, damage, dmgType, entityId`. Registered via `ModNetworking`.
 - `DamageNumberRenderer`: client-only `@EventBusSubscriber`. Stores the projection and model-view matrices from `RenderLevelStageEvent.AFTER_LEVEL`. In `RenderGuiEvent.Post`, projects each entry's world position to screen via MVP multiply and draws text using `Font.drawInBatch` with ARGB alpha on `GuiGraphics.bufferSource()`. Entries for the same entity within 5 ticks are merged by accumulating damage and keeping the highest-priority color. Numbers fade out over 30 ticks.
