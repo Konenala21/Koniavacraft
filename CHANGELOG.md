@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.1.8] - 2026-05-23
+
 ### Player Changes / 玩家更新內容
 
 - Arcane Pulse Modulator (wand rod) now renders installed core and upgrade plugins visually on the model: the core appears near the wrench head, and up to four upgrade USB-shaped plugins appear on the four side prongs. First-person view shows two slots; third-person shows all four.
