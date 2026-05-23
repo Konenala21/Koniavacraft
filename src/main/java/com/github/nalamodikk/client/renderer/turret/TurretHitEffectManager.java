@@ -9,17 +9,18 @@ import java.util.List;
 public class TurretHitEffectManager {
 
     public static final int DURATION_TICKS = 12;
+    private static final int MAX_ACTIVE = 128;
 
     public record HitEffect(Vec3 pos, float chargeRatio, long spawnTick) {}
 
     private static final List<HitEffect> ACTIVE = new ArrayList<>();
 
     public static void addEffect(Vec3 pos, float chargeRatio) {
-        // gameTime is not directly available here; the renderer will pass current time at spawn
-        // We store client's System.nanoTime converted to a stable game-tick-based value instead.
-        // Actually: we grab level gameTime on the render thread via Minecraft.getInstance().level
         net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
         long gameTime = mc.level != null ? mc.level.getGameTime() : 0L;
+        if (ACTIVE.size() >= MAX_ACTIVE) {
+            ACTIVE.remove(0);
+        }
         ACTIVE.add(new HitEffect(pos, chargeRatio, gameTime));
     }
 

@@ -72,9 +72,10 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
             player.startUsingItem(hand);
             return InteractionResultHolder.consume(stack);
         } else {
-            // 單手：立即發射
+            // 單手：立即發射，加最小冷卻防止連點器濫用
             if (!level.isClientSide && level instanceof ServerLevel serverLevel) {
                 fireNormalShot(serverLevel, player, stack, hand);
+                player.getCooldowns().addCooldown(stack.getItem(), 4);
             }
             return InteractionResultHolder.success(stack);
         }
