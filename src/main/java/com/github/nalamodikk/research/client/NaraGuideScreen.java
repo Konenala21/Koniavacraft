@@ -56,14 +56,18 @@ public class NaraGuideScreen extends Screen {
         },
         // Chapter 1: 研究系統
         {
-            {"guide.koniava.research.overview.title", "guide.koniava.research.overview.body"},
-            {"guide.koniava.research.table.title",    "guide.koniava.research.table.body"},
+            {"guide.koniava.research.overview.title",      "guide.koniava.research.overview.body"},
+            {"guide.koniava.research.table.title",         "guide.koniava.research.table.body"},
+            {"guide.koniava.research.aspect_synth.title",  "guide.koniava.research.aspect_synth.body"},
         },
         // Chapter 2: 魔力基礎設施
         {
             {"guide.koniava.mana.generator.title", "guide.koniava.mana.generator.body"},
             {"guide.koniava.mana.conduit.title",   "guide.koniava.mana.conduit.body"},
             {"guide.koniava.mana.machines.title",  "guide.koniava.mana.machines.body"},
+            {"guide.koniava.mana.grinder.title",   "guide.koniava.mana.grinder.body"},
+            {"guide.koniava.mana.infuser.title",   "guide.koniava.mana.infuser.body"},
+            {"guide.koniava.mana.crafting.title",  "guide.koniava.mana.crafting.body"},
         },
         // Chapter 3: 祭壇系統
         {

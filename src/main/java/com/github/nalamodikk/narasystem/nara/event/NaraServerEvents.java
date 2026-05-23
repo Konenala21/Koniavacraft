@@ -62,6 +62,10 @@ public class NaraServerEvents {
     private static final Set<UUID> pendingWandRodCraft = new HashSet<>();
     private static final Set<UUID> watchingForWandCore = new HashSet<>();
     private static int wandCoreCheckTimer = 0;
+    // Machine craft tutorials
+    private static final Set<UUID> pendingManaGrinderCraft = new HashSet<>();
+    private static final Set<UUID> pendingManaInfuserCraft = new HashSet<>();
+    private static final Set<UUID> pendingManaCraftingCraft = new HashSet<>();
 
     @SubscribeEvent
     public static void onServerStopping(ServerStoppingEvent event) {
@@ -79,6 +83,9 @@ public class NaraServerEvents {
         pendingFirstAltarFormed.clear();
         pendingWandRodCraft.clear();
         watchingForWandCore.clear();
+        pendingManaGrinderCraft.clear();
+        pendingManaInfuserCraft.clear();
+        pendingManaCraftingCraft.clear();
         ArcaneConduitBlockEntity.clearAllStaticCachesGracefully();
         ArcaneConduitBlock.clearStaticCaches();
         ResearchGate.clearCache();
@@ -101,6 +108,9 @@ public class NaraServerEvents {
         pendingFirstAltarFormed.remove(uuid);
         pendingWandRodCraft.remove(uuid);
         watchingForWandCore.remove(uuid);
+        pendingManaGrinderCraft.remove(uuid);
+        pendingManaInfuserCraft.remove(uuid);
+        pendingManaCraftingCraft.remove(uuid);
     }
 
     public static void scheduleFirstScanTutorial(ServerPlayer player) {
@@ -177,6 +187,27 @@ public class NaraServerEvents {
             knowledge.addPendingTutorial(NaraTutorialFlow.WAND_ROD_CRAFT);
             savedData.setDirty();
             pendingWandRodCraft.add(sp.getUUID());
+        }
+
+        if (event.getCrafting().getItem() == ModBlocks.MANA_GRINDER.get().asItem()
+                && !knowledge.hasSeenTutorial(NaraTutorialFlow.MANA_GRINDER_CRAFT)) {
+            knowledge.addPendingTutorial(NaraTutorialFlow.MANA_GRINDER_CRAFT);
+            savedData.setDirty();
+            pendingManaGrinderCraft.add(sp.getUUID());
+        }
+
+        if (event.getCrafting().getItem() == ModBlocks.MANA_INFUSER.get().asItem()
+                && !knowledge.hasSeenTutorial(NaraTutorialFlow.MANA_INFUSER_CRAFT)) {
+            knowledge.addPendingTutorial(NaraTutorialFlow.MANA_INFUSER_CRAFT);
+            savedData.setDirty();
+            pendingManaInfuserCraft.add(sp.getUUID());
+        }
+
+        if (event.getCrafting().getItem() == ModBlocks.MANA_CRAFTING_TABLE_BLOCK.get().asItem()
+                && !knowledge.hasSeenTutorial(NaraTutorialFlow.MANA_CRAFTING_CRAFT)) {
+            knowledge.addPendingTutorial(NaraTutorialFlow.MANA_CRAFTING_CRAFT);
+            savedData.setDirty();
+            pendingManaCraftingCraft.add(sp.getUUID());
         }
     }
 
@@ -304,6 +335,10 @@ public class NaraServerEvents {
             }
         }
 
+        tickWhenGuiClosed(pendingManaGrinderCraft, NaraTutorialFlow.MANA_GRINDER_CRAFT, event);
+        tickWhenGuiClosed(pendingManaInfuserCraft, NaraTutorialFlow.MANA_INFUSER_CRAFT, event);
+        tickWhenGuiClosed(pendingManaCraftingCraft, NaraTutorialFlow.MANA_CRAFTING_CRAFT, event);
+
         Iterator<Map.Entry<UUID, Integer>> it = pendingPunishmentDialogue.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<UUID, Integer> entry = it.next();
@@ -354,6 +389,25 @@ public class NaraServerEvents {
         UUID uuid = player.getUUID();
         if (!awaitingRespawn.remove(uuid)) return;
         pendingPunishmentDialogue.put(uuid, 20);
+    }
+
+    private static void tickWhenGuiClosed(Set<UUID> pending, String tutorialId,
+                                           ServerTickEvent.Post event) {
+        if (pending.isEmpty()) return;
+        Iterator<UUID> it = pending.iterator();
+        while (it.hasNext()) {
+            UUID uuid = it.next();
+            ServerPlayer player = event.getServer().getPlayerList().getPlayer(uuid);
+            if (player == null) { it.remove(); continue; }
+            if (player.containerMenu == player.inventoryMenu) {
+                it.remove();
+                var savedData = ResearchSavedData.get(player.serverLevel());
+                if (savedData.getOrCreate(player.getUUID()).markTutorialSeen(tutorialId)) {
+                    NaraTutorialPacket.send(player, tutorialId);
+                    savedData.setDirty();
+                }
+            }
+        }
     }
 
     private static void tickDelayedTutorial(Map<UUID, Integer> pendingMap, String tutorialId,

@@ -89,6 +89,12 @@ All notable changes to this project will be documented in this file.
 - `NaraSoundHelper`: client-only utility that resolves the player's Minecraft language code to `zh_tw` or `en` (fallback), plays the matching `SimpleSoundInstance`, and exposes `stopCurrent()` to halt playback mid-line.
 - `NaraDialogueManager.advanceLine()` and `close()` now call `NaraSoundHelper.stopCurrent()` before transitioning, ensuring the previous voice clip stops when the player skips or dialogue ends.
 - OGG files at 5x normalized volume are committed under `assets/koniava/sounds/nara/{locale}/`. Generated from Alibaba Cloud Qwen3-TTS VoiceDesign API with per-line emotion instructions.
+- Added Nara tutorial dialogues for Mana Grinder, Mana Infuser, Mana Crafting Table (craft-triggered), and Aspect Synthesis Screen (client screen-open-triggered). Each has JEI-conditional lines. Mana Grinder and Mana Infuser share identical JEI click area coords (149,4,21,15).
+- `NaraTutorialFlow`: added `MANA_GRINDER_CRAFT`, `MANA_INFUSER_CRAFT`, `MANA_CRAFTING_CRAFT`, `ASPECT_SYNTHESIS_OPEN` constants and corresponding dialogue methods. `claimAspectSynthesisShown()` replaces server-side tracking for the client-only screen.
+- `NaraDialogueOverlay`: added `ScreenEvent.Opening` handler to detect first `AspectSynthesisScreen` open. Dialogue box uses compact mode (BOX_W=180, left-anchored) when `overlayOnScreen` is true, to avoid overlap with JEI's right-side item list.
+- `NaraServerEvents`: added `tickWhenGuiClosed()` helper (DRY refactor of repeated close-GUI-wait pattern). Added craft detection and pending sets for the three new machines.
+- `NaraCommand`: added `/koniava nara tutorial <id>` with tab-completion for all tutorial IDs, so tutorials can be re-triggered without resetting saved state.
+- `first_watch_open` tutorial now has a third line mentioning the guide tab in the watch.
 
 ## [0.0.1.7-2]
 

@@ -141,6 +141,7 @@ public class NaraDialogueManager {
         choiceTimerTicks = 0;
         selectedChoiceIndex = 0;
         overlayOnScreen = false;
+        NaraGuiHighlight.hide();
     }
 
     // ── Getters ───────────────────────────────────────────────────────────────
@@ -148,6 +149,8 @@ public class NaraDialogueManager {
     public static boolean isActive() { return dialogueState != DialogueState.INACTIVE; }
     public static boolean isOverlayOnScreen() { return overlayOnScreen; }
     public static void setOverlayOnScreen(boolean value) { overlayOnScreen = value; }
+    public static void setGuiHighlight(float relX, float relY, int size) { NaraGuiHighlight.show(relX, relY, size); }
+    public static void clearGuiHighlight() { NaraGuiHighlight.hide(); }
     public static DialogueState getDialogueState() { return dialogueState; }
     public static PortraitState getPortraitState() { return portraitState; }
     public static Component getDisplayName() { return displayName; }

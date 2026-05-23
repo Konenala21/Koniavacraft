@@ -3,6 +3,7 @@ package com.github.nalamodikk.narasystem.nara.hud;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraSkipIntroPacket;
 import com.github.nalamodikk.register.ModItems;
+import com.github.nalamodikk.research.client.AspectSynthesisScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
@@ -42,18 +43,22 @@ public class NaraDialogueOverlay {
     private static final int COLOR_GREY       = 0xFFAAAAAA;
 
     // HUD 尺寸
-    private static final int PORTRAIT_W  = 72;
-    private static final int PORTRAIT_H  = 108;
-    private static final int NAME_H      = 18;
-    private static final int BOX_W       = 280;
-    private static final int BOX_H       = PORTRAIT_H + NAME_H;
-    private static final int CHOICE_H    = 18;
-    private static final int PADDING     = 8;
-    private static final int MARGIN      = 16;
+    private static final int PORTRAIT_W      = 72;
+    private static final int PORTRAIT_H      = 108;
+    private static final int NAME_H          = 18;
+    private static final int BOX_W           = 280;
+    private static final int BOX_W_COMPACT   = 180;
+    private static final int BOX_H           = PORTRAIT_H + NAME_H;
+    private static final int CHOICE_H        = 18;
+    private static final int PADDING         = 8;
+    private static final int MARGIN          = 16;
 
     // 游標閃爍
     private static int cursorTick = 0;
     private static boolean cursorVisible = true;
+
+    // AspectSynthesis 教學計時
+    private static int aspectSynthesisCountdown = -1;
 
     @SubscribeEvent
     public static void onKeyInput(InputEvent.Key event) {
@@ -106,6 +111,13 @@ public class NaraDialogueOverlay {
     }
 
     @SubscribeEvent
+    public static void onScreenOpen(ScreenEvent.Opening event) {
+        if (!(event.getScreen() instanceof AspectSynthesisScreen)) return;
+        if (!NaraTutorialFlow.claimAspectSynthesisShown()) return;
+        aspectSynthesisCountdown = 50;
+    }
+
+    @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) return;
@@ -120,6 +132,13 @@ public class NaraDialogueOverlay {
         }
         cursorTick++;
         if (cursorTick >= 10) { cursorTick = 0; cursorVisible = !cursorVisible; }
+        if (aspectSynthesisCountdown > 0) {
+            aspectSynthesisCountdown--;
+            if (aspectSynthesisCountdown == 0) {
+                aspectSynthesisCountdown = -1;
+                NaraTutorialFlow.start(NaraTutorialFlow.ASPECT_SYNTHESIS_OPEN);
+            }
+        }
     }
 
     @SubscribeEvent
@@ -148,14 +167,19 @@ public class NaraDialogueOverlay {
         if (!NaraDialogueManager.isActive()) return;
         if (!NaraDialogueManager.isOverlayOnScreen()) return;
         Minecraft mc = Minecraft.getInstance();
-        renderDialogue(event.getGuiGraphics(), mc,
-                mc.getWindow().getGuiScaledWidth(),
-                mc.getWindow().getGuiScaledHeight());
+        int sw = mc.getWindow().getGuiScaledWidth();
+        int sh = mc.getWindow().getGuiScaledHeight();
+        if (NaraGuiHighlight.isActive() && event.getScreen() instanceof net.minecraft.client.gui.screens.inventory.AbstractContainerScreen<?> cs) {
+            renderGuiHighlight(event.getGuiGraphics(), cs.getGuiLeft(), cs.getGuiTop());
+        }
+        renderDialogue(event.getGuiGraphics(), mc, sw, sh);
     }
 
     private static void renderDialogue(GuiGraphics g, Minecraft mc, int sw, int sh) {
-        int totalW = PORTRAIT_W + PADDING + BOX_W;
-        int hudX = (sw - totalW) / 2;
+        boolean compact = NaraDialogueManager.isOverlayOnScreen();
+        int boxW = compact ? BOX_W_COMPACT : BOX_W;
+        int totalW = PORTRAIT_W + PADDING + boxW;
+        int hudX = compact ? MARGIN : (sw - totalW) / 2;
         int hudY = (sh - BOX_H) / 2;
 
         Component skipHint = Component.translatable("nara.hud.hint.skip_all");
@@ -163,8 +187,8 @@ public class NaraDialogueOverlay {
         g.drawCenteredString(mc.font, skipHint, hudX + totalW / 2, hintY, COLOR_GREY);
 
         renderPortraitArea(g, hudX, hudY);
-        renderTextBox(g, mc, hudX + PORTRAIT_W + PADDING, hudY);
-        renderChoices(g, mc, hudX, hudY + BOX_H + 4, sw);
+        renderTextBox(g, mc, hudX + PORTRAIT_W + PADDING, hudY, boxW);
+        renderChoices(g, mc, hudX, hudY + BOX_H + 4, sw, totalW);
     }
 
     private static void renderPortraitArea(GuiGraphics g, int x, int y) {
@@ -212,8 +236,7 @@ public class NaraDialogueOverlay {
         }
     }
 
-    private static void renderTextBox(GuiGraphics g, Minecraft mc, int x, int y) {
-        int w = BOX_W;
+    private static void renderTextBox(GuiGraphics g, Minecraft mc, int x, int y, int w) {
         int h = BOX_H;
 
         // 背景
@@ -248,7 +271,7 @@ public class NaraDialogueOverlay {
         }
     }
 
-    private static void renderChoices(GuiGraphics g, Minecraft mc, int x, int y, int screenWidth) {
+    private static void renderChoices(GuiGraphics g, Minecraft mc, int x, int y, int screenWidth, int totalW) {
         if (NaraDialogueManager.getDialogueState() != NaraDialogueManager.DialogueState.CHOOSING) return;
 
         List<NaraChoice> choices = NaraDialogueManager.getCurrentChoices();
@@ -259,10 +282,9 @@ public class NaraDialogueOverlay {
         if (timeout > 0) {
             int elapsed = NaraDialogueManager.getChoiceTimerTicks();
             float progress = 1f - (float) elapsed / timeout;
-            int barW = PORTRAIT_W + PADDING + BOX_W;
             int barH = 3;
-            g.fill(x, y, x + barW, y + barH, 0x44FFFFFF);
-            g.fill(x, y, x + (int)(barW * progress), y + barH, COLOR_TEAL);
+            g.fill(x, y, x + totalW, y + barH, 0x44FFFFFF);
+            g.fill(x, y, x + (int)(totalW * progress), y + barH, COLOR_TEAL);
             y += barH + 2;
         }
 
@@ -274,7 +296,7 @@ public class NaraDialogueOverlay {
         int selected = NaraDialogueManager.getSelectedChoiceIndex();
         for (int i = 0; i < choices.size(); i++) {
             NaraChoice choice = choices.get(i);
-            int btnW = PORTRAIT_W + PADDING + BOX_W;
+            int btnW = totalW;
             int btnH = CHOICE_H;
             boolean isSelected = (i == selected);
 
@@ -322,6 +344,23 @@ public class NaraDialogueOverlay {
         g.blit(WATCH_HIGHLIGHT, 0, 0, 0, 0, size, size, size, size);
         g.setColor(1f, 1f, 1f, 1f);
 
+        g.pose().popPose();
+    }
+
+    private static void renderGuiHighlight(GuiGraphics g, int guiLeft, int guiTop) {
+        float cx = guiLeft + NaraGuiHighlight.getRelX();
+        float cy = guiTop  + NaraGuiHighlight.getRelY();
+        int size = NaraGuiHighlight.getSize();
+        float pulse = NaraGuiHighlight.getPulse();
+        float scale = NaraGuiHighlight.getScale();
+
+        g.pose().pushPose();
+        g.pose().translate(cx, cy, 300);
+        g.pose().scale(scale, scale, 1f);
+        g.pose().translate(-size / 2f, -size / 2f, 0);
+        g.setColor(1f, 0.85f, 0.2f, pulse);
+        g.blit(WATCH_HIGHLIGHT, 0, 0, 0, 0, size, size, size, size);
+        g.setColor(1f, 1f, 1f, 1f);
         g.pose().popPose();
     }
 
