@@ -312,6 +312,12 @@
   "nara.zh_tw.mana_gen_placed.line3": {
     "sounds": [{"name": "koniava:nara/zh_tw/mana_gen_placed_line3", "stream": false}]
   },
+  "nara.zh_tw.wand_rod.craft_line1": {
+    "sounds": [{"name": "koniava:nara/zh_tw/wand_rod_craft_line1", "stream": false}]
+  },
+  "nara.zh_tw.wand_rod.craft_line2": {
+    "sounds": [{"name": "koniava:nara/zh_tw/wand_rod_craft_line2", "stream": false}]
+  },
   "nara.zh_tw.wand_rod.no_items_line1": {
     "sounds": [{"name": "koniava:nara/zh_tw/wand_rod_no_items_line1", "stream": false}]
   },
@@ -401,6 +407,12 @@
   },
   "nara.en.mana_gen_placed.line3": {
     "sounds": [{"name": "koniava:nara/en/mana_gen_placed_line3", "stream": false}]
+  },
+  "nara.en.wand_rod.craft_line1": {
+    "sounds": [{"name": "koniava:nara/en/wand_rod_craft_line1", "stream": false}]
+  },
+  "nara.en.wand_rod.craft_line2": {
+    "sounds": [{"name": "koniava:nara/en/wand_rod_craft_line2", "stream": false}]
   },
   "nara.en.wand_rod.no_items_line1": {
     "sounds": [{"name": "koniava:nara/en/wand_rod_no_items_line1", "stream": false}]

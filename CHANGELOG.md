@@ -41,6 +41,8 @@ All notable changes to this project will be documented in this file.
 - Jade 懸停提示現在對所有魔力機器和奧術導管顯示當前及最大魔力量。
 - Added R key binding to skip the altar upgrade animation.
 - 新增 R 鍵快捷鍵可跳過祭壇升級動畫。
+- Nara now plays a tutorial dialogue when the player first crafts a wand rod, explaining its purpose and the need for a core plugin. Opening the upgrade GUI later triggers context-sensitive tips depending on whether a core is installed.
+- 娜拉現在會在玩家首次合成魔杖杖柄時播放教學對話，說明其用途與安裝核心插件的必要性。之後開啟升級 GUI 時，會依是否已安裝核心顯示對應提示。
 - Nara dialogue now plays voice acting for all 48 dialogue lines in both Traditional Chinese and English, covering every tutorial trigger including first scan, watch open, mana generator, wand rod, first research, altar formation, mana grinder, mana infuser, mana crafting table, and aspect synthesis. The correct audio is selected automatically based on the player's in-game language setting.
 - 娜拉對話現在對全部 48 條台詞播放配音，涵蓋所有教學觸發點，包括初次掃描、手錶開啟、魔力發電機、魔杖杖柄、首次研究、祭壇成形、魔力粉碎機、魔力灌注機、魔力合成台與本源合成介面。繁體中文與英文各一套，根據玩家遊戲內語言自動選擇。
 - Nara Guide screen (watch UI) can now be closed with the inventory key (default E).
@@ -93,8 +95,11 @@ All notable changes to this project will be documented in this file.
 - `NaraTutorialFlow`: added `MANA_GRINDER_CRAFT`, `MANA_INFUSER_CRAFT`, `MANA_CRAFTING_CRAFT`, `ASPECT_SYNTHESIS_OPEN` constants and corresponding dialogue methods. `claimAspectSynthesisShown()` replaces server-side tracking for the client-only screen.
 - `NaraDialogueOverlay`: added `ScreenEvent.Opening` handler to detect first `AspectSynthesisScreen` open. Dialogue box uses compact mode (BOX_W=180, left-anchored) when `overlayOnScreen` is true, to avoid overlap with JEI's right-side item list.
 - `NaraServerEvents`: added `tickWhenGuiClosed()` helper (DRY refactor of repeated close-GUI-wait pattern). Added craft detection and pending sets for the three new machines.
-- `NaraCommand`: added `/koniava nara tutorial <id>` with tab-completion for all tutorial IDs, so tutorials can be re-triggered without resetting saved state.
+- `NaraCommand`: added `/koniava nara tutorial <id>` with tab-completion for all tutorial IDs, so tutorials can be re-triggered without resetting saved state. Removed redundant `/koniava nara machine` subcommand (superseded by the above).
 - `first_watch_open` tutorial now has a third line mentioning the guide tab in the watch.
+- `NaraServerEvents`: pending tutorial maps changed from `Set<UUID>` to `Map<UUID, Integer>` countdown (200-tick timeout). All GUI-wait blocks (`pendingWandRodCraft`, `pendingManaGenCraft`, `tickWhenGuiClosed`) now fire on timeout even if the player never closes their crafting GUI, eliminating the long reaction delay after crafting or placing a machine.
+- Added `WAND_ROD_CRAFT` tutorial dialogue case to `NaraTutorialFlow`. Server now sends the `WAND_ROD_CRAFT` packet directly when the player closes the crafting GUI (or on timeout). `WAND_ROD_NO_ITEMS` and `WAND_ROD_READY` are triggered client-side in `WandUpgradeScreen.init()` using once-per-session flags.
+- Added `wand_rod_craft_line1/2` to `ModSounds` DIALOGUE_KEYS and `sounds.json` (zh_tw and en). Added corresponding OGG entries to `generate_nara_voice.py`.
 
 ## [0.0.1.7-2]
 

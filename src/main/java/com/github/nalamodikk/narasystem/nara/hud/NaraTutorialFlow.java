@@ -29,15 +29,31 @@ public class NaraTutorialFlow {
 
     private static boolean altarT6Shown = false;
     private static boolean aspectSynthesisShown = false;
+    private static boolean wandRodNoItemsShown = false;
+    private static boolean wandRodReadyShown = false;
 
     public static void resetSessionFlags() {
         altarT6Shown = false;
         aspectSynthesisShown = false;
+        wandRodNoItemsShown = false;
+        wandRodReadyShown = false;
     }
 
     public static boolean claimAspectSynthesisShown() {
         if (aspectSynthesisShown) return false;
         aspectSynthesisShown = true;
+        return true;
+    }
+
+    public static boolean claimWandRodNoItemsShown() {
+        if (wandRodNoItemsShown) return false;
+        wandRodNoItemsShown = true;
+        return true;
+    }
+
+    public static boolean claimWandRodReadyShown() {
+        if (wandRodReadyShown) return false;
+        wandRodReadyShown = true;
         return true;
     }
 
@@ -51,6 +67,7 @@ public class NaraTutorialFlow {
             case MANA_GEN_PLACED      -> startManaGenPlaced();
             case FIRST_RESEARCH       -> startFirstResearch();
             case FIRST_ALTAR_FORMED   -> startFirstAltarFormed();
+            case WAND_ROD_CRAFT       -> startWandRodCraft();
             case WAND_ROD_NO_ITEMS    -> startWandRodNoItems();
             case WAND_ROD_READY      -> startWandRodReady();
             case WAND_ROD_GOT_CORE   -> startWandRodGotCore();
@@ -215,6 +232,22 @@ public class NaraTutorialFlow {
                                 () -> {})),
                         0, null)
                         .withOnStart(() -> NaraSoundHelper.play("first_altar_formed", "line2"))
+        ));
+    }
+
+    private static void startWandRodCraft() {
+        NaraDialogueManager.setPortraitShown();
+        NaraDialogueManager.startDialogue(List.of(
+                NaraDialogueLine.simple(
+                        Component.translatable("nara.dialogue.tutorial.wand_rod.craft.line1"))
+                        .withOnStart(() -> NaraSoundHelper.play("wand_rod", "craft_line1")),
+                NaraDialogueLine.withChoices(
+                        Component.translatable("nara.dialogue.tutorial.wand_rod.craft.line2"),
+                        List.of(new NaraChoice(
+                                Component.translatable("nara.dialogue.tutorial.wand_rod.confirm"),
+                                () -> {})),
+                        0, null)
+                        .withOnStart(() -> NaraSoundHelper.play("wand_rod", "craft_line2"))
         ));
     }
 

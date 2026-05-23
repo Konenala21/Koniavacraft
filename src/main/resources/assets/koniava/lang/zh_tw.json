@@ -228,6 +228,8 @@
   "nara.dialogue.tutorial.mana_gen_placed.line2": "這裡產生的魔力需要有地方去。把奧術導管接到輸出面，再連到你的機器。",
   "nara.dialogue.tutorial.mana_gen_placed.line3": "看到 GUI 左側那個發亮的區域了嗎？點它可以用 JEI 查有哪些燃料可以用。",
   "nara.dialogue.tutorial.mana_gen_placed.confirm": "明白了。",
+  "nara.dialogue.tutorial.wand_rod.craft.line1": "你把它做出來了！這是奧術脈衝調製器，控制所有魔力工具的核心裝置。",
+  "nara.dialogue.tutorial.wand_rod.craft.line2": "不過光是拿著它沒用，要先合成核心插件裝進去，才能發揮真正的功能。",
   "nara.dialogue.tutorial.wand_rod.no_items.line1": "這是魔杖杖柄。要有核心才能用。升級模組也可以裝，但核心是必須的。",
   "nara.dialogue.tutorial.wand_rod.no_items.line2": "先去合成一個核心。有了之後，手持杖柄按 [%s]（預設 U）開啟升級介面。",
   "nara.dialogue.tutorial.wand_rod.ready.line1": "你已經有核心了。手持杖柄按 [%s]（預設 U）。左上槽位裝核心，左邊下方槽位裝升級模組。",

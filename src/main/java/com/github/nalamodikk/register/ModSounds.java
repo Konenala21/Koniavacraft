@@ -30,6 +30,7 @@ public class ModSounds {
             {"first_watch_open", "line1"}, {"first_watch_open", "line2"}, {"first_watch_open", "line3"},
             {"mana_gen_craft", "line1"}, {"mana_gen_craft", "line2"},
             {"mana_gen_placed", "line1"}, {"mana_gen_placed", "line2"}, {"mana_gen_placed", "line3"},
+            {"wand_rod", "craft_line1"}, {"wand_rod", "craft_line2"},
             {"wand_rod", "no_items_line1"}, {"wand_rod", "no_items_line2"},
             {"wand_rod", "ready_line1"}, {"wand_rod", "got_core_line1"},
             {"first_research", "line1"}, {"first_research", "line2"},

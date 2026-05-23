@@ -207,6 +207,8 @@
   "nara.dialogue.tutorial.mana_gen_placed.line2": "The mana produced here needs somewhere to go. Connect arcane conduits to the output face and route them to your machines.",
   "nara.dialogue.tutorial.mana_gen_placed.line3": "See that area on the left side of the GUI? Click it to look up valid fuels in JEI.",
   "nara.dialogue.tutorial.mana_gen_placed.confirm": "Got it.",
+  "nara.dialogue.tutorial.wand_rod.craft.line1": "You made it! This is the Arcane Pulse Modulator, the core device for controlling all mana tools.",
+  "nara.dialogue.tutorial.wand_rod.craft.line2": "Just holding it won't do much though. Craft a core plugin and slot it in to unlock its real function.",
   "nara.dialogue.tutorial.wand_rod.no_items.line1": "That is a wand rod. It needs a core before it can do anything. Upgrade modules help too.",
   "nara.dialogue.tutorial.wand_rod.no_items.line2": "Craft a core first. Once you have one, hold the rod and press [%s] (default: U) to open the upgrade screen.",
   "nara.dialogue.tutorial.wand_rod.ready.line1": "You already have a core. Hold the wand rod and press [%s] (default: U). Top-left slot is the core, left side slots below are for upgrades.",

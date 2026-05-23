@@ -6,6 +6,7 @@ import com.github.nalamodikk.common.item.wand.WandRodItem;
 import com.github.nalamodikk.common.item.wand.core.IWandCore;
 import com.github.nalamodikk.common.item.wand.upgrade.IWandUpgrade;
 import com.github.nalamodikk.common.network.packet.server.wand.WandCoreSwapPacket;
+import com.github.nalamodikk.narasystem.nara.hud.NaraTutorialFlow;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -61,6 +62,20 @@ public class WandUpgradeScreen extends Screen {
     public WandUpgradeScreen(InteractionHand hand) {
         super(Component.translatable("screen.koniava.wand_upgrade"));
         this.hand = hand;
+    }
+
+    @Override
+    public void init() {
+        super.init();
+        ItemStack wand = wand();
+        if (wand.getItem() instanceof WandRodItem) {
+            WandCoreData data = WandRodItem.getData(wand);
+            if (!data.hasCore() && NaraTutorialFlow.claimWandRodNoItemsShown()) {
+                NaraTutorialFlow.start(NaraTutorialFlow.WAND_ROD_NO_ITEMS);
+            } else if (data.hasCore() && NaraTutorialFlow.claimWandRodReadyShown()) {
+                NaraTutorialFlow.start(NaraTutorialFlow.WAND_ROD_READY);
+            }
+        }
     }
 
     private ItemStack wand() {

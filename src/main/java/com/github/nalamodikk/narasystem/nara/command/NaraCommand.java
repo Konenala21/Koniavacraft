@@ -74,6 +74,7 @@ public class NaraCommand {
             NaraTutorialFlow.MANA_GEN_PLACED,
             NaraTutorialFlow.FIRST_RESEARCH,
             NaraTutorialFlow.FIRST_ALTAR_FORMED,
+            NaraTutorialFlow.WAND_ROD_CRAFT,
             NaraTutorialFlow.WAND_ROD_NO_ITEMS,
             NaraTutorialFlow.WAND_ROD_READY,
             NaraTutorialFlow.WAND_ROD_GOT_CORE,
