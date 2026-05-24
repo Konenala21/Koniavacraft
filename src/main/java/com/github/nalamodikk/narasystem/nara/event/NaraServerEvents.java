@@ -75,6 +75,8 @@ public class NaraServerEvents {
     private static final Map<UUID, Integer> pendingManaGrinderCraft = new HashMap<>();
     private static final Map<UUID, Integer> pendingManaInfuserCraft = new HashMap<>();
     private static final Map<UUID, Integer> pendingManaCraftingCraft = new HashMap<>();
+    private static final Map<UUID, Integer> pendingManaDeployerCraft = new HashMap<>();
+    private static final Map<UUID, Integer> pendingManaChargerCraft = new HashMap<>();
     // Dev test tutorial (ghost block)
     // Phase 1: block placed, waiting for chunk update to reach client before opening GUI
     private static final Map<UUID, Integer> ghostOpenDelay = new HashMap<>();
@@ -85,6 +87,8 @@ public class NaraServerEvents {
     private static final Map<UUID, String> pendingTestTutorialId = new HashMap<>();
     private static final Map<UUID, BlockPos> ghostBlocks = new HashMap<>();
     private static final Map<UUID, ResourceKey<Level>> ghostBlockLevels = new HashMap<>();
+    // Positions being removed by ghost cleanup; machine onRemove checks this to skip NBT item drops
+    private static final Set<Long> ghostPositionKeys = new HashSet<>();
 
     @SubscribeEvent
     public static void onServerStopping(ServerStoppingEvent event) {
@@ -105,13 +109,15 @@ public class NaraServerEvents {
         pendingManaGrinderCraft.clear();
         pendingManaInfuserCraft.clear();
         pendingManaCraftingCraft.clear();
+        pendingManaDeployerCraft.clear();
+        pendingManaChargerCraft.clear();
         for (Map.Entry<UUID, BlockPos> e : ghostBlocks.entrySet()) {
             ServerPlayer p = event.getServer().getPlayerList().getPlayer(e.getKey());
             ResourceKey<Level> dimKey = ghostBlockLevels.get(e.getKey());
             ServerLevel targetLvl = dimKey != null
                     ? event.getServer().getLevel(dimKey)
                     : (p != null ? p.serverLevel() : null);
-            if (targetLvl != null) targetLvl.removeBlock(e.getValue(), false);
+            if (targetLvl != null) removeGhostBlock(targetLvl, e.getValue());
         }
         ghostBlocks.clear();
         ghostBlockLevels.clear();
@@ -144,13 +150,15 @@ public class NaraServerEvents {
         pendingManaGrinderCraft.remove(uuid);
         pendingManaInfuserCraft.remove(uuid);
         pendingManaCraftingCraft.remove(uuid);
+        pendingManaDeployerCraft.remove(uuid);
+        pendingManaChargerCraft.remove(uuid);
         ghostOpenDelay.remove(uuid);
         ghostOpenTutorialId.remove(uuid);
         ResourceKey<Level> dimKey = ghostBlockLevels.remove(uuid);
         BlockPos ghostPos = ghostBlocks.remove(uuid);
         if (ghostPos != null) {
             ServerLevel targetLvl = dimKey != null ? player.server.getLevel(dimKey) : player.serverLevel();
-            if (targetLvl != null) targetLvl.removeBlock(ghostPos, false);
+            if (targetLvl != null) removeGhostBlock(targetLvl, ghostPos);
         }
         pendingTestTutorial.remove(uuid);
         pendingTestTutorialId.remove(uuid);
@@ -250,6 +258,20 @@ public class NaraServerEvents {
             savedData.setDirty();
             pendingManaCraftingCraft.put(sp.getUUID(), GUI_CLOSE_TIMEOUT_TICKS);
         }
+
+        if (event.getCrafting().getItem() == ModBlocks.MANA_DEPLOYER.get().asItem()
+                && !knowledge.hasSeenTutorial(NaraTutorialFlow.MANA_DEPLOYER_CRAFT)) {
+            knowledge.addPendingTutorial(NaraTutorialFlow.MANA_DEPLOYER_CRAFT);
+            savedData.setDirty();
+            pendingManaDeployerCraft.put(sp.getUUID(), GUI_CLOSE_TIMEOUT_TICKS);
+        }
+
+        if (event.getCrafting().getItem() == ModBlocks.MANA_CHARGER.get().asItem()
+                && !knowledge.hasSeenTutorial(NaraTutorialFlow.MANA_CHARGER_CRAFT)) {
+            knowledge.addPendingTutorial(NaraTutorialFlow.MANA_CHARGER_CRAFT);
+            savedData.setDirty();
+            pendingManaChargerCraft.put(sp.getUUID(), GUI_CLOSE_TIMEOUT_TICKS);
+        }
     }
 
     @SubscribeEvent
@@ -292,6 +314,10 @@ public class NaraServerEvents {
             pendingManaInfuserCraft.put(uuid, GUI_CLOSE_TIMEOUT_TICKS);
         if (pending.contains(NaraTutorialFlow.MANA_CRAFTING_CRAFT))
             pendingManaCraftingCraft.put(uuid, GUI_CLOSE_TIMEOUT_TICKS);
+        if (pending.contains(NaraTutorialFlow.MANA_DEPLOYER_CRAFT))
+            pendingManaDeployerCraft.put(uuid, GUI_CLOSE_TIMEOUT_TICKS);
+        if (pending.contains(NaraTutorialFlow.MANA_CHARGER_CRAFT))
+            pendingManaChargerCraft.put(uuid, GUI_CLOSE_TIMEOUT_TICKS);
 
         // Craft tutorial fired but player hasn't placed the generator yet
         if (knowledge.hasSeenTutorial(NaraTutorialFlow.MANA_GEN_CRAFT)
@@ -421,6 +447,8 @@ public class NaraServerEvents {
         tickWhenGuiClosed(pendingManaGrinderCraft, NaraTutorialFlow.MANA_GRINDER_CRAFT, event);
         tickWhenGuiClosed(pendingManaInfuserCraft, NaraTutorialFlow.MANA_INFUSER_CRAFT, event);
         tickWhenGuiClosed(pendingManaCraftingCraft, NaraTutorialFlow.MANA_CRAFTING_CRAFT, event);
+        tickWhenGuiClosed(pendingManaDeployerCraft, NaraTutorialFlow.MANA_DEPLOYER_CRAFT, event);
+        tickWhenGuiClosed(pendingManaChargerCraft, NaraTutorialFlow.MANA_CHARGER_CRAFT, event);
 
         // Expire the mana generator placement watch after timeout (no tutorial fired, just cleanup)
         if (!pendingManaGenPlacement.isEmpty()) {
@@ -443,7 +471,7 @@ public class NaraServerEvents {
                     ResourceKey<Level> dimKey = ghostBlockLevels.remove(uuid);
                     if (gp != null && dimKey != null) {
                         ServerLevel ghostLvl = event.getServer().getLevel(dimKey);
-                        if (ghostLvl != null) ghostLvl.removeBlock(gp, false);
+                        if (ghostLvl != null) removeGhostBlock(ghostLvl, gp);
                     }
                     continue;
                 }
@@ -476,7 +504,7 @@ public class NaraServerEvents {
                     ResourceKey<Level> cleanDim = ghostBlockLevels.remove(uuid);
                     if (cleanPos != null) {
                         ServerLevel cleanLvl = cleanDim != null ? event.getServer().getLevel(cleanDim) : player.serverLevel();
-                        if (cleanLvl != null) cleanLvl.removeBlock(cleanPos, false);
+                        if (cleanLvl != null) removeGhostBlock(cleanLvl, cleanPos);
                     }
                     if (tid != null) NaraTutorialPacket.send(player, tid);
                 }
@@ -496,7 +524,7 @@ public class NaraServerEvents {
                     ResourceKey<Level> dimKey = ghostBlockLevels.remove(uuid);
                     if (gp != null && dimKey != null) {
                         ServerLevel ghostLvl = event.getServer().getLevel(dimKey);
-                        if (ghostLvl != null) ghostLvl.removeBlock(gp, false);
+                        if (ghostLvl != null) removeGhostBlock(ghostLvl, gp);
                     }
                     continue;
                 }
@@ -509,7 +537,7 @@ public class NaraServerEvents {
                     ResourceKey<Level> dimKey = ghostBlockLevels.remove(uuid);
                     if (gp != null) {
                         ServerLevel ghostLvl = dimKey != null ? event.getServer().getLevel(dimKey) : player.serverLevel();
-                        if (ghostLvl != null) ghostLvl.removeBlock(gp, false);
+                        if (ghostLvl != null) removeGhostBlock(ghostLvl, gp);
                     }
                     if (tid != null) NaraTutorialPacket.send(player, tid);
                 } else {
@@ -577,6 +605,8 @@ public class NaraServerEvents {
             NaraTutorialFlow.MANA_GRINDER_CRAFT,
             NaraTutorialFlow.MANA_INFUSER_CRAFT,
             NaraTutorialFlow.MANA_CRAFTING_CRAFT,
+            NaraTutorialFlow.MANA_DEPLOYER_CRAFT,
+            NaraTutorialFlow.MANA_CHARGER_CRAFT,
             NaraTutorialFlow.RESEARCH_TABLE,
             NaraTutorialFlow.FIRST_RESEARCH
     );
@@ -588,7 +618,7 @@ public class NaraServerEvents {
         ResourceKey<Level> existingDim = ghostBlockLevels.remove(uuid);
         if (existingGhost != null) {
             ServerLevel existingLvl = existingDim != null ? player.server.getLevel(existingDim) : player.serverLevel();
-            if (existingLvl != null) existingLvl.removeBlock(existingGhost, false);
+            if (existingLvl != null) removeGhostBlock(existingLvl, existingGhost);
         }
         ghostOpenDelay.remove(uuid);
         ghostOpenTutorialId.remove(uuid);
@@ -614,6 +644,19 @@ public class NaraServerEvents {
         ghostOpenTutorialId.put(uuid, tutorialId);
     }
 
+    public static boolean isGhostBlock(BlockPos pos) {
+        return ghostPositionKeys.contains(pos.asLong());
+    }
+
+    private static void removeGhostBlock(ServerLevel level, BlockPos pos) {
+        ghostPositionKeys.add(pos.asLong());
+        try {
+            level.removeBlock(pos, false);
+        } finally {
+            ghostPositionKeys.remove(pos.asLong());
+        }
+    }
+
     private static BlockState getGhostBlockState(String id) {
         return switch (id) {
             case NaraTutorialFlow.RESEARCH_TABLE, NaraTutorialFlow.FIRST_RESEARCH ->
@@ -626,6 +669,10 @@ public class NaraServerEvents {
                     ModBlocks.MANA_INFUSER.get().defaultBlockState();
             case NaraTutorialFlow.MANA_CRAFTING_CRAFT ->
                     ModBlocks.MANA_CRAFTING_TABLE_BLOCK.get().defaultBlockState();
+            case NaraTutorialFlow.MANA_DEPLOYER_CRAFT ->
+                    ModBlocks.MANA_DEPLOYER.get().defaultBlockState();
+            case NaraTutorialFlow.MANA_CHARGER_CRAFT ->
+                    ModBlocks.MANA_CHARGER.get().defaultBlockState();
             default -> null;
         };
     }

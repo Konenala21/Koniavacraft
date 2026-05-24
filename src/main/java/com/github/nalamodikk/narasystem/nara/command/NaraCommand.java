@@ -83,5 +83,7 @@ public class NaraCommand {
             NaraTutorialFlow.MANA_CRAFTING_CRAFT,
             NaraTutorialFlow.ASPECT_SYNTHESIS_OPEN,
             NaraTutorialFlow.ALTAR_T6,
+            NaraTutorialFlow.MANA_DEPLOYER_CRAFT,
+            NaraTutorialFlow.MANA_CHARGER_CRAFT,
     };
 }

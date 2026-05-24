@@ -1,6 +1,7 @@
 package com.github.nalamodikk.common.block.blockentity.mana_crafting;
 
 import com.github.nalamodikk.common.block.blockentity.manabase.BaseMachineBlock;
+import com.github.nalamodikk.narasystem.nara.event.NaraServerEvents;
 import com.github.nalamodikk.register.ModBlockEntities;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
@@ -74,14 +75,13 @@ public class ManaCraftingTableBlock extends BaseMachineBlock {
         if (!state.is(newState.getBlock())) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof ManaCraftingTableBlockEntity blockEntity) {
-
-                // ✅ 新增：保存資料進物品
-                ItemStack drop = new ItemStack(this); // 這個方塊對應的物品
-                CompoundTag tag = blockEntity.saveWithoutMetadata(level.registryAccess());
-                BlockItem.setBlockEntityData(drop, blockEntity.getType(), tag); // 寫入 NBT
-                Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), drop); // 掉落方塊物品
-
-                level.invalidateCapabilities(pos); // ❗清除快取
+                if (!NaraServerEvents.isGhostBlock(pos)) {
+                    ItemStack drop = new ItemStack(this);
+                    CompoundTag tag = blockEntity.saveWithoutMetadata(level.registryAccess());
+                    BlockItem.setBlockEntityData(drop, blockEntity.getType(), tag);
+                    Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), drop);
+                }
+                level.invalidateCapabilities(pos);
             }
         }
         super.onRemove(state, level, pos, newState, movedByPiston);

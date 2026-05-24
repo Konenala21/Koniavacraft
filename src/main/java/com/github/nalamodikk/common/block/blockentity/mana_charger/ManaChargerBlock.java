@@ -1,6 +1,7 @@
 package com.github.nalamodikk.common.block.blockentity.mana_charger;
 
 import com.github.nalamodikk.common.block.blockentity.manabase.BaseMachineBlock;
+import com.github.nalamodikk.narasystem.nara.event.NaraServerEvents;
 import com.github.nalamodikk.register.ModBlockEntities;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
@@ -61,10 +62,12 @@ public class ManaChargerBlock extends BaseMachineBlock {
         if (!state.is(newState.getBlock())) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof ManaChargerBlockEntity charger) {
-                ItemStack drop = new ItemStack(this);
-                CompoundTag tag = charger.saveWithoutMetadata(level.registryAccess());
-                net.minecraft.world.item.BlockItem.setBlockEntityData(drop, charger.getType(), tag);
-                Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), drop);
+                if (!NaraServerEvents.isGhostBlock(pos)) {
+                    ItemStack drop = new ItemStack(this);
+                    CompoundTag tag = charger.saveWithoutMetadata(level.registryAccess());
+                    net.minecraft.world.item.BlockItem.setBlockEntityData(drop, charger.getType(), tag);
+                    Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), drop);
+                }
                 level.invalidateCapabilities(pos);
             }
         }

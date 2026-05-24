@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Nara now plays a tutorial dialogue when the player first crafts a Mana Deployer, explaining its interaction modes and how to set it up with conduits. A ghost GUI opens automatically so the player can see the interface immediately.
+- 娜拉現在會在玩家首次合成魔力部署器時播放教學對話，說明互動模式與導管接法。教學觸發時自動開啟幽靈介面讓玩家直接查看。
+- Nara now plays a tutorial dialogue when the player first crafts a Mana Charger, explaining how to charge mana-powered items through a conduit network. A ghost GUI opens automatically.
+- 娜拉現在會在玩家首次合成魔力充能台時播放教學對話，說明如何透過導管網路替魔力道具充能。教學觸發時自動開啟幽靈介面。
 - Fixed Mana Deployer consuming mana even when the interaction was explicitly rejected (e.g. right-clicking a locked block or an item that refuses activation).
 - 修復魔力部署器在互動明確被拒絕時（例如右鍵已鎖定的方塊，或物品拒絕啟用）仍然消耗魔力的問題。
 - Fixed Mana Charger IO direction config being lost on world reload; all faces previously set to non-default now correctly persist.
@@ -13,6 +17,7 @@ All notable changes to this project will be documented in this file.
 
 ### Developer Notes / 開發者備註
 
+- Added `MANA_DEPLOYER_CRAFT` and `MANA_CHARGER_CRAFT` tutorial IDs to `NaraTutorialFlow`. Both follow the same ghost-GUI pattern as other machine tutorials. Test with `/koniava nara tutorial mana_deployer_craft` and `mana_charger_craft`.
 - Fixed `doRightClick` in `ManaDeployerBlockEntity` treating `InteractionResult.FAIL` as a successful activation; now uses `consumesAction()` to correctly distinguish PASS, FAIL, and SUCCESS.
 - Fixed `ManaChargerBlockEntity.saveAdditional`/`loadAdditional` not serializing `directionConfig`; added IO config NBT round-trip matching the deployer pattern.
 

@@ -39,6 +39,8 @@ public class ModSounds {
             {"mana_infuser", "line1"}, {"mana_infuser", "line2"}, {"mana_infuser", "line3"},
             {"mana_crafting", "line1"}, {"mana_crafting", "line2"}, {"mana_crafting", "line3"},
             {"aspect_synthesis", "line1"}, {"aspect_synthesis", "line2"}, {"aspect_synthesis", "line3"},
+            {"mana_deployer", "line1"}, {"mana_deployer", "line2"},
+            {"mana_charger", "line1"},  {"mana_charger", "line2"},
     };
 
     // key: "zh_tw.first_login.line1" → DeferredHolder

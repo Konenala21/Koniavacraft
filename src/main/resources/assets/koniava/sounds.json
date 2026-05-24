@@ -378,6 +378,18 @@
   "nara.zh_tw.aspect_synthesis.line3": {
     "sounds": [{"name": "koniava:nara/zh_tw/aspect_synthesis_line3", "stream": false}]
   },
+  "nara.zh_tw.mana_deployer.line1": {
+    "sounds": [{"name": "koniava:nara/zh_tw/mana_deployer_line1", "stream": false}]
+  },
+  "nara.zh_tw.mana_deployer.line2": {
+    "sounds": [{"name": "koniava:nara/zh_tw/mana_deployer_line2", "stream": false}]
+  },
+  "nara.zh_tw.mana_charger.line1": {
+    "sounds": [{"name": "koniava:nara/zh_tw/mana_charger_line1", "stream": false}]
+  },
+  "nara.zh_tw.mana_charger.line2": {
+    "sounds": [{"name": "koniava:nara/zh_tw/mana_charger_line2", "stream": false}]
+  },
   "nara.en.first_scan.line1": {
     "sounds": [{"name": "koniava:nara/en/first_scan_line1", "stream": false}]
   },
@@ -473,5 +485,17 @@
   },
   "nara.en.aspect_synthesis.line3": {
     "sounds": [{"name": "koniava:nara/en/aspect_synthesis_line3", "stream": false}]
+  },
+  "nara.en.mana_deployer.line1": {
+    "sounds": [{"name": "koniava:nara/en/mana_deployer_line1", "stream": false}]
+  },
+  "nara.en.mana_deployer.line2": {
+    "sounds": [{"name": "koniava:nara/en/mana_deployer_line2", "stream": false}]
+  },
+  "nara.en.mana_charger.line1": {
+    "sounds": [{"name": "koniava:nara/en/mana_charger_line1", "stream": false}]
+  },
+  "nara.en.mana_charger.line2": {
+    "sounds": [{"name": "koniava:nara/en/mana_charger_line2", "stream": false}]
   }
 }
