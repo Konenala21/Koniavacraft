@@ -1,6 +1,8 @@
 package com.github.nalamodikk;
 
 import com.github.nalamodikk.biome.BiomeTerrainRegistration;
+import com.github.nalamodikk.common.particle.FormationEffectManager;
+import com.github.nalamodikk.client.particle.ClientInteractiveFormationManager;
 import com.github.nalamodikk.client.renderer.ManaStrikeShaderRenderer;
 import com.github.nalamodikk.client.renderer.altar.AltarShockwaveRenderer;
 import com.github.nalamodikk.client.renderer.altar.AltarMagicCircleRenderer;
@@ -85,7 +87,10 @@ public class KoniavacraftMod {
         ModEntities.register(modEventBus);
         ModMobEffects.register(modEventBus);
         ModSounds.register(modEventBus);
+        ModParticles.register(modEventBus);
         if (FMLEnvironment.dist == Dist.CLIENT) {
+            NeoForge.EVENT_BUS.register(ClientInteractiveFormationManager.class);
+            modEventBus.addListener(ModParticles::registerProviders);
             modEventBus.addListener(ModKeyMappings::onRegisterKeyMappings);
             modEventBus.addListener(com.github.nalamodikk.register.client.ModColorHandlers::onRegisterItemColors);
             modEventBus.addListener((EntityRenderersEvent.RegisterRenderers e) -> {
@@ -117,6 +122,7 @@ public class KoniavacraftMod {
 
         NeoForge.EVENT_BUS.register(this);
         NeoForge.EVENT_BUS.register(BiomeTerrainRegistration.class);
+        NeoForge.EVENT_BUS.register(FormationEffectManager.class);
 
         // Register the item to a creative tab
 

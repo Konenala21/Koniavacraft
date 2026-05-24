@@ -83,8 +83,8 @@ public class NaraServerEvents {
     private static final Map<UUID, Integer> ghostOpenDelay = new HashMap<>();
     private static final Map<UUID, String> ghostOpenTutorialId = new HashMap<>();
     private static final int GHOST_OPEN_DELAY = 10;
-    // Phase 2: GUI open, waiting for close or timeout
-    private static final Map<UUID, Integer> pendingTestTutorial = new HashMap<>();
+    // Phase 2: GUI open, waiting for player to actually close it (no timeout: JEI tutorials need time)
+    private static final Set<UUID> pendingTestTutorial = new HashSet<>();
     private static final Map<UUID, String> pendingTestTutorialId = new HashMap<>();
     private static final Map<UUID, BlockPos> ghostBlocks = new HashMap<>();
     private static final Map<UUID, ResourceKey<Level>> ghostBlockLevels = new HashMap<>();
@@ -530,7 +530,7 @@ public class NaraServerEvents {
                     }
                 }
                 if (opened) {
-                    pendingTestTutorial.put(uuid, GUI_CLOSE_TIMEOUT_TICKS);
+                    pendingTestTutorial.add(uuid);
                     if (FIRE_ON_GUI_OPEN.contains(tid)) {
                         NaraTutorialPacket.send(player, tid);
                         pendingTestTutorialId.put(uuid, null);
@@ -550,10 +550,9 @@ public class NaraServerEvents {
         }
 
         if (!pendingTestTutorial.isEmpty()) {
-            Iterator<Map.Entry<UUID, Integer>> tit = pendingTestTutorial.entrySet().iterator();
+            Iterator<UUID> tit = pendingTestTutorial.iterator();
             while (tit.hasNext()) {
-                Map.Entry<UUID, Integer> entry = tit.next();
-                UUID uuid = entry.getKey();
+                UUID uuid = tit.next();
                 ServerPlayer player = event.getServer().getPlayerList().getPlayer(uuid);
                 if (player == null) {
                     tit.remove();
@@ -566,9 +565,7 @@ public class NaraServerEvents {
                     }
                     continue;
                 }
-                int remaining = entry.getValue() - 1;
-                boolean timeout = remaining <= 0;
-                if (timeout || player.containerMenu == player.inventoryMenu) {
+                if (player.containerMenu == player.inventoryMenu) {
                     tit.remove();
                     String tid = pendingTestTutorialId.remove(uuid);
                     BlockPos gp = ghostBlocks.remove(uuid);
@@ -578,8 +575,6 @@ public class NaraServerEvents {
                         if (ghostLvl != null) removeGhostBlock(ghostLvl, gp);
                     }
                     if (tid != null) NaraTutorialPacket.send(player, tid);
-                } else {
-                    entry.setValue(remaining);
                 }
             }
         }

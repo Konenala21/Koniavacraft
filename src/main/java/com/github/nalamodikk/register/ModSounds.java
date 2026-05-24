@@ -44,6 +44,26 @@ public class ModSounds {
             {"solar_collector", "line1"}, {"solar_collector", "line2"},
     };
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> TURRET_SHOOT =
+            SOUND_EVENTS.register("weapon.turret.shoot",
+                    () -> SoundEvent.createVariableRangeEvent(
+                            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "weapon.turret.shoot")));
+
+    public static final DeferredHolder<SoundEvent, SoundEvent> TURRET_CHARGE =
+            SOUND_EVENTS.register("weapon.turret.charge",
+                    () -> SoundEvent.createVariableRangeEvent(
+                            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "weapon.turret.charge")));
+
+    public static final DeferredHolder<SoundEvent, SoundEvent> TURRET_SHOOT_CHARGED =
+            SOUND_EVENTS.register("weapon.turret.shoot_charged",
+                    () -> SoundEvent.createVariableRangeEvent(
+                            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "weapon.turret.shoot_charged")));
+
+    public static final DeferredHolder<SoundEvent, SoundEvent> TURRET_NO_MANA =
+            SOUND_EVENTS.register("weapon.turret.no_mana",
+                    () -> SoundEvent.createVariableRangeEvent(
+                            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "weapon.turret.no_mana")));
+
     // key: "zh_tw.first_login.line1" → DeferredHolder
     public static final Map<String, DeferredHolder<SoundEvent, SoundEvent>> NARA =
             new HashMap<>();

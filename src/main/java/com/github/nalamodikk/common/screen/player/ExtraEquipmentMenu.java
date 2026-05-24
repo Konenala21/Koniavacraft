@@ -107,7 +107,7 @@ public class ExtraEquipmentMenu extends AbstractContainerMenu {
         initializing[0] = false;
 
         // 新增額外裝備欄位（使用修正後的 handler）
-        addSpecificEquipmentSlots(this.extraEquipmentHandler, 79, 23);
+        addSpecificEquipmentSlots(this.extraEquipmentHandler, 80, 24);
 
         // === 🔥 修正：9格儲存欄位的同步機制 ===
         NonNullList<ItemStack> grid = player.getData(ModDataAttachments.NINE_GRID.get());

@@ -881,6 +881,8 @@
   "item.koniava.dev_render_test.tooltip.1": "右鍵: ManaStrike 特效，Shift 右鍵: Orbital 特效",
   "item.koniava.dev_render_test.tooltip.2": "部分特效以 orbital-railgun 為原型設計",
   "item.koniava.dev_render_test_2": "開發渲染物品2（傅立葉曲線）",
+  "item.koniava.dev_render_test_3": "開發渲染物品3（法陣粒子）",
+  "item.koniava.dev_render_test_4": "開發渲染物品4（互動式法陣）",
 
   "item.koniava.consensus_glasses": "共識眼鏡",
   "item.koniava.consensus_glasses.tooltip.unbound": "右鍵使用：將你目前的研究進度和本源資料存入此物品。",

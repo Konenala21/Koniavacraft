@@ -16,6 +16,7 @@ public class AltarRecipeProvider {
 
     public static void generate(RecipeOutput output) {
         registerWeapons(output);
+        registerWandParts(output);
         registerCircuitMaterials(output);
         registerConduits(output);
         // 魔力水晶（催化：精煉魔力粉，底座：魔力碎片×4）
@@ -74,6 +75,25 @@ public class AltarRecipeProvider {
                 ),
                 new ItemStack(ModItems.FLOATING_TURRET.get()),
                 50000, 400, 3
+        );
+    }
+
+    private static void registerWandParts(RecipeOutput output) {
+        // 術式脈衝諧振器（T3 祭壇，升級自基礎杖柄）
+        save(output, "wand_rod_advanced",
+                Ingredient.of(ModItems.HIGH_DENSITY_MANA_CORE.get()),
+                List.of(
+                        Ingredient.of(ModItems.WAND_ROD.get()),
+                        Ingredient.of(ModItems.PRECISION_MANA_CIRCUIT.get()),
+                        Ingredient.of(ModItems.PRECISION_MANA_CIRCUIT.get()),
+                        Ingredient.of(ModItems.MANA_CRYSTAL.get()),
+                        Ingredient.of(ModItems.MANA_CRYSTAL.get()),
+                        Ingredient.of(ModItems.MANA_INGOT.get()),
+                        Ingredient.of(ModItems.MANA_INGOT.get()),
+                        Ingredient.of(Items.AMETHYST_SHARD)
+                ),
+                new ItemStack(ModItems.WAND_ROD_ADVANCED.get()),
+                40000, 320, 3
         );
     }
 

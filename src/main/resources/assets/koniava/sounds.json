@@ -509,5 +509,17 @@
   },
   "nara.en.solar_collector.line2": {
     "sounds": [{"name": "koniava:nara/en/solar_collector_line2", "stream": false}]
+  },
+  "weapon.turret.shoot": {
+    "sounds": [{"name": "koniava:weapon/turret_shoot", "stream": false}]
+  },
+  "weapon.turret.charge": {
+    "sounds": [{"name": "koniava:weapon/turret_charge", "stream": false}]
+  },
+  "weapon.turret.shoot_charged": {
+    "sounds": [{"name": "koniava:weapon/turret_shoot_charged", "stream": false}]
+  },
+  "weapon.turret.no_mana": {
+    "sounds": [{"name": "koniava:weapon/turret_no_mana", "stream": false}]
   }
 }

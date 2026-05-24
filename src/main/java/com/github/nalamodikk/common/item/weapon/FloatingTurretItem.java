@@ -8,11 +8,9 @@ import com.github.nalamodikk.common.player.equipment.EquipmentType;
 import com.github.nalamodikk.common.player.equipment.ISpecificEquipment;
 import com.github.nalamodikk.register.ModDataComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ClientboundStopSoundPacket;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
+import com.github.nalamodikk.register.ModSounds;
 import net.minecraft.sounds.SoundSource;
 
 import net.minecraft.world.InteractionHand;
@@ -95,11 +93,6 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
         int ticksHeld = MAX_CHARGE_TICKS - remainingUseDuration;
         float chargeRatio = Math.min(1.0F, (float) ticksHeld / MAX_CHARGE_TICKS);
 
-        // 音調隨蓄力緩升：0.5 → 0.9
-        float pitch = 0.5F + chargeRatio * 0.4F;
-        sl.playSound(null, player.getX(), player.getY(), player.getZ(),
-                SoundEvents.BEACON_AMBIENT, SoundSource.PLAYERS, 1.8F, pitch);
-
         // 雙持才有充能粒子（單手無蓄力狀態）
         if (!isDualWielding(player)) return;
         spawnChargingEffect(sl, player, FloatingTurretEventHandler.HAND_MAIN_SLOT, chargeRatio);
@@ -140,19 +133,11 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
         }
     }
 
-    private static void stopChargeSound(Player player) {
-        if (player instanceof ServerPlayer sp) {
-            sp.connection.send(new ClientboundStopSoundPacket(
-                    ResourceLocation.withDefaultNamespace("block.beacon.ambient"), SoundSource.PLAYERS));
-        }
-    }
-
     // 雙持：放開右鍵時依持續時間決定模式
     @Override
     public void releaseUsing(ItemStack stack, Level level, LivingEntity entity, int ticksRemaining) {
         if (!(entity instanceof Player player) || level.isClientSide) return;
         if (!(level instanceof ServerLevel serverLevel)) return;
-        stopChargeSound(player);
 
         int mainMana = player.getMainHandItem().getOrDefault(ModDataComponents.MANA_STORED, 0);
         int offMana  = player.getOffhandItem().getOrDefault(ModDataComponents.MANA_STORED, 0);
@@ -162,7 +147,7 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
             // 快速點擊：兩把同時普通射
             if (mainMana < HAND_MANA_COST && offMana < HAND_MANA_COST) {
                 level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                        SoundEvents.DISPENSER_FAIL, SoundSource.PLAYERS, 0.5F, 1.2F);
+                        ModSounds.TURRET_NO_MANA.get(), SoundSource.PLAYERS, 0.8F, 1.0F);
                 return;
             }
             fireDualNormalShot(serverLevel, player);
@@ -181,7 +166,6 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
     @Override
     public ItemStack finishUsingItem(ItemStack stack, Level level, LivingEntity entity) {
         if (entity instanceof Player player && !level.isClientSide && level instanceof ServerLevel serverLevel) {
-            stopChargeSound(player);
             fireChargedShot(serverLevel, player, 1.0F);
         }
         return stack;
@@ -238,7 +222,7 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
 
         if (fired) {
             level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                    SoundEvents.AMETHYST_BLOCK_HIT, SoundSource.PLAYERS, 0.8F, 1.4F);
+                    ModSounds.TURRET_SHOOT.get(), SoundSource.PLAYERS, 0.8F, 1.0F);
         }
     }
 
@@ -252,7 +236,7 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
         level.addFreshEntity(FloatingTurretProjectile.shoot(level, player, turretPos(player, slotIndex, 0f)));
 
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                SoundEvents.AMETHYST_BLOCK_HIT, SoundSource.PLAYERS, 0.6F, 1.6F);
+                ModSounds.TURRET_SHOOT.get(), SoundSource.PLAYERS, 0.6F, 1.0F);
 
         stack.set(ModDataComponents.MANA_STORED, mana - HAND_MANA_COST);
 
@@ -285,7 +269,7 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
         level.addFreshEntity(FloatingTurretProjectile.shootCharged(level, player, chargeRatio, spawnPos));
 
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                SoundEvents.AMETHYST_BLOCK_BREAK, SoundSource.PLAYERS, 1.0F, 0.6F + chargeRatio * 0.6F);
+                ModSounds.TURRET_SHOOT_CHARGED.get(), SoundSource.PLAYERS, 1.2F, 0.7F + chargeRatio * 0.4F);
     }
 
     @Override

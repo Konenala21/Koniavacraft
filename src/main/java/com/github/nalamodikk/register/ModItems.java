@@ -10,6 +10,8 @@ import com.github.nalamodikk.common.item.research.ResearchNoteItem;
 import com.github.nalamodikk.common.item.ConsensusGlassesItem;
 import com.github.nalamodikk.common.item.DevRenderTestItem;
 import com.github.nalamodikk.common.item.DevRenderTestItem2;
+import com.github.nalamodikk.common.item.DevRenderTestItem3;
+import com.github.nalamodikk.common.item.DevRenderTestItem4;
 import com.github.nalamodikk.common.item.SourceTomeItem;
 import com.github.nalamodikk.common.item.debug.ManaDebugToolItem;
 import com.github.nalamodikk.common.item.tool.AdvancedTechWandItem;
@@ -202,6 +204,14 @@ public class ModItems {
 
     public static final DeferredItem<DevRenderTestItem2> DEV_RENDER_TEST_2 =
             ITEMS.register("dev_render_test_2", () -> new DevRenderTestItem2(
+                    new Item.Properties().stacksTo(1)));
+
+    public static final DeferredItem<DevRenderTestItem3> DEV_RENDER_TEST_3 =
+            ITEMS.register("dev_render_test_3", () -> new DevRenderTestItem3(
+                    new Item.Properties().stacksTo(1)));
+
+    public static final DeferredItem<DevRenderTestItem4> DEV_RENDER_TEST_4 =
+            ITEMS.register("dev_render_test_4", () -> new DevRenderTestItem4(
                     new Item.Properties().stacksTo(1)));
 
     public static void register(IEventBus eventBus){

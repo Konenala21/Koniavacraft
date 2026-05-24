@@ -24,6 +24,8 @@ public class ModCreativeModTabs {
             "mana_debug_tool",
             "dev_render_test_1",
             "dev_render_test_2",
+            "dev_render_test_3",
+            "dev_render_test_4",
             // deprecated wands — replaced by wand_rod modular system
             "basic_tech_wand",
             "advanced_tech_wand",
