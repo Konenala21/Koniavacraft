@@ -770,6 +770,7 @@
   "koniava.config.render.fullAnimationDistance": "完整動畫渲染距離",
   "koniava.config.render.reducedAnimationDistance": "降級動畫渲染距離",
   "koniava.config.render.reducedAnimationScale": "降級動畫強度倍率",
+  "koniava.config.nara.voiceVolume": "娜拉配音音量",
   "//21": "=== 配置狀態訊息 ===",
   "message.koniava.config.biome.performance_low": "§e[生態系] 性能模式：低配置伺服器優化",
   "message.koniava.config.biome.performance_high": "§a[生態系] 性能模式：高配置伺服器優化",

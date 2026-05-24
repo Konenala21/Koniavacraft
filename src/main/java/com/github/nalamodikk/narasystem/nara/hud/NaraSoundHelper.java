@@ -1,5 +1,6 @@
 package com.github.nalamodikk.narasystem.nara.hud;
 
+import com.github.nalamodikk.common.config.ModClientConfig;
 import com.github.nalamodikk.register.ModSounds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -23,7 +24,8 @@ public class NaraSoundHelper {
             holder = ModSounds.NARA.get(FALLBACK_LOCALE + "." + group + "." + line);
         }
         if (holder == null) return;
-        currentSound = SimpleSoundInstance.forUI(holder.get(), 1.0f);
+        float vol = 0.25f * (float) ModClientConfig.INSTANCE.naraVoiceVolume.get();
+        currentSound = SimpleSoundInstance.forUI(holder.get(), 1.0f, vol);
         Minecraft.getInstance().getSoundManager().play(currentSound);
     }
 

@@ -21,8 +21,17 @@ public class ModClientConfig {
     public final ModConfigSpec.IntValue fullAnimationDistance;
     public final ModConfigSpec.IntValue reducedAnimationDistance;
     public final ModConfigSpec.DoubleValue reducedAnimationScale;
+    public final ModConfigSpec.DoubleValue naraVoiceVolume;
 
     private ModClientConfig(ModConfigSpec.Builder builder) {
+        builder.push("nara");
+
+        naraVoiceVolume = builder
+                .comment("Volume multiplier for Nara's voice dialogue (1.0 = 100%, 2.0 = 200%)")
+                .translation("koniava.config.nara.voiceVolume")
+                .defineInRange("naraVoiceVolume", 1.0D, 0.0D, 4.0D);
+
+        builder.pop();
         builder.push("render");
 
         fullAnimationDistance = builder
@@ -49,10 +58,11 @@ public class ModClientConfig {
             return;
         }
         KoniavacraftMod.LOGGER.info(
-                "載入客戶端渲染設定: fullDistance={}, reducedDistance={}, reducedScale={}",
+                "載入客戶端設定: fullDistance={}, reducedDistance={}, reducedScale={}, naraVoiceVolume={}",
                 INSTANCE.fullAnimationDistance.get(),
                 INSTANCE.reducedAnimationDistance.get(),
-                INSTANCE.reducedAnimationScale.get()
+                INSTANCE.reducedAnimationScale.get(),
+                INSTANCE.naraVoiceVolume.get()
         );
     }
 
@@ -62,10 +72,11 @@ public class ModClientConfig {
             return;
         }
         KoniavacraftMod.LOGGER.info(
-                "重新載入客戶端渲染設定: fullDistance={}, reducedDistance={}, reducedScale={}",
+                "重新載入客戶端設定: fullDistance={}, reducedDistance={}, reducedScale={}, naraVoiceVolume={}",
                 INSTANCE.fullAnimationDistance.get(),
                 INSTANCE.reducedAnimationDistance.get(),
-                INSTANCE.reducedAnimationScale.get()
+                INSTANCE.reducedAnimationScale.get(),
+                INSTANCE.naraVoiceVolume.get()
         );
     }
 }
