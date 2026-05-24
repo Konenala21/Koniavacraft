@@ -20,7 +20,7 @@ public class SoundOptionsScreenMixin {
                 OptionInstance.noTooltip(),
                 (caption, value) -> Options.genericValueLabel(
                         caption,
-                        Component.translatable("options.percent_value", (int)(value * 100))),
+                        Component.literal((int)(value * 100) + "%")),
                 OptionInstance.UnitDouble.INSTANCE,
                 ModClientConfig.INSTANCE.naraVoiceVolume.get(),
                 value -> ModClientConfig.INSTANCE.naraVoiceVolume.set(value)
