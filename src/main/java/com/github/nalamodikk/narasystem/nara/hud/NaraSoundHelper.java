@@ -24,7 +24,7 @@ public class NaraSoundHelper {
             holder = ModSounds.NARA.get(FALLBACK_LOCALE + "." + group + "." + line);
         }
         if (holder == null) return;
-        float vol = 0.25f * (float) ModClientConfig.INSTANCE.naraVoiceVolume.get();
+        float vol = 0.25f * ModClientConfig.INSTANCE.naraVoiceVolume.get().floatValue();
         currentSound = SimpleSoundInstance.forUI(holder.get(), 1.0f, vol);
         Minecraft.getInstance().getSoundManager().play(currentSound);
     }
