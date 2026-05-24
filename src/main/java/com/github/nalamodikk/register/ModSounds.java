@@ -41,6 +41,7 @@ public class ModSounds {
             {"aspect_synthesis", "line1"}, {"aspect_synthesis", "line2"}, {"aspect_synthesis", "line3"},
             {"mana_deployer", "line1"}, {"mana_deployer", "line2"},
             {"mana_charger", "line1"},  {"mana_charger", "line2"},
+            {"solar_collector", "line1"}, {"solar_collector", "line2"},
     };
 
     // key: "zh_tw.first_login.line1" → DeferredHolder

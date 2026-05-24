@@ -497,5 +497,17 @@
   },
   "nara.en.mana_charger.line2": {
     "sounds": [{"name": "koniava:nara/en/mana_charger_line2", "stream": false}]
+  },
+  "nara.zh_tw.solar_collector.line1": {
+    "sounds": [{"name": "koniava:nara/zh_tw/solar_collector_line1", "stream": false}]
+  },
+  "nara.zh_tw.solar_collector.line2": {
+    "sounds": [{"name": "koniava:nara/zh_tw/solar_collector_line2", "stream": false}]
+  },
+  "nara.en.solar_collector.line1": {
+    "sounds": [{"name": "koniava:nara/en/solar_collector_line1", "stream": false}]
+  },
+  "nara.en.solar_collector.line2": {
+    "sounds": [{"name": "koniava:nara/en/solar_collector_line2", "stream": false}]
   }
 }

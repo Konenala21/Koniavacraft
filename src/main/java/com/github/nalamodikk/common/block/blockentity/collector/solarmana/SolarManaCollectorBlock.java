@@ -1,6 +1,7 @@
 package com.github.nalamodikk.common.block.blockentity.collector.solarmana;
 
 import com.github.nalamodikk.common.block.blockentity.manabase.BaseMachineBlock;
+import com.github.nalamodikk.narasystem.nara.event.NaraServerEvents;
 import com.github.nalamodikk.register.ModBlockEntities;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
@@ -70,10 +71,11 @@ public class SolarManaCollectorBlock extends BaseMachineBlock {
         if (!oldState.is(newState.getBlock())) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof SolarManaCollectorBlockEntity collector) {
-                collector.drops(level,pos); // 如果你有 drops() 方法
-                Containers.dropContents(level, pos, collector.getUpgradeInventory());
-                level.invalidateCapabilities(pos); // ❗❗通知 NeoForge: 這個位置的能力不可靠了，清除快取！
-
+                if (!NaraServerEvents.isGhostBlock(pos)) {
+                    collector.drops(level, pos);
+                    Containers.dropContents(level, pos, collector.getUpgradeInventory());
+                }
+                level.invalidateCapabilities(pos);
             }
             super.onRemove(oldState, level, pos, newState, isMoving);
         }

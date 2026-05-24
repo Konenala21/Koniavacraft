@@ -1,6 +1,7 @@
 package com.github.nalamodikk.narasystem.nara.hud;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.register.client.ModKeyMappings;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraSkipIntroPacket;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraTutorialSeenPacket;
 import com.github.nalamodikk.register.ModItems;
@@ -68,8 +69,8 @@ public class NaraDialogueOverlay {
 
         int key = event.getKey();
 
-        // ESC 鍵跳過整段對話（ESC 同時會開暫停選單，關掉即可）
-        if (key == GLFW.GLFW_KEY_ESCAPE) {
+        // 自訂跳過鍵（預設 R，可在控制設定更改）
+        if (ModKeyMappings.NARA_SKIP.matches(key, event.getScanCode())) {
             NaraDialogueManager.close();
             NaraFirstLoginFlow.resetIgnoreCount();
             NaraSkipIntroPacket.send();

@@ -242,6 +242,9 @@
   "nara.dialogue.tutorial.mana_charger.line1": "Mana Charger. Dedicated to restoring mana in mana-powered items. Connect it to a conduit network and it runs on its own.",
   "nara.dialogue.tutorial.mana_charger.line2": "Put the item to charge in the charging slot and supply mana through arcane conduits. Collect it when full and slot in the next one.",
   "nara.dialogue.tutorial.mana_charger.confirm": "Got it.",
+  "nara.dialogue.tutorial.solar_collector.line1": "Solar mana collector. No fuel — just sunlight converted into mana. Sounds great, right? It stops working at night and in rain, but if you're tired of feeding machines, this one runs itself.",
+  "nara.dialogue.tutorial.solar_collector.line2": "Place it somewhere with open sky, connect a conduit on the bottom face, and it pushes mana out automatically during the day. Upgrade slots take speed upgrades — no upgrades means base output only.",
+  "nara.dialogue.tutorial.solar_collector.confirm": "Got it.",
   "item.koniava.nara_watch.scan.unknown": "No recognisable aspects found.",
   "item.koniava.nara_watch.scan.discovered": "New aspects discovered:",
   "item.koniava.nara_watch.scan.known": "Aspects already known: %s",
@@ -845,7 +848,8 @@
 
   "nara.hud.hint.continue": "[F] Continue",
   "nara.hud.hint.skip": "[F] Skip",
-  "nara.hud.hint.skip_all": "[Esc] Skip dialogue",
+  "nara.hud.hint.skip_all": "[R] Skip dialogue",
+  "key.koniava.nara_skip": "Skip Nara Dialogue",
   "nara.hud.hint.choose": "↕ Scroll  [F] Confirm  [1][2] Select",
 
   "nara.hud.name": "Nara",

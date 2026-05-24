@@ -6,10 +6,12 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
-- Nara now plays a tutorial dialogue when the player first crafts a Mana Deployer, explaining its interaction modes and how to set it up with conduits. A ghost GUI opens automatically so the player can see the interface immediately.
-- 娜拉現在會在玩家首次合成魔力部署器時播放教學對話，說明互動模式與導管接法。教學觸發時自動開啟幽靈介面讓玩家直接查看。
-- Nara now plays a tutorial dialogue when the player first crafts a Mana Charger, explaining how to charge mana-powered items through a conduit network. A ghost GUI opens automatically.
-- 娜拉現在會在玩家首次合成魔力充能台時播放教學對話，說明如何透過導管網路替魔力道具充能。教學觸發時自動開啟幽靈介面。
+- Nara now plays a tutorial dialogue when the player first crafts a Mana Deployer, Mana Charger, Mana Grinder, Mana Infuser, Mana Crafting Table, or Solar Mana Collector. The tutorial fires when the player actually places the machine, and the machine GUI opens automatically so the dialogue appears in context.
+- 娜拉現在會在玩家首次合成魔力部署器、魔力充能台、魔力研磨機、魔力注魔台、魔力合成台或太陽能魔力收集器後，等待玩家實際放下機器才觸發教學對話，放下的同時自動開啟機器介面，教學對話在 GUI 上直接播放。
+- Added Nara tutorial for Solar Mana Collector explaining sky access, conduit placement, and upgrade slots.
+- 新增太陽能魔力收集器娜拉教學，說明天空視野需求、導管接法與升級槽用途。
+- The Nara dialogue skip button is now a rebindable keybind (default: R) instead of Escape. It can be changed in Options > Controls under the mod category.
+- 娜拉對話跳過按鍵現在改為可自訂按鍵（預設：R），不再使用 Escape，可在「選項 > 控制項」中更改。
 - Fixed Mana Deployer consuming mana even when the interaction was explicitly rejected (e.g. right-clicking a locked block or an item that refuses activation).
 - 修復魔力部署器在互動明確被拒絕時（例如右鍵已鎖定的方塊，或物品拒絕啟用）仍然消耗魔力的問題。
 - Fixed Mana Charger IO direction config being lost on world reload; all faces previously set to non-default now correctly persist.
@@ -17,7 +19,11 @@ All notable changes to this project will be documented in this file.
 
 ### Developer Notes / 開發者備註
 
-- Added `MANA_DEPLOYER_CRAFT` and `MANA_CHARGER_CRAFT` tutorial IDs to `NaraTutorialFlow`. Both follow the same ghost-GUI pattern as other machine tutorials. Test with `/koniava nara tutorial mana_deployer_craft` and `mana_charger_craft`.
+- Machine tutorials (grinder, infuser, crafting, deployer, charger, solar collector) now use `Set<UUID>` pending-placement sets instead of timed GUI-close detection. `checkMachinePlaced()` in `NaraServerEvents` handles placement detection, menu open, and tutorial dispatch in one call.
+- Added `ghostPositionKeys` tracking set and `removeGhostBlock()` helper in `NaraServerEvents`. Machine `onRemove` implementations check `NaraServerEvents.isGhostBlock(pos)` to suppress NBT item drops during test-command ghost block cleanup.
+- Added `NARA_SKIP` keybinding to `ModKeyMappings` (default GLFW_KEY_R). `NaraDialogueOverlay` now uses `ModKeyMappings.NARA_SKIP.matches()` instead of checking for Escape directly.
+- Added `SOLAR_COLLECTOR_CRAFT` tutorial to `NaraTutorialFlow` and `NaraCommand`. Voice lines (zh_tw + en) generated locally with Qwen3-TTS clone mode.
+- Added `MANA_DEPLOYER_CRAFT` and `MANA_CHARGER_CRAFT` tutorial IDs to `NaraTutorialFlow`. Test all machine tutorials with `/koniava nara tutorial <id>`.
 - Fixed `doRightClick` in `ManaDeployerBlockEntity` treating `InteractionResult.FAIL` as a successful activation; now uses `consumesAction()` to correctly distinguish PASS, FAIL, and SUCCESS.
 - Fixed `ManaChargerBlockEntity.saveAdditional`/`loadAdditional` not serializing `directionConfig`; added IO config NBT round-trip matching the deployer pattern.
 

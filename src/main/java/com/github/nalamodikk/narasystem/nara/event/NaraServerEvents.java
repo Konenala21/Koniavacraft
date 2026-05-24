@@ -71,12 +71,13 @@ public class NaraServerEvents {
     private static final Map<UUID, Integer> pendingWandRodCraft = new HashMap<>();
     private static final Set<UUID> watchingForWandCore = new HashSet<>();
     private static int wandCoreCheckTimer = 0;
-    // Machine craft tutorials
-    private static final Map<UUID, Integer> pendingManaGrinderCraft = new HashMap<>();
-    private static final Map<UUID, Integer> pendingManaInfuserCraft = new HashMap<>();
-    private static final Map<UUID, Integer> pendingManaCraftingCraft = new HashMap<>();
-    private static final Map<UUID, Integer> pendingManaDeployerCraft = new HashMap<>();
-    private static final Map<UUID, Integer> pendingManaChargerCraft = new HashMap<>();
+    // Machine placement tutorials (fire when player places + opens machine GUI, not on craft GUI close)
+    private static final Set<UUID> pendingManaGrinderPlaced = new HashSet<>();
+    private static final Set<UUID> pendingManaInfuserPlaced = new HashSet<>();
+    private static final Set<UUID> pendingManaCraftingPlaced = new HashSet<>();
+    private static final Set<UUID> pendingManaDeployerPlaced = new HashSet<>();
+    private static final Set<UUID> pendingManaChargerPlaced = new HashSet<>();
+    private static final Set<UUID> pendingSolarCollectorPlaced = new HashSet<>();
     // Dev test tutorial (ghost block)
     // Phase 1: block placed, waiting for chunk update to reach client before opening GUI
     private static final Map<UUID, Integer> ghostOpenDelay = new HashMap<>();
@@ -106,11 +107,12 @@ public class NaraServerEvents {
         pendingFirstAltarFormed.clear();
         pendingWandRodCraft.clear();
         watchingForWandCore.clear();
-        pendingManaGrinderCraft.clear();
-        pendingManaInfuserCraft.clear();
-        pendingManaCraftingCraft.clear();
-        pendingManaDeployerCraft.clear();
-        pendingManaChargerCraft.clear();
+        pendingManaGrinderPlaced.clear();
+        pendingManaInfuserPlaced.clear();
+        pendingManaCraftingPlaced.clear();
+        pendingManaDeployerPlaced.clear();
+        pendingManaChargerPlaced.clear();
+        pendingSolarCollectorPlaced.clear();
         for (Map.Entry<UUID, BlockPos> e : ghostBlocks.entrySet()) {
             ServerPlayer p = event.getServer().getPlayerList().getPlayer(e.getKey());
             ResourceKey<Level> dimKey = ghostBlockLevels.get(e.getKey());
@@ -147,11 +149,12 @@ public class NaraServerEvents {
         pendingFirstAltarFormed.remove(uuid);
         pendingWandRodCraft.remove(uuid);
         watchingForWandCore.remove(uuid);
-        pendingManaGrinderCraft.remove(uuid);
-        pendingManaInfuserCraft.remove(uuid);
-        pendingManaCraftingCraft.remove(uuid);
-        pendingManaDeployerCraft.remove(uuid);
-        pendingManaChargerCraft.remove(uuid);
+        pendingManaGrinderPlaced.remove(uuid);
+        pendingManaInfuserPlaced.remove(uuid);
+        pendingManaCraftingPlaced.remove(uuid);
+        pendingManaDeployerPlaced.remove(uuid);
+        pendingManaChargerPlaced.remove(uuid);
+        pendingSolarCollectorPlaced.remove(uuid);
         ghostOpenDelay.remove(uuid);
         ghostOpenTutorialId.remove(uuid);
         ResourceKey<Level> dimKey = ghostBlockLevels.remove(uuid);
@@ -242,54 +245,92 @@ public class NaraServerEvents {
                 && !knowledge.hasSeenTutorial(NaraTutorialFlow.MANA_GRINDER_CRAFT)) {
             knowledge.addPendingTutorial(NaraTutorialFlow.MANA_GRINDER_CRAFT);
             savedData.setDirty();
-            pendingManaGrinderCraft.put(sp.getUUID(), GUI_CLOSE_TIMEOUT_TICKS);
+            pendingManaGrinderPlaced.add(sp.getUUID());
         }
 
         if (event.getCrafting().getItem() == ModBlocks.MANA_INFUSER.get().asItem()
                 && !knowledge.hasSeenTutorial(NaraTutorialFlow.MANA_INFUSER_CRAFT)) {
             knowledge.addPendingTutorial(NaraTutorialFlow.MANA_INFUSER_CRAFT);
             savedData.setDirty();
-            pendingManaInfuserCraft.put(sp.getUUID(), GUI_CLOSE_TIMEOUT_TICKS);
+            pendingManaInfuserPlaced.add(sp.getUUID());
         }
 
         if (event.getCrafting().getItem() == ModBlocks.MANA_CRAFTING_TABLE_BLOCK.get().asItem()
                 && !knowledge.hasSeenTutorial(NaraTutorialFlow.MANA_CRAFTING_CRAFT)) {
             knowledge.addPendingTutorial(NaraTutorialFlow.MANA_CRAFTING_CRAFT);
             savedData.setDirty();
-            pendingManaCraftingCraft.put(sp.getUUID(), GUI_CLOSE_TIMEOUT_TICKS);
+            pendingManaCraftingPlaced.add(sp.getUUID());
         }
 
         if (event.getCrafting().getItem() == ModBlocks.MANA_DEPLOYER.get().asItem()
                 && !knowledge.hasSeenTutorial(NaraTutorialFlow.MANA_DEPLOYER_CRAFT)) {
             knowledge.addPendingTutorial(NaraTutorialFlow.MANA_DEPLOYER_CRAFT);
             savedData.setDirty();
-            pendingManaDeployerCraft.put(sp.getUUID(), GUI_CLOSE_TIMEOUT_TICKS);
+            pendingManaDeployerPlaced.add(sp.getUUID());
         }
 
         if (event.getCrafting().getItem() == ModBlocks.MANA_CHARGER.get().asItem()
                 && !knowledge.hasSeenTutorial(NaraTutorialFlow.MANA_CHARGER_CRAFT)) {
             knowledge.addPendingTutorial(NaraTutorialFlow.MANA_CHARGER_CRAFT);
             savedData.setDirty();
-            pendingManaChargerCraft.put(sp.getUUID(), GUI_CLOSE_TIMEOUT_TICKS);
+            pendingManaChargerPlaced.add(sp.getUUID());
+        }
+
+        if (event.getCrafting().getItem() == ModBlocks.SOLAR_MANA_COLLECTOR.get().asItem()
+                && !knowledge.hasSeenTutorial(NaraTutorialFlow.SOLAR_COLLECTOR_CRAFT)) {
+            knowledge.addPendingTutorial(NaraTutorialFlow.SOLAR_COLLECTOR_CRAFT);
+            savedData.setDirty();
+            pendingSolarCollectorPlaced.add(sp.getUUID());
         }
     }
 
     @SubscribeEvent
     public static void onBlockPlaced(BlockEvent.EntityPlaceEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
-        if (!event.getPlacedBlock().is(ModBlocks.MANA_GENERATOR.get())) return;
-        if (!pendingManaGenPlacement.containsKey(player.getUUID())) return;
         if (!(event.getLevel() instanceof ServerLevel level)) return;
-        if (!(level.getBlockEntity(event.getPos()) instanceof ManaGeneratorBlockEntity be)) return;
-        pendingManaGenPlacement.remove(player.getUUID());
+        BlockPos pos = event.getPos();
 
-        player.openMenu(
-                new SimpleMenuProvider(be, Component.translatable("block.koniava.mana_generator")),
-                event.getPos()
-        );
+        if (event.getPlacedBlock().is(ModBlocks.MANA_GENERATOR.get())
+                && pendingManaGenPlacement.containsKey(player.getUUID())) {
+            if (level.getBlockEntity(pos) instanceof ManaGeneratorBlockEntity be) {
+                pendingManaGenPlacement.remove(player.getUUID());
+                player.openMenu(
+                        new SimpleMenuProvider(be, Component.translatable("block.koniava.mana_generator")),
+                        pos
+                );
+                var savedData = ResearchSavedData.get(level);
+                if (savedData.getOrCreate(player.getUUID()).markTutorialSeen(NaraTutorialFlow.MANA_GEN_PLACED)) {
+                    NaraTutorialPacket.send(player, NaraTutorialFlow.MANA_GEN_PLACED);
+                    savedData.setDirty();
+                }
+            }
+        }
+
+        checkMachinePlaced(player, level, pos, event.getPlacedBlock(),
+                ModBlocks.MANA_GRINDER.get(), pendingManaGrinderPlaced, NaraTutorialFlow.MANA_GRINDER_CRAFT);
+        checkMachinePlaced(player, level, pos, event.getPlacedBlock(),
+                ModBlocks.MANA_INFUSER.get(), pendingManaInfuserPlaced, NaraTutorialFlow.MANA_INFUSER_CRAFT);
+        checkMachinePlaced(player, level, pos, event.getPlacedBlock(),
+                ModBlocks.MANA_CRAFTING_TABLE_BLOCK.get(), pendingManaCraftingPlaced, NaraTutorialFlow.MANA_CRAFTING_CRAFT);
+        checkMachinePlaced(player, level, pos, event.getPlacedBlock(),
+                ModBlocks.MANA_DEPLOYER.get(), pendingManaDeployerPlaced, NaraTutorialFlow.MANA_DEPLOYER_CRAFT);
+        checkMachinePlaced(player, level, pos, event.getPlacedBlock(),
+                ModBlocks.MANA_CHARGER.get(), pendingManaChargerPlaced, NaraTutorialFlow.MANA_CHARGER_CRAFT);
+        checkMachinePlaced(player, level, pos, event.getPlacedBlock(),
+                ModBlocks.SOLAR_MANA_COLLECTOR.get(), pendingSolarCollectorPlaced, NaraTutorialFlow.SOLAR_COLLECTOR_CRAFT);
+    }
+
+    private static void checkMachinePlaced(ServerPlayer player, ServerLevel level, BlockPos pos,
+                                            BlockState placed, net.minecraft.world.level.block.Block target,
+                                            Set<UUID> pendingSet, String tutorialId) {
+        if (!placed.is(target)) return;
+        if (!pendingSet.remove(player.getUUID())) return;
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MenuProvider mp)) return;
+        player.openMenu(mp, pos);
         var savedData = ResearchSavedData.get(level);
-        if (savedData.getOrCreate(player.getUUID()).markTutorialSeen(NaraTutorialFlow.MANA_GEN_PLACED)) {
-            NaraTutorialPacket.send(player, NaraTutorialFlow.MANA_GEN_PLACED);
+        if (savedData.getOrCreate(player.getUUID()).markTutorialSeen(tutorialId)) {
+            NaraTutorialPacket.send(player, tutorialId);
             savedData.setDirty();
         }
     }
@@ -309,15 +350,17 @@ public class NaraServerEvents {
         if (pending.contains(NaraTutorialFlow.WAND_ROD_CRAFT))
             pendingWandRodCraft.put(uuid, GUI_CLOSE_TIMEOUT_TICKS);
         if (pending.contains(NaraTutorialFlow.MANA_GRINDER_CRAFT))
-            pendingManaGrinderCraft.put(uuid, GUI_CLOSE_TIMEOUT_TICKS);
+            pendingManaGrinderPlaced.add(uuid);
         if (pending.contains(NaraTutorialFlow.MANA_INFUSER_CRAFT))
-            pendingManaInfuserCraft.put(uuid, GUI_CLOSE_TIMEOUT_TICKS);
+            pendingManaInfuserPlaced.add(uuid);
         if (pending.contains(NaraTutorialFlow.MANA_CRAFTING_CRAFT))
-            pendingManaCraftingCraft.put(uuid, GUI_CLOSE_TIMEOUT_TICKS);
+            pendingManaCraftingPlaced.add(uuid);
         if (pending.contains(NaraTutorialFlow.MANA_DEPLOYER_CRAFT))
-            pendingManaDeployerCraft.put(uuid, GUI_CLOSE_TIMEOUT_TICKS);
+            pendingManaDeployerPlaced.add(uuid);
         if (pending.contains(NaraTutorialFlow.MANA_CHARGER_CRAFT))
-            pendingManaChargerCraft.put(uuid, GUI_CLOSE_TIMEOUT_TICKS);
+            pendingManaChargerPlaced.add(uuid);
+        if (pending.contains(NaraTutorialFlow.SOLAR_COLLECTOR_CRAFT))
+            pendingSolarCollectorPlaced.add(uuid);
 
         // Craft tutorial fired but player hasn't placed the generator yet
         if (knowledge.hasSeenTutorial(NaraTutorialFlow.MANA_GEN_CRAFT)
@@ -444,11 +487,6 @@ public class NaraServerEvents {
             }
         }
 
-        tickWhenGuiClosed(pendingManaGrinderCraft, NaraTutorialFlow.MANA_GRINDER_CRAFT, event);
-        tickWhenGuiClosed(pendingManaInfuserCraft, NaraTutorialFlow.MANA_INFUSER_CRAFT, event);
-        tickWhenGuiClosed(pendingManaCraftingCraft, NaraTutorialFlow.MANA_CRAFTING_CRAFT, event);
-        tickWhenGuiClosed(pendingManaDeployerCraft, NaraTutorialFlow.MANA_DEPLOYER_CRAFT, event);
-        tickWhenGuiClosed(pendingManaChargerCraft, NaraTutorialFlow.MANA_CHARGER_CRAFT, event);
 
         // Expire the mana generator placement watch after timeout (no tutorial fired, just cleanup)
         if (!pendingManaGenPlacement.isEmpty()) {
@@ -607,6 +645,7 @@ public class NaraServerEvents {
             NaraTutorialFlow.MANA_CRAFTING_CRAFT,
             NaraTutorialFlow.MANA_DEPLOYER_CRAFT,
             NaraTutorialFlow.MANA_CHARGER_CRAFT,
+            NaraTutorialFlow.SOLAR_COLLECTOR_CRAFT,
             NaraTutorialFlow.RESEARCH_TABLE,
             NaraTutorialFlow.FIRST_RESEARCH
     );
@@ -673,6 +712,8 @@ public class NaraServerEvents {
                     ModBlocks.MANA_DEPLOYER.get().defaultBlockState();
             case NaraTutorialFlow.MANA_CHARGER_CRAFT ->
                     ModBlocks.MANA_CHARGER.get().defaultBlockState();
+            case NaraTutorialFlow.SOLAR_COLLECTOR_CRAFT ->
+                    ModBlocks.SOLAR_MANA_COLLECTOR.get().defaultBlockState();
             default -> null;
         };
     }

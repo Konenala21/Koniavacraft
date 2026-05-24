@@ -37,6 +37,13 @@ public final class ModKeyMappings {
         CATEGORY_MOD
     );
 
+    public static final KeyMapping NARA_SKIP = new KeyMapping(
+        "key.koniava.nara_skip",
+        InputConstants.Type.KEYSYM,
+        GLFW.GLFW_KEY_R,
+        CATEGORY_MOD
+    );
+
     private ModKeyMappings() {}
 
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
@@ -44,5 +51,6 @@ public final class ModKeyMappings {
         event.register(GHOST_LOCK);
         event.register(SKIP_ALTAR_ANIM);
         event.register(OPEN_UPGRADE_GUI);
+        event.register(NARA_SKIP);
     }
 }

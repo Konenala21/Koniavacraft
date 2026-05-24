@@ -26,8 +26,9 @@ public class NaraTutorialFlow {
     public static final String MANA_INFUSER_CRAFT    = "mana_infuser_craft";
     public static final String MANA_CRAFTING_CRAFT   = "mana_crafting_craft";
     public static final String ASPECT_SYNTHESIS_OPEN = "aspect_synthesis_open";
-    public static final String MANA_DEPLOYER_CRAFT   = "mana_deployer_craft";
-    public static final String MANA_CHARGER_CRAFT    = "mana_charger_craft";
+    public static final String MANA_DEPLOYER_CRAFT        = "mana_deployer_craft";
+    public static final String MANA_CHARGER_CRAFT         = "mana_charger_craft";
+    public static final String SOLAR_COLLECTOR_CRAFT      = "solar_collector_craft";
     public static final String WAND_ROD_CRAFT_SEEN        = "wand_rod_craft_seen";
     public static final String ASPECT_SYNTHESIS_OPEN_SEEN = "aspect_synthesis_open_seen";
 
@@ -83,8 +84,9 @@ public class NaraTutorialFlow {
             case MANA_INFUSER_CRAFT  -> startManaInfuserCraft();
             case MANA_CRAFTING_CRAFT -> startManaCraftingCraft();
             case ASPECT_SYNTHESIS_OPEN -> startAspectSynthesisOpen();
-            case MANA_DEPLOYER_CRAFT -> startManaDeployerCraft();
-            case MANA_CHARGER_CRAFT  -> startManaChargerCraft();
+            case MANA_DEPLOYER_CRAFT    -> startManaDeployerCraft();
+            case MANA_CHARGER_CRAFT     -> startManaChargerCraft();
+            case SOLAR_COLLECTOR_CRAFT  -> startSolarCollectorCraft();
             case WAND_ROD_CRAFT_SEEN        -> wandRodCraftShown = true;
             case ASPECT_SYNTHESIS_OPEN_SEEN -> aspectSynthesisShown = true;
         }
@@ -473,6 +475,23 @@ public class NaraTutorialFlow {
                                 () -> {})),
                         0, null)
                         .withOnStart(() -> NaraSoundHelper.play("mana_charger", "line2"))
+        ));
+    }
+
+    private static void startSolarCollectorCraft() {
+        if (Minecraft.getInstance().screen != null) NaraDialogueManager.setOverlayOnScreen(true);
+        NaraDialogueManager.setPortraitShown();
+        NaraDialogueManager.startDialogue(List.of(
+                NaraDialogueLine.simple(
+                        Component.translatable("nara.dialogue.tutorial.solar_collector.line1"))
+                        .withOnStart(() -> NaraSoundHelper.play("solar_collector", "line1")),
+                NaraDialogueLine.withChoices(
+                        Component.translatable("nara.dialogue.tutorial.solar_collector.line2"),
+                        List.of(new NaraChoice(
+                                Component.translatable("nara.dialogue.tutorial.solar_collector.confirm"),
+                                () -> {})),
+                        0, null)
+                        .withOnStart(() -> NaraSoundHelper.play("solar_collector", "line2"))
         ));
     }
 

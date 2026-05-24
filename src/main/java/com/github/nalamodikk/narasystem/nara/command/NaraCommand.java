@@ -85,5 +85,6 @@ public class NaraCommand {
             NaraTutorialFlow.ALTAR_T6,
             NaraTutorialFlow.MANA_DEPLOYER_CRAFT,
             NaraTutorialFlow.MANA_CHARGER_CRAFT,
+            NaraTutorialFlow.SOLAR_COLLECTOR_CRAFT,
     };
 }
