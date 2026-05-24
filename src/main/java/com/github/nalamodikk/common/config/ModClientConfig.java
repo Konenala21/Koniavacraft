@@ -27,9 +27,9 @@ public class ModClientConfig {
         builder.push("nara");
 
         naraVoiceVolume = builder
-                .comment("Volume multiplier for Nara's voice dialogue (1.0 = 100%, 2.0 = 200%)")
+                .comment("Volume for Nara's voice dialogue (0.0 = mute, 1.0 = 100%)")
                 .translation("koniava.config.nara.voiceVolume")
-                .defineInRange("naraVoiceVolume", 1.0D, 0.0D, 4.0D);
+                .defineInRange("naraVoiceVolume", 1.0D, 0.0D, 1.0D);
 
         builder.pop();
         builder.push("render");
