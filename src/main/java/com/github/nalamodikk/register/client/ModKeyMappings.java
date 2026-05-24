@@ -44,6 +44,13 @@ public final class ModKeyMappings {
         CATEGORY_MOD
     );
 
+    public static final KeyMapping DASH = new KeyMapping(
+        "key.koniava.dash",
+        InputConstants.Type.KEYSYM,
+        GLFW.GLFW_KEY_V,
+        CATEGORY_MOD
+    );
+
     private ModKeyMappings() {}
 
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
@@ -52,5 +59,6 @@ public final class ModKeyMappings {
         event.register(SKIP_ALTAR_ANIM);
         event.register(OPEN_UPGRADE_GUI);
         event.register(NARA_SKIP);
+        event.register(DASH);
     }
 }

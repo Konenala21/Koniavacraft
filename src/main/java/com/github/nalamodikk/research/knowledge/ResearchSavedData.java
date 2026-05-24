@@ -1,12 +1,15 @@
 package com.github.nalamodikk.research.knowledge;
 
 import com.github.nalamodikk.research.aspect.Aspect;
+import com.github.nalamodikk.research.template.ResearchRegistry;
+import com.github.nalamodikk.research.template.ResearchTemplate;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -59,9 +62,22 @@ public class ResearchSavedData extends SavedData {
      * Returns true if this was newly completed.
      */
     public boolean completeResearch(UUID playerId, net.minecraft.resources.ResourceLocation researchId) {
-        boolean isNew = getOrCreate(playerId).completeResearch(researchId);
-        if (isNew) setDirty();
+        PlayerKnowledge knowledge = getOrCreate(playerId);
+        boolean isNew = knowledge.completeResearch(researchId);
+        if (isNew) {
+            tryAdvanceTier(knowledge);
+            setDirty();
+        }
         return isNew;
+    }
+
+    private static void tryAdvanceTier(PlayerKnowledge knowledge) {
+        int tier = knowledge.getCurrentTier();
+        List<ResearchTemplate> tierResearches = ResearchRegistry.allForTier(tier);
+        if (tierResearches.isEmpty()) return;
+        boolean allDone = tierResearches.stream()
+                .allMatch(t -> knowledge.hasCompleted(t.getId()));
+        if (allDone) knowledge.advanceTier();
     }
 
     // ── NBT serialisation ────────────────────────────────────────────────────

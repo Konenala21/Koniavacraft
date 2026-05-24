@@ -6,6 +6,35 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Added a keybind (default R, rebindable) to skip altar upgrade animations mid-playback. Camera and pitch reset immediately on skip. T6 Nara dialogue still triggers if skipped before it fires.
+- 新增可自訂按鍵（預設 R）可在祭壇升級動畫播放中途跳過。跳過時鏡頭仰角立即歸位。T6 娜拉台詞若尚未觸發，跳過時仍會補發。
+
+- Nara Watch scan messages now show the target's name (block, entity, item, or fluid) instead of a generic prompt.
+- 娜拉手錶掃描訊息現在會顯示目標名稱（方塊、生物、物品或流體），不再只顯示通用提示。
+
+- Research tier advancement is now automatic: completing all research in the current tier unlocks the next tier and shows a notification message. Previously the tier never advanced, blocking Tier 2 research (Mana Weapons).
+- 研究層級現在自動升級：完成目前層級的所有研究後自動解鎖下一層，並顯示通知訊息。先前層級永遠不會推進，導致第 2 層研究（魔力武器）無法解鎖。
+
+- The Altar Ring Architecture research description now clarifies that it is a technical reference and does not unlock any equipment.
+- 祭壇環形升級結構研究說明現在明確標示：本條目為操作指引，不解鎖任何設備。
+
+- Added Mana Sprint Boots: a new magical armor piece with a dash ability (default key V). Holds 800 mana and supports up to 5 upgrade slots.
+- 新增魔力衝刺靴：具備衝刺技能（預設按鍵 V）的魔力護甲，最多 800 魔力儲量，支援 5 個升級插件槽。
+- Added 16 boots upgrade items in 4 categories (Armor, Cooldown, Dash Distance, Mana Efficiency), each with Mk0-Mk3 tiers.
+- 新增 16 個靴子升級插件，分為防禦強化、冷卻縮減、衝刺距離、魔力效率四類，各有 Mk0-Mk3 四個等級。
+- Crafting Mana Sprint Boots (Unfinished) requires a T1 altar: catalyst Mana Crystal, pedestals leather boots, 3x Mana Ingot, 2x Mana Crystal Fragment, 2x Feather.
+- 魔力衝刺靴（未完成）需要 T1 祭壇合成，催化劑為魔力水晶，底座材料為皮革靴子、魔力錠×3、魔力水晶碎片×2、羽毛×2。
+- Activate the boots by placing them in the Mana Infuser (costs 5000 mana).
+- 將未完成的靴子放入魔力注魔台（消耗 5000 魔力）即可啟動為完成品。
+- Open the boots upgrade UI with the Upgrade GUI key (default U) while the boots are equipped.
+- 穿著靴子時按升級介面鍵（預設 U）可開啟靴子升級介面，介面含玩家 3D 穿著預覽。
+
+- Fixed: certain consequences of ignoring Nara's first-login dialogue were not triggering correctly. They now work as intended.
+- 修復：忽略娜拉第一次登入對話時，部分應有的後果未能正確觸發，現已修正。
+- Added Arcane Pulse Resonator (advanced wand rod) altar infusion recipe: requires T3 altar, 40000 mana, 320 ticks. Catalyst: High-Density Mana Core. Pedestals: basic wand rod, 2x Precision Mana Circuit, 2x Mana Crystal, 2x Mana Ingot, Amethyst Shard.
+- 新增術式脈衝諧振器（進階法杖柄）祭壇灌注配方，需要 T3 祭壇、40000 魔力、320 tick。催化劑：高密度魔力核心；底座：術式脈衝調制器、精密魔力迴路×2、魔力水晶×2、魔力錠×2、紫水晶碎片。
+- Fixed Mana Charger recipe requiring altar-only materials (Mana Crystal, Mana Wafer, Basic Mana Circuit); replaced with pre-altar materials (Mana Ingot, Refined Mana Dust, Mana Wire, Mana Crystal Fragment, Mana Substrate) so it can be crafted before building the altar.
+- 修復魔力充能台配方要求祭壇限定材料（魔力水晶、魔力晶圓、基礎魔力電路板）的問題，改用前祭壇可取得的材料（魔力錠、精煉魔力粉、魔力導線、魔力水晶碎片、魔力基板），現在可以在建造祭壇之前合成。
 - Nara now plays a tutorial dialogue when the player first crafts a Mana Deployer, Mana Charger, Mana Grinder, Mana Infuser, Mana Crafting Table, or Solar Mana Collector. The tutorial fires when the player actually places the machine, and the machine GUI opens automatically so the dialogue appears in context.
 - 娜拉現在會在玩家首次合成魔力部署器、魔力充能台、魔力研磨機、魔力注魔台、魔力合成台或太陽能魔力收集器後，等待玩家實際放下機器才觸發教學對話，放下的同時自動開啟機器介面，教學對話在 GUI 上直接播放。
 - Added Nara tutorial for Solar Mana Collector explaining sky access, conduit placement, and upgrade slots.
@@ -16,9 +45,27 @@ All notable changes to this project will be documented in this file.
 - 修復魔力部署器在互動明確被拒絕時（例如右鍵已鎖定的方塊，或物品拒絕啟用）仍然消耗魔力的問題。
 - Fixed Mana Charger IO direction config being lost on world reload; all faces previously set to non-default now correctly persist.
 - 修復魔力充能台的 IO 方向設定在世界重載後遺失的問題，非預設面的設定現在能正確保留。
+- Fixed Mana Pickaxe not accepting enchantments at the enchanting table; added to minecraft:enchantable/mining, mining_loot, durability, and vanishing item tags.
+- 修復魔力稿子無法在附魔台附魔的問題，現已加入 minecraft:enchantable/mining、mining_loot、durability、vanishing 物品標籤。
 
 ### Developer Notes / 開發者備註
 
+- Added `SKIP_ALTAR_ANIM` keybinding (default R) to `ModKeyMappings`. `AltarUpgradeAnimManager.skipAll()` fires end sound, triggers T6 dialogue if pending, then clears `ACTIVE`. `ClientTickHandler.onClientTickPost` checks `consumeClick()` and also calls `AltarCameraController.reset()` + `player.setXRot(0)`.
+- Added `AltarUpgradeAnimManager.hasAnyActive()` guard so the skip key only consumes input while an animation is running.
+- `ScanTarget` records (`ItemTarget`, `EntityTarget`, `BlockTarget`, `FluidTarget`) now each override `scanHeader()` using `Component.translatable("item.koniava.nara_watch.scan.first_time_named", <name>)`. `PlayerTarget` already had its own header and is unchanged.
+- Added tier advancement logic to `ResearchSavedData.completeResearch()` via `tryAdvanceTier(PlayerKnowledge)`: checks `ResearchRegistry.allForTier(currentTier)` and calls `knowledge.advanceTier()` if all are completed. `CompletedResearchItem.use()` compares tier before/after and sends `research.koniava.tier_advance` chat message on advancement.
+
+- Added `ManaSprintBootsItem` (extends ArmorItem, ModArmorMaterials.MANA_ALLOY). Dynamic armor values via `getDefaultAttributeModifiers(ItemStack)` override in IItemExtension. Dash logic in `performDash()`.
+- Added `EquipmentUpgradeData` DataComponent with custom `equals()` using `ItemStack.isSameItemSameComponents` to prevent spurious equip animations.
+- Added `BootsUpgradeBehavior` enum (ARMOR, COOLDOWN, DASH_DISTANCE, MANA_EFFICIENCY), `BootsUpgradeItem`, `DashPacket` (C2S), `BootsUpgradeSwapPacket` (C2S).
+- Added `BootsUpgradeScreen`: 3-panel layout reusing `wand_upgrade_gui.png`; center panel renders player model via `InventoryScreen.renderEntityInInventoryFollowsMouse`.
+- Added `DASH` keybinding (default V) to `ModKeyMappings`. `ClientTickHandler` opens `BootsUpgradeScreen` via existing `OPEN_UPGRADE_GUI` key when boots are equipped.
+- Added `ModMobEffects.SPRINT_COOLDOWN` (HUD-display effect for dash cooldown).
+- Added `ModArmorMaterials` with `MANA_ALLOY` armor material. Registered in `KoniavacraftMod`.
+- Added altar recipe `mana_sprint_boots_unfinished` (T1, minTier=1) and infuser recipe `mana_sprint_boots_activate` to respective datagen providers.
+
+- Fixed `NaraCreeperPunishPacket.handle()` incorrectly guarding on `NaraHelper.isBound(player)`: since `NaraBindRequestPacket` sets bound state before sending `NaraStartDialoguePacket`, the guard always returned early during first-login, preventing punishment scheduling and `nara_ignored` advancement. Removed the guard; duplicate punishment is already prevented by `naraPunishmentActive`.
+- Added `AltarRecipeProvider.registerWandParts()` with wand_rod_advanced altar recipe (T3, 40000 mana).
 - Machine tutorials (grinder, infuser, crafting, deployer, charger, solar collector) now use `Set<UUID>` pending-placement sets instead of timed GUI-close detection. `checkMachinePlaced()` in `NaraServerEvents` handles placement detection, menu open, and tutorial dispatch in one call.
 - Added `ghostPositionKeys` tracking set and `removeGhostBlock()` helper in `NaraServerEvents`. Machine `onRemove` implementations check `NaraServerEvents.isGhostBlock(pos)` to suppress NBT item drops during test-command ghost block cleanup.
 - Added `NARA_SKIP` keybinding to `ModKeyMappings` (default GLFW_KEY_R). `NaraDialogueOverlay` now uses `ModKeyMappings.NARA_SKIP.matches()` instead of checking for Escape directly.

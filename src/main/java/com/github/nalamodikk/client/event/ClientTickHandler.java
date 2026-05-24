@@ -6,8 +6,12 @@ import com.github.nalamodikk.client.renderer.altar.AltarFadeRenderer;
 import com.github.nalamodikk.client.renderer.altar.AltarUpgradeAnimManager;
 import com.github.nalamodikk.client.renderer.altar.AltarExplosionManager;
 import com.github.nalamodikk.client.renderer.altar.AltarExplosionRenderer;
+import com.github.nalamodikk.client.screen.boots.BootsUpgradeScreen;
 import com.github.nalamodikk.client.screen.wand.WandUpgradeScreen;
+import com.github.nalamodikk.common.item.equipment.boots.ManaSprintBootsItem;
 import com.github.nalamodikk.common.item.wand.WandRodItem;
+import com.github.nalamodikk.common.network.packet.server.boots.DashPacket;
+import net.minecraft.world.entity.EquipmentSlot;
 import com.github.nalamodikk.register.client.ModKeyMappings;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.InteractionHand;
@@ -39,13 +43,26 @@ public class ClientTickHandler {
         if (ModKeyMappings.OPEN_UPGRADE_GUI.consumeClick()) {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player != null && mc.screen == null) {
+                boolean opened = false;
                 for (InteractionHand hand : InteractionHand.values()) {
-                    var stack = mc.player.getItemInHand(hand);
-                    if (stack.getItem() instanceof WandRodItem) {
+                    if (mc.player.getItemInHand(hand).getItem() instanceof WandRodItem) {
                         mc.setScreen(new WandUpgradeScreen(hand));
+                        opened = true;
                         break;
                     }
                 }
+                if (!opened && mc.player.getItemBySlot(EquipmentSlot.FEET).getItem() instanceof ManaSprintBootsItem) {
+                    mc.setScreen(new BootsUpgradeScreen());
+                }
+            }
+        }
+
+        if (ModKeyMappings.DASH.consumeClick()) {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null && mc.screen == null
+                    && mc.player.getItemBySlot(EquipmentSlot.FEET).getItem() instanceof ManaSprintBootsItem
+                    && !mc.player.hasEffect(com.github.nalamodikk.register.ModMobEffects.SPRINT_COOLDOWN)) {
+                DashPacket.send();
             }
         }
 

@@ -60,7 +60,10 @@ public class CompletedResearchItem extends Item {
         if (!level.isClientSide() && player instanceof ServerPlayer sp) {
             ServerLevel serverLevel = sp.serverLevel();
             var data      = ResearchSavedData.get(serverLevel);
+            var knowledge = data.getOrCreate(sp.getUUID());
+            int tierBefore = knowledge.getCurrentTier();
             boolean isNew = data.completeResearch(sp.getUUID(), researchId);
+            int tierAfter = knowledge.getCurrentTier();
 
             if (isNew) {
                 // First time committing — trigger ceremony
@@ -80,6 +83,12 @@ public class CompletedResearchItem extends Item {
                             .stream().filter(h -> t.getUnlockedRecipes().contains(h.id())).toList();
                     if (!toAward.isEmpty()) sp.awardRecipes(toAward);
                 });
+
+                if (tierAfter > tierBefore) {
+                    sp.sendSystemMessage(Component.translatable(
+                            "research.koniava.tier_advance", tierAfter)
+                            .withStyle(ChatFormatting.GOLD));
+                }
 
                 // Consume the scroll
                 stack.shrink(1);
