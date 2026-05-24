@@ -63,6 +63,14 @@ public class DevRenderTestItem3 extends Item {
     //   +0.58  inner symbol ring
     //   +1.20  top ring
     //   +1.30  center glow
+    //
+    // Image-sampled points: run scripts/formation_sampler.py [img.png] and paste output here.
+    // u = player-right, v = player-forward, coordinates in script units (scale=1.5 by default).
+    // spawnFromPoints() multiplies by POINTS_SCALE to convert to world blocks.
+    private static final float POINTS_SCALE = 6.5f;
+    private static final float[][] FORMATION_POINTS = {
+        // paste float[][] output from formation_sampler.py here
+    };
 
     private static void spawnFormation(ServerLevel level, ServerPlayer player) {
         double yaw = Math.toRadians(player.getYRot());
@@ -73,14 +81,32 @@ public class DevRenderTestItem3 extends Item {
         double base = player.getY() + 0.05;
         double cz = player.getZ();
 
-        spawnRingLayer (level, cx, base + 0.00, cz, rx, rz, fx, fz, 9.5,  430);
-        spawnRingLayer (level, cx, base + 0.00, cz, rx, rz, fx, fz, 10.0, 450);
-        spawnGlyphRing (level, cx, base + 0.05, cz, rx, rz, fx, fz, 8.0,  22, 0.30f);
-        spawnRingLayer (level, cx, base + 0.22, cz, rx, rz, fx, fz, 5.5,  250);
-        spawnEnneagram (level, cx, base + 0.50, cz, rx, rz, fx, fz, 4.5,  30);
-        spawnGlyphRing (level, cx, base + 0.58, cz, rx, rz, fx, fz, 2.8,  14, 0.22f);
-        spawnRingLayer (level, cx, base + 1.20, cz, rx, rz, fx, fz, 1.4,  80);
-        spawnRingLayer (level, cx, base + 1.30, cz, rx, rz, fx, fz, 0.30, 20);
+        if (FORMATION_POINTS.length > 0) {
+            spawnFromPoints(level, cx, base + 0.10, cz, rx, rz, fx, fz, FORMATION_POINTS, POINTS_SCALE);
+        } else {
+            spawnRingLayer (level, cx, base + 0.00, cz, rx, rz, fx, fz, 9.5,  430);
+            spawnRingLayer (level, cx, base + 0.00, cz, rx, rz, fx, fz, 10.0, 450);
+            spawnGlyphRing (level, cx, base + 0.05, cz, rx, rz, fx, fz, 8.0,  22, 0.30f);
+            spawnRingLayer (level, cx, base + 0.22, cz, rx, rz, fx, fz, 5.5,  250);
+            spawnEnneagram (level, cx, base + 0.50, cz, rx, rz, fx, fz, 4.5,  30);
+            spawnGlyphRing (level, cx, base + 0.58, cz, rx, rz, fx, fz, 2.8,  14, 0.22f);
+            spawnRingLayer (level, cx, base + 1.20, cz, rx, rz, fx, fz, 1.4,  80);
+            spawnRingLayer (level, cx, base + 1.30, cz, rx, rz, fx, fz, 0.30, 20);
+        }
+    }
+
+    private static void spawnFromPoints(ServerLevel level,
+            double cx, double cy, double cz,
+            double rx, double rz, double fx, double fz,
+            float[][] points, float scale) {
+        for (float[] p : points) {
+            double u = p[0] * scale;
+            double v = p[1] * scale;
+            level.sendParticles(
+                    new FormationParticleOptions(cx, cy, cz, FormationParticleOptions.STATIC, 0f, 0f),
+                    cx + u * rx + v * fx, cy, cz + u * rz + v * fz,
+                    1, 0, 0, 0, 0);
+        }
     }
 
     private static void spawnRingLayer(ServerLevel level,

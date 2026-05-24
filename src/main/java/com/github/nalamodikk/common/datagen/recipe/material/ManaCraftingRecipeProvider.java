@@ -118,17 +118,17 @@ public class ManaCraftingRecipeProvider {
                 .manaCost(3000)
                 .save(output, "precision_mana_circuit");
 
-        // 魔力充能台
+        // 魔力充能台（前祭壇路徑：注魔台 + 研磨機材料）
         ManaCraftingRecipeBuilder.create(ModBlocks.MANA_CHARGER.get(), 1)
                 .shaped(true)
-                .pattern("IMI")
-                .pattern("CVC")
-                .pattern("IFI")
+                .pattern("IRI")
+                .pattern("WGW")
+                .pattern("ISI")
                 .define('I', ModItems.MANA_INGOT.get())
-                .define('M', ModItems.MANA_CRYSTAL.get())
-                .define('C', ModItems.BASIC_MANA_CIRCUIT.get())
-                .define('V', ModItems.MANA_WAFER.get())
-                .define('F', Items.IRON_INGOT)
+                .define('R', ModItems.REFINED_MANA_DUST.get())
+                .define('W', ModItems.MANA_WIRE.get())
+                .define('G', ModItems.MANA_CRYSTAL_FRAGMENT.get())
+                .define('S', ModItems.MANA_SUBSTRATE.get())
                 .manaCost(2000)
                 .save(output, "mana_charger");
 

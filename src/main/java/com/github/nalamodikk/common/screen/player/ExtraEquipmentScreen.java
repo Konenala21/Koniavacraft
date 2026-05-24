@@ -23,11 +23,11 @@ public class ExtraEquipmentScreen extends AbstractContainerScreen<ExtraEquipment
         private static final int SLOT_UV_X = 235;
         private static final int SLOT_UV_Y = 1;
         private static final int SLOT_SIZE = 18;
-        private static final int EXTRA_SLOT_BASE_X = 80;
-        private static final int EXTRA_SLOT_BASE_Y = 24;
+        private static final int EXTRA_SLOT_BASE_X = 79;   // slot.x(80) - 1
+        private static final int EXTRA_SLOT_BASE_Y = 23;   // slot.y(24) - 1
         private static final int EXTRA_SLOTS_PER_COL = 5;
-        private static final int VANILLA_SLOT_BASE_X = 61;
-        private static final int VANILLA_SLOT_BASE_Y = 23;
+        private static final int VANILLA_SLOT_BASE_X = 60; // slot.x(61) - 1
+        private static final int VANILLA_SLOT_BASE_Y = 22; // slot.y(23) - 1
         private static final int VANILLA_SLOT_COUNT = 4;
 
         private float xMouse;
