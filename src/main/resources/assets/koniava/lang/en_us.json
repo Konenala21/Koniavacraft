@@ -1027,6 +1027,18 @@
   "guide.koniava.weapons.upgrade.title": "Upgrade Modules",
   "guide.koniava.weapons.upgrade.body": "[Placeholder — fill in your text here]",
 
+  "guide.koniava.chapter.equipment": "Mana Equipment",
+  "guide.koniava.equipment.overview.title": "Mana Alloy Armor Set",
+  "guide.koniava.equipment.overview.body": "A four-piece set: helmet, chestplate, leggings, and boots. Each piece stores mana independently and has upgrade slots.\n\nCraft at the Altar (T1) using the matching iron armor base plus mana materials. Use the Mana Charger to refill mana.\n\nUpgrade slots accept Capacity upgrades (more mana storage) or Armor upgrades (more defense), Mk0 through Mk3, crafted at the Mana Crafting Table.",
+  "guide.koniava.equipment.boots.title": "Mana Sprint Boots",
+  "guide.koniava.equipment.boots.body": "Press the Dash key (default V) to consume mana and sprint forward at high speed. Disabled in water and lava.\n\nUpgrade slots: Dash Distance (longer sprint), Mana Efficiency (lower cost), Capacity (more mana storage), Armor (more defense). Each scales from Mk0 to Mk3.\n\nOpen the upgrade interface with the upgrade GUI key (default U) and use the Mana Charger to refill.",
+  "guide.koniava.equipment.leggings.title": "Mana Alloy Leggings",
+  "guide.koniava.equipment.leggings.body": "Press the jump key again while airborne to activate a double jump, consuming 300 mana for an upward boost. Requires a brief pause after leaving the ground to avoid accidental triggers. Disabled in water and lava.\n\nUpgrade slots: Capacity (more mana storage), Armor (more defense).",
+  "guide.koniava.equipment.chestplate.title": "Mana Alloy Chestplate",
+  "guide.koniava.equipment.chestplate.body": "Passive protection only, no active ability. Wearing it directly increases your defense and mana capacity, suited for surviving high-risk situations.\n\nUpgrade slots: Capacity (increases mana cap), Armor (increases defense).",
+  "guide.koniava.equipment.helmet.title": "Mana Alloy Helmet",
+  "guide.koniava.equipment.helmet.body": "While worn, displays two panels in the top-left corner of the screen:\n\nEquipment panel: lists all equipped mana pieces and their current mana levels.\n\nEnvironment concentration: calculated from the biome base value plus nearby mana machine density. Mana Plains is highest (80%); Nether and End are near zero. Currently display-only, with hooks reserved for future systems.",
+
   "death.attack.floating_turret": "%1$s was automated out of existence",
   "death.attack.floating_turret.player": "%1$s was efficiently eliminated by %2$s's floating turret",
 

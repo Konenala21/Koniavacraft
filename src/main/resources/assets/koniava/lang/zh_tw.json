@@ -1046,6 +1046,18 @@
   "guide.koniava.weapons.upgrade.title": "升級插件",
   "guide.koniava.weapons.upgrade.body": "（佔位符，等你填文字）",
 
+  "guide.koniava.chapter.equipment": "魔力裝備",
+  "guide.koniava.equipment.overview.title": "魔力合金套裝",
+  "guide.koniava.equipment.overview.body": "由頭盔、胸甲、護腿、靴子四件組成的套裝，每件均儲存魔力並具備升級槽。\n\n在祭壇（T1）合成，基底為對應的鐵質裝備加上魔力材料。使用充能台為裝備補充魔力。\n\n升級槽可插容量升級（增加魔力上限）或防甲升級（增加防禦值），等級 Mk0 至 Mk3，在魔力合成台合成。",
+  "guide.koniava.equipment.boots.title": "魔力衝刺靴",
+  "guide.koniava.equipment.boots.body": "按下衝刺鍵（預設 V）消耗魔力向前高速衝刺。水中和岩漿中停用。\n\n升級槽支援衝刺距離（延長衝刺距離）、魔力效率（降低消耗）、容量（增加儲量）和防甲（提升防禦值），Mk0 至 Mk3 遞進。\n\n按下升級介面快捷鍵（預設 U）開啟升級槽管理介面，並使用充能台補充魔力。",
+  "guide.koniava.equipment.leggings.title": "魔力合金護腿",
+  "guide.koniava.equipment.leggings.body": "在空中再次按下跳躍鍵發動二段跳，消耗 300 魔力向上躍起。需離地後稍作停頓才能觸發，避免起跳時誤觸。水中和岩漿中停用。\n\n升級槽：容量（增加魔力儲量）、防甲（提升防禦值）。",
+  "guide.koniava.equipment.chestplate.title": "魔力合金胸甲",
+  "guide.koniava.equipment.chestplate.body": "純被動防護裝備，無主動技能。穿戴後直接提升防禦值，並增加魔力上限，適合需要在高風險環境中撐更久的場合。\n\n升級槽：容量（增加魔力上限）、防甲（增加防禦值）。",
+  "guide.koniava.equipment.helmet.title": "魔力合金頭盔",
+  "guide.koniava.equipment.helmet.body": "穿戴後在畫面左上角顯示兩個資訊區塊：\n\n魔力裝備欄：列出目前穿著的所有魔力裝備及各自的魔力量。\n\n環境魔力濃度：由生物群系基礎值加上附近魔力機器密度加成計算。魔力平原最高（80%），地獄和末地幾乎為零。目前為純顯示功能，預留未來擴展介面。",
+
   "death.attack.floating_turret": "%1$s 被全自動消滅了",
   "death.attack.floating_turret.player": "%1$s 被 %2$s 的浮游砲精準料理",
 

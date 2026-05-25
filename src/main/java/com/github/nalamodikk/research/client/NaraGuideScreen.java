@@ -82,6 +82,14 @@ public class NaraGuideScreen extends Screen {
             {"guide.koniava.weapons.hand.title",     "guide.koniava.weapons.hand.body"},
             {"guide.koniava.weapons.turret.title",   "guide.koniava.weapons.turret.body"},
         },
+        // Chapter 5: 魔力裝備（需要完成 mana_equipment 研究）
+        {
+            {"guide.koniava.equipment.overview.title",    "guide.koniava.equipment.overview.body"},
+            {"guide.koniava.equipment.boots.title",       "guide.koniava.equipment.boots.body"},
+            {"guide.koniava.equipment.leggings.title",    "guide.koniava.equipment.leggings.body"},
+            {"guide.koniava.equipment.chestplate.title",  "guide.koniava.equipment.chestplate.body"},
+            {"guide.koniava.equipment.helmet.title",      "guide.koniava.equipment.helmet.body"},
+        },
     };
 
     private static final String[] CHAPTER_KEYS = {
@@ -90,6 +98,7 @@ public class NaraGuideScreen extends Screen {
         "guide.koniava.chapter.mana",
         "guide.koniava.chapter.altar",
         "guide.koniava.chapter.weapons",
+        "guide.koniava.chapter.equipment",
     };
 
     // null = always visible; non-null = requires that research to be completed
@@ -99,6 +108,7 @@ public class NaraGuideScreen extends Screen {
         ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "mana_generation"),   // Ch2 魔力設施
         ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "aspect_altar"),      // Ch3 祭壇系統
         ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "mana_weapons"),      // Ch4 魔力武器
+        ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "mana_equipment"),   // Ch5 魔力裝備
     };
 
     // ── Easter eggs ───────────────────────────────────────────────────────────
