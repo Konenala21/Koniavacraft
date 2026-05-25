@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Mana Alloy Leggings now support double jump. Press jump again while in the air to consume 300 mana and jump a second time. Resets on landing.
+- 魔力合金護腿現在支援二段跳。在空中再次按跳躍鍵消耗 300 魔力進行二段跳，落地後重置。
+
+- Added Mana Alloy Helmet, Mana Alloy Chestplate, and Mana Alloy Leggings. All three store mana and support upgrade slots (Capacity and Armor upgrades, Mk0-Mk3 each). Open the upgrade interface with the same keybind as boots/wand (default U). Craft at the Altar (T1) using iron armor + mana ingots + mana crystal fragments + refined mana dust.
+- 新增魔力合金頭盔、魔力合金胸甲、魔力合金護腿。三件均可儲存魔力並支援升級槽（容量升級和防甲升級各 Mk0-Mk3）。與靴子/法杖相同的按鍵（預設 U）可開啟升級介面。在 T1 祭壇合成，材料為鐵盔甲 + 魔力錠 + 魔力晶體碎片 + 精煉魔力粉。
+
 - Wand Core and Wand Upgrade tooltips now show a "Compatible:" line listing the wand rods they can be installed into, with the item names highlighted in yellow. Mk0-Mk1 upgrades list both rods; Mk2-Mk3 upgrades list the Arcane Pulse Resonator only.
 - 法杖核心和法杖升級工具提示現在顯示「適用於：」欄位，列出可安裝的法杖柄，物品名稱以黃色標示。Mk0-Mk1 升級列出兩支杖柄；Mk2-Mk3 只列出術式脈衝諧振器。
 
@@ -14,6 +20,13 @@ All notable changes to this project will be documented in this file.
 
 ### Developer Notes / 開發者備註
 
+- Added `ManaArmorItem` (abstract base), `ManaAlloyHelmetItem`, `ManaAlloyChestplateItem`, `ManaAlloyLeggingsItem` with mana storage + dynamic armor attributes + upgrade slot system.
+- Added `HelmetUpgradeItem/ChestplateUpgradeItem/LeggingsUpgradeItem` with corresponding `*UpgradeBehavior` enums (CAPACITY, ARMOR). 24 upgrade items registered total (8 per piece).
+- Added `ArmorUpgradeSwapPacket` (C2S, registered in `ModNetworking`). Generic packet handles install/remove for all three armor slots via `EquipmentSlot` ordinal.
+- Added `ManaArmorUpgradeScreen` (reuses `wand_upgrade_gui.png`). 3-slot layout: horizontal row; 4-slot: 2x2 grid. Opens on upgrade GUI keybind when HEAD/CHEST/LEGS armor is worn.
+- `ClientTickHandler`: upgraded GUI key now also checks HEAD/CHEST/LEGS slots for `ManaArmorItem` after checking FEET for boots.
+- `ModCreativeModTabs`: `HelmetUpgradeItem`, `ChestplateUpgradeItem`, `LeggingsUpgradeItem` grouped after other items (same as wand/boots upgrades).
+- `ModItemModelProvider`: 24 armor upgrade item names added to `UPGRADE_NAMES` (use `wand_upgrade` parent model). 3 armor item textures will auto-generate when texture files are added.
 - Added shared lang key `tooltip.koniava.upgrade.compatible` = `"Compatible: %s"` / `"適用於：%s"`. Removed `tooltip.koniava.boots_upgrade.compatible` (was hardcoded, replaced by the parameterized key).
 - `WandCoreItem.appendHoverText`: appends compatible line with both rod names (yellow). `WandUpgradeItem.appendHoverText`: appends compatible line; if `mk <= 1` shows both rods, else shows resonator only. `BootsUpgradeItem.appendHoverText`: same pattern with `item.koniava.mana_sprint_boots`.
 - Added `item.koniava.wand_rod_advanced` to `en_us.json` ("Arcane Pulse Resonator"). Was previously only in `zh_tw.json`.

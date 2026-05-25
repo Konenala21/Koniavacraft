@@ -18,6 +18,7 @@ public class AltarRecipeProvider {
         registerWeapons(output);
         registerWandParts(output);
         registerBoots(output);
+        registerArmor(output);
         registerCircuitMaterials(output);
         registerConduits(output);
         // 魔力水晶（催化：精煉魔力粉，底座：魔力碎片×4）
@@ -108,6 +109,59 @@ public class AltarRecipeProvider {
                 ),
                 new ItemStack(ModItems.MANA_WAFER.get(), 2),
                 5000, 100
+        );
+    }
+
+    private static void registerArmor(RecipeOutput output) {
+        // 魔力合金頭盔 T1 祭壇
+        save(output, "mana_alloy_helmet",
+                Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
+                List.of(
+                        Ingredient.of(Items.IRON_HELMET),
+                        Ingredient.of(ModItems.MANA_INGOT.get()),
+                        Ingredient.of(ModItems.MANA_INGOT.get()),
+                        Ingredient.of(ModItems.MANA_INGOT.get()),
+                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
+                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
+                        Ingredient.of(ModItems.REFINED_MANA_DUST.get()),
+                        Ingredient.of(ModItems.REFINED_MANA_DUST.get())
+                ),
+                new ItemStack(ModItems.MANA_ALLOY_HELMET.get()),
+                8000, 140, 1
+        );
+
+        // 魔力合金胸甲 T1 祭壇
+        save(output, "mana_alloy_chestplate",
+                Ingredient.of(ModItems.MANA_CRYSTAL.get()),
+                List.of(
+                        Ingredient.of(Items.IRON_CHESTPLATE),
+                        Ingredient.of(ModItems.MANA_INGOT.get()),
+                        Ingredient.of(ModItems.MANA_INGOT.get()),
+                        Ingredient.of(ModItems.MANA_INGOT.get()),
+                        Ingredient.of(ModItems.MANA_INGOT.get()),
+                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
+                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
+                        Ingredient.of(ModItems.REFINED_MANA_DUST.get())
+                ),
+                new ItemStack(ModItems.MANA_ALLOY_CHESTPLATE.get()),
+                12000, 180, 1
+        );
+
+        // 魔力合金護腿 T1 祭壇
+        save(output, "mana_alloy_leggings",
+                Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
+                List.of(
+                        Ingredient.of(Items.IRON_LEGGINGS),
+                        Ingredient.of(ModItems.MANA_INGOT.get()),
+                        Ingredient.of(ModItems.MANA_INGOT.get()),
+                        Ingredient.of(ModItems.MANA_INGOT.get()),
+                        Ingredient.of(ModItems.MANA_INGOT.get()),
+                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
+                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
+                        Ingredient.of(ModItems.REFINED_MANA_DUST.get())
+                ),
+                new ItemStack(ModItems.MANA_ALLOY_LEGGINGS.get()),
+                10000, 160, 1
         );
     }
 

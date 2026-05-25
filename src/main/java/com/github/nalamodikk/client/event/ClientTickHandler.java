@@ -6,9 +6,14 @@ import com.github.nalamodikk.client.renderer.altar.AltarFadeRenderer;
 import com.github.nalamodikk.client.renderer.altar.AltarUpgradeAnimManager;
 import com.github.nalamodikk.client.renderer.altar.AltarExplosionManager;
 import com.github.nalamodikk.client.renderer.altar.AltarExplosionRenderer;
+import com.github.nalamodikk.client.screen.armor.ManaArmorUpgradeScreen;
 import com.github.nalamodikk.client.screen.boots.BootsUpgradeScreen;
 import com.github.nalamodikk.client.screen.wand.WandUpgradeScreen;
+import com.github.nalamodikk.common.item.equipment.ManaArmorItem;
+import com.github.nalamodikk.common.item.equipment.armor.ManaAlloyLeggingsItem;
+import com.github.nalamodikk.common.item.equipment.armor.ManaConcentrationHelper;
 import com.github.nalamodikk.common.item.equipment.boots.ManaSprintBootsItem;
+import com.github.nalamodikk.common.network.packet.server.armor.DoubleJumpPacket;
 import com.github.nalamodikk.common.item.wand.WandRodItem;
 import com.github.nalamodikk.common.network.packet.server.boots.DashPacket;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -35,10 +40,16 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID, value = Dist.CLIENT)
 public class ClientTickHandler {
 
+    private static boolean jumpWasDown = false;
+    private static int airTicks = 0;
+
     @SubscribeEvent
     public static void onClientTickPost(ClientTickEvent.Post event) {
         AltarUpgradeAnimManager.clientTick();
         AltarExplosionManager.clientTick();
+
+        Minecraft mcTick = Minecraft.getInstance();
+        if (mcTick.player != null) ManaConcentrationHelper.clientTick(mcTick.player);
 
         if (ModKeyMappings.OPEN_UPGRADE_GUI.consumeClick()) {
             Minecraft mc = Minecraft.getInstance();
@@ -53,6 +64,15 @@ public class ClientTickHandler {
                 }
                 if (!opened && mc.player.getItemBySlot(EquipmentSlot.FEET).getItem() instanceof ManaSprintBootsItem) {
                     mc.setScreen(new BootsUpgradeScreen());
+                    opened = true;
+                }
+                if (!opened) {
+                    for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS}) {
+                        if (mc.player.getItemBySlot(slot).getItem() instanceof ManaArmorItem) {
+                            mc.setScreen(new ManaArmorUpgradeScreen(slot));
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -71,6 +91,19 @@ public class ClientTickHandler {
             }
         }
 
+        // 二段跳偵測
+        if (mcTick.player != null && mcTick.screen == null && !mcTick.player.getAbilities().flying) {
+            boolean onGround = mcTick.player.onGround();
+            boolean jumpDown = mcTick.options.keyJump.isDown();
+            boolean justPressed = jumpDown && !jumpWasDown;
+            if (onGround) airTicks = 0; else airTicks++;
+            if (justPressed && airTicks >= 3
+                    && mcTick.player.getItemBySlot(EquipmentSlot.LEGS).getItem() instanceof ManaAlloyLeggingsItem) {
+                DoubleJumpPacket.send();
+            }
+            jumpWasDown = jumpDown;
+        }
+
         if (ModKeyMappings.SKIP_ALTAR_ANIM.consumeClick() && AltarUpgradeAnimManager.hasAnyActive()) {
             AltarUpgradeAnimManager.skipAll();
             AltarCameraController.reset();
@@ -81,6 +114,9 @@ public class ClientTickHandler {
 
     @SubscribeEvent
     public static void onClientLogOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        ManaConcentrationHelper.reset();
+        jumpWasDown = false;
+        airTicks = 0;
         NaraTutorialFlow.resetSessionFlags();
         NaraFirstLoginFlow.resetIgnoreCount();
         AltarUpgradeAnimManager.clear();
