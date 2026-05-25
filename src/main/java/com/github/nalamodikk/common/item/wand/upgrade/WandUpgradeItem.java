@@ -1,6 +1,7 @@
 package com.github.nalamodikk.common.item.wand.upgrade;
 
 import com.github.nalamodikk.common.item.upgrade.IModUpgrade;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -32,5 +33,18 @@ public class WandUpgradeItem extends Item implements IModUpgrade {
         }
         lines.add(Component.translatable("tooltip.koniava.wand_upgrade.type", behavior.getDisplayName()));
         lines.add(behavior.getEffectTooltip(mk));
+        if (mk <= 1) {
+            Component compatible = Component.translatable("item.koniava.wand_rod")
+                    .withStyle(ChatFormatting.YELLOW)
+                    .append(Component.literal(", ").withStyle(ChatFormatting.GRAY))
+                    .append(Component.translatable("item.koniava.wand_rod_advanced")
+                            .withStyle(ChatFormatting.YELLOW));
+            lines.add(Component.translatable("tooltip.koniava.upgrade.compatible", compatible)
+                    .withStyle(ChatFormatting.GRAY));
+        } else {
+            lines.add(Component.translatable("tooltip.koniava.upgrade.compatible",
+                    Component.translatable("item.koniava.wand_rod_advanced").withStyle(ChatFormatting.YELLOW)
+            ).withStyle(ChatFormatting.GRAY));
+        }
     }
 }

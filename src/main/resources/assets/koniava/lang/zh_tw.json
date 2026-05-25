@@ -115,7 +115,7 @@
   "tooltip.koniava.mana_sprint_boots.mana": "魔力：%s / %s",
   "tooltip.koniava.mana_sprint_boots.upgrades": "升級：%s / %s",
   "tooltip.koniava.mana_sprint_boots.open_upgrade": "按下 %s 開啟升級介面",
-  "tooltip.koniava.boots_upgrade.compatible": "適用於：魔力衝刺靴",
+  "tooltip.koniava.upgrade.compatible": "適用於：%s",
   "message.koniava.boots.not_enough_mana": "魔力不足，無法衝刺。",
   "message.koniava.boots.in_liquid": "在液體中無法衝刺。",
   "item.koniava.boots_upgrade_armor": "防甲強化板",

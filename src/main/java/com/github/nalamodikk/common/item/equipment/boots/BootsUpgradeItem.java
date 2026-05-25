@@ -1,6 +1,7 @@
 package com.github.nalamodikk.common.item.equipment.boots;
 
 import com.github.nalamodikk.common.item.upgrade.IModUpgrade;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -32,6 +33,8 @@ public class BootsUpgradeItem extends Item implements IModUpgrade {
         }
         lines.add(Component.translatable("tooltip.koniava.wand_upgrade.type", behavior.getDisplayName()));
         lines.add(behavior.getEffectTooltip(mk));
-        lines.add(Component.translatable("tooltip.koniava.boots_upgrade.compatible"));
+        lines.add(Component.translatable("tooltip.koniava.upgrade.compatible",
+                Component.translatable("item.koniava.mana_sprint_boots").withStyle(ChatFormatting.YELLOW)
+        ).withStyle(ChatFormatting.GRAY));
     }
 }
