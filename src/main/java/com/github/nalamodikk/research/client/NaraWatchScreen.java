@@ -144,7 +144,10 @@ public class NaraWatchScreen extends Screen {
         searchBox.setMaxLength(64);
     }
 
+    private static final int NODE_GAP = 18;  // horizontal gap between sibling nodes
+
     private void computeLayout(Collection<ResearchTemplate> all) {
+        // ── Step 1: compute depths (longest-path from root) ──────────────────
         Map<ResourceLocation, Integer> depths = new LinkedHashMap<>();
         for (ResearchTemplate t : all) depths.put(t.getId(), 0);
 
@@ -162,26 +165,57 @@ public class NaraWatchScreen extends Screen {
                     }
         }
 
-        Map<Integer, List<ResourceLocation>> byDepth = new LinkedHashMap<>();
+        // ── Step 2: group nodes by depth ────────────────────────────────────
+        Map<Integer, List<ResearchTemplate>> byDepth = new LinkedHashMap<>();
         for (ResearchTemplate t : all)
             byDepth.computeIfAbsent(depths.getOrDefault(t.getId(), 0), k -> new ArrayList<>())
-                   .add(t.getId());
+                   .add(t);
 
         int maxDepth = byDepth.keySet().stream().mapToInt(i -> i).max().orElse(0);
         int padding  = 20;
         int usableH  = NA_H - 2 * padding - NODE_SIZE;
-        int rowStep  = maxDepth > 0 ? Math.max(26, usableH / maxDepth) : 0;
+        int rowStep  = maxDepth > 0 ? Math.max(28, usableH / maxDepth) : 0;
 
-        for (Map.Entry<Integer, List<ResourceLocation>> e : byDepth.entrySet()) {
-            int depth = e.getKey();
-            List<ResourceLocation> ids = e.getValue();
-            int count  = ids.size();
-            int y      = padding + depth * rowStep;
-            int totalW = count * NODE_SIZE + (count - 1) * 16;
-            int startX = (NA_W - totalW) / 2;
+        // ── Step 3: layout depth by depth, top to bottom ────────────────────
+        // Process in order 0..maxDepth so parent positions are always known.
+        for (int d = 0; d <= maxDepth; d++) {
+            List<ResearchTemplate> nodes = byDepth.getOrDefault(d, List.of());
+            if (nodes.isEmpty()) continue;
+
+            // Sort siblings by average X of their prerequisites (barycenter heuristic)
+            // so children are ordered left-to-right following their parents.
+            if (d > 0) {
+                nodes.sort((a, b) -> Double.compare(avgParentX(a), avgParentX(b)));
+            }
+
+            int count  = nodes.size();
+            int stride = NODE_SIZE + NODE_GAP;
+            int totalW = count * NODE_SIZE + (count - 1) * NODE_GAP;
+            int y      = padding + d * rowStep;
+
+            // Ideal centre: average of all parents' X positions
+            double idealCentreX = nodes.stream()
+                    .mapToDouble(this::avgParentX)
+                    .average()
+                    .orElse(NA_W / 2.0);
+            int startX = (int) Math.round(idealCentreX - totalW / 2.0);
+            // Clamp so nodes stay inside the node area
+            startX = Math.max(0, Math.min(startX, NA_W - totalW));
+
             for (int i = 0; i < count; i++)
-                nodePositions.put(ids.get(i), new int[]{ startX + i * (NODE_SIZE + 16), y });
+                nodePositions.put(nodes.get(i).getId(), new int[]{ startX + i * stride, y });
         }
+    }
+
+    /** Average X position of the node's prerequisites; falls back to horizontal centre. */
+    private double avgParentX(ResearchTemplate t) {
+        double sum = 0;
+        int count = 0;
+        for (ResourceLocation prereqId : t.getPrerequisites()) {
+            int[] pos = nodePositions.get(prereqId);
+            if (pos != null) { sum += pos[0] + NODE_SIZE / 2.0; count++; }
+        }
+        return count > 0 ? sum / count : NA_W / 2.0;
     }
 
     private float computeFitZoom() {
@@ -305,10 +339,17 @@ public class NaraWatchScreen extends Screen {
             for (ResourceLocation prereqId : t.getPrerequisites()) {
                 int[] pp = nodePositions.get(prereqId);
                 if (pp == null) continue;
-                drawLine(g,
-                        sx(pp[0])  + ns / 2, sy(pp[1])  + ns,
-                        sx(pos[0]) + ns / 2, sy(pos[1]),
-                        completed.contains(prereqId) ? 0xFF55FF55 : 0xFF555555);
+                boolean done = completed.contains(prereqId);
+                int color = done ? 0xFF44CC44 : 0xFF445566;
+                int x1 = sx(pp[0])  + ns / 2;
+                int y1 = sy(pp[1])  + ns;
+                int x2 = sx(pos[0]) + ns / 2;
+                int y2 = sy(pos[1]);
+                // Elbow connector: vertical down → horizontal → vertical down
+                int mid = (y1 + y2) / 2;
+                drawLine(g, x1, y1, x1, mid, color);
+                drawLine(g, x1, mid, x2, mid, color);
+                drawLine(g, x2, mid, x2, y2, color);
             }
         }
     }
