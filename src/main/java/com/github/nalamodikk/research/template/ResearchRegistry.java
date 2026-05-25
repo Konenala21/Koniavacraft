@@ -101,6 +101,20 @@ public final class ResearchRegistry {
     // ── Tier 1 continued — 魔法期完整 ────────────────────────────────────────
 
     /**
+     * Mana equipment: player discovers the mana-infused armor set.
+     * Pure guidance — unlocks the Mana Equipment guide chapter; does not gate any recipes.
+     * Vitality↔Mechanism (living body + mechanical protection), Mana (stored in armor).
+     */
+    public static final ResearchTemplate MANA_EQUIPMENT = register(
+            ResearchTemplate.builder(id("mana_equipment"))
+                    .tier(1)
+                    .aspects(ModAspects.VITALITY, ModAspects.MECHANISM, ModAspects.MANA)
+                    .holeRatio(0.30)
+                    .prerequisites(id("mana_tools"))
+                    .build()
+    );
+
+    /**
      * Mana infusion: player learns to infuse items with mana.
      * Vitality↔Lifeflow (Vitality∈Lifeflow), Lifeflow↔Mana (Mana∈Lifeflow).
      */
