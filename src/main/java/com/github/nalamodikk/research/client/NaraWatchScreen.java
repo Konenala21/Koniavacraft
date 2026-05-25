@@ -80,11 +80,21 @@ public class NaraWatchScreen extends Screen {
 
     private static final int TAB_GAP = 3;
 
-    private static final String[] TIER_LABELS   = { "全", "T1", "T2", "T3", "T4" };
-    private static final String[] STATUS_LABELS = { "全部", "可解鎖", "已完成" };
+    private static final String[] TIER_KEYS = {
+        "gui.koniava.nara_watch.tier.all",
+        "gui.koniava.nara_watch.tier.1",
+        "gui.koniava.nara_watch.tier.2",
+        "gui.koniava.nara_watch.tier.3",
+        "gui.koniava.nara_watch.tier.4"
+    };
+    private static final String[] STATUS_KEYS = {
+        "gui.koniava.nara_watch.status.all",
+        "gui.koniava.nara_watch.status.available",
+        "gui.koniava.nara_watch.status.completed"
+    };
 
     private static final int GUIDE_TAB_OFFSET_Y =
-            TIER_TAB_START_Y + TIER_LABELS.length * (TIER_TAB_H + TAB_GAP) + 10;
+            TIER_TAB_START_Y + TIER_KEYS.length * (TIER_TAB_H + TAB_GAP) + 10;
 
     // ── State ─────────────────────────────────────────────────────────────────
 
@@ -330,14 +340,14 @@ public class NaraWatchScreen extends Screen {
 
     // Left tabs: tier filter, protrude to the LEFT of the panel
     private void renderLeftTabs(GuiGraphics g, int mouseX, int mouseY) {
-        for (int i = 0; i < TIER_LABELS.length; i++) {
+        for (int i = 0; i < TIER_KEYS.length; i++) {
             int tx = panelX - TIER_TAB_W;
             int ty = panelY + TIER_TAB_START_Y + i * (TIER_TAB_H + TAB_GAP);
             boolean active  = activeTierFilter == i;
             boolean hovered = mouseX >= tx && mouseX < tx + TIER_TAB_W
                            && mouseY >= ty && mouseY < ty + TIER_TAB_H;
-            renderSideTab(g, tx, ty, TIER_TAB_W, TIER_TAB_H, TIER_LABELS[i],
-                          active, hovered, false);
+            renderSideTab(g, tx, ty, TIER_TAB_W, TIER_TAB_H,
+                          Component.translatable(TIER_KEYS[i]), active, hovered, false);
         }
     }
 
@@ -347,20 +357,20 @@ public class NaraWatchScreen extends Screen {
         boolean hovered = mouseX >= tx && mouseX < tx + TIER_TAB_W
                        && mouseY >= ty && mouseY < ty + TIER_TAB_H;
         renderSideTab(g, tx, ty, TIER_TAB_W, TIER_TAB_H,
-                Component.translatable("gui.koniava.nara_watch.guide_tab").getString(),
+                Component.translatable("gui.koniava.nara_watch.guide_tab"),
                 false, hovered, false);
     }
 
     // Right tabs: status filter, protrude to the RIGHT of the panel
     private void renderRightTabs(GuiGraphics g, int mouseX, int mouseY) {
-        for (int i = 0; i < STATUS_LABELS.length; i++) {
+        for (int i = 0; i < STATUS_KEYS.length; i++) {
             int tx = panelX + PANEL_W;
             int ty = panelY + STATUS_TAB_START_Y + i * (STATUS_TAB_H + TAB_GAP);
             boolean active  = activeStatusFilter == i;
             boolean hovered = mouseX >= tx && mouseX < tx + STATUS_TAB_W
                            && mouseY >= ty && mouseY < ty + STATUS_TAB_H;
-            renderSideTab(g, tx, ty, STATUS_TAB_W, STATUS_TAB_H, STATUS_LABELS[i],
-                          active, hovered, true);
+            renderSideTab(g, tx, ty, STATUS_TAB_W, STATUS_TAB_H,
+                          Component.translatable(STATUS_KEYS[i]), active, hovered, true);
         }
     }
 
@@ -372,7 +382,7 @@ public class NaraWatchScreen extends Screen {
      *                  false = tab protrudes leftward (open right edge)
      */
     private void renderSideTab(GuiGraphics g, int x, int y, int w, int h,
-                                String label, boolean active, boolean hovered,
+                                Component label, boolean active, boolean hovered,
                                 boolean rightSide) {
         int bg     = active  ? 0xCC1A2C66
                    : hovered ? 0xCC152150
@@ -473,7 +483,7 @@ public class NaraWatchScreen extends Screen {
             }
 
             // Check left tier tabs
-            for (int i = 0; i < TIER_LABELS.length; i++) {
+            for (int i = 0; i < TIER_KEYS.length; i++) {
                 int tx = panelX - TIER_TAB_W;
                 int ty = panelY + TIER_TAB_START_Y + i * (TIER_TAB_H + TAB_GAP);
                 if (mouseX >= tx && mouseX < tx + TIER_TAB_W
@@ -484,7 +494,7 @@ public class NaraWatchScreen extends Screen {
                 }
             }
             // Check right status tabs
-            for (int i = 0; i < STATUS_LABELS.length; i++) {
+            for (int i = 0; i < STATUS_KEYS.length; i++) {
                 int tx = panelX + PANEL_W;
                 int ty = panelY + STATUS_TAB_START_Y + i * (STATUS_TAB_H + TAB_GAP);
                 if (mouseX >= tx && mouseX < tx + STATUS_TAB_W
