@@ -31,12 +31,14 @@ public class NaraTutorialFlow {
     public static final String SOLAR_COLLECTOR_CRAFT      = "solar_collector_craft";
     public static final String WAND_ROD_CRAFT_SEEN        = "wand_rod_craft_seen";
     public static final String ASPECT_SYNTHESIS_OPEN_SEEN = "aspect_synthesis_open_seen";
+    public static final String BOOTS_EQUIP                = "boots_equip";
 
     private static boolean altarT6Shown = false;
     private static boolean aspectSynthesisShown = false;
     private static boolean wandRodNoItemsShown = false;
     private static boolean wandRodReadyShown = false;
     private static boolean wandRodCraftShown = false;
+    private static boolean bootsEquipShown = false;
 
     public static void resetSessionFlags() {
         altarT6Shown = false;
@@ -44,6 +46,7 @@ public class NaraTutorialFlow {
         wandRodNoItemsShown = false;
         wandRodReadyShown = false;
         wandRodCraftShown = false;
+        bootsEquipShown = false;
     }
 
     public static boolean isWandRodCraftShown() { return wandRodCraftShown; }
@@ -89,6 +92,7 @@ public class NaraTutorialFlow {
             case SOLAR_COLLECTOR_CRAFT  -> startSolarCollectorCraft();
             case WAND_ROD_CRAFT_SEEN        -> wandRodCraftShown = true;
             case ASPECT_SYNTHESIS_OPEN_SEEN -> aspectSynthesisShown = true;
+            case BOOTS_EQUIP                -> startBootsEquip();
         }
     }
 
@@ -501,6 +505,20 @@ public class NaraTutorialFlow {
                                 () -> {})),
                         0, null)
                         .withOnStart(() -> NaraSoundHelper.play("solar_collector", "line2"))
+        ));
+    }
+
+    private static void startBootsEquip() {
+        if (bootsEquipShown) return;
+        bootsEquipShown = true;
+        NaraDialogueManager.setPortraitShown();
+        NaraDialogueManager.startDialogue(List.of(
+                NaraDialogueLine.withChoices(
+                        Component.translatable("nara.dialogue.tutorial.boots_equip.line1"),
+                        List.of(new NaraChoice(
+                                Component.translatable("nara.dialogue.tutorial.boots_equip.confirm"),
+                                () -> {})),
+                        0, null)
         ));
     }
 

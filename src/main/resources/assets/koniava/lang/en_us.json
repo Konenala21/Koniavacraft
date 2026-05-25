@@ -327,6 +327,8 @@
   "nara.dialogue.tutorial.solar_collector.line1": "Solar mana collector. No fuel — just sunlight converted into mana. Sounds great, right? It stops working at night and in rain, but if you're tired of feeding machines, this one runs itself.",
   "nara.dialogue.tutorial.solar_collector.line2": "Place it somewhere with open sky, connect a conduit on the bottom face, and it pushes mana out automatically during the day. Upgrade slots take speed upgrades — no upgrades means base output only.",
   "nara.dialogue.tutorial.solar_collector.confirm": "Got it.",
+  "nara.dialogue.tutorial.boots_equip.line1": "Oh, you put those boots on! How to use them is in the guide under the Mana Equipment chapter. Go look.",
+  "nara.dialogue.tutorial.boots_equip.confirm": "Got it.",
   "item.koniava.nara_watch.scan.unknown": "No recognisable aspects found.",
   "item.koniava.nara_watch.scan.discovered": "New aspects discovered:",
   "item.koniava.nara_watch.scan.known": "Aspects already known: %s",

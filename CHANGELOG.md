@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Nara now gives a brief hint the first time you equip Mana Sprint Boots, pointing you to the Mana Equipment chapter in the guide.
+- 首次裝備魔力衝刺靴時，娜拉會給一句簡短提示，指引你查看指引介面的「魔力裝備」章節。
+
 - Mana Alloy Leggings now support double jump. Press jump again while in the air to consume 300 mana and jump a second time. Resets on landing.
 - 魔力合金護腿現在支援二段跳。在空中再次按跳躍鍵消耗 300 魔力進行二段跳，落地後重置。
 
@@ -27,6 +30,7 @@ All notable changes to this project will be documented in this file.
 - `ClientTickHandler`: upgraded GUI key now also checks HEAD/CHEST/LEGS slots for `ManaArmorItem` after checking FEET for boots.
 - `ModCreativeModTabs`: `HelmetUpgradeItem`, `ChestplateUpgradeItem`, `LeggingsUpgradeItem` grouped after other items (same as wand/boots upgrades).
 - `ModItemModelProvider`: 24 armor upgrade item names added to `UPGRADE_NAMES` (use `wand_upgrade` parent model). 3 armor item textures will auto-generate when texture files are added.
+- Added `NaraTutorialFlow.BOOTS_EQUIP` trigger. Fires once via `LivingEquipmentChangeEvent` (FEET slot, `ManaSprintBootsItem`) in `NaraServerEvents`. Persisted in `ResearchSavedData` via `markTutorialSeen`. 1-line dialogue with confirm button, no sound.
 - Added shared lang key `tooltip.koniava.upgrade.compatible` = `"Compatible: %s"` / `"適用於：%s"`. Removed `tooltip.koniava.boots_upgrade.compatible` (was hardcoded, replaced by the parameterized key).
 - `WandCoreItem.appendHoverText`: appends compatible line with both rod names (yellow). `WandUpgradeItem.appendHoverText`: appends compatible line; if `mk <= 1` shows both rods, else shows resonator only. `BootsUpgradeItem.appendHoverText`: same pattern with `item.koniava.mana_sprint_boots`.
 - Added `item.koniava.wand_rod_advanced` to `en_us.json` ("Arcane Pulse Resonator"). Was previously only in `zh_tw.json`.

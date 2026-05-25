@@ -346,6 +346,8 @@
   "nara.dialogue.tutorial.solar_collector.line1": "太陽能魔力收集器。不用燃料，直接把陽光轉成魔力，聽起來很棒對吧。夜晚和下雨天不工作，但如果你不想一直燒東西，放著讓它跑是最省事的。",
   "nara.dialogue.tutorial.solar_collector.line2": "找個能看到天空的位置放下去，底面接上奧術導管，白天就會自動輸出魔力。升級槽可以插加速升級，不插的話產量就這樣了。",
   "nara.dialogue.tutorial.solar_collector.confirm": "明白了。",
+  "nara.dialogue.tutorial.boots_equip.line1": "哦你把那雙靴子穿上了！怎麼用都在指引介面的「魔力裝備」章節，自己去看。",
+  "nara.dialogue.tutorial.boots_equip.confirm": "知道了。",
   "item.koniava.nara_watch.scan.unknown": "未找到可識別的本源。",
   "item.koniava.nara_watch.scan.discovered": "發現新本源：",
   "item.koniava.nara_watch.scan.known": "本源已知：%s",

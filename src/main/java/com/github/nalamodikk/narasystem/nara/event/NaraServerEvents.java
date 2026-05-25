@@ -6,6 +6,7 @@ import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitBlock
 import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.research.ResearchTableBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.research.ResearchTableMenu;
+import com.github.nalamodikk.common.item.equipment.boots.ManaSprintBootsItem;
 import com.github.nalamodikk.common.item.wand.WandRodItem;
 import com.github.nalamodikk.common.item.wand.core.WandCoreItem;
 import com.github.nalamodikk.narasystem.nara.hud.NaraTutorialFlow;
@@ -17,6 +18,7 @@ import com.github.nalamodikk.research.ResearchGate;
 import com.github.nalamodikk.research.knowledge.ResearchSavedData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -30,6 +32,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingEquipmentChangeEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
@@ -790,5 +793,17 @@ public class NaraServerEvents {
 
     public static void grantAngryAdvancement(ServerPlayer player) {
         grantAdvancement(player, "nara_angry");
+    }
+
+    @SubscribeEvent
+    public static void onEquipmentChange(LivingEquipmentChangeEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        if (event.getSlot() != EquipmentSlot.FEET) return;
+        if (!(event.getTo().getItem() instanceof ManaSprintBootsItem)) return;
+        var savedData = ResearchSavedData.get(player.serverLevel());
+        if (savedData.getOrCreate(player.getUUID()).markTutorialSeen(NaraTutorialFlow.BOOTS_EQUIP)) {
+            NaraTutorialPacket.send(player, NaraTutorialFlow.BOOTS_EQUIP);
+            savedData.setDirty();
+        }
     }
 }
