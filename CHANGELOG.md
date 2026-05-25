@@ -6,6 +6,18 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Fixed Mana Charger dropping its held item twice when broken (once from the block's own drop code and once from the base machine handler).
+- 修復魔力充能台被破壞時物品重複掉落兩次的問題。
+
+- Nara tutorial for Mana Grinder, Mana Infuser, and Mana Crafting Table now highlights the relevant GUI area on the final tutorial line, and clears the highlight when the player confirms.
+- 魔力研磨機、魔力注魔台、魔力合成台的娜拉教學最後一行現在會高亮對應的 GUI 區域，玩家確認後自動清除高亮。
+
+- Fixed Nara creeper punishment not triggering for players who had not yet bound to Nara.
+- 修復未綁定娜拉的玩家炸死苦力怕時不會觸發懲罰對話的問題。
+
+- Updated audio for Mana Grinder and Mana Infuser tutorial lines.
+- 更新魔力研磨機與魔力注魔台教學語音。
+
 - Added a keybind (default R, rebindable) to skip altar upgrade animations mid-playback. Camera and pitch reset immediately on skip. T6 Nara dialogue still triggers if skipped before it fires.
 - 新增可自訂按鍵（預設 R）可在祭壇升級動畫播放中途跳過。跳過時鏡頭仰角立即歸位。T6 娜拉台詞若尚未觸發，跳過時仍會補發。
 

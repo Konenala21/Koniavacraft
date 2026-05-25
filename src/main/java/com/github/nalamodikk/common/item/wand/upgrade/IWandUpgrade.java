@@ -1,10 +1,8 @@
 package com.github.nalamodikk.common.item.wand.upgrade;
 
-import net.minecraft.network.chat.Component;
+import com.github.nalamodikk.common.item.upgrade.IModUpgrade;
 
-/**
- * Implemented by items that can be installed in a WandRodItem upgrade slot.
- */
-public interface IWandUpgrade {
-    Component getUpgradeDisplayName();
+/** @deprecated use IModUpgrade directly */
+@Deprecated
+public interface IWandUpgrade extends IModUpgrade {
 }

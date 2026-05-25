@@ -9,7 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.common.Tags;
 
 /**
- * ⚙️ 魔力粉碎機配方數據生成器
+ * 魔力粉碎機配方數據生成器
  */
 public class ManaGrinderRecipeProvider {
     public static void generate(RecipeOutput output) {

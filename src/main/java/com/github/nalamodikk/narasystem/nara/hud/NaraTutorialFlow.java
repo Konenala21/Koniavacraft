@@ -332,9 +332,12 @@ public class NaraTutorialFlow {
                     Component.translatable("nara.dialogue.tutorial.mana_grinder.line3"),
                     List.of(new NaraChoice(
                             Component.translatable("nara.dialogue.tutorial.mana_grinder.confirm"),
-                            () -> {})),
+                            () -> NaraDialogueManager.clearGuiHighlight())),
                     0, null)
-                    .withOnStart(() -> NaraSoundHelper.play("mana_grinder", "line3")));
+                    .withOnStart(() -> {
+                        NaraSoundHelper.play("mana_grinder", "line3");
+                        NaraDialogueManager.setGuiHighlight(159, 11, 25);
+                    }));
         } else {
             lines.add(NaraDialogueLine.withChoices(
                     Component.translatable("nara.dialogue.tutorial.mana_grinder.line2"),
@@ -363,9 +366,12 @@ public class NaraTutorialFlow {
                     Component.translatable("nara.dialogue.tutorial.mana_infuser.line3"),
                     List.of(new NaraChoice(
                             Component.translatable("nara.dialogue.tutorial.mana_infuser.confirm"),
-                            () -> {})),
+                            () -> NaraDialogueManager.clearGuiHighlight())),
                     0, null)
-                    .withOnStart(() -> NaraSoundHelper.play("mana_infuser", "line3")));
+                    .withOnStart(() -> {
+                        NaraSoundHelper.play("mana_infuser", "line3");
+                        NaraDialogueManager.setGuiHighlight(159, 11, 25);
+                    }));
         } else {
             lines.add(NaraDialogueLine.withChoices(
                     Component.translatable("nara.dialogue.tutorial.mana_infuser.line2"),
@@ -394,9 +400,12 @@ public class NaraTutorialFlow {
                     Component.translatable("nara.dialogue.tutorial.mana_crafting.line3"),
                     List.of(new NaraChoice(
                             Component.translatable("nara.dialogue.tutorial.mana_crafting.confirm"),
-                            () -> {})),
+                            () -> NaraDialogueManager.clearGuiHighlight())),
                     0, null)
-                    .withOnStart(() -> NaraSoundHelper.play("mana_crafting", "line3")));
+                    .withOnStart(() -> {
+                        NaraSoundHelper.play("mana_crafting", "line3");
+                        NaraDialogueManager.setGuiHighlight(110, 55, 30);
+                    }));
         } else {
             lines.add(NaraDialogueLine.withChoices(
                     Component.translatable("nara.dialogue.tutorial.mana_crafting.line2"),

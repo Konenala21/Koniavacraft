@@ -1,5 +1,6 @@
 package com.github.nalamodikk.common.item.wand.upgrade;
 
+import com.github.nalamodikk.common.item.upgrade.IModUpgrade;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -7,7 +8,7 @@ import net.minecraft.world.item.TooltipFlag;
 
 import java.util.List;
 
-public class WandUpgradeItem extends Item implements IWandUpgrade {
+public class WandUpgradeItem extends Item implements IModUpgrade {
 
     private final WandUpgradeBehavior behavior;
     private final int mk;

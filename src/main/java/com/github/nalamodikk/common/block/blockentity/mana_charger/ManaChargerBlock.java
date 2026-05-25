@@ -68,6 +68,10 @@ public class ManaChargerBlock extends BaseMachineBlock {
                     net.minecraft.world.item.BlockItem.setBlockEntityData(drop, charger.getType(), tag);
                     Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), drop);
                 }
+                // Clear slot so BaseMachineBlock.onRemove → drops() doesn't duplicate the item
+                if (charger.getItemHandler() != null) {
+                    charger.getItemHandler().setStackInSlot(ManaChargerBlockEntity.ITEM_SLOT, ItemStack.EMPTY);
+                }
                 level.invalidateCapabilities(pos);
             }
         }

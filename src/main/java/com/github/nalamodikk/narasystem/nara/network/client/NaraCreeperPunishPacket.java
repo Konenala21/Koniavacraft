@@ -8,7 +8,6 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
@@ -31,7 +30,6 @@ public record NaraCreeperPunishPacket() implements CustomPacketPayload {
     private static void handle(NaraCreeperPunishPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
-            if (com.github.nalamodikk.narasystem.nara.util.NaraHelper.isBound(player)) return;
             if (player.isCreative() || player.isSpectator()) {
                 NaraServerEvents.schedulePunishmentDialogue(player.getUUID(), 40);
                 return;
