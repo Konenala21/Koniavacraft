@@ -85,6 +85,7 @@ public class KoniavacraftMod {
         ModStructureTypes.register(modEventBus);
         ModStructurePieceTypes.register(modEventBus);
         ModEntities.register(modEventBus);
+        ModArmorMaterials.register(modEventBus);
         ModMobEffects.register(modEventBus);
         ModSounds.register(modEventBus);
         ModParticles.register(modEventBus);

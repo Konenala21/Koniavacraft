@@ -3,6 +3,7 @@ package com.github.nalamodikk.register;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.item.debug.ManaDebugToolItem;
 import com.github.nalamodikk.common.item.tool.BasicTechWandItem;
+import com.github.nalamodikk.common.item.upgrade.EquipmentUpgradeData;
 import com.github.nalamodikk.common.item.wand.WandCoreData;
 import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
 import com.github.nalamodikk.common.utils.data.CodecsLibrary;
@@ -137,6 +138,12 @@ public class ModDataComponents {
                     .networkSynchronized(WandCoreData.STREAM_CODEC)
                     .build();
 
+    public static final DataComponentType<EquipmentUpgradeData> EQUIPMENT_UPGRADE_DATA =
+            DataComponentType.<EquipmentUpgradeData>builder()
+                    .persistent(EquipmentUpgradeData.CODEC)
+                    .networkSynchronized(EquipmentUpgradeData.STREAM_CODEC)
+                    .build();
+
     /** Controls whether an Aspect Token should reveal the aspect's real name. */
     public static final DataComponentType<Boolean> ASPECT_HIDDEN =
             DataComponentType.<Boolean>builder()
@@ -160,6 +167,7 @@ public class ModDataComponents {
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "aspect_id"), ASPECT_ID);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "aspect_hidden"), ASPECT_HIDDEN);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "wand_core_data"), WAND_CORE_DATA);
+            helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "equipment_upgrade_data"), EQUIPMENT_UPGRADE_DATA);
         });
     }
 }

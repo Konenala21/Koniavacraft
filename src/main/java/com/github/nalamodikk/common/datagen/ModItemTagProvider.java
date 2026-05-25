@@ -65,5 +65,17 @@ public class ModItemTagProvider extends ItemTagsProvider {
         tag(ItemTags.FLOWERS)
                 .add(ModBlocks.MANA_BLOOM.get().asItem());
 
+        tag(ItemTags.MINING_ENCHANTABLE)
+                .add(ModItems.MANA_PICKAXE.get());
+
+        tag(ItemTags.MINING_LOOT_ENCHANTABLE)
+                .add(ModItems.MANA_PICKAXE.get());
+
+        tag(ItemTags.DURABILITY_ENCHANTABLE)
+                .add(ModItems.MANA_PICKAXE.get());
+
+        tag(ItemTags.VANISHING_ENCHANTABLE)
+                .add(ModItems.MANA_PICKAXE.get());
+
     }
 }

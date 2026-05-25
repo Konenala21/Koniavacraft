@@ -492,6 +492,202 @@ public class ManaCraftingRecipeProvider {
                 .manaCost(10000)
                 .save(output, "mana_output_upgrade_mk3");
 
+        // ── 靴子升級插件 ─────────────────────────────────────────────────────
+
+        // 防甲升級 Mk0
+        ManaCraftingRecipeBuilder.create(ModItems.BOOTS_UPGRADE_ARMOR_MK0.get(), 1)
+                .shaped(true)
+                .pattern("IMI")
+                .pattern("MUM")
+                .pattern("IMI")
+                .define('I', Items.IRON_INGOT)
+                .define('M', ModItems.MANA_INGOT.get())
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(2000)
+                .save(output, "boots_upgrade_armor_mk0");
+
+        // 防甲升級 Mk1
+        ManaCraftingRecipeBuilder.create(ModItems.BOOTS_UPGRADE_ARMOR_MK1.get(), 1)
+                .shaped(true)
+                .pattern("IMI")
+                .pattern("FAF")
+                .pattern("IMI")
+                .define('I', Items.IRON_INGOT)
+                .define('M', ModItems.MANA_INGOT.get())
+                .define('F', ModItems.MANA_CRYSTAL_FRAGMENT.get())
+                .define('A', ModItems.BOOTS_UPGRADE_ARMOR_MK0.get())
+                .manaCost(3500)
+                .save(output, "boots_upgrade_armor_mk1");
+
+        // 防甲升級 Mk2
+        ManaCraftingRecipeBuilder.create(ModItems.BOOTS_UPGRADE_ARMOR_MK2.get(), 1)
+                .shaped(true)
+                .pattern("IMI")
+                .pattern("CAC")
+                .pattern("IMI")
+                .define('I', Items.IRON_INGOT)
+                .define('M', ModItems.MANA_INGOT.get())
+                .define('C', ModItems.MANA_CRYSTAL.get())
+                .define('A', ModItems.BOOTS_UPGRADE_ARMOR_MK1.get())
+                .manaCost(5500)
+                .save(output, "boots_upgrade_armor_mk2");
+
+        // 防甲升級 Mk3
+        ManaCraftingRecipeBuilder.create(ModItems.BOOTS_UPGRADE_ARMOR_MK3.get(), 1)
+                .shaped(true)
+                .pattern("NPN")
+                .pattern("PAP")
+                .pattern("NPN")
+                .define('N', Items.NETHERITE_INGOT)
+                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('A', ModItems.BOOTS_UPGRADE_ARMOR_MK2.get())
+                .manaCost(9000)
+                .save(output, "boots_upgrade_armor_mk3");
+
+        // 衝刺距離升級 Mk0
+        ManaCraftingRecipeBuilder.create(ModItems.BOOTS_UPGRADE_DASH_DISTANCE_MK0.get(), 1)
+                .shaped(true)
+                .pattern("FMF")
+                .pattern("MUM")
+                .pattern("FMF")
+                .define('F', Items.FEATHER)
+                .define('M', ModItems.MANA_INGOT.get())
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(2000)
+                .save(output, "boots_upgrade_dash_distance_mk0");
+
+        // 衝刺距離升級 Mk1
+        ManaCraftingRecipeBuilder.create(ModItems.BOOTS_UPGRADE_DASH_DISTANCE_MK1.get(), 1)
+                .shaped(true)
+                .pattern("FCF")
+                .pattern("CAC")
+                .pattern("FCF")
+                .define('F', Items.FEATHER)
+                .define('C', ModItems.MANA_CRYSTAL_FRAGMENT.get())
+                .define('A', ModItems.BOOTS_UPGRADE_DASH_DISTANCE_MK0.get())
+                .manaCost(3500)
+                .save(output, "boots_upgrade_dash_distance_mk1");
+
+        // 衝刺距離升級 Mk2
+        ManaCraftingRecipeBuilder.create(ModItems.BOOTS_UPGRADE_DASH_DISTANCE_MK2.get(), 1)
+                .shaped(true)
+                .pattern("FXF")
+                .pattern("XAX")
+                .pattern("FXF")
+                .define('F', Items.FEATHER)
+                .define('X', ModItems.MANA_CRYSTAL.get())
+                .define('A', ModItems.BOOTS_UPGRADE_DASH_DISTANCE_MK1.get())
+                .manaCost(5500)
+                .save(output, "boots_upgrade_dash_distance_mk2");
+
+        // 衝刺距離升級 Mk3
+        ManaCraftingRecipeBuilder.create(ModItems.BOOTS_UPGRADE_DASH_DISTANCE_MK3.get(), 1)
+                .shaped(true)
+                .pattern("PHP")
+                .pattern("PAP")
+                .pattern("PHP")
+                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('H', Items.PHANTOM_MEMBRANE)
+                .define('A', ModItems.BOOTS_UPGRADE_DASH_DISTANCE_MK2.get())
+                .manaCost(9000)
+                .save(output, "boots_upgrade_dash_distance_mk3");
+
+        // 魔力效率升級 Mk0
+        ManaCraftingRecipeBuilder.create(ModItems.BOOTS_UPGRADE_MANA_EFFICIENCY_MK0.get(), 1)
+                .shaped(true)
+                .pattern("QWQ")
+                .pattern("WUW")
+                .pattern("QWQ")
+                .define('Q', ModItems.MANA_WAFER.get())
+                .define('W', ModItems.REFINED_MANA_DUST.get())
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(2000)
+                .save(output, "boots_upgrade_mana_efficiency_mk0");
+
+        // 魔力效率升級 Mk1
+        ManaCraftingRecipeBuilder.create(ModItems.BOOTS_UPGRADE_MANA_EFFICIENCY_MK1.get(), 1)
+                .shaped(true)
+                .pattern("QWQ")
+                .pattern("WAW")
+                .pattern("QWQ")
+                .define('Q', ModItems.MANA_WAFER.get())
+                .define('W', ModItems.CONDENSED_MANA_DUST.get())
+                .define('A', ModItems.BOOTS_UPGRADE_MANA_EFFICIENCY_MK0.get())
+                .manaCost(3500)
+                .save(output, "boots_upgrade_mana_efficiency_mk1");
+
+        // 魔力效率升級 Mk2
+        ManaCraftingRecipeBuilder.create(ModItems.BOOTS_UPGRADE_MANA_EFFICIENCY_MK2.get(), 1)
+                .shaped(true)
+                .pattern("QPQ")
+                .pattern("PAP")
+                .pattern("QPQ")
+                .define('Q', ModItems.MANA_WAFER.get())
+                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('A', ModItems.BOOTS_UPGRADE_MANA_EFFICIENCY_MK1.get())
+                .manaCost(5500)
+                .save(output, "boots_upgrade_mana_efficiency_mk2");
+
+        // 魔力效率升級 Mk3
+        ManaCraftingRecipeBuilder.create(ModItems.BOOTS_UPGRADE_MANA_EFFICIENCY_MK3.get(), 1)
+                .shaped(true)
+                .pattern("HPH")
+                .pattern("PAP")
+                .pattern("HPH")
+                .define('H', ModItems.HIGH_DENSITY_MANA_CORE.get())
+                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('A', ModItems.BOOTS_UPGRADE_MANA_EFFICIENCY_MK2.get())
+                .manaCost(9000)
+                .save(output, "boots_upgrade_mana_efficiency_mk3");
+
+        // 魔力容量升級 Mk0
+        ManaCraftingRecipeBuilder.create(ModItems.BOOTS_UPGRADE_CAPACITY_MK0.get(), 1)
+                .shaped(true)
+                .pattern("FMF")
+                .pattern("MUM")
+                .pattern("FMF")
+                .define('F', ModItems.MANA_CRYSTAL_FRAGMENT.get())
+                .define('M', ModItems.MANA_INGOT.get())
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(2000)
+                .save(output, "boots_upgrade_capacity_mk0");
+
+        // 魔力容量升級 Mk1
+        ManaCraftingRecipeBuilder.create(ModItems.BOOTS_UPGRADE_CAPACITY_MK1.get(), 1)
+                .shaped(true)
+                .pattern("FCF")
+                .pattern("CAC")
+                .pattern("FCF")
+                .define('F', ModItems.MANA_CRYSTAL_FRAGMENT.get())
+                .define('C', ModItems.MANA_CRYSTAL.get())
+                .define('A', ModItems.BOOTS_UPGRADE_CAPACITY_MK0.get())
+                .manaCost(3500)
+                .save(output, "boots_upgrade_capacity_mk1");
+
+        // 魔力容量升級 Mk2
+        ManaCraftingRecipeBuilder.create(ModItems.BOOTS_UPGRADE_CAPACITY_MK2.get(), 1)
+                .shaped(true)
+                .pattern("CHC")
+                .pattern("HAH")
+                .pattern("CHC")
+                .define('C', ModItems.MANA_CRYSTAL.get())
+                .define('H', ModItems.HIGH_DENSITY_MANA_CORE.get())
+                .define('A', ModItems.BOOTS_UPGRADE_CAPACITY_MK1.get())
+                .manaCost(5500)
+                .save(output, "boots_upgrade_capacity_mk2");
+
+        // 魔力容量升級 Mk3
+        ManaCraftingRecipeBuilder.create(ModItems.BOOTS_UPGRADE_CAPACITY_MK3.get(), 1)
+                .shaped(true)
+                .pattern("HPH")
+                .pattern("PAP")
+                .pattern("HPH")
+                .define('H', ModItems.HIGH_DENSITY_MANA_CORE.get())
+                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('A', ModItems.BOOTS_UPGRADE_CAPACITY_MK2.get())
+                .manaCost(9000)
+                .save(output, "boots_upgrade_capacity_mk3");
+
     }
 
 }

@@ -4,7 +4,6 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.item.wand.WandCoreData;
 import com.github.nalamodikk.common.item.wand.WandRodItem;
 import com.github.nalamodikk.common.item.wand.core.IWandCore;
-import com.github.nalamodikk.common.item.wand.upgrade.IWandUpgrade;
 import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeItem;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -107,7 +106,7 @@ public record WandCoreSwapPacket(InteractionHand hand, int slot, int inventorySl
             fromInv.shrink(1);
             WandRodItem.setData(wand, updated);
         } else {
-            if (!(fromInv.getItem() instanceof IWandUpgrade)) return;
+            if (!(fromInv.getItem() instanceof WandUpgradeItem)) return;
             WandRodItem rod = (WandRodItem) wand.getItem();
             if (wandSlot >= rod.getMaxUpgradeSlots()) return;
             if (fromInv.getItem() instanceof WandUpgradeItem wu && wu.getMk() > rod.getMaxUpgradeMk()) {

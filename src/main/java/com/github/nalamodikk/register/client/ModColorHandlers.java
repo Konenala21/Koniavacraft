@@ -1,5 +1,6 @@
 package com.github.nalamodikk.register.client;
 
+import com.github.nalamodikk.common.item.equipment.boots.BootsUpgradeItem;
 import com.github.nalamodikk.common.item.wand.core.WandCoreItem;
 import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeItem;
 import com.github.nalamodikk.register.ModItems;
@@ -47,6 +48,32 @@ public class ModColorHandlers {
                 ModItems.WAND_UPGRADE_COOLDOWN_MK1.get(),
                 ModItems.WAND_UPGRADE_COOLDOWN_MK2.get(),
                 ModItems.WAND_UPGRADE_COOLDOWN_MK3.get()
+        );
+
+        // 靴子升級物品：依 behavior 染色
+        event.register(
+                (stack, tintIndex) -> {
+                    if (tintIndex == 0 && stack.getItem() instanceof BootsUpgradeItem upg) {
+                        return upg.getBehavior().getColor();
+                    }
+                    return 0xFFFFFF;
+                },
+                ModItems.BOOTS_UPGRADE_ARMOR_MK0.get(),
+                ModItems.BOOTS_UPGRADE_ARMOR_MK1.get(),
+                ModItems.BOOTS_UPGRADE_ARMOR_MK2.get(),
+                ModItems.BOOTS_UPGRADE_ARMOR_MK3.get(),
+                ModItems.BOOTS_UPGRADE_DASH_DISTANCE_MK0.get(),
+                ModItems.BOOTS_UPGRADE_DASH_DISTANCE_MK1.get(),
+                ModItems.BOOTS_UPGRADE_DASH_DISTANCE_MK2.get(),
+                ModItems.BOOTS_UPGRADE_DASH_DISTANCE_MK3.get(),
+                ModItems.BOOTS_UPGRADE_MANA_EFFICIENCY_MK0.get(),
+                ModItems.BOOTS_UPGRADE_MANA_EFFICIENCY_MK1.get(),
+                ModItems.BOOTS_UPGRADE_MANA_EFFICIENCY_MK2.get(),
+                ModItems.BOOTS_UPGRADE_MANA_EFFICIENCY_MK3.get(),
+                ModItems.BOOTS_UPGRADE_CAPACITY_MK0.get(),
+                ModItems.BOOTS_UPGRADE_CAPACITY_MK1.get(),
+                ModItems.BOOTS_UPGRADE_CAPACITY_MK2.get(),
+                ModItems.BOOTS_UPGRADE_CAPACITY_MK3.get()
         );
     }
 }

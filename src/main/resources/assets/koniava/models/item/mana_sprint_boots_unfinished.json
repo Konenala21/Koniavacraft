@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "koniava:item/mana_sprint_boots_unfinished"
+  }
+}

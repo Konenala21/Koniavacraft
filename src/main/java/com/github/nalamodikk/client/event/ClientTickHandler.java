@@ -62,7 +62,12 @@ public class ClientTickHandler {
             if (mc.player != null && mc.screen == null
                     && mc.player.getItemBySlot(EquipmentSlot.FEET).getItem() instanceof ManaSprintBootsItem
                     && !mc.player.hasEffect(com.github.nalamodikk.register.ModMobEffects.SPRINT_COOLDOWN)) {
-                DashPacket.send();
+                if (mc.player.isInWater() || mc.player.isInLava()) {
+                    mc.player.displayClientMessage(
+                            net.minecraft.network.chat.Component.translatable("message.koniava.boots.in_liquid"), true);
+                } else {
+                    DashPacket.send();
+                }
             }
         }
 

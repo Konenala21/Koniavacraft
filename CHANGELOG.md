@@ -28,6 +28,16 @@ All notable changes to this project will be documented in this file.
 - 將未完成的靴子放入魔力注魔台（消耗 5000 魔力）即可啟動為完成品。
 - Open the boots upgrade UI with the Upgrade GUI key (default U) while the boots are equipped.
 - 穿著靴子時按升級介面鍵（預設 U）可開啟靴子升級介面，介面含玩家 3D 穿著預覽。
+- Added Mana Capacity upgrade for boots (Mk0-Mk3): increases maximum mana storage by 200/400/700/1200.
+- 新增靴子魔力容量升級（Mk0-Mk3）：最大魔力分別增加 200/400/700/1200。
+- Fixed boots not charging past base mana capacity even with capacity upgrades installed.
+- 修復靴子安裝容量升級後充能台仍只充到基礎容量的問題。
+- Boots upgrade items now show a tooltip: upgrade tier, type, effect, and "Compatible: Mana Sprint Boots".
+- 靴子升級插件工具提示現在顯示等級、類型、效果與「適用於：魔力衝刺靴」。
+- Mana Sprint Boots tooltip now shows "Press [key] to open upgrade interface", reflecting the player's actual keybind setting.
+- 魔力衝刺靴工具提示現在顯示「按下 [按鍵] 開啟升級介面」，自動對應玩家實際設定的按鍵。
+- Rebalanced Mana Sprint Boots to a 5-tier design: base mana 6000, dash cost 10 (600 uses). Capacity Mk0-3 adds +1000/+2000/+3000/+4000 mana (700/800/900/1000 uses). Dash distance upgrades +1/+2/+3/+4 blocks (total 4/5/6/7). Removed dash cooldown entirely: mana is now the sole limiting factor. Removed Cooldown Reducer upgrade items (Mk0-3).
+- 重新平衡魔力衝刺靴為 5 檔設計：基礎魔力 6000、消耗 10（600 次）；容量升級 Mk0-3 增加 +1000/+2000/+3000/+4000 魔力（對應 700/800/900/1000 次）；距離升級 +1/+2/+3/+4 格。移除衝刺冷卻機制，改以魔力作為唯一限制；同步移除冷卻縮減器升級物品（Mk0-3）。
 
 - Fixed: certain consequences of ignoring Nara's first-login dialogue were not triggering correctly. They now work as intended.
 - 修復：忽略娜拉第一次登入對話時，部分應有的後果未能正確觸發，現已修正。
@@ -47,6 +57,8 @@ All notable changes to this project will be documented in this file.
 - 修復魔力充能台的 IO 方向設定在世界重載後遺失的問題，非預設面的設定現在能正確保留。
 - Fixed Mana Pickaxe not accepting enchantments at the enchanting table; added to minecraft:enchantable/mining, mining_loot, durability, and vanishing item tags.
 - 修復魔力稿子無法在附魔台附魔的問題，現已加入 minecraft:enchantable/mining、mining_loot、durability、vanishing 物品標籤。
+- Fixed Mana Charger duplicating the item inside it when broken: the charged item now drops correctly once (inside the picked-up charger block), not twice.
+- 修復魔力充能台破壞時內部物品複製的問題：被充能的物品現在只會掉落一次（保留在撿起的充能台方塊內），不再重複掉落。
 
 ### Developer Notes / 開發者備註
 

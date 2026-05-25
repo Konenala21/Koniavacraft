@@ -17,6 +17,7 @@ public class AltarRecipeProvider {
     public static void generate(RecipeOutput output) {
         registerWeapons(output);
         registerWandParts(output);
+        registerBoots(output);
         registerCircuitMaterials(output);
         registerConduits(output);
         // 魔力水晶（催化：精煉魔力粉，底座：魔力碎片×4）
@@ -107,6 +108,25 @@ public class AltarRecipeProvider {
                 ),
                 new ItemStack(ModItems.MANA_WAFER.get(), 2),
                 5000, 100
+        );
+    }
+
+    private static void registerBoots(RecipeOutput output) {
+        // 魔力衝刺靴（未完成）T1 祭壇
+        save(output, "mana_sprint_boots_unfinished",
+                Ingredient.of(ModItems.MANA_CRYSTAL.get()),
+                List.of(
+                        Ingredient.of(Items.LEATHER_BOOTS),
+                        Ingredient.of(ModItems.MANA_INGOT.get()),
+                        Ingredient.of(ModItems.MANA_INGOT.get()),
+                        Ingredient.of(ModItems.MANA_INGOT.get()),
+                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
+                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
+                        Ingredient.of(Items.FEATHER),
+                        Ingredient.of(Items.FEATHER)
+                ),
+                new ItemStack(ModItems.MANA_SPRINT_BOOTS_UNFINISHED.get()),
+                10000, 160, 1
         );
     }
 

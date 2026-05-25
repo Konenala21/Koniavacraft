@@ -4,7 +4,7 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.item.wand.WandCoreData;
 import com.github.nalamodikk.common.item.wand.WandRodItem;
 import com.github.nalamodikk.common.item.wand.core.IWandCore;
-import com.github.nalamodikk.common.item.wand.upgrade.IWandUpgrade;
+import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeItem;
 import com.github.nalamodikk.common.network.packet.server.wand.WandCoreSwapPacket;
 import com.github.nalamodikk.narasystem.nara.hud.NaraTutorialFlow;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -52,6 +52,10 @@ public class WandUpgradeScreen extends Screen {
 
     // -1 = none, -2 = core slot, 0-3 = upgrade slots
     private int selectedWandSlot = -1;
+
+    // Deferred tooltip — set during panel rendering, drawn last to avoid being covered
+    private Component pendingTooltip = null;
+    private int pendingTooltipX, pendingTooltipY;
 
     // 3D 預覽旋轉 + 縮放狀態
     private float previewRotY = 30f;
@@ -108,9 +112,14 @@ public class WandUpgradeScreen extends Screen {
         // 整張背景一次 blit
         g.blit(TEXTURE, startX(), sy, 0, 0, BG_W, BG_H, TEXTURE_W, TEXTURE_H);
 
+        pendingTooltip = null;
         render3DWand(g);
         renderLeftPanel(g, leftX(), sy, mouseX, mouseY);
         renderRightPanel(g, rightX(), sy, mouseX, mouseY);
+
+        if (pendingTooltip != null) {
+            g.renderTooltip(font, pendingTooltip, pendingTooltipX, pendingTooltipY);
+        }
     }
 
     // ── 中間：3D 模型 ─────────────────────────────────────────────────────
@@ -187,8 +196,9 @@ public class WandUpgradeScreen extends Screen {
             g.renderItemDecorations(font, stack, x + 4, y + 4);
         }
         if (hovered) {
-            Component tooltip = stack.isEmpty() ? label : stack.getHoverName();
-            g.renderTooltip(font, tooltip, mx, my);
+            pendingTooltip = stack.isEmpty() ? label : stack.getHoverName();
+            pendingTooltipX = mx;
+            pendingTooltipY = my;
         }
     }
 
@@ -321,7 +331,7 @@ public class WandUpgradeScreen extends Screen {
             if (s.isEmpty()) continue;
             boolean ok = selectedWandSlot == -2
                     ? s.getItem() instanceof IWandCore
-                    : s.getItem() instanceof IWandUpgrade;
+                    : s.getItem() instanceof WandUpgradeItem;
             if (ok) result.add(s);
         }
         return result;

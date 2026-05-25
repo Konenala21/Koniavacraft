@@ -2,6 +2,9 @@ package com.github.nalamodikk.register;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.block.blockentity.manabase.BaseMachineBlock;
+import com.github.nalamodikk.common.item.equipment.boots.BootsUpgradeItem;
+import com.github.nalamodikk.common.item.wand.core.WandCoreItem;
+import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeItem;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.BlockItem;
@@ -42,12 +45,19 @@ public class ModCreativeModTabs {
                             .icon(() -> new ItemStack(ModItems.MANA_DUST.get()))
                             .title(Component.translatable("creativetab.koniava_items"))
                             .displayItems((parameters, output) -> {
+                                List<Item> upgradeItems = new ArrayList<>();
                                 ModItems.ITEMS.getEntries().forEach(item -> {
                                     if (item.get() instanceof BlockItem) return;
                                     String path = item.getId().getPath();
                                     if (DEV_ITEM_PATHS.contains(path)) return;
-                                    output.accept(item.get());
+                                    Item i = item.get();
+                                    if (i instanceof WandCoreItem || i instanceof WandUpgradeItem || i instanceof BootsUpgradeItem) {
+                                        upgradeItems.add(i);
+                                    } else {
+                                        output.accept(i);
+                                    }
                                 });
+                                upgradeItems.forEach(output::accept);
                             })
                             .build());
 

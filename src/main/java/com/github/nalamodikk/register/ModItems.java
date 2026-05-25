@@ -24,6 +24,9 @@ import com.github.nalamodikk.common.item.wand.core.WandCoreBehavior;
 import com.github.nalamodikk.common.item.wand.core.WandCoreItem;
 import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeBehavior;
 import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeItem;
+import com.github.nalamodikk.common.item.equipment.boots.BootsUpgradeBehavior;
+import com.github.nalamodikk.common.item.equipment.boots.BootsUpgradeItem;
+import com.github.nalamodikk.common.item.equipment.boots.ManaSprintBootsItem;
 import com.github.nalamodikk.common.item.weapon.FloatingTurretItem;
 import com.github.nalamodikk.common.utils.upgrade.UpgradeType;
 import net.minecraft.world.item.Item;
@@ -197,6 +200,58 @@ public class ModItems {
     public static final DeferredItem<SourceTomeItem> SOURCE_TOME =
             ITEMS.register("source_tome", () -> new SourceTomeItem(
                     new Item.Properties().stacksTo(1)));
+
+    // ── 魔力衝刺靴 ──────────────────────────────────────────────────────────
+
+    public static final DeferredItem<Item> MANA_SPRINT_BOOTS_UNFINISHED =
+            ITEMS.registerSimpleItem("mana_sprint_boots_unfinished", new Item.Properties().stacksTo(1));
+
+    public static final DeferredItem<ManaSprintBootsItem> MANA_SPRINT_BOOTS =
+            ITEMS.register("mana_sprint_boots", () -> new ManaSprintBootsItem(
+                    ModArmorMaterials.MANA_ALLOY,
+                    new Item.Properties()
+                            .component(ModDataComponents.MANA_STORED, 0)
+                            .component(ModDataComponents.MAX_MANA, ManaSprintBootsItem.BASE_MAX_MANA)));
+
+    // 防禦升級
+    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_ARMOR_MK0 =
+            ITEMS.register("boots_upgrade_armor_mk0", () -> new BootsUpgradeItem(BootsUpgradeBehavior.ARMOR, 0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_ARMOR_MK1 =
+            ITEMS.register("boots_upgrade_armor_mk1", () -> new BootsUpgradeItem(BootsUpgradeBehavior.ARMOR, 1, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_ARMOR_MK2 =
+            ITEMS.register("boots_upgrade_armor_mk2", () -> new BootsUpgradeItem(BootsUpgradeBehavior.ARMOR, 2, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_ARMOR_MK3 =
+            ITEMS.register("boots_upgrade_armor_mk3", () -> new BootsUpgradeItem(BootsUpgradeBehavior.ARMOR, 3, new Item.Properties().stacksTo(4)));
+
+    // 衝刺距離升級
+    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_DASH_DISTANCE_MK0 =
+            ITEMS.register("boots_upgrade_dash_distance_mk0", () -> new BootsUpgradeItem(BootsUpgradeBehavior.DASH_DISTANCE, 0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_DASH_DISTANCE_MK1 =
+            ITEMS.register("boots_upgrade_dash_distance_mk1", () -> new BootsUpgradeItem(BootsUpgradeBehavior.DASH_DISTANCE, 1, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_DASH_DISTANCE_MK2 =
+            ITEMS.register("boots_upgrade_dash_distance_mk2", () -> new BootsUpgradeItem(BootsUpgradeBehavior.DASH_DISTANCE, 2, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_DASH_DISTANCE_MK3 =
+            ITEMS.register("boots_upgrade_dash_distance_mk3", () -> new BootsUpgradeItem(BootsUpgradeBehavior.DASH_DISTANCE, 3, new Item.Properties().stacksTo(4)));
+
+    // 魔力效率升級
+    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_MANA_EFFICIENCY_MK0 =
+            ITEMS.register("boots_upgrade_mana_efficiency_mk0", () -> new BootsUpgradeItem(BootsUpgradeBehavior.MANA_EFFICIENCY, 0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_MANA_EFFICIENCY_MK1 =
+            ITEMS.register("boots_upgrade_mana_efficiency_mk1", () -> new BootsUpgradeItem(BootsUpgradeBehavior.MANA_EFFICIENCY, 1, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_MANA_EFFICIENCY_MK2 =
+            ITEMS.register("boots_upgrade_mana_efficiency_mk2", () -> new BootsUpgradeItem(BootsUpgradeBehavior.MANA_EFFICIENCY, 2, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_MANA_EFFICIENCY_MK3 =
+            ITEMS.register("boots_upgrade_mana_efficiency_mk3", () -> new BootsUpgradeItem(BootsUpgradeBehavior.MANA_EFFICIENCY, 3, new Item.Properties().stacksTo(4)));
+
+    // 魔力容量升級
+    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_CAPACITY_MK0 =
+            ITEMS.register("boots_upgrade_capacity_mk0", () -> new BootsUpgradeItem(BootsUpgradeBehavior.CAPACITY, 0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_CAPACITY_MK1 =
+            ITEMS.register("boots_upgrade_capacity_mk1", () -> new BootsUpgradeItem(BootsUpgradeBehavior.CAPACITY, 1, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_CAPACITY_MK2 =
+            ITEMS.register("boots_upgrade_capacity_mk2", () -> new BootsUpgradeItem(BootsUpgradeBehavior.CAPACITY, 2, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_CAPACITY_MK3 =
+            ITEMS.register("boots_upgrade_capacity_mk3", () -> new BootsUpgradeItem(BootsUpgradeBehavior.CAPACITY, 3, new Item.Properties().stacksTo(4)));
 
     public static final DeferredItem<DevRenderTestItem> DEV_RENDER_TEST_1 =
             ITEMS.register("dev_render_test_1", () -> new DevRenderTestItem(

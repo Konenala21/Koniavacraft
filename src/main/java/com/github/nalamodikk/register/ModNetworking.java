@@ -7,6 +7,8 @@ import com.github.nalamodikk.common.network.packet.client.altar.RitualExplosionP
 import com.github.nalamodikk.common.network.packet.client.turret.DamageNumberPacket;
 import com.github.nalamodikk.common.network.packet.client.turret.TurretHitPacket;
 import com.github.nalamodikk.common.network.packet.server.OpenUpgradeGuiPacket;
+import com.github.nalamodikk.common.network.packet.server.boots.BootsUpgradeSwapPacket;
+import com.github.nalamodikk.common.network.packet.server.boots.DashPacket;
 import com.github.nalamodikk.common.network.packet.server.wand.WandCoreSwapPacket;
 import com.github.nalamodikk.common.network.packet.server.deployer.SetDeployerIntervalPacket;
 import com.github.nalamodikk.common.network.packet.server.deployer.ToggleDeployerEnabledPacket;
@@ -73,6 +75,8 @@ public class ModNetworking {
         TurretHitPacket.registerToClient(registrar);
         DamageNumberPacket.registerToClient(registrar);
         WandCoreSwapPacket.registerTo(registrar);
+        DashPacket.registerTo(registrar);
+        BootsUpgradeSwapPacket.registerTo(registrar);
         FormationStagePacket.registerToClient(registrar);
     }
 }

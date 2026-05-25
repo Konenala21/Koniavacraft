@@ -20,48 +20,23 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.item.enchantment.Enchantments;
 
-/**
- * 🔮 魔力注入機配方數據生成器
- *
- * 功能：
- * - 生成基礎材料注入配方
- * - 生成武器裝備強化配方
- * - 生成食物強化配方
- * - 生成特殊物品注入配方
- */
 public class ManaInfuserRecipeProvider {
 
-    /**
-     * 🎯 生成所有魔力注入配方
-     */
     public static void generate(RecipeOutput output, HolderLookup.Provider lookupProvider) {
-        // === 🧪 基礎材料注入 ===
         generateBasicMaterialRecipes(output);
-
-        // === ⚔️ 武器裝備強化 ===
-
-        // === 🍞 食物強化 ===
+        generateArmorRecipes(output);
         generateFoodEnhancementRecipes(output);
-
-        // === 💎 特殊物品注入 ===
         generateSpecialItemRecipes(output);
-
-        // === 📚 附魔相關 ===
         generateEnchantmentRecipes(output, lookupProvider);
     }
 
-    /**
-     * 🧪 基礎材料注入配方
-     */
     private static void generateBasicMaterialRecipes(RecipeOutput output) {
         // 鐵錠 → 魔力錠
         createManaInfuserRecipe(output,
                 "iron_to_mana_ingot",
                 Ingredient.of(Items.IRON_INGOT),
                 new ItemStack(ModItems.MANA_INGOT.get()),
-                1750,  // 魔力消耗
-                40,  // 注入時間 (2秒)
-                1    // 輸入數量
+                1750, 40, 1
         );
 
         // 魔力粉 → 濃縮魔力粉
@@ -69,19 +44,15 @@ public class ManaInfuserRecipeProvider {
                 "mana_dust_to_condensed",
                 Ingredient.of(ModItems.MANA_DUST.get()),
                 new ItemStack(ModItems.CONDENSED_MANA_DUST.get()),
-                875,  // 魔力消耗
-                30,  // 注入時間
-                2    // 需要2個魔力粉
+                875, 30, 2
         );
 
         // 濃縮魔力粉 → 精煉魔力粉
         createManaInfuserRecipe(output,
                 "condensed_to_refined_mana_dust",
                 Ingredient.of(ModItems.CONDENSED_MANA_DUST.get()),
-                new ItemStack(ModItems.REFINED_MANA_DUST.get(),2),
-                2625,  // 魔力消耗
-                60,  // 注入時間 (3秒)
-                1
+                new ItemStack(ModItems.REFINED_MANA_DUST.get(), 2),
+                2625, 60, 1
         );
 
         // 魔力晶體 → 高密度魔力核
@@ -89,9 +60,7 @@ public class ManaInfuserRecipeProvider {
                 "mana_crystal_to_high_density_core",
                 Ingredient.of(ModItems.MANA_CRYSTAL.get()),
                 new ItemStack(ModItems.HIGH_DENSITY_MANA_CORE.get()),
-                8000,
-                200,
-                1
+                8000, 200, 1
         );
 
         // 精煉魔力粉 → 魔力水晶碎片
@@ -99,33 +68,27 @@ public class ManaInfuserRecipeProvider {
                 "refined_mana_dust_to_crystal_fragment",
                 Ingredient.of(ModItems.REFINED_MANA_DUST.get()),
                 new ItemStack(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
-                4200,  // 魔力消耗
-                80,  // 注入時間 (4秒)
-                3    // 需要3個精煉魔力粉
+                4200, 80, 3
         );
-
     }
 
-    /**
-     * ⚔️ 武器裝備強化配方
-     */
+    private static void generateArmorRecipes(RecipeOutput output) {
+        // 魔力衝刺靴（未完成）→ 魔力衝刺靴（完成）
+        createManaInfuserRecipe(output,
+                "mana_sprint_boots_activate",
+                Ingredient.of(ModItems.MANA_SPRINT_BOOTS_UNFINISHED.get()),
+                new ItemStack(ModItems.MANA_SPRINT_BOOTS.get()),
+                5000, 100, 1
+        );
+    }
 
-
-    /**
-     * 🍞 食物強化配方
-     */
     private static void generateFoodEnhancementRecipes(RecipeOutput output) {
-        // 麵包 → 魔力麵包 (更高飽食度)
-
-
         // 蘋果 → 金蘋果
         createManaInfuserRecipe(output,
                 "apple_to_golden_apple",
                 Ingredient.of(Items.APPLE),
                 new ItemStack(Items.GOLDEN_APPLE),
-                2800,  // 魔力消耗
-                60,  // 注入時間
-                1
+                2800, 60, 1
         );
 
         // 胡蘿蔔 → 金胡蘿蔔
@@ -133,66 +96,47 @@ public class ManaInfuserRecipeProvider {
                 "carrot_to_golden_carrot",
                 Ingredient.of(Items.CARROT),
                 new ItemStack(Items.GOLDEN_CARROT),
-                2100,  // 魔力消耗
-                50,  // 注入時間
-                1
+                2100, 50, 1
         );
     }
 
-    /**
-     * 💎 特殊物品注入配方
-     */
     private static void generateSpecialItemRecipes(RecipeOutput output) {
-        // 玻璃 → 強化玻璃 (更多數量)
-
         // 石頭 → 石磚
         createManaInfuserRecipe(output,
                 "stone_to_stone_bricks",
                 Ingredient.of(Items.STONE),
                 new ItemStack(Items.STONE_BRICKS),
-                700,  // 魔力消耗
-                25,  // 注入時間
-                1
+                700, 25, 1
         );
 
-        // 沙子 → 玻璃 (無需熔爐)
+        // 沙子 → 玻璃
         createManaInfuserRecipe(output,
                 "sand_to_glass",
                 Ingredient.of(Items.SAND),
                 new ItemStack(Items.GLASS),
-                525,  // 魔力消耗
-                30,  // 注入時間
-                1
+                525, 30, 1
         );
 
-        // 圓石 → 石頭 (無需熔爐)
+        // 圓石 → 石頭
         createManaInfuserRecipe(output,
                 "cobblestone_to_stone",
                 Ingredient.of(Items.COBBLESTONE),
                 new ItemStack(Items.STONE),
-                350,  // 魔力消耗
-                20,  // 注入時間
-                1
+                350, 20, 1
         );
     }
 
-    /**
-     * 📚 附魔相關配方
-     */
     private static void generateEnchantmentRecipes(RecipeOutput output, HolderLookup.Provider lookupProvider) {
-        // 書 → 附魔書 (固定 Unbreaking I)
+        // 書 → 附魔書 (Unbreaking I)
         HolderLookup.RegistryLookup<Enchantment> enchantmentRegistry = lookupProvider.lookupOrThrow(Registries.ENCHANTMENT);
         ItemStack enchantedBook = EnchantedBookItem.createForEnchantment(
                 new EnchantmentInstance(enchantmentRegistry.getOrThrow(Enchantments.UNBREAKING), 1)
         );
-
         createManaInfuserRecipe(output,
                 "book_to_enchanted_book",
                 Ingredient.of(Items.BOOK),
                 enchantedBook,
-                14000, // 魔力消耗
-                80,  // 注入時間
-                1
+                14000, 80, 1
         );
 
         // 經驗瓶 → 更多經驗瓶
@@ -200,15 +144,10 @@ public class ManaInfuserRecipeProvider {
                 "experience_bottle_multiplication",
                 Ingredient.of(Items.EXPERIENCE_BOTTLE),
                 new ItemStack(Items.EXPERIENCE_BOTTLE, 2),
-                2100,  // 魔力消耗
-                45,  // 注入時間
-                1
+                2100, 45, 1
         );
     }
 
-    /**
-     * 🔧 創建魔力注入配方的輔助方法
-     */
     private static void createManaInfuserRecipe(RecipeOutput output,
                                                 String name,
                                                 Ingredient input,
@@ -216,25 +155,12 @@ public class ManaInfuserRecipeProvider {
                                                 int manaCost,
                                                 int infusionTime,
                                                 int inputCount) {
-
-        // 創建配方
-        ManaInfuserRecipe recipe = new ManaInfuserRecipe(
-                input, result, manaCost, infusionTime, inputCount
-        );
-
-        // 創建資源位置
+        ManaInfuserRecipe recipe = new ManaInfuserRecipe(input, result, manaCost, infusionTime, inputCount);
         ResourceLocation recipeId = ResourceLocation.fromNamespaceAndPath(
-                KoniavacraftMod.MOD_ID,
-                "mana_infuser/" + name
-        );
-
-        // 保存配方 (暫時不包含advancement，可以後續添加)
+                KoniavacraftMod.MOD_ID, "mana_infuser/" + name);
         output.accept(recipeId, recipe, null);
     }
 
-    /**
-     * 🎯 創建帶advancement的魔力注入配方
-     */
     private static void createManaInfuserRecipeWithAdvancement(RecipeOutput output,
                                                                String name,
                                                                Ingredient input,
@@ -244,34 +170,22 @@ public class ManaInfuserRecipeProvider {
                                                                int inputCount,
                                                                String criterionName,
                                                                Ingredient criterionItem) {
-
-        // 創建配方
-        ManaInfuserRecipe recipe = new ManaInfuserRecipe(
-                input, result, manaCost, infusionTime, inputCount
-        );
-
-        // 創建資源位置
+        ManaInfuserRecipe recipe = new ManaInfuserRecipe(input, result, manaCost, infusionTime, inputCount);
         ResourceLocation recipeId = ResourceLocation.fromNamespaceAndPath(
-                KoniavacraftMod.MOD_ID,
-                "mana_infuser/" + name
-        );
+                KoniavacraftMod.MOD_ID, "mana_infuser/" + name);
 
         ItemStack[] criterionItems = criterionItem.getItems();
         if (criterionItems.length == 0) {
             throw new IllegalArgumentException("Criterion ingredient has no concrete items: " + name);
         }
 
-        // 創建advancement
         Advancement.Builder advancement = output.advancement()
-                .addCriterion("has_the_recipe",
-                        RecipeUnlockedTrigger.unlocked(recipeId))
+                .addCriterion("has_the_recipe", RecipeUnlockedTrigger.unlocked(recipeId))
                 .addCriterion(criterionName,
-                        InventoryChangeTrigger.TriggerInstance
-                                .hasItems(criterionItems[0].getItem()))
+                        InventoryChangeTrigger.TriggerInstance.hasItems(criterionItems[0].getItem()))
                 .rewards(AdvancementRewards.Builder.recipe(recipeId))
                 .requirements(AdvancementRequirements.Strategy.OR);
 
-        // 保存配方
         output.accept(recipeId, recipe, advancement.build(recipeId.withPrefix("recipes/")));
     }
 }

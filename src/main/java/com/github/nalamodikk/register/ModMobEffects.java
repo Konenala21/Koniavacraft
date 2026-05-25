@@ -19,6 +19,11 @@ public class ModMobEffects {
             MOB_EFFECTS.register("combat_state", () ->
                     new MobEffect(MobEffectCategory.NEUTRAL, 0x4FC3F7) {});
 
+    // 衝刺冷卻效果：純 HUD 顯示，用於魔力衝刺靴冷卻計時
+    public static final DeferredHolder<MobEffect, MobEffect> SPRINT_COOLDOWN =
+            MOB_EFFECTS.register("sprint_cooldown", () ->
+                    new MobEffect(MobEffectCategory.NEUTRAL, 0x44AAFF) {});
+
     public static void register(IEventBus bus) {
         MOB_EFFECTS.register(bus);
     }
