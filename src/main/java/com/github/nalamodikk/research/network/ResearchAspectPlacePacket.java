@@ -74,6 +74,7 @@ public record ResearchAspectPlacePacket(
             // Only the note owner may modify the grid
             if (!table.isNoteOwner(player.getUUID())) {
                 player.sendSystemMessage(Component.translatable("message.koniava.research.table_in_use"));
+                revertClient(player, packet, table);
                 return;
             }
 
@@ -82,9 +83,13 @@ public record ResearchAspectPlacePacket(
 
             // Quill check BEFORE any aspect changes
             ItemStack quill = table.getInventory().getStackInSlot(ResearchTableBlockEntity.QUILL_SLOT);
-            if (quill.isEmpty() || !(quill.getItem() instanceof InkQuillItem)) return;
+            if (quill.isEmpty() || !(quill.getItem() instanceof InkQuillItem)) {
+                revertClient(player, packet, table);
+                return;
+            }
             if (InkQuillItem.isOutOfInk(quill)) {
                 player.sendSystemMessage(Component.translatable("item.koniava.ink_quill.out_of_ink_prompt"));
+                revertClient(player, packet, table);
                 return;
             }
 
@@ -97,11 +102,13 @@ public record ResearchAspectPlacePacket(
                 Aspect aspect = com.github.nalamodikk.research.aspect.ModAspects.get(newAspectId);
                 if (aspect == null) {
                     player.sendSystemMessage(Component.translatable("message.koniava.synthesis.invalid_aspect"));
+                    revertClient(player, packet, table);
                     return;
                 }
                 if (knowledge.getAspectCount(newAspectId) <= 0) {
                     player.sendSystemMessage(Component.translatable("message.koniava.research.not_enough_aspect",
                             aspect.getName()));
+                    revertClient(player, packet, table);
                     return;
                 }
             }
@@ -136,6 +143,15 @@ public record ResearchAspectPlacePacket(
                 }
             }
         });
+    }
+
+    private static void revertClient(ServerPlayer player, ResearchAspectPlacePacket packet,
+                                      ResearchTableBlockEntity table) {
+        String key = packet.q() + "," + packet.r();
+        String savedVal = table.getSavedPlacements().get(key);
+        ResourceLocation authAspect = savedVal != null ? ResourceLocation.tryParse(savedVal) : null;
+        ResearchCellRevertPacket.sendTo(player, packet.tablePos(), packet.researchId(),
+                packet.q(), packet.r(), authAspect);
     }
 
     private static void consumeAspect(PlayerKnowledge knowledge, ResourceLocation aspectId) {

@@ -530,6 +530,28 @@ public class ResearchScreen extends Screen {
         }
     }
 
+    /**
+     * Called by ResearchCellRevertPacket when the server rejects a placement.
+     * Rolls the grid back to the authoritative server state for that cell.
+     */
+    public void revertCell(BlockPos pos, ResourceLocation resId, int q, int r, @Nullable Aspect serverAspect) {
+        if (!pos.equals(tablePos) || !resId.equals(template.getId())) return;
+        HexCoord coord = new HexCoord(q, r);
+        GridCell cell = grid.getCell(coord);
+        if (cell == null || cell.isHole() || cell.isFixed()) return;
+
+        if (serverAspect == null) {
+            if (cell.isPlaced()) grid = grid.removeAspect(coord);
+        } else {
+            if (cell.isEmpty()) {
+                grid = grid.placeAspect(coord, serverAspect);
+            } else if (cell.isPlaced() && !cell.getAspect().getId().equals(serverAspect.getId())) {
+                grid = grid.removeAspect(coord);
+                grid = grid.placeAspect(coord, serverAspect);
+            }
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /** Returns the HexCoord at screen position (x, y), or null if none. */

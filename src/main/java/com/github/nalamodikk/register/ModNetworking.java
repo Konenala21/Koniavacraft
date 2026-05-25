@@ -32,6 +32,7 @@ import com.github.nalamodikk.narasystem.nara.network.server.NaraSkipIntroPacket;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraTutorialSeenPacket;
 import com.github.nalamodikk.research.network.AspectSynthesisPacket;
 import com.github.nalamodikk.research.network.ResearchAspectPlacePacket;
+import com.github.nalamodikk.research.network.ResearchCellRevertPacket;
 import com.github.nalamodikk.research.network.ResearchCompletePacket;
 import com.github.nalamodikk.research.network.StartResearchPacket;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -70,6 +71,7 @@ public class ModNetworking {
 
         ResearchCompletePacket.registerTo(registrar);
         ResearchAspectPlacePacket.registerTo(registrar);
+        ResearchCellRevertPacket.registerToClient(registrar);
         StartResearchPacket.registerTo(registrar);
         AspectSynthesisPacket.registerTo(registrar);
         AltarUpgradeAnimPacket.registerToClient(registrar);
