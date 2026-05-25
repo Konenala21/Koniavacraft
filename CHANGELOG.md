@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.0.1.8-1] - 2026-05-25
 
 ### Player Changes / 玩家更新內容
 
@@ -30,8 +30,8 @@ All notable changes to this project will be documented in this file.
 - The Altar Ring Architecture research description now clarifies that it is a technical reference and does not unlock any equipment.
 - 祭壇環形升級結構研究說明現在明確標示：本條目為操作指引，不解鎖任何設備。
 
-- Added Mana Sprint Boots: a new magical armor piece with a dash ability (default key V). Holds 800 mana and supports up to 5 upgrade slots.
-- 新增魔力衝刺靴：具備衝刺技能（預設按鍵 V）的魔力護甲，最多 800 魔力儲量，支援 5 個升級插件槽。
+- Added Mana Sprint Boots: a new magical armor piece with a dash ability (default key V). Holds 6000 mana and supports up to 5 upgrade slots.
+- 新增魔力衝刺靴：具備衝刺技能（預設按鍵 V）的魔力護甲，最多 6000 魔力儲量，支援 5 個升級插件槽。
 - Added 16 boots upgrade items in 4 categories (Armor, Dash Distance, Mana Efficiency, Capacity), each with Mk0-Mk3 tiers.
 - 新增 16 個靴子升級插件，分為防禦強化、衝刺距離、魔力效率、魔力容量四類，各有 Mk0-Mk3 四個等級。
 - Crafting Mana Sprint Boots (Unfinished) requires a T1 altar: catalyst Mana Crystal, pedestals leather boots, 3x Mana Ingot, 2x Mana Crystal Fragment, 2x Feather.
