@@ -519,6 +519,7 @@ public class NaraTutorialFlow {
                                 Component.translatable("nara.dialogue.tutorial.boots_equip.confirm"),
                                 () -> {})),
                         0, null)
+                        .withOnStart(() -> NaraSoundHelper.play("boots_equip", "line1"))
         ));
     }
 

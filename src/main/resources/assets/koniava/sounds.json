@@ -510,6 +510,12 @@
   "nara.en.solar_collector.line2": {
     "sounds": [{"name": "koniava:nara/en/solar_collector_line2", "stream": false}]
   },
+  "nara.zh_tw.boots_equip.line1": {
+    "sounds": [{"name": "koniava:nara/zh_tw/boots_equip_line1", "stream": false}]
+  },
+  "nara.en.boots_equip.line1": {
+    "sounds": [{"name": "koniava:nara/en/boots_equip_line1", "stream": false}]
+  },
   "weapon.turret.shoot": {
     "sounds": [{"name": "koniava:weapon/turret_shoot", "stream": false}]
   },

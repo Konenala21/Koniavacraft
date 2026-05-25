@@ -193,7 +193,6 @@
   "tooltip.koniava.wand.core": "Core: %s",
   "tooltip.koniava.wand.no_core": "No core installed",
   "message.koniava.wand.no_core": "No core installed in this wand.",
-  "message.koniava.wand.not_enough_mana": "Not enough mana (%s / %s required).",
   "item.koniava.speed_upgrade": "Speed Upgrade Module",
   "item.koniava.efficiency_upgrade": "Efficiency Upgrade Module",
   "item.koniava.accelerated_processing_upgrade": "Accelerated Processing Upgrade",
