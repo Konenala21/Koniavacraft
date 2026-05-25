@@ -32,24 +32,40 @@ All notable changes to this project will be documented in this file.
 
 - Added Mana Sprint Boots: a new magical armor piece with a dash ability (default key V). Holds 800 mana and supports up to 5 upgrade slots.
 - 新增魔力衝刺靴：具備衝刺技能（預設按鍵 V）的魔力護甲，最多 800 魔力儲量，支援 5 個升級插件槽。
-- Added 16 boots upgrade items in 4 categories (Armor, Cooldown, Dash Distance, Mana Efficiency), each with Mk0-Mk3 tiers.
-- 新增 16 個靴子升級插件，分為防禦強化、冷卻縮減、衝刺距離、魔力效率四類，各有 Mk0-Mk3 四個等級。
+- Added 16 boots upgrade items in 4 categories (Armor, Dash Distance, Mana Efficiency, Capacity), each with Mk0-Mk3 tiers.
+- 新增 16 個靴子升級插件，分為防禦強化、衝刺距離、魔力效率、魔力容量四類，各有 Mk0-Mk3 四個等級。
 - Crafting Mana Sprint Boots (Unfinished) requires a T1 altar: catalyst Mana Crystal, pedestals leather boots, 3x Mana Ingot, 2x Mana Crystal Fragment, 2x Feather.
 - 魔力衝刺靴（未完成）需要 T1 祭壇合成，催化劑為魔力水晶，底座材料為皮革靴子、魔力錠×3、魔力水晶碎片×2、羽毛×2。
 - Activate the boots by placing them in the Mana Infuser (costs 5000 mana).
 - 將未完成的靴子放入魔力注魔台（消耗 5000 魔力）即可啟動為完成品。
 - Open the boots upgrade UI with the Upgrade GUI key (default U) while the boots are equipped.
 - 穿著靴子時按升級介面鍵（預設 U）可開啟靴子升級介面，介面含玩家 3D 穿著預覽。
-- Added Mana Capacity upgrade for boots (Mk0-Mk3): increases maximum mana storage by 200/400/700/1200.
-- 新增靴子魔力容量升級（Mk0-Mk3）：最大魔力分別增加 200/400/700/1200。
 - Fixed boots not charging past base mana capacity even with capacity upgrades installed.
 - 修復靴子安裝容量升級後充能台仍只充到基礎容量的問題。
 - Boots upgrade items now show a tooltip: upgrade tier, type, effect, and "Compatible: Mana Sprint Boots".
 - 靴子升級插件工具提示現在顯示等級、類型、效果與「適用於：魔力衝刺靴」。
 - Mana Sprint Boots tooltip now shows "Press [key] to open upgrade interface", reflecting the player's actual keybind setting.
 - 魔力衝刺靴工具提示現在顯示「按下 [按鍵] 開啟升級介面」，自動對應玩家實際設定的按鍵。
-- Rebalanced Mana Sprint Boots to a 5-tier design: base mana 6000, dash cost 10 (600 uses). Capacity Mk0-3 adds +1000/+2000/+3000/+4000 mana (700/800/900/1000 uses). Dash distance upgrades +1/+2/+3/+4 blocks (total 4/5/6/7). Removed dash cooldown entirely: mana is now the sole limiting factor. Removed Cooldown Reducer upgrade items (Mk0-3).
-- 重新平衡魔力衝刺靴為 5 檔設計：基礎魔力 6000、消耗 10（600 次）；容量升級 Mk0-3 增加 +1000/+2000/+3000/+4000 魔力（對應 700/800/900/1000 次）；距離升級 +1/+2/+3/+4 格。移除衝刺冷卻機制，改以魔力作為唯一限制；同步移除冷卻縮減器升級物品（Mk0-3）。
+- Rebalanced Mana Sprint Boots: base mana 6000, dash cost 10 (600 uses base). Capacity Mk0-3 adds +1000/+2000/+3000/+4000 mana (700/800/900/1000 uses). Dash distance base 3 blocks; Dash Distance upgrades Mk0-3 add +1/+2/+3/+4 blocks (total 4/5/6/7). A fixed 1-second cooldown limits dash rate; Cooldown Reducer upgrade items removed.
+- 重新平衡魔力衝刺靴：基礎魔力 6000、衝刺消耗 10（600 次）；容量升級 Mk0-3 分別增加 +1000/+2000/+3000/+4000 魔力（對應 700/800/900/1000 次）；衝刺距離基礎 3 格，距離升級 Mk0-3 增加 +1/+2/+3/+4 格（共 4/5/6/7 格）。保留固定 1 秒冷卻限制衝刺頻率；移除冷卻縮減器升級物品（Mk0-3）。
+
+- Each boots upgrade type can now only be installed once per boots. Installing a duplicate type is rejected by the server; the upgrade GUI automatically filters out already-installed types from the candidate list.
+- 靴子每種升級類型現在只能安裝一次。伺服端拒絕重複類型；升級 GUI 自動從候選清單過濾已安裝的同類型物品。
+
+- Dash is now disabled in water and lava. Pressing the dash key while submerged shows an actionbar message instead of silently failing.
+- 衝刺在水中和岩漿中停用。在液體中按下衝刺鍵會在動作欄顯示提示訊息，而非無聲失敗。
+
+- Fixed upgrade slot tooltip in the Wand and Boots upgrade GUI being covered by the right panel when hovering over left-panel slots. Tooltip now always renders on top of all panels.
+- 修復法杖和靴子升級 GUI 左側槽位懸停時工具提示被右側面板遮蓋的問題，現在工具提示永遠在所有面板上層繪製。
+
+- Wand upgrade GUI now correctly rejects Boots upgrade items. Boots upgrades can no longer be installed into a wand.
+- 法杖升級 GUI 現在正確拒絕靴子升級物品，靴子升級插件不再能被裝入法杖。
+
+- Upgrade items (Wand Cores, Wand Upgrades, Boots Upgrades) are now grouped together at the end of the creative tab, instead of being scattered among other items.
+- 升級物品（法杖核心、法杖升級、靴子升級）現在統一排列在創意欄位末尾，不再散布在其他物品之間。
+
+- Added a visual icon for the Sprint Cooldown status effect (blue feather, 18x18).
+- 新增衝刺冷卻狀態效果的視覺圖示（藍色羽毛，18x18）。
 
 - Fixed: certain consequences of ignoring Nara's first-login dialogue were not triggering correctly. They now work as intended.
 - 修復：忽略娜拉第一次登入對話時，部分應有的後果未能正確觸發，現已修正。
@@ -81,12 +97,19 @@ All notable changes to this project will be documented in this file.
 
 - Added `ManaSprintBootsItem` (extends ArmorItem, ModArmorMaterials.MANA_ALLOY). Dynamic armor values via `getDefaultAttributeModifiers(ItemStack)` override in IItemExtension. Dash logic in `performDash()`.
 - Added `EquipmentUpgradeData` DataComponent with custom `equals()` using `ItemStack.isSameItemSameComponents` to prevent spurious equip animations.
-- Added `BootsUpgradeBehavior` enum (ARMOR, COOLDOWN, DASH_DISTANCE, MANA_EFFICIENCY), `BootsUpgradeItem`, `DashPacket` (C2S), `BootsUpgradeSwapPacket` (C2S).
+- Added `BootsUpgradeBehavior` enum (ARMOR, DASH_DISTANCE, MANA_EFFICIENCY, CAPACITY), `BootsUpgradeItem`, `DashPacket` (C2S), `BootsUpgradeSwapPacket` (C2S).
 - Added `BootsUpgradeScreen`: 3-panel layout reusing `wand_upgrade_gui.png`; center panel renders player model via `InventoryScreen.renderEntityInInventoryFollowsMouse`.
 - Added `DASH` keybinding (default V) to `ModKeyMappings`. `ClientTickHandler` opens `BootsUpgradeScreen` via existing `OPEN_UPGRADE_GUI` key when boots are equipped.
-- Added `ModMobEffects.SPRINT_COOLDOWN` (HUD-display effect for dash cooldown).
+- Added `ModMobEffects.SPRINT_COOLDOWN` (HUD-display mob effect icon: `textures/mob_effect/sprint_cooldown.png`, 18x18). Dash applies a 20-tick (1s) instance; `ClientTickHandler` also checks `hasEffect(SPRINT_COOLDOWN)` client-side before sending `DashPacket` to suppress wasted packets.
 - Added `ModArmorMaterials` with `MANA_ALLOY` armor material. Registered in `KoniavacraftMod`.
 - Added altar recipe `mana_sprint_boots_unfinished` (T1, minTier=1) and infuser recipe `mana_sprint_boots_activate` to respective datagen providers.
+- One-per-type enforcement: `BootsUpgradeSwapPacket.installToBoots()` iterates all occupied slots and returns early if any existing upgrade shares `getBehavior()` with the incoming item. `BootsUpgradeScreen.getCompatibleItems()` builds a `HashSet<BootsUpgradeBehavior>` of already-installed types (excluding the currently selected slot) and skips matching candidates.
+- Deferred tooltip pattern in `BootsUpgradeScreen` and `WandUpgradeScreen`: `renderSlot()` stores tooltip into `pendingTooltip`/`pendingTooltipX`/`pendingTooltipY` instead of drawing immediately; `render()` flushes it after all panels to guarantee draw-order.
+- `WandCoreSwapPacket.installToWand()` and `WandUpgradeScreen.getCompatibleItems()` changed from `instanceof IModUpgrade` to `instanceof WandUpgradeItem` to prevent boots upgrades from being accepted.
+- `IWandUpgrade` marked `@Deprecated` and now extends `IModUpgrade` (empty body). `WandUpgradeItem` implements `IModUpgrade` directly.
+- `ModCreativeModTabs.koniava_ITEMS_TAB`: items implementing `WandCoreItem`, `WandUpgradeItem`, or `BootsUpgradeItem` are deferred to a separate `upgradeItems` list and appended after all other non-dev, non-block items.
+- `ManaChargerBlock`: after the block entity drops its held item on break, `setStackInSlot(ITEM_SLOT, ItemStack.EMPTY)` clears the slot immediately so the base machine handler does not drop it a second time.
+- `NaraTutorialFlow` mana grinder/infuser/crafting final step: `withOnStart()` calls `NaraDialogueManager.setGuiHighlight(x, y, size)`; confirm callback calls `clearGuiHighlight()`.
 
 - Fixed `NaraCreeperPunishPacket.handle()` incorrectly guarding on `NaraHelper.isBound(player)`: since `NaraBindRequestPacket` sets bound state before sending `NaraStartDialoguePacket`, the guard always returned early during first-login, preventing punishment scheduling and `nara_ignored` advancement. Removed the guard; duplicate punishment is already prevented by `naraPunishmentActive`.
 - Added `AltarRecipeProvider.registerWandParts()` with wand_rod_advanced altar recipe (T3, 40000 mana).
