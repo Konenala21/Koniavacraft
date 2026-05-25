@@ -26,6 +26,7 @@ public class NaraDialogueManager {
 
     private static Component displayName = Component.translatable("nara.hud.name.unknown");
     private static boolean portraitMad = false;
+    private static int madCooldown = 0;
     private static int charIndex = 0;
     private static int choiceTimerTicks = 0;
     private static int revealTicks = 0;
@@ -175,9 +176,13 @@ public class NaraDialogueManager {
         return currentLine.choiceTimeoutTicks();
     }
 
-    public static void setPortraitHidden() { portraitState = PortraitState.HIDDEN; displayName = Component.translatable("nara.hud.name.unknown"); portraitMad = false; }
-    public static void setPortraitShown() { portraitState = PortraitState.SHOWN; displayName = Component.translatable("nara.hud.name"); portraitMad = false; }
-    public static void setPortraitMad() { portraitState = PortraitState.SHOWN; displayName = Component.translatable("nara.hud.name"); portraitMad = true; }
+    public static void setPortraitHidden() { portraitState = PortraitState.HIDDEN; displayName = Component.translatable("nara.hud.name.unknown"); portraitMad = false; madCooldown = 0; }
+    public static void setPortraitShown() {
+        portraitState = PortraitState.SHOWN;
+        displayName = Component.translatable("nara.hud.name");
+        if (madCooldown > 0 && --madCooldown == 0) portraitMad = false;
+    }
+    public static void setPortraitMad() { portraitState = PortraitState.SHOWN; displayName = Component.translatable("nara.hud.name"); portraitMad = true; madCooldown = 3; }
     public static boolean isPortraitMad() { return portraitMad; }
     public static boolean wasCharAddedThisTick() { return charAddedThisTick; }
 }
