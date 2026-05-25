@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Player Changes / 玩家更新內容
+
+- Wand Core and Wand Upgrade tooltips now show a "Compatible:" line listing the wand rods they can be installed into, with the item names highlighted in yellow. Mk0-Mk1 upgrades list both rods; Mk2-Mk3 upgrades list the Arcane Pulse Resonator only.
+- 法杖核心和法杖升級工具提示現在顯示「適用於：」欄位，列出可安裝的法杖柄，物品名稱以黃色標示。Mk0-Mk1 升級列出兩支杖柄；Mk2-Mk3 只列出術式脈衝諧振器。
+
+- Boots Upgrade tooltip "Compatible:" item name is now highlighted in yellow.
+- 靴子升級工具提示的「適用於：」物品名稱現在以黃色標示。
+
+### Developer Notes / 開發者備註
+
+- Added shared lang key `tooltip.koniava.upgrade.compatible` = `"Compatible: %s"` / `"適用於：%s"`. Removed `tooltip.koniava.boots_upgrade.compatible` (was hardcoded, replaced by the parameterized key).
+- `WandCoreItem.appendHoverText`: appends compatible line with both rod names (yellow). `WandUpgradeItem.appendHoverText`: appends compatible line; if `mk <= 1` shows both rods, else shows resonator only. `BootsUpgradeItem.appendHoverText`: same pattern with `item.koniava.mana_sprint_boots`.
+- Added `item.koniava.wand_rod_advanced` to `en_us.json` ("Arcane Pulse Resonator"). Was previously only in `zh_tw.json`.
+
 ## [0.0.1.8-1] - 2026-05-25
 
 ### Player Changes / 玩家更新內容
