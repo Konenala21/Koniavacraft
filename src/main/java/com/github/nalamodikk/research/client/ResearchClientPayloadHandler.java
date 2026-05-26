@@ -5,6 +5,7 @@ import com.github.nalamodikk.research.network.KnowledgeSyncPacket;
 import com.github.nalamodikk.research.network.WatchSyncPacket;
 import com.github.nalamodikk.research.jei.AspectSynthesisJEIPlugin;
 import net.minecraft.client.Minecraft;
+import net.neoforged.fml.ModList;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 import java.util.HashSet;
@@ -15,14 +16,15 @@ public class ResearchClientPayloadHandler {
         context.enqueueWork(() -> {
             ClientResearchCache.update(packet.discovered(), packet.completed(),
                     packet.availableOverrides(), packet.lockedResearch(), packet.tier());
-            AspectSynthesisJEIPlugin.refreshAspectIngredients();
+            ClientResearchCache.updateScannedTargets(packet.scannedTargets());
+            if (ModList.get().isLoaded("jei")) AspectSynthesisJEIPlugin.refreshAspectIngredients();
         });
     }
 
     public static void handleAspectSync(AspectSyncPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             ClientResearchCache.updateAspects(packet.discovered());
-            AspectSynthesisJEIPlugin.refreshAspectIngredients();
+            if (ModList.get().isLoaded("jei")) AspectSynthesisJEIPlugin.refreshAspectIngredients();
         });
     }
 
@@ -30,7 +32,8 @@ public class ResearchClientPayloadHandler {
         context.enqueueWork(() -> {
             ClientResearchCache.update(packet.discovered(), packet.completed(), packet.availableOverrides(),
                     packet.lockedResearch(), packet.tier());
-            AspectSynthesisJEIPlugin.refreshAspectIngredients();
+            ClientResearchCache.updateScannedTargets(packet.scannedTargets());
+            if (ModList.get().isLoaded("jei")) AspectSynthesisJEIPlugin.refreshAspectIngredients();
             Minecraft.getInstance().setScreen(
                     new NaraWatchScreen(new HashSet<>(packet.completed()), packet.tier()));
         });

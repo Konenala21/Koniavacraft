@@ -23,7 +23,6 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.random.RandomGenerator;
 
 public record AspectSynthesisPacket(BlockPos tablePos, ResourceLocation aspect1, ResourceLocation aspect2) implements CustomPacketPayload {
 
@@ -127,7 +126,7 @@ public record AspectSynthesisPacket(BlockPos tablePos, ResourceLocation aspect1,
             return false;
         }
 
-        int damage = 1 + RandomGenerator.getDefault().nextInt(5);
+        int damage = 1 + player.getRandom().nextInt(5);
         ItemStack updated = quill.copy();
         boolean justLocked = InkQuillItem.applyDamage(updated, damage);
         table.getInventory().setStackInSlot(ResearchTableBlockEntity.QUILL_SLOT, updated);

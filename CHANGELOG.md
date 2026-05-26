@@ -6,6 +6,18 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Added Mana Plate Press machine: accepts Mana Alloy Ingot and presses it into Mana Reinforced Plate (used to craft Mana Alloy armor sets). Connect arcane conduits for mana.
+- 新增魔力壓板機：接受魔力合金錠並壓製成魔力強化板（用於合成魔力合金套裝）。連接奧術導管供應魔力。
+
+- Added four new intermediate materials for the Mana Alloy armor crafting chain: Mana Iron (iron + mana ingot), Mana Crystal Alloy Dust (grinder), Mana Alloy Ingot (infuser), Mana Reinforced Plate (plate press).
+- 新增四種魔力合金套裝的中間材料：魔力鐵（鐵錠 + 魔力錠合成）、魔力水晶合金粉（粉碎機）、魔力合金錠（注入機）、魔力強化板（壓板機）。
+
+- The Mana Plate Press block now has a pressing animation: the press plate moves down as the recipe progresses and snaps back smoothly when done.
+- 魔力壓板機方塊現在有壓板動畫：壓板隨配方進度下壓，完成後平滑彈回。
+
+- Unified Armor Upgrade Screen navigation reworked: the nav strip now shows item icons only (no text). The current piece is displayed as a larger centered icon in the left panel. Clicking left/right triggers a 180ms slide-in animation. Upgrade slot backgrounds are darkened for better readability.
+- 通用裝備升級介面導航列改版：導航條改為純圖示（無文字）。當前裝備以較大置中圖示顯示於左側面板，切換時觸發 180ms 滑入動畫。升級格底色加深以提高可讀性。
+
 - Nara now gives a brief hint the first time you equip Mana Sprint Boots, pointing you to the Mana Equipment chapter in the guide.
 - 首次裝備魔力衝刺靴時，娜拉會給一句簡短提示，指引你查看指引介面的「魔力裝備」章節。
 
@@ -23,6 +35,13 @@ All notable changes to this project will be documented in this file.
 
 ### Developer Notes / 開發者備註
 
+- Added `ManaPlatePressBlock/BlockEntity/Menu/Screen/Recipe` (new machine type). Simplified BE: no upgrade inventory, no research gate. Crafting chain recipe provider added. Block model is custom Blockbench (`mana_plate_press_texture.png`). GUI texture: `mana_plate_press_gui.png`.
+- Added `ManaPlatePressRenderer` (BER): parses Blockbench model at runtime, animates "壓板核心" group with `progress/maxProgress` ratio for downward press and lerp-smoothed return (`lerpFactor` 0.18 up / 0.35 down). Per-instance offset stored in `Map<BlockPos, Float>`.
+- `ManaPlatePressBlockEntity` now fully implements `IConfigurableBlock`: `setIOMap`, `getIOMap`, `setIOConfig`, `getIOConfig`. Loot table (`dropSelf`) added to `ModBlockLootTableProvider`.
+- Renamed item `mana_crystal_alloy_powder` to `mana_crystal_alloy_dust` (item ID, field name, lang key, recipe name updated across `ModItems`, `ManaGrinderRecipeProvider`, `ManaInfuserRecipeProvider`, both lang files).
+- Added four new items: `mana_iron`, `mana_crystal_alloy_dust`, `mana_alloy_ingot`, `mana_reinforced_plate`. Textures drawn by user; datagen picks up item models on next `runData`.
+- `UnifiedArmorUpgradeScreen` nav strip overhaul: side cells show item icon only (no text, no background fill), center cell fully removed. Left panel now renders one 2x-scaled item icon with `enableScissor`-clipped 180ms ease-out slide animation (`System.nanoTime` timing, per-direction). `computeUpgradeSlotsY` simplified to fixed offset. Slot `renderSlot` adds `0x88000000` dark underlay before texture blit.
+
 - Added `ManaArmorItem` (abstract base), `ManaAlloyHelmetItem`, `ManaAlloyChestplateItem`, `ManaAlloyLeggingsItem` with mana storage + dynamic armor attributes + upgrade slot system.
 - Added `HelmetUpgradeItem/ChestplateUpgradeItem/LeggingsUpgradeItem` with corresponding `*UpgradeBehavior` enums (CAPACITY, ARMOR). 24 upgrade items registered total (8 per piece).
 - Added `ArmorUpgradeSwapPacket` (C2S, registered in `ModNetworking`). Generic packet handles install/remove for all three armor slots via `EquipmentSlot` ordinal.
@@ -34,6 +53,34 @@ All notable changes to this project will be documented in this file.
 - Added shared lang key `tooltip.koniava.upgrade.compatible` = `"Compatible: %s"` / `"適用於：%s"`. Removed `tooltip.koniava.boots_upgrade.compatible` (was hardcoded, replaced by the parameterized key).
 - `WandCoreItem.appendHoverText`: appends compatible line with both rod names (yellow). `WandUpgradeItem.appendHoverText`: appends compatible line; if `mk <= 1` shows both rods, else shows resonator only. `BootsUpgradeItem.appendHoverText`: same pattern with `item.koniava.mana_sprint_boots`.
 - Added `item.koniava.wand_rod_advanced` to `en_us.json` ("Arcane Pulse Resonator"). Was previously only in `zh_tw.json`.
+
+## [0.0.1.8-2] - 2026-05-26
+
+### Player Changes / 玩家更新內容
+
+- Fixed: clicking the synthesis output in the Research Table had no effect when JEI was not installed. The knowledge sync packet was crashing silently due to a missing JEI class guard, leaving the client cache empty.
+- 修正：未安裝 JEI 時，點擊研究台的合成輸出格沒有任何反應。知識同步封包因缺少 JEI 類別保護而無聲崩潰，導致客戶端快取永遠是空的。
+
+- Fixed: clicking the synthesis output in the Research Table had no effect on some JVM distributions (including the CurseForge launcher's bundled JVM). The aspect synthesis packet handler crashed with "L32X64MixRandom not available" because RandomGenerator.getDefault() relies on a Java SPI provider absent in stripped JDKs.
+- 修正：部分 JVM 發行版（包含 CurseForge 啟動器內建的 JVM）中，點擊研究台合成輸出格沒有任何反應。本源合成封包處理器因 RandomGenerator.getDefault() 依賴精簡版 JDK 中不存在的 Java SPI provider（L32X64MixRandom）而崩潰。
+
+- Fixed: altar ritual could complete with the wrong output if pedestal items were swapped during the ritual.
+- 修正：祭壇儀式進行中若底座物品被替換，可能以錯誤的配方完成儀式。
+
+- Fixed: armor upgrade screen could fail to find the correct armor slot when the inventory was resynced.
+- 修正：裝備升級介面在背包重新同步後可能找不到正確的裝備格。
+
+### Developer Notes / 開發者備註
+
+- `ResearchClientPayloadHandler`: all three handlers now guard `AspectSynthesisJEIPlugin.refreshAspectIngredients()` with `ModList.get().isLoaded("jei")` to prevent `NoClassDefFoundError: mezz/jei/api/IModPlugin` when JEI is absent.
+- `AspectSynthesisPacket.damageQuill()`: replaced `RandomGenerator.getDefault().nextInt(5)` with `player.getRandom().nextInt(5)`. `RandomGenerator.getDefault()` resolves to `L32X64MixRandom` via Java SPI, absent in some stripped JVMs; `player.getRandom()` returns Minecraft's `RandomSource` which is always available.
+- `AspectAltarBlockEntity.completeRitual()`: now reads `cachedRecipe` directly instead of calling `findMatchingRecipe()` again, eliminating the race window where changed pedestal items could produce a different recipe match.
+- `UnifiedArmorUpgradeScreen.findInventorySlot()`: changed comparison from reference equality to `ItemStack.isSameItemSameComponents()`, matching the fix already applied to the wand screen.
+- `ClientTickHandler`: added `onClientRespawn` handler (`ClientPlayerNetworkEvent.Clone`) to reset `jumpWasDown` and `airTicks` on respawn.
+- `ClientTickHandler.onClientLogOut`: added `DamageNumberRenderer.clear()`, `TurretHitEffectManager.clear()`, `TurretHitEffectRenderer.release()`, and `FloatingTurretPlayerRenderer.reset()` to prevent stale per-session state carrying over to the next login.
+- `DamageNumberRenderer`, `TurretHitEffectManager`: added `clear()` static method.
+- `FloatingTurretPlayerRenderer`: added `reset()` static method that zeroes charge smoothing state.
+- `KoniavacraftMod`: added `AltarExplosionRenderer.reload()` to the resource reload listener; it was the only altar renderer missing from the reload chain.
 
 ## [0.0.1.8-1] - 2026-05-25
 

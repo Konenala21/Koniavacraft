@@ -28,6 +28,8 @@ public class TurretHitEffectManager {
         ACTIVE.removeIf(e -> currentGameTime - e.spawnTick() > DURATION_TICKS + 2);
     }
 
+    public static void clear() { ACTIVE.clear(); }
+
     public static List<HitEffect> getActive() {
         return Collections.unmodifiableList(ACTIVE);
     }

@@ -8,6 +8,7 @@ import com.github.nalamodikk.client.renderer.altar.AltarShockwaveRenderer;
 import com.github.nalamodikk.client.renderer.altar.AltarMagicCircleRenderer;
 import com.github.nalamodikk.client.renderer.altar.AltarT6ClimaxRenderer;
 import com.github.nalamodikk.client.renderer.altar.AltarT45OrbRenderer;
+import com.github.nalamodikk.client.renderer.altar.AltarExplosionRenderer;
 import com.github.nalamodikk.client.renderer.altar.AltarFadeRenderer;
 import com.github.nalamodikk.client.renderer.entity.FloatingTurretModel;
 import com.github.nalamodikk.client.renderer.entity.FloatingTurretProjectileRenderer;
@@ -110,6 +111,7 @@ public class KoniavacraftMod {
                         AltarT6ClimaxRenderer.reload();
                         AltarT45OrbRenderer.reload();
                         AltarFadeRenderer.reload();
+                        AltarExplosionRenderer.reload();
                         TurretHitEffectRenderer.reload();
                     }));
             // ClientEffectEvents is auto-registered by @EventBusSubscriber; no manual register needed.

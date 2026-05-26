@@ -437,10 +437,8 @@ public static final List<Vec3i> RING_T1 = List.of(
     private void completeRitual() {
         if (level == null) return;
 
-        Optional<RecipeHolder<AltarRecipe>> holder = findMatchingRecipe();
-        if (holder.isEmpty()) { cancelRitual(); return; }
-
-        AltarRecipe recipe = holder.get().value();
+        AltarRecipe recipe = cachedRecipe;
+        if (recipe == null) { cancelRitual(); return; }
 
         // Validate ingredient indices BEFORE consuming anything — defensive guard against
         // findMatchedIndices diverging from the earlier matches() check
@@ -912,9 +910,10 @@ public static final List<Vec3i> RING_T1 = List.of(
         tag.putInt("Mana", manaStorage.getManaStored());
         tag.putInt("UpgradeTier", upgradeTier);
         tag.putLong("RingPhaseStart", ringPhaseStart);
-        tag.putInt("WarningTick", warningTick);
         tag.putInt("ManaConsumedSoFar", manaConsumedSoFar);
+        if (activatorUUID != null) tag.putString("ActivatorUUID", activatorUUID.toString());
         // CompletionAnimTick intentionally not saved — cosmetic only, resets on world load
+        // WarningTick intentionally not saved — always reset to 0 on load for a fresh grace window
     }
 
     @Override
@@ -927,8 +926,9 @@ public static final List<Vec3i> RING_T1 = List.of(
         manaStorage.setMana(tag.getInt("Mana"));
         upgradeTier = tag.getInt("UpgradeTier");
         ringPhaseStart = tag.getLong("RingPhaseStart");
-        warningTick = tag.getInt("WarningTick");
+        warningTick = 0; // always reset on load — player gets a fresh warning window after reload
         manaConsumedSoFar = tag.getInt("ManaConsumedSoFar");
+        activatorUUID = tag.contains("ActivatorUUID") ? UUID.fromString(tag.getString("ActivatorUUID")) : null;
         // cachedRecipe not serializable; re-resolved lazily in tickRitual() on first tick
         // completionAnimTick not loaded — always starts at 0 on world load
     }

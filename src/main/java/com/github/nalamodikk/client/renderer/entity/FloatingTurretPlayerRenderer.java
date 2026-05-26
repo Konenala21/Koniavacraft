@@ -46,6 +46,13 @@ public class FloatingTurretPlayerRenderer {
     private static int   lastDecayTickMain  = -1;
     private static int   lastDecayTickOff   = -1;
 
+    public static void reset() {
+        smoothedChargeMain = 0F;
+        smoothedChargeOff  = 0F;
+        lastDecayTickMain  = -1;
+        lastDecayTickOff   = -1;
+    }
+
     @SubscribeEvent
     public static void onRenderPlayer(RenderPlayerEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();

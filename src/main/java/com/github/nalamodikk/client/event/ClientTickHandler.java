@@ -6,8 +6,7 @@ import com.github.nalamodikk.client.renderer.altar.AltarFadeRenderer;
 import com.github.nalamodikk.client.renderer.altar.AltarUpgradeAnimManager;
 import com.github.nalamodikk.client.renderer.altar.AltarExplosionManager;
 import com.github.nalamodikk.client.renderer.altar.AltarExplosionRenderer;
-import com.github.nalamodikk.client.screen.armor.ManaArmorUpgradeScreen;
-import com.github.nalamodikk.client.screen.boots.BootsUpgradeScreen;
+import com.github.nalamodikk.client.screen.armor.UnifiedArmorUpgradeScreen;
 import com.github.nalamodikk.client.screen.wand.WandUpgradeScreen;
 import com.github.nalamodikk.common.item.equipment.ManaArmorItem;
 import com.github.nalamodikk.common.item.equipment.armor.ManaAlloyLeggingsItem;
@@ -26,6 +25,10 @@ import com.github.nalamodikk.client.renderer.LissajousRenderer;
 import com.github.nalamodikk.client.renderer.MagicCircleRenderer;
 import com.github.nalamodikk.client.renderer.RippleRenderer;
 import com.github.nalamodikk.client.renderer.SpiralCurveRenderer;
+import com.github.nalamodikk.client.renderer.DamageNumberRenderer;
+import com.github.nalamodikk.client.renderer.entity.FloatingTurretPlayerRenderer;
+import com.github.nalamodikk.client.renderer.turret.TurretHitEffectManager;
+import com.github.nalamodikk.client.renderer.turret.TurretHitEffectRenderer;
 import com.github.nalamodikk.client.renderer.ManaStrikeShaderRenderer;
 import com.github.nalamodikk.client.renderer.OrbitalTestShaderRenderer;
 import com.github.nalamodikk.research.client.ClientResearchCache;
@@ -62,14 +65,12 @@ public class ClientTickHandler {
                         break;
                     }
                 }
-                if (!opened && mc.player.getItemBySlot(EquipmentSlot.FEET).getItem() instanceof ManaSprintBootsItem) {
-                    mc.setScreen(new BootsUpgradeScreen());
-                    opened = true;
-                }
                 if (!opened) {
-                    for (EquipmentSlot slot : new EquipmentSlot[]{EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS}) {
-                        if (mc.player.getItemBySlot(slot).getItem() instanceof ManaArmorItem) {
-                            mc.setScreen(new ManaArmorUpgradeScreen(slot));
+                    for (EquipmentSlot slot : new EquipmentSlot[]{
+                            EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
+                        var item = mc.player.getItemBySlot(slot).getItem();
+                        if (item instanceof ManaArmorItem || item instanceof ManaSprintBootsItem) {
+                            mc.setScreen(new UnifiedArmorUpgradeScreen(slot));
                             break;
                         }
                     }
@@ -92,16 +93,20 @@ public class ClientTickHandler {
         }
 
         // 二段跳偵測
-        if (mcTick.player != null && mcTick.screen == null && !mcTick.player.getAbilities().flying) {
-            boolean onGround = mcTick.player.onGround();
-            boolean jumpDown = mcTick.options.keyJump.isDown();
-            boolean justPressed = jumpDown && !jumpWasDown;
-            if (onGround) airTicks = 0; else airTicks++;
-            if (justPressed && airTicks >= 3
-                    && mcTick.player.getItemBySlot(EquipmentSlot.LEGS).getItem() instanceof ManaAlloyLeggingsItem) {
-                DoubleJumpPacket.send();
+        if (mcTick.player != null && mcTick.screen == null) {
+            if (mcTick.player.getAbilities().flying) {
+                airTicks = 0;
+            } else {
+                boolean onGround = mcTick.player.onGround();
+                boolean jumpDown = mcTick.options.keyJump.isDown();
+                boolean justPressed = jumpDown && !jumpWasDown;
+                if (onGround) airTicks = 0; else airTicks++;
+                if (justPressed && airTicks >= 3
+                        && mcTick.player.getItemBySlot(EquipmentSlot.LEGS).getItem() instanceof ManaAlloyLeggingsItem) {
+                    DoubleJumpPacket.send();
+                }
+                jumpWasDown = jumpDown;
             }
-            jumpWasDown = jumpDown;
         }
 
         if (ModKeyMappings.SKIP_ALTAR_ANIM.consumeClick() && AltarUpgradeAnimManager.hasAnyActive()) {
@@ -110,6 +115,12 @@ public class ClientTickHandler {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player != null) mc.player.setXRot(0f);
         }
+    }
+
+    @SubscribeEvent
+    public static void onClientRespawn(ClientPlayerNetworkEvent.Clone event) {
+        jumpWasDown = false;
+        airTicks = 0;
     }
 
     @SubscribeEvent
@@ -133,5 +144,9 @@ public class ClientTickHandler {
         FresnelSphereRenderer.release();
         AltarFadeRenderer.release();
         ClientResearchCache.clear();
+        DamageNumberRenderer.clear();
+        TurretHitEffectManager.clear();
+        TurretHitEffectRenderer.release();
+        FloatingTurretPlayerRenderer.reset();
     }
 }

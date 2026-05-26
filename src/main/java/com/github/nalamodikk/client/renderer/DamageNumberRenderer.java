@@ -59,6 +59,8 @@ public class DamageNumberRenderer {
         return 0;
     }
 
+    public static void clear() { ENTRIES.clear(); }
+
     public static void add(double x, double y, double z, float damage, byte dmgType, int entityId) {
         int colorRGB = switch (dmgType) {
             case 1  -> 0xFFD700;
