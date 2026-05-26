@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Fixed: Mana Grass Block no longer converts to vanilla dirt when a block is placed above it. It now correctly converts to Mana Soil instead.
+- 修正：魔力草方塊在上方放置其他方塊後，不再錯誤地變成原版泥土，現在會正確地轉換為魔力泥土。
+
 - Fixed: Items placed on Aspect Pedestals are now dropped when the pedestal block is broken instead of being lost.
 - 修正：放置在元素底座上的物品，在底座被挖掉時現在會正確掉落，不再消失。
 
@@ -103,6 +106,7 @@ All notable changes to this project will be documented in this file.
 - `ResearchClientPayloadHandler`: all three handlers now guard `AspectSynthesisJEIPlugin.refreshAspectIngredients()` with `ModList.get().isLoaded("jei")` to prevent `NoClassDefFoundError: mezz/jei/api/IModPlugin` when JEI is absent.
 - `AspectSynthesisPacket.damageQuill()`: replaced `RandomGenerator.getDefault().nextInt(5)` with `player.getRandom().nextInt(5)`. `RandomGenerator.getDefault()` resolves to `L32X64MixRandom` via Java SPI, absent in some stripped JVMs; `player.getRandom()` returns Minecraft's `RandomSource` which is always available.
 - `AspectAltarBlockEntity.completeRitual()`: now reads `cachedRecipe` directly instead of calling `findMatchingRecipe()` again.
+- `ManaGrassBlock.randomTick()`: removed `super.randomTick()` call to prevent vanilla `GrassBlock` from converting the block to `Blocks.DIRT` when a full block is placed above. Re-implemented the die/spread logic: uses `GrassBlock.canBeGrass()` for light check; converts to `ModBlocks.MANA_SOIL` instead of vanilla dirt; spreads to adjacent mana soil unchanged.
 - `AspectPedestalBlock.onRemove()`: added override to drop held item stack via `Containers.dropItemStack` when block is removed (server-side only, skipped when replacing with same block type).
 - `PlatePressRecipeCategory`: added centered time-text row at `TIME_Y = 65` using `jei.koniava.plate_press.time` lang key. Added matching keys to `en_us.json` ("Time: %s ticks") and `zh_tw.json` ("時間: %s ticks").
 - Updated OGG audio files for six music disc tracks: `quantified_mana_a/b`, `memory_two_sides_a/b`, `knowledge_shortcut_a/b`.

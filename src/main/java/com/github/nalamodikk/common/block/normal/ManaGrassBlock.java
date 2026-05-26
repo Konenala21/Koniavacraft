@@ -59,29 +59,27 @@ public class ManaGrassBlock extends GrassBlock {
         }
     }
 
-    // 🌱 魔力草的特殊傳播邏輯
     @Override
     public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        // 先執行原版的草地邏輯
-        super.randomTick(state, level, pos, random);
+        if (!GrassBlock.canBeGrass(state, level, pos)) {
+            if (!level.isAreaLoaded(pos, 3)) {
+                return;
+            }
+            level.setBlockAndUpdate(pos, ModBlocks.MANA_SOIL.get().defaultBlockState());
+            return;
+        }
 
-        // 額外的魔力草傳播邏輯
-        if (level.getMaxLocalRawBrightness(pos.above()) >= 9) {
-            // 向周圍的魔力土壤傳播魔力草
+        if (level.getMaxLocalRawBrightness(pos) >= 9) {
             for (int i = 0; i < 4; ++i) {
                 BlockPos targetPos = pos.offset(
                         random.nextInt(3) - 1,
                         random.nextInt(5) - 3,
                         random.nextInt(3) - 1
                 );
-
                 BlockState targetState = level.getBlockState(targetPos);
-
-                // 如果目標是魔力土壤，且光照充足，轉換為魔力草
                 if (targetState.is(ModBlocks.MANA_SOIL.get()) &&
                         level.getMaxLocalRawBrightness(targetPos.above()) >= 4 &&
                         !level.getBlockState(targetPos.above()).isCollisionShapeFullBlock(level, targetPos.above())) {
-
                     level.setBlockAndUpdate(targetPos, this.defaultBlockState());
                 }
             }
