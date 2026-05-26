@@ -815,6 +815,7 @@
   "tooltip.koniava.mana_grinder.recipes": "View available recipes",
   "jei.koniava.grinder.mana": "Mana: %s",
   "jei.koniava.grinder.time": "Time: %s ticks",
+  "jei.koniava.plate_press.time": "Time: %s ticks",
   "jei.koniava.grinder.chance": "%s%%",
   "jei.koniava.grinder.chance_detail": "Byproduct chance: %s%%",
   "gui.koniava.rate": "Rate: %s",

@@ -6,6 +6,15 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Fixed: Items placed on Aspect Pedestals are now dropped when the pedestal block is broken instead of being lost.
+- 修正：放置在元素底座上的物品，在底座被挖掉時現在會正確掉落，不再消失。
+
+- Added: Mana Plate Press JEI recipe view now shows the pressing time in ticks.
+- 新增：魔力壓板機 JEI 配方介面現在顯示壓制所需時間（ticks）。
+
+- Updated Chinese (Traditional) display names for three music discs: "量化之境 (A/B)", "兩個視角的同一人 (A/B)", "我應該沒來遲吧! (A/B)". Audio files for these six tracks have also been updated.
+- 更新三張音樂唱片的繁體中文名稱：「量化之境（A/B）」、「兩個視角的同一人（A/B）」、「我應該沒來遲吧!（A/B）」。這六個音軌的音訊檔案也已更新。
+
 - Mana Alloy armor set (Helmet, Chestplate, Leggings) and Mana Sprint Boots are now crafted exclusively at the Altar (T1). The Mana Infuser no longer has duplicate armor recipes. Boots now require a two-step altar ritual: craft unfinished boots first, then activate them with crystal fragments, mana wire, and feathers.
 - 魔力合金套裝（頭盔、胸甲、護腿）和魔力衝刺靴現在統一在 T1 祭壇合成，注入機不再有重複的裝備配方。靴子需要兩步祭壇儀式：先合成未完成靴，再以晶體碎片、魔力導線、羽毛激活。
 
@@ -94,6 +103,10 @@ All notable changes to this project will be documented in this file.
 - `ResearchClientPayloadHandler`: all three handlers now guard `AspectSynthesisJEIPlugin.refreshAspectIngredients()` with `ModList.get().isLoaded("jei")` to prevent `NoClassDefFoundError: mezz/jei/api/IModPlugin` when JEI is absent.
 - `AspectSynthesisPacket.damageQuill()`: replaced `RandomGenerator.getDefault().nextInt(5)` with `player.getRandom().nextInt(5)`. `RandomGenerator.getDefault()` resolves to `L32X64MixRandom` via Java SPI, absent in some stripped JVMs; `player.getRandom()` returns Minecraft's `RandomSource` which is always available.
 - `AspectAltarBlockEntity.completeRitual()`: now reads `cachedRecipe` directly instead of calling `findMatchingRecipe()` again.
+- `AspectPedestalBlock.onRemove()`: added override to drop held item stack via `Containers.dropItemStack` when block is removed (server-side only, skipped when replacing with same block type).
+- `PlatePressRecipeCategory`: added centered time-text row at `TIME_Y = 65` using `jei.koniava.plate_press.time` lang key. Added matching keys to `en_us.json` ("Time: %s ticks") and `zh_tw.json` ("時間: %s ticks").
+- Updated OGG audio files for six music disc tracks: `quantified_mana_a/b`, `memory_two_sides_a/b`, `knowledge_shortcut_a/b`.
+- Updated `zh_tw.json` jukebox song display names for three discs (A and B variants each): quantified_mana, memory_two_sides, knowledge_shortcut.
 - `UnifiedArmorUpgradeScreen.findInventorySlot()`: changed comparison from reference equality to `ItemStack.isSameItemSameComponents()`.
 - `ClientTickHandler`: added `onClientRespawn` handler; added `DamageNumberRenderer.clear()`, `TurretHitEffectManager.clear()`, `TurretHitEffectRenderer.release()`, `FloatingTurretPlayerRenderer.reset()` on logout.
 - `DamageNumberRenderer`, `TurretHitEffectManager`: added `clear()`. `FloatingTurretPlayerRenderer`: added `reset()`.

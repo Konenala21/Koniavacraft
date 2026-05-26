@@ -55,6 +55,7 @@ public class PlatePressRecipeCategory implements IRecipeCategory<ManaPlatePressR
     private static final int ARROW_Y = 36;
     private static final int ARROW_WIDTH = 44;
     private static final int ARROW_HEIGHT = 12;
+    private static final int TIME_Y = 65;
 
     private final IGuiHelper guiHelper;
     private final IDrawableStatic background;
@@ -126,6 +127,12 @@ public class PlatePressRecipeCategory implements IRecipeCategory<ManaPlatePressR
 
     @Override
     public void draw(@NotNull ManaPlatePressRecipe recipe, @NotNull IRecipeSlotsView recipeSlotsView, @NotNull GuiGraphics guiGraphics, double mouseX, double mouseY) {
+        var font = Minecraft.getInstance().font;
+
+        Component timeText = Component.translatable("jei.koniava.plate_press.time", recipe.getPressingTime());
+        int timeX = Math.max(0, (WIDTH - font.width(timeText)) / 2);
+        guiGraphics.drawString(font, timeText, timeX, TIME_Y, 0x404040, false);
+
         int manaCost = recipe.getManaCost();
         int maxMana = Math.max(getMaxManaCost(), manaCost);
 
