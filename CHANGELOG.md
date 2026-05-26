@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Mana Alloy armor set (Helmet, Chestplate, Leggings) and Mana Sprint Boots are now crafted exclusively at the Altar (T1). The Mana Infuser no longer has duplicate armor recipes. Boots now require a two-step altar ritual: craft unfinished boots first, then activate them with crystal fragments, mana wire, and feathers.
+- 魔力合金套裝（頭盔、胸甲、護腿）和魔力衝刺靴現在統一在 T1 祭壇合成，注入機不再有重複的裝備配方。靴子需要兩步祭壇儀式：先合成未完成靴，再以晶體碎片、魔力導線、羽毛激活。
+
 - Added JEI support for Mana Plate Press: shows input count, mana cost bar, and animated progress arrow. Clicking the progress arrow in the machine GUI opens the JEI recipe list.
 - 魔力壓板機現在支援 JEI：顯示輸入數量、魔力消耗條與動態進度箭頭。在機器介面點擊進度箭頭可開啟 JEI 配方列表。
 
