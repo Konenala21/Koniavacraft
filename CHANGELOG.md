@@ -6,6 +6,15 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Added JEI support for Mana Plate Press: shows input count, mana cost bar, and animated progress arrow. Clicking the progress arrow in the machine GUI opens the JEI recipe list.
+- 魔力壓板機現在支援 JEI：顯示輸入數量、魔力消耗條與動態進度箭頭。在機器介面點擊進度箭頭可開啟 JEI 配方列表。
+
+- Fixed: Mana Infuser slot rejected items that needed more than one piece (e.g. armor plates). The slot now correctly allows any ingredient that matches a recipe regardless of count.
+- 修正：魔力注入機的輸入槽拒絕放入需要多個的物品（例如製作裝備所需的強化板）。現在只要物品類型符合配方就可以放入，不再檢查數量。
+
+- Fixed: Mana Infuser JEI recipe display showed all armor recipes as requiring only 1 plate. Input count is now shown correctly (e.g. x5 for helmet, x8 for chestplate). Mana bar no longer overflows due to a hardcoded max of 200.
+- 修正：魔力注入機 JEI 配方顯示所有裝備配方都只需 1 塊板子。現在正確顯示輸入數量（例如頭盔 x5、胸甲 x8）。魔力條不再因硬寫最大值 200 而導致溢出。
+
 - Added Mana Plate Press machine: accepts Mana Alloy Ingot and presses it into Mana Reinforced Plate (used to craft Mana Alloy armor sets). Connect arcane conduits for mana.
 - 新增魔力壓板機：接受魔力合金錠並壓製成魔力強化板（用於合成魔力合金套裝）。連接奧術導管供應魔力。
 

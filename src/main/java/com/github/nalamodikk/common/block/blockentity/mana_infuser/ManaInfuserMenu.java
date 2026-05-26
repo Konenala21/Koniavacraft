@@ -119,10 +119,10 @@ public class ManaInfuserMenu extends AbstractContainerMenu {
 
     private boolean hasRecipeForItem(ItemStack stack) {
         if (blockEntity == null || blockEntity.getLevel() == null) return false;
-        ManaInfuserRecipe.ManaInfuserInput input = new ManaInfuserRecipe.ManaInfuserInput(stack);
         return blockEntity.getLevel().getRecipeManager()
-                .getRecipeFor(ModRecipes.MANA_INFUSER_TYPE.get(), input, blockEntity.getLevel())
-                .isPresent();
+                .getAllRecipesFor(ModRecipes.MANA_INFUSER_TYPE.get())
+                .stream()
+                .anyMatch(holder -> holder.value().getInput().test(stack));
     }
 
     @Override

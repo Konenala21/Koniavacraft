@@ -9,6 +9,8 @@ import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import net.minecraft.world.item.crafting.Ingredient;
 
 import java.util.Arrays;
+import java.util.List;
+
 import mezz.jei.api.gui.builder.ITooltipBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.drawable.IDrawableAnimated;

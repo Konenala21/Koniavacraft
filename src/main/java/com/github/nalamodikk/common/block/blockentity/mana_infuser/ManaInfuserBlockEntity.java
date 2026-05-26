@@ -263,10 +263,10 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock imple
 
     private boolean hasRecipeForItem(ItemStack stack) {
         if (level == null || stack.isEmpty()) return false;
-        ManaInfuserRecipe.ManaInfuserInput input = new ManaInfuserRecipe.ManaInfuserInput(stack);
         return level.getRecipeManager()
-                .getRecipeFor(ModRecipes.MANA_INFUSER_TYPE.get(), input, level)
-                .isPresent();
+                .getAllRecipesFor(ModRecipes.MANA_INFUSER_TYPE.get())
+                .stream()
+                .anyMatch(holder -> holder.value().getInput().test(stack));
     }
 
     @Override

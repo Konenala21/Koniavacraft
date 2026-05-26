@@ -2,6 +2,8 @@ package com.github.nalamodikk.common.block.blockentity.mana_infuser;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.register.ModBlocks;
+import com.github.nalamodikk.register.ModRecipes;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
@@ -51,6 +53,8 @@ public class ManaInfuserCategory implements IRecipeCategory<ManaInfuserRecipe> {
     private final IDrawableStatic background;
     private final IDrawable icon;
     private final IDrawableAnimated arrow; // 🆕 動畫箭頭
+
+    private int maxManaCostCache = -1;
 
     public ManaInfuserCategory(IGuiHelper guiHelper) {
         // 🎨 使用你的原版 GUI 材質作為背景
@@ -136,8 +140,21 @@ public class ManaInfuserCategory implements IRecipeCategory<ManaInfuserRecipe> {
 
         // 📝 繪製配方信息文字
 
-        // 🔹 處理 tooltip
         handleTooltips(graphics, font, mouseX, mouseY, manaCost, infusionTime, inputCount);
+    }
+
+    private int getMaxManaCost() {
+        if (maxManaCostCache > 0) return maxManaCostCache;
+        var level = Minecraft.getInstance().level;
+        if (level == null) return 0;
+        maxManaCostCache = level.getRecipeManager()
+                .getAllRecipesFor(ModRecipes.MANA_INFUSER_TYPE.get())
+                .stream()
+                .map(RecipeHolder::value)
+                .mapToInt(ManaInfuserRecipe::getManaCost)
+                .max()
+                .orElse(0);
+        return maxManaCostCache;
     }
 
     /**
@@ -150,9 +167,9 @@ public class ManaInfuserCategory implements IRecipeCategory<ManaInfuserRecipe> {
         int manaBarWidth = 10;  // 186-176=10
         int manaBarHeight = 48; // 49-1=48
 
-        // 計算魔力條填充高度
-        int maxMana = 200; // 假設最大魔力
-        int fillHeight = Math.min(manaBarHeight * manaCost / maxMana, manaBarHeight);
+        int maxMana = Math.max(getMaxManaCost(), manaCost);
+        int fillHeight = maxMana > 0 ? (int) ((manaCost / (float) maxMana) * manaBarHeight) : 0;
+        if (manaCost > 0 && fillHeight == 0) fillHeight = 3;
 
         if (fillHeight > 0) {
             // 從底部往上填充
