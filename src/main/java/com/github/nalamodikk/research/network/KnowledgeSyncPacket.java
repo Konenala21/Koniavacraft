@@ -13,6 +13,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,19 +23,23 @@ import java.util.Map;
  */
 public record KnowledgeSyncPacket(Map<ResourceLocation, Integer> discovered, List<ResourceLocation> completed,
                                   List<ResourceLocation> availableOverrides, List<ResourceLocation> lockedResearch,
-                                  int tier)
+                                  int tier, Map<ResourceLocation, List<ResourceLocation>> scannedTargets)
         implements CustomPacketPayload {
 
     public static final Type<KnowledgeSyncPacket> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "knowledge_sync"));
 
+    private static final StreamCodec<io.netty.buffer.ByteBuf, List<ResourceLocation>> RL_LIST_CODEC =
+            ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list());
+
     public static final StreamCodec<io.netty.buffer.ByteBuf, KnowledgeSyncPacket> STREAM_CODEC =
             StreamCodec.composite(
                     ByteBufCodecs.map(HashMap::new, ResourceLocation.STREAM_CODEC, ByteBufCodecs.VAR_INT), KnowledgeSyncPacket::discovered,
-                    ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), KnowledgeSyncPacket::completed,
-                    ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), KnowledgeSyncPacket::availableOverrides,
-                    ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), KnowledgeSyncPacket::lockedResearch,
-                    ByteBufCodecs.VAR_INT, KnowledgeSyncPacket::tier,
+                    RL_LIST_CODEC,                                                                          KnowledgeSyncPacket::completed,
+                    RL_LIST_CODEC,                                                                          KnowledgeSyncPacket::availableOverrides,
+                    RL_LIST_CODEC,                                                                          KnowledgeSyncPacket::lockedResearch,
+                    ByteBufCodecs.VAR_INT,                                                                  KnowledgeSyncPacket::tier,
+                    ByteBufCodecs.map(HashMap::new, ResourceLocation.STREAM_CODEC, RL_LIST_CODEC),          KnowledgeSyncPacket::scannedTargets,
                     KnowledgeSyncPacket::new
             );
 
@@ -43,12 +48,15 @@ public record KnowledgeSyncPacket(Map<ResourceLocation, Integer> discovered, Lis
 
     public static void sendTo(ServerPlayer player) {
         PlayerKnowledge knowledge = ResearchSavedData.get(player.serverLevel()).getOrCreate(player.getUUID());
+        Map<ResourceLocation, List<ResourceLocation>> scanned = new HashMap<>();
+        knowledge.getScannedTargets().forEach((k, v) -> scanned.put(k, new ArrayList<>(v)));
         PacketDistributor.sendToPlayer(player, new KnowledgeSyncPacket(
                 new HashMap<>(knowledge.getDiscoveredAspectsMap()),
                 List.copyOf(knowledge.getCompletedResearch()),
                 List.copyOf(knowledge.getAvailableResearchOverrides()),
                 List.copyOf(knowledge.getLockedResearch()),
-                knowledge.getCurrentTier()
+                knowledge.getCurrentTier(),
+                scanned
         ));
     }
 

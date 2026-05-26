@@ -22,19 +22,24 @@ import java.util.Set;
  */
 public record WatchSyncPacket(List<ResourceLocation> completed, List<ResourceLocation> availableOverrides,
                               List<ResourceLocation> lockedResearch, int tier,
-                              Map<ResourceLocation, Integer> discovered)
+                              Map<ResourceLocation, Integer> discovered,
+                              Map<ResourceLocation, List<ResourceLocation>> scannedTargets)
         implements CustomPacketPayload {
 
     public static final Type<WatchSyncPacket> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "watch_sync"));
 
+    private static final StreamCodec<io.netty.buffer.ByteBuf, List<ResourceLocation>> RL_LIST_CODEC =
+            ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list());
+
     public static final StreamCodec<io.netty.buffer.ByteBuf, WatchSyncPacket> STREAM_CODEC =
             StreamCodec.composite(
-                    ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), WatchSyncPacket::completed,
-                    ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), WatchSyncPacket::availableOverrides,
-                    ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), WatchSyncPacket::lockedResearch,
-                    ByteBufCodecs.VAR_INT,                                      WatchSyncPacket::tier,
-                    ByteBufCodecs.map(HashMap::new, ResourceLocation.STREAM_CODEC, ByteBufCodecs.VAR_INT), WatchSyncPacket::discovered,
+                    RL_LIST_CODEC,                                                                               WatchSyncPacket::completed,
+                    RL_LIST_CODEC,                                                                               WatchSyncPacket::availableOverrides,
+                    RL_LIST_CODEC,                                                                               WatchSyncPacket::lockedResearch,
+                    ByteBufCodecs.VAR_INT,                                                                       WatchSyncPacket::tier,
+                    ByteBufCodecs.map(HashMap::new, ResourceLocation.STREAM_CODEC, ByteBufCodecs.VAR_INT),       WatchSyncPacket::discovered,
+                    ByteBufCodecs.map(HashMap::new, ResourceLocation.STREAM_CODEC, RL_LIST_CODEC),               WatchSyncPacket::scannedTargets,
                     WatchSyncPacket::new
             );
 
@@ -42,10 +47,11 @@ public record WatchSyncPacket(List<ResourceLocation> completed, List<ResourceLoc
     public Type<? extends CustomPacketPayload> type() { return TYPE; }
 
     public static void sendTo(ServerPlayer player, Set<ResourceLocation> completed, Set<ResourceLocation> availableOverrides,
-                              Set<ResourceLocation> lockedResearch, int tier, Map<ResourceLocation, Integer> discovered) {
+                              Set<ResourceLocation> lockedResearch, int tier, Map<ResourceLocation, Integer> discovered,
+                              Map<ResourceLocation, List<ResourceLocation>> scannedTargets) {
         PacketDistributor.sendToPlayer(player,
                 new WatchSyncPacket(List.copyOf(completed), List.copyOf(availableOverrides), List.copyOf(lockedResearch),
-                        tier, new HashMap<>(discovered)));
+                        tier, new HashMap<>(discovered), new HashMap<>(scannedTargets)));
     }
 
     public static void handle(WatchSyncPacket packet, IPayloadContext context) {
