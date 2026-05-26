@@ -45,6 +45,21 @@ All notable changes to this project will be documented in this file.
 - Fixed: armor upgrade screen could fail to find the correct armor slot when the inventory was resynced.
 - 修正：裝備升級介面在背包重新同步後可能找不到正確的裝備格。
 
+- Added Mana Equipment research node (T1). Unlocks Chapter 5 of the Nara Guide. Requires Vitality, Mechanism, and Mana aspects.
+- 新增魔力裝備研究節點（T1）。解鎖娜拉指引第 5 章，需要活力、機制、魔力本源。
+
+- Added Mana Equipment chapter (Chapter 5) to the Nara Guide: five pages covering the full armor set overview, boots, leggings, chestplate, and helmet.
+- 娜拉指引新增魔力裝備章節（第 5 章）：共五頁，涵蓋完整套裝概覽、靴子、護腿、胸甲、頭盔。
+
+- Fixed: placing an aspect in the research grid would briefly show the piece in the wrong position if the server rejected the move (table in use, missing quill, etc.). The grid cell now correctly reverts to its previous state.
+- 修正：在研究格放置本源時，若伺服器拒絕操作（研究台被占用、缺少羽毛筆等），格子短暫顯示錯誤位置後才回退。現在格子會立即還原為正確狀態。
+
+- Fixed: research tree in the Nara Watch was displaying nodes in registration order with overlapping diagonal lines. Nodes are now arranged using a barycenter heuristic and connections use elbow-style routing.
+- 修正：娜拉手錶研究樹依照登錄順序排列節點，連線重疊難以閱讀。現在改用重心啟發式排版，連線改為折線路由。
+
+- Fixed: Nara's angry portrait would persist for all subsequent dialogues after the punishment event. It now automatically calms after 3 dialogues.
+- 修正：娜拉憤怒表情在懲罰事件後會持續貼在所有後續對話上。現在改為在 3 次對話後自動恢復正常表情。
+
 ### Developer Notes / 開發者備註
 
 - Added `ManaPlatePressBlock/BlockEntity/Menu/Screen/Recipe` (new machine type). Simplified BE: no upgrade inventory, no research gate. Crafting chain recipe provider added. Block model is custom Blockbench (`mana_plate_press_texture.png`). GUI texture: `mana_plate_press_gui.png`.
@@ -71,6 +86,12 @@ All notable changes to this project will be documented in this file.
 - `ClientTickHandler`: added `onClientRespawn` handler; added `DamageNumberRenderer.clear()`, `TurretHitEffectManager.clear()`, `TurretHitEffectRenderer.release()`, `FloatingTurretPlayerRenderer.reset()` on logout.
 - `DamageNumberRenderer`, `TurretHitEffectManager`: added `clear()`. `FloatingTurretPlayerRenderer`: added `reset()`.
 - `KoniavacraftMod`: added `AltarExplosionRenderer.reload()` to the resource reload listener.
+- Added `MANA_EQUIPMENT` research node to `ResearchRegistry` (T1, after `MANA_TOOLS`). Requires Vitality + Mechanism + Mana aspects, `holeRatio` 0.30. Gates Chapter 5 in `NaraGuideScreen`.
+- Added Mana Equipment chapter to `NaraGuideScreen` (5 pages: set overview, boots, leggings, chestplate, helmet). EN + ZH lang keys added.
+- `NaraWatchScreen`: replaced hardcoded `TIER_LABELS`/`STATUS_LABELS` String arrays with translation key arrays; `renderSideTab` now accepts `Component` instead of `String`.
+- `NaraWatchScreen` research tree layout: replaced fixed registration-order placement with barycenter heuristic — siblings sorted by parent average X, then centered above that X. Connections replaced single diagonal lines with elbow connectors (vertical → horizontal midpoint → vertical).
+- Added `ResearchCellRevertPacket` (S2C). All rejection branches in `ResearchAspectPlacePacket` call `revertClient()` before returning; `ResearchScreen.revertCell()` applies the authoritative cell state from the server.
+- `NaraDialogueManager`: added `madCooldown` counter. `setPortraitMad()` sets it to 3; each `setPortraitShown()` decrements and only clears `portraitMad` when it reaches zero.
 
 ## [0.0.1.8-1] - 2026-05-25
 
