@@ -73,52 +73,12 @@ public class ManaInfuserRecipeProvider {
     }
 
     private static void generateArmorRecipes(RecipeOutput output) {
-        // 魔力衝刺靴（未完成）→ 魔力衝刺靴（完成）
-        createManaInfuserRecipe(output,
-                "mana_sprint_boots_activate",
-                Ingredient.of(ModItems.MANA_SPRINT_BOOTS_UNFINISHED.get()),
-                new ItemStack(ModItems.MANA_SPRINT_BOOTS.get()),
-                5000, 100, 1
-        );
-
         // 魔力水晶合金粉 × 2 → 魔力合金錠
         createManaInfuserRecipe(output,
                 "mana_crystal_alloy_dust_to_ingot",
                 Ingredient.of(ModItems.MANA_CRYSTAL_ALLOY_DUST.get()),
                 new ItemStack(ModItems.MANA_ALLOY_INGOT.get()),
                 4000, 100, 2
-        );
-
-        // 強化板 × 5 → 魔力合金頭盔
-        createManaInfuserRecipe(output,
-                "plates_to_helmet",
-                Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
-                new ItemStack(ModItems.MANA_ALLOY_HELMET.get()),
-                8000, 120, 5
-        );
-
-        // 強化板 × 8 → 魔力合金胸甲
-        createManaInfuserRecipe(output,
-                "plates_to_chestplate",
-                Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
-                new ItemStack(ModItems.MANA_ALLOY_CHESTPLATE.get()),
-                12800, 160, 8
-        );
-
-        // 強化板 × 7 → 魔力合金護腿
-        createManaInfuserRecipe(output,
-                "plates_to_leggings",
-                Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
-                new ItemStack(ModItems.MANA_ALLOY_LEGGINGS.get()),
-                11200, 140, 7
-        );
-
-        // 強化板 × 4 → 魔力合金靴（使用注入機的部份流程，靴子後段仍需升級系統）
-        createManaInfuserRecipe(output,
-                "plates_to_boots_base",
-                Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
-                new ItemStack(ModItems.MANA_SPRINT_BOOTS_UNFINISHED.get()),
-                6400, 100, 4
         );
     }
 

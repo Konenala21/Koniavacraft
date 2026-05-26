@@ -183,6 +183,21 @@ public class AltarRecipeProvider {
                 new ItemStack(ModItems.MANA_SPRINT_BOOTS_UNFINISHED.get()),
                 10000, 160, 1
         );
+
+        // 魔力衝刺靴激活 T1 祭壇（未完成→完成）
+        save(output, "mana_sprint_boots_activate",
+                Ingredient.of(ModItems.MANA_SPRINT_BOOTS_UNFINISHED.get()),
+                List.of(
+                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
+                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
+                        Ingredient.of(ModItems.MANA_WIRE.get()),
+                        Ingredient.of(ModItems.MANA_WIRE.get()),
+                        Ingredient.of(Items.FEATHER),
+                        Ingredient.of(Items.FEATHER)
+                ),
+                new ItemStack(ModItems.MANA_SPRINT_BOOTS.get()),
+                8000, 120, 1
+        );
     }
 
     private static void registerConduits(RecipeOutput output) {
