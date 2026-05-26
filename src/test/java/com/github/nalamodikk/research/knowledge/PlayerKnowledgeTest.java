@@ -43,7 +43,7 @@ class PlayerKnowledgeTest {
     void saveLoadPreservesAspectQuantitiesScansAndAvailableState() {
         PlayerKnowledge knowledge = new PlayerKnowledge();
         knowledge.discoverAspect(ModAspects.MANA, 4);
-        knowledge.recordItemScan(ITEM_ID);
+        knowledge.recordItemScan(ITEM_ID, java.util.List.of());
         knowledge.setResearchState(RESEARCH_ID, PlayerKnowledge.ResearchState.FORCED_AVAILABLE);
         knowledge.setTier(3);
 
@@ -51,7 +51,7 @@ class PlayerKnowledgeTest {
         PlayerKnowledge loaded = PlayerKnowledge.load(saved);
 
         assertEquals(4, loaded.getAspectCount(ModAspects.MANA.getId()));
-        assertTrue(loaded.getScannedItems().contains(ITEM_ID));
+        assertTrue(loaded.getScannedTargets().containsKey(ITEM_ID));
         assertEquals(PlayerKnowledge.ResearchState.FORCED_AVAILABLE, loaded.getResearchState(RESEARCH_ID));
         assertEquals(3, loaded.getCurrentTier());
     }

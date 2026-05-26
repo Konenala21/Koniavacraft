@@ -527,5 +527,29 @@
   },
   "weapon.turret.no_mana": {
     "sounds": [{"name": "koniava:weapon/turret_no_mana", "stream": false}]
+  },
+  "music.disc.quantified_mana_a": {
+    "sounds": [{"name": "koniava:music/disc/quantified_mana_a", "stream": true}]
+  },
+  "music.disc.quantified_mana_b": {
+    "sounds": [{"name": "koniava:music/disc/quantified_mana_b", "stream": true}]
+  },
+  "music.disc.memory_two_sides_a": {
+    "sounds": [{"name": "koniava:music/disc/memory_two_sides_a", "stream": true}]
+  },
+  "music.disc.memory_two_sides_b": {
+    "sounds": [{"name": "koniava:music/disc/memory_two_sides_b", "stream": true}]
+  },
+  "music.disc.knowledge_shortcut_a": {
+    "sounds": [{"name": "koniava:music/disc/knowledge_shortcut_a", "stream": true}]
+  },
+  "music.disc.knowledge_shortcut_b": {
+    "sounds": [{"name": "koniava:music/disc/knowledge_shortcut_b", "stream": true}]
+  },
+  "music.disc.u_key_core_a": {
+    "sounds": [{"name": "koniava:music/disc/u_key_core_a", "stream": true}]
+  },
+  "music.disc.u_key_core_b": {
+    "sounds": [{"name": "koniava:music/disc/u_key_core_b", "stream": true}]
   }
 }

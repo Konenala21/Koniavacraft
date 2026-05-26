@@ -5,6 +5,7 @@ import com.github.nalamodikk.common.datagen.recipe.MaterialProcessingRecipeProvi
 import com.github.nalamodikk.common.datagen.recipe.material.ManaCraftingRecipeProvider;
 import com.github.nalamodikk.common.datagen.recipe.material.ManaFuelRecipeProvider;
 import com.github.nalamodikk.common.datagen.recipe.material.ManaInfuserRecipeProvider;
+import com.github.nalamodikk.common.datagen.recipe.material.ManaPlatePressRecipeProvider;
 import com.github.nalamodikk.common.datagen.recipe.altar.AltarRecipeProvider;
 import com.github.nalamodikk.common.datagen.recipe.processing.ManaGrinderRecipeProvider;
 import com.github.nalamodikk.register.ModBlocks;
@@ -40,6 +41,7 @@ public class ModRecipeProvider extends RecipeProvider {
         ManaCraftingRecipeProvider.generate(recipeOutput);
         ManaInfuserRecipeProvider.generate(recipeOutput, provider);
         ManaGrinderRecipeProvider.generate(recipeOutput);
+        ManaPlatePressRecipeProvider.generate(recipeOutput);
         AltarRecipeProvider.generate(recipeOutput);
         // ⚙️ 加工配方（粉碎機、清洗機、富集機）
         ProcessingRecipeProvider.generate(recipeOutput);
@@ -49,6 +51,7 @@ public class ModRecipeProvider extends RecipeProvider {
         generateUpgradeRecipes(recipeOutput);
         generateToolRecipes(recipeOutput);
         generateStorageRecipes(recipeOutput);
+        generateMaterialChainRecipes(recipeOutput);
         generateExperimentalRecipes(recipeOutput);
         normalBlock(recipeOutput);
     }
@@ -156,6 +159,18 @@ public class ModRecipeProvider extends RecipeProvider {
                 .define('B', Blocks.IRON_BLOCK)
                 .unlockedBy("has_mana_crystal", has(ModItems.MANA_CRYSTAL.get()))
                 .save(output, "mana_infuser");
+
+        // 🔩 魔力壓板機
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.MANA_PLATE_PRESS.get())
+                .pattern("IMI")
+                .pattern("BCB")
+                .pattern("IMI")
+                .define('I', ModItems.MANA_ALLOY_INGOT.get())
+                .define('M', ModItems.MANA_INGOT.get())
+                .define('B', Blocks.IRON_BLOCK)
+                .define('C', ModBlocks.BASIC_ARCANE_CONDUIT.get())
+                .unlockedBy("has_mana_alloy_ingot", has(ModItems.MANA_ALLOY_INGOT.get()))
+                .save(output, "mana_plate_press");
 
         // 🤖 魔力部署器
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.MANA_DEPLOYER.get())
@@ -323,6 +338,15 @@ public class ModRecipeProvider extends RecipeProvider {
 
 
     // === 🧪 實驗性/示例配方 ===
+    private void generateMaterialChainRecipes(RecipeOutput output) {
+        // 鐵錠 + 魔力錠 → 魔力鐵（無序合成）
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.MANA_IRON.get())
+                .requires(Items.IRON_INGOT)
+                .requires(ModItems.MANA_INGOT.get())
+                .unlockedBy("has_mana_ingot", has(ModItems.MANA_INGOT.get()))
+                .save(output, "mana_iron");
+    }
+
     private void generateExperimentalRecipes(RecipeOutput output) {
         // 🌟 切石機示例
         SingleItemRecipeBuilder.stonecutting(

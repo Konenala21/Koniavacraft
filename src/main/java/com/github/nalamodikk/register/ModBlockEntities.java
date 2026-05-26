@@ -12,6 +12,7 @@ import com.github.nalamodikk.common.block.blockentity.mana_deployer.ManaDeployer
 import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserBlockEntity;
+import com.github.nalamodikk.common.block.blockentity.mana_plate_press.ManaPlatePressBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.research.ResearchTableBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -82,6 +83,9 @@ public class ModBlockEntities {
 
     public static final Supplier<BlockEntityType<ManaGrinderBlockEntity>> MANA_GRINDER_BE =
             register("mana_grinder", ManaGrinderBlockEntity::new, ModBlocks.MANA_GRINDER);
+
+    public static final Supplier<BlockEntityType<ManaPlatePressBlockEntity>> MANA_PLATE_PRESS_BE =
+            register("mana_plate_press", ManaPlatePressBlockEntity::new, ModBlocks.MANA_PLATE_PRESS);
 
     public static final Supplier<BlockEntityType<AspectAltarBlockEntity>> ASPECT_ALTAR_BE =
             register("aspect_altar", AspectAltarBlockEntity::new, ModBlocks.ASPECT_ALTAR);

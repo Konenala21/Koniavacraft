@@ -130,7 +130,7 @@ public class NaraWatchItem extends Item {
                     .getOrCreate(serverPlayer.getUUID());
             WatchSyncPacket.sendTo(serverPlayer, knowledge.getCompletedResearch(), knowledge.getAvailableResearchOverrides(),
                     knowledge.getLockedResearch(), knowledge.getCurrentTier(),
-                    knowledge.getDiscoveredAspectsMap());
+                    knowledge.getDiscoveredAspectsMap(), knowledge.getScannedTargets());
             NaraServerEvents.scheduleFirstWatchOpenTutorial(serverPlayer);
         }
     }
@@ -161,7 +161,7 @@ public class NaraWatchItem extends Item {
         PlayerKnowledge knowledge = savedData.getOrCreate(player.getUUID());
         ResourceLocation id = target.id();
 
-        if (knowledge.recordItemScan(id)) {
+        if (knowledge.recordItemScan(id, aspects)) {
             int reward = ThreadLocalRandom.current().nextInt(2, 6);
             List<AspectReward> rewards = new ArrayList<>();
             for (Aspect aspect : aspects) {
@@ -173,6 +173,7 @@ public class NaraWatchItem extends Item {
             playSuccessEffects(player.level(), target.pos());
             savedData.setDirty();
             AspectSyncPacket.sendTo(player);
+            com.github.nalamodikk.research.network.ScanResultSyncPacket.sendTo(player, id, aspects);
             NaraServerEvents.scheduleFirstScanTutorial(player);
         } else {
             player.sendSystemMessage(Component.translatable("item.koniava.nara_watch.scan.duplicate")

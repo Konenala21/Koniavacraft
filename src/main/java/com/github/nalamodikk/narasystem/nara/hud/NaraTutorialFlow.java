@@ -25,6 +25,7 @@ public class NaraTutorialFlow {
     public static final String MANA_GRINDER_CRAFT    = "mana_grinder_craft";
     public static final String MANA_INFUSER_CRAFT    = "mana_infuser_craft";
     public static final String MANA_CRAFTING_CRAFT   = "mana_crafting_craft";
+    public static final String MANA_CRAFTING_PLACED  = "mana_crafting_placed";
     public static final String ASPECT_SYNTHESIS_OPEN = "aspect_synthesis_open";
     public static final String MANA_DEPLOYER_CRAFT        = "mana_deployer_craft";
     public static final String MANA_CHARGER_CRAFT         = "mana_charger_craft";
@@ -85,7 +86,8 @@ public class NaraTutorialFlow {
             case WAND_ROD_GOT_CORE   -> startWandRodGotCore();
             case MANA_GRINDER_CRAFT  -> startManaGrinderCraft();
             case MANA_INFUSER_CRAFT  -> startManaInfuserCraft();
-            case MANA_CRAFTING_CRAFT -> startManaCraftingCraft();
+            case MANA_CRAFTING_CRAFT   -> startManaCraftingCraft();
+            case MANA_CRAFTING_PLACED  -> startManaCraftingPlaced();
             case ASPECT_SYNTHESIS_OPEN -> startAspectSynthesisOpen();
             case MANA_DEPLOYER_CRAFT    -> startManaDeployerCraft();
             case MANA_CHARGER_CRAFT     -> startManaChargerCraft();
@@ -390,6 +392,17 @@ public class NaraTutorialFlow {
 
     private static void startManaCraftingCraft() {
         if (Minecraft.getInstance().screen != null) NaraDialogueManager.setOverlayOnScreen(true);
+        NaraDialogueManager.setPortraitShown();
+        NaraDialogueManager.startDialogue(List.of(
+                NaraDialogueLine.simple(
+                        Component.translatable("nara.dialogue.tutorial.mana_crafting_craft.line1")),
+                NaraDialogueLine.simple(
+                        Component.translatable("nara.dialogue.tutorial.mana_crafting_craft.line2"))
+        ));
+    }
+
+    private static void startManaCraftingPlaced() {
+        NaraDialogueManager.setOverlayOnScreen(true);
         NaraDialogueManager.setPortraitShown();
         boolean hasJei = ModList.get().isLoaded("jei");
         List<NaraDialogueLine> lines = new ArrayList<>();

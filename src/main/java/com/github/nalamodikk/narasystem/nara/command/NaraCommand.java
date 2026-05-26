@@ -13,6 +13,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
 
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.Objects;
+
 public class NaraCommand {
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -52,6 +56,17 @@ public class NaraCommand {
                                                 StringArgumentType.getString(ctx, "id")))
                                 )
                         )
+                        .then(Commands.literal("detect")
+                                .executes(ctx -> {
+                                    if (!(ctx.getSource().getEntity() instanceof ServerPlayer player)) {
+                                        ctx.getSource().sendFailure(Component.translatable("command.koniava.nara.player_only"));
+                                        return 0;
+                                    }
+                                    NaraServerEvents.restorePendingTutorials(player);
+                                    ctx.getSource().sendSuccess(() -> Component.literal("Nara tutorial detection run for " + player.getName().getString()), false);
+                                    return 1;
+                                })
+                        )
                 )
         );
     }
@@ -66,25 +81,11 @@ public class NaraCommand {
         return 1;
     }
 
-    private static final String[] TUTORIAL_IDS = {
-            NaraTutorialFlow.RESEARCH_TABLE,
-            NaraTutorialFlow.FIRST_SCAN,
-            NaraTutorialFlow.FIRST_WATCH_OPEN,
-            NaraTutorialFlow.MANA_GEN_CRAFT,
-            NaraTutorialFlow.MANA_GEN_PLACED,
-            NaraTutorialFlow.FIRST_RESEARCH,
-            NaraTutorialFlow.FIRST_ALTAR_FORMED,
-            NaraTutorialFlow.WAND_ROD_CRAFT,
-            NaraTutorialFlow.WAND_ROD_NO_ITEMS,
-            NaraTutorialFlow.WAND_ROD_READY,
-            NaraTutorialFlow.WAND_ROD_GOT_CORE,
-            NaraTutorialFlow.MANA_GRINDER_CRAFT,
-            NaraTutorialFlow.MANA_INFUSER_CRAFT,
-            NaraTutorialFlow.MANA_CRAFTING_CRAFT,
-            NaraTutorialFlow.ASPECT_SYNTHESIS_OPEN,
-            NaraTutorialFlow.ALTAR_T6,
-            NaraTutorialFlow.MANA_DEPLOYER_CRAFT,
-            NaraTutorialFlow.MANA_CHARGER_CRAFT,
-            NaraTutorialFlow.SOLAR_COLLECTOR_CRAFT,
-    };
+    private static final String[] TUTORIAL_IDS = Arrays.stream(NaraTutorialFlow.class.getDeclaredFields())
+            .filter(f -> f.getType() == String.class
+                    && Modifier.isStatic(f.getModifiers())
+                    && Modifier.isFinal(f.getModifiers()))
+            .map(f -> { try { return (String) f.get(null); } catch (Exception e) { return null; } })
+            .filter(Objects::nonNull)
+            .toArray(String[]::new);
 }

@@ -60,7 +60,7 @@ public class NaraFirstLoginFlow {
         var line8 = NaraDialogueLine.simple(Component.translatable("nara.dialogue.first_login.line8"))
                 .withOnStart(() -> NaraSoundHelper.play("first_login", "line8"));
 
-        NaraDialogueManager.startDialogue(List.of(line1, line2, line3, line4, line5, line6, line7, line8));
+        NaraDialogueManager.startDialogueImmediate(List.of(line1, line2, line3, line4, line5, line6, line7, line8));
     }
 
     public static int currentTimeout() {
@@ -80,7 +80,7 @@ public class NaraFirstLoginFlow {
 
     private static void triggerAngryDialogue() {
         NaraDialogueManager.setPortraitMad();
-        NaraDialogueManager.startDialogue(List.of(
+        NaraDialogueManager.startDialogueImmediate(List.of(
                 NaraDialogueLine.simple(Component.translatable("nara.dialogue.angry.line1"))
                         .withOnStart(() -> NaraSoundHelper.play("angry", "line1"))
         ));

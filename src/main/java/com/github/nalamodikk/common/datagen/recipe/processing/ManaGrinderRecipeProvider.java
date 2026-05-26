@@ -95,6 +95,16 @@ public class ManaGrinderRecipeProvider {
                 .processingTime(60)
                 .save();
 
-        KoniavacraftMod.LOGGER.debug("Generated {} mana grinder recipes.", 9);
+        // ── 魔力合金套裝材料鏈 ─────────────────────────────────────────────────
+        // 魔力鐵 + 魔力水晶 → 魔力水晶合金粉 ×2
+        ProcessingRecipeProvider.createProcessingRecipe(output, "grinder/mana_iron_to_alloy_powder", "grinder")
+                .input(ModItems.MANA_IRON.get())
+                .input(ModItems.MANA_CRYSTAL.get())
+                .output(ModItems.MANA_CRYSTAL_ALLOY_DUST.get(), 2)
+                .manaCost(3500)
+                .processingTime(100)
+                .save();
+
+        KoniavacraftMod.LOGGER.debug("Generated {} mana grinder recipes.", 10);
     }
 }

@@ -8,11 +8,14 @@ import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class PlayerKnowledge {
 
@@ -24,7 +27,7 @@ public class PlayerKnowledge {
     private final Set<ResourceLocation> completedResearch = new HashSet<>();
     private final Set<ResourceLocation> availableResearchOverrides = new HashSet<>();
     private final Set<ResourceLocation> lockedResearch = new HashSet<>();
-    private final Set<ResourceLocation> scannedItems = new HashSet<>();
+    private final Map<ResourceLocation, List<ResourceLocation>> scannedTargets = new HashMap<>();
     private final Set<String> seenTutorials = new HashSet<>();
     private final Set<String> pendingTutorials = new HashSet<>();
     private int currentTier = MIN_TIER;
@@ -96,12 +99,20 @@ public class PlayerKnowledge {
         return Collections.unmodifiableSet(pendingTutorials);
     }
 
-    public boolean recordItemScan(ResourceLocation itemId) {
-        return scannedItems.add(itemId);
+    public boolean recordItemScan(ResourceLocation targetId, List<Aspect> aspects) {
+        List<ResourceLocation> existing = scannedTargets.get(targetId);
+        if (existing != null && !existing.isEmpty()) return false;
+        List<ResourceLocation> ids = aspects.stream().map(Aspect::getId).collect(Collectors.toList());
+        scannedTargets.put(targetId, ids);
+        return true;
     }
 
-    public Set<ResourceLocation> getScannedItems() {
-        return Collections.unmodifiableSet(scannedItems);
+    public boolean hasScannedTarget(ResourceLocation id) {
+        return scannedTargets.containsKey(id);
+    }
+
+    public Map<ResourceLocation, List<ResourceLocation>> getScannedTargets() {
+        return Collections.unmodifiableMap(scannedTargets);
     }
 
     public boolean hasCompleted(ResourceLocation researchId) {
@@ -195,7 +206,7 @@ public class PlayerKnowledge {
         completedResearch.clear();
         availableResearchOverrides.clear();
         lockedResearch.clear();
-        scannedItems.clear();
+        scannedTargets.clear();
         seenTutorials.clear();
         pendingTutorials.clear();
         currentTier = MIN_TIER;
@@ -229,11 +240,15 @@ public class PlayerKnowledge {
         }
         tag.put("LockedResearch", lockedList);
 
-        ListTag scannedList = new ListTag();
-        for (ResourceLocation id : scannedItems) {
-            scannedList.add(StringTag.valueOf(id.toString()));
+        CompoundTag scannedTag = new CompoundTag();
+        for (Map.Entry<ResourceLocation, List<ResourceLocation>> entry : scannedTargets.entrySet()) {
+            ListTag aspectList = new ListTag();
+            for (ResourceLocation aId : entry.getValue()) {
+                aspectList.add(StringTag.valueOf(aId.toString()));
+            }
+            scannedTag.put(entry.getKey().toString(), aspectList);
         }
-        tag.put("ScannedItems", scannedList);
+        tag.put("ScannedTargets", scannedTag);
 
         ListTag tutorialList = new ListTag();
         for (String id : seenTutorials) {
@@ -264,7 +279,11 @@ public class PlayerKnowledge {
         loadResearch(tag.getList("CompletedResearch", Tag.TAG_STRING), knowledge);
         loadAvailableResearchOverrides(tag, knowledge);
         loadLockedResearch(tag, knowledge);
-        loadScannedItems(tag.getList("ScannedItems", Tag.TAG_STRING), knowledge);
+        if (tag.contains("ScannedTargets", Tag.TAG_COMPOUND)) {
+            loadScannedTargets(tag.getCompound("ScannedTargets"), knowledge);
+        } else {
+            loadLegacyScannedItems(tag.getList("ScannedItems", Tag.TAG_STRING), knowledge);
+        }
         loadSeenTutorials(tag.getList("SeenTutorials", Tag.TAG_STRING), knowledge);
         loadPendingTutorials(tag.getList("PendingTutorials", Tag.TAG_STRING), knowledge);
         knowledge.addPrimaryAspects();
@@ -325,12 +344,24 @@ public class PlayerKnowledge {
         }
     }
 
-    private static void loadScannedItems(ListTag scannedList, PlayerKnowledge knowledge) {
+    private static void loadScannedTargets(CompoundTag tag, PlayerKnowledge knowledge) {
+        for (String key : tag.getAllKeys()) {
+            ResourceLocation targetId = ResourceLocation.tryParse(key);
+            if (targetId == null) continue;
+            ListTag aspectList = tag.getList(key, Tag.TAG_STRING);
+            List<ResourceLocation> aspects = new ArrayList<>();
+            for (int i = 0; i < aspectList.size(); i++) {
+                ResourceLocation aId = ResourceLocation.tryParse(aspectList.getString(i));
+                if (aId != null) aspects.add(aId);
+            }
+            knowledge.scannedTargets.put(targetId, aspects);
+        }
+    }
+
+    private static void loadLegacyScannedItems(ListTag scannedList, PlayerKnowledge knowledge) {
         for (int i = 0; i < scannedList.size(); i++) {
             ResourceLocation id = ResourceLocation.tryParse(scannedList.getString(i));
-            if (id != null) {
-                knowledge.scannedItems.add(id);
-            }
+            if (id != null) knowledge.scannedTargets.put(id, List.of());
         }
     }
 

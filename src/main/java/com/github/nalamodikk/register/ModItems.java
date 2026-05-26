@@ -39,6 +39,7 @@ import com.github.nalamodikk.common.item.equipment.armor.LeggingsUpgradeItem;
 import com.github.nalamodikk.common.item.weapon.FloatingTurretItem;
 import com.github.nalamodikk.common.utils.upgrade.UpgradeType;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -57,6 +58,16 @@ public class ModItems {
     public static final DeferredItem<Item> MANA_CRYSTAL_FRAGMENT = ITEMS.register("mana_crystal_fragment", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> REFINED_MANA_DUST = ITEMS.register("refined_mana_dust", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> MANA_CRYSTAL = ITEMS.register("mana_crystal", () -> new Item(new Item.Properties()));
+
+    // ── 魔力合金套裝中間材料 ─────────────────────────────────────────────────────
+    public static final DeferredItem<Item> MANA_IRON =
+            ITEMS.register("mana_iron", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> MANA_CRYSTAL_ALLOY_DUST =
+            ITEMS.register("mana_crystal_alloy_dust", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> MANA_ALLOY_INGOT =
+            ITEMS.register("mana_alloy_ingot", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> MANA_REINFORCED_PLATE =
+            ITEMS.register("mana_reinforced_plate", () -> new Item(new Item.Properties()));
 
     // ── T1 電路板中間材料 ─────────────────────────────────────────────────────
     public static final DeferredItem<Item> MANA_SUBSTRATE    = ITEMS.register("mana_substrate",    () -> new Item(new Item.Properties()));
@@ -219,6 +230,7 @@ public class ModItems {
             ITEMS.register("mana_sprint_boots", () -> new ManaSprintBootsItem(
                     ModArmorMaterials.MANA_ALLOY,
                     new Item.Properties()
+                            .durability(429)
                             .component(ModDataComponents.MANA_STORED, 0)
                             .component(ModDataComponents.MAX_MANA, ManaSprintBootsItem.BASE_MAX_MANA)));
 
@@ -268,6 +280,7 @@ public class ModItems {
             ITEMS.register("mana_alloy_helmet", () -> new ManaAlloyHelmetItem(
                     ModArmorMaterials.MANA_ALLOY,
                     new Item.Properties()
+                            .durability(363)
                             .component(ModDataComponents.MANA_STORED, 0)
                             .component(ModDataComponents.MAX_MANA, ManaAlloyHelmetItem.BASE_MAX_MANA)));
 
@@ -275,6 +288,7 @@ public class ModItems {
             ITEMS.register("mana_alloy_chestplate", () -> new ManaAlloyChestplateItem(
                     ModArmorMaterials.MANA_ALLOY,
                     new Item.Properties()
+                            .durability(528)
                             .component(ModDataComponents.MANA_STORED, 0)
                             .component(ModDataComponents.MAX_MANA, ManaAlloyChestplateItem.BASE_MAX_MANA)));
 
@@ -282,6 +296,7 @@ public class ModItems {
             ITEMS.register("mana_alloy_leggings", () -> new ManaAlloyLeggingsItem(
                     ModArmorMaterials.MANA_ALLOY,
                     new Item.Properties()
+                            .durability(495)
                             .component(ModDataComponents.MANA_STORED, 0)
                             .component(ModDataComponents.MAX_MANA, ManaAlloyLeggingsItem.BASE_MAX_MANA)));
 
@@ -354,6 +369,32 @@ public class ModItems {
     public static final DeferredItem<DevRenderTestItem4> DEV_RENDER_TEST_4 =
             ITEMS.register("dev_render_test_4", () -> new DevRenderTestItem4(
                     new Item.Properties().stacksTo(1)));
+
+    // ── 音樂唱片 ────────────────────────────────────────────────────────────────
+    public static final DeferredItem<Item> DISC_QUANTIFIED_MANA_A =
+            ITEMS.register("disc_quantified_mana_a", () -> new Item(new Item.Properties()
+                    .stacksTo(1).rarity(Rarity.RARE).jukeboxPlayable(ModJukeboxSongs.QUANTIFIED_MANA_A)));
+    public static final DeferredItem<Item> DISC_QUANTIFIED_MANA_B =
+            ITEMS.register("disc_quantified_mana_b", () -> new Item(new Item.Properties()
+                    .stacksTo(1).rarity(Rarity.RARE).jukeboxPlayable(ModJukeboxSongs.QUANTIFIED_MANA_B)));
+    public static final DeferredItem<Item> DISC_MEMORY_TWO_SIDES_A =
+            ITEMS.register("disc_memory_two_sides_a", () -> new Item(new Item.Properties()
+                    .stacksTo(1).rarity(Rarity.RARE).jukeboxPlayable(ModJukeboxSongs.MEMORY_TWO_SIDES_A)));
+    public static final DeferredItem<Item> DISC_MEMORY_TWO_SIDES_B =
+            ITEMS.register("disc_memory_two_sides_b", () -> new Item(new Item.Properties()
+                    .stacksTo(1).rarity(Rarity.RARE).jukeboxPlayable(ModJukeboxSongs.MEMORY_TWO_SIDES_B)));
+    public static final DeferredItem<Item> DISC_KNOWLEDGE_SHORTCUT_A =
+            ITEMS.register("disc_knowledge_shortcut_a", () -> new Item(new Item.Properties()
+                    .stacksTo(1).rarity(Rarity.RARE).jukeboxPlayable(ModJukeboxSongs.KNOWLEDGE_SHORTCUT_A)));
+    public static final DeferredItem<Item> DISC_KNOWLEDGE_SHORTCUT_B =
+            ITEMS.register("disc_knowledge_shortcut_b", () -> new Item(new Item.Properties()
+                    .stacksTo(1).rarity(Rarity.RARE).jukeboxPlayable(ModJukeboxSongs.KNOWLEDGE_SHORTCUT_B)));
+    public static final DeferredItem<Item> DISC_U_KEY_CORE_A =
+            ITEMS.register("disc_u_key_core_a", () -> new Item(new Item.Properties()
+                    .stacksTo(1).rarity(Rarity.RARE).jukeboxPlayable(ModJukeboxSongs.U_KEY_CORE_A)));
+    public static final DeferredItem<Item> DISC_U_KEY_CORE_B =
+            ITEMS.register("disc_u_key_core_b", () -> new Item(new Item.Properties()
+                    .stacksTo(1).rarity(Rarity.RARE).jukeboxPlayable(ModJukeboxSongs.U_KEY_CORE_B)));
 
     public static void register(IEventBus eventBus){
         ITEMS.register(eventBus);

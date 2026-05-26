@@ -4,10 +4,11 @@ import net.minecraft.resources.ResourceLocation;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.HashMap;
-import java.util.Set;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Client-side cache of the local player's discovered aspects and completed research.
@@ -20,6 +21,7 @@ public final class ClientResearchCache {
     private static Set<ResourceLocation> availableResearchOverrides = new HashSet<>();
     private static Set<ResourceLocation> lockedResearch = new HashSet<>();
     private static int currentTier = 1;
+    private static Map<ResourceLocation, List<ResourceLocation>> scannedTargets = new HashMap<>();
 
     /** Called by networking handlers on the client thread. */
     public static void update(Collection<ResourceLocation> aspects, Collection<ResourceLocation> research, int tier) {
@@ -114,12 +116,33 @@ public final class ClientResearchCache {
         return currentTier;
     }
 
+    public static boolean hasScanned(ResourceLocation targetId) {
+        return scannedTargets.containsKey(targetId);
+    }
+
+    public static List<ResourceLocation> getScannedAspects(ResourceLocation targetId) {
+        return Collections.unmodifiableList(scannedTargets.getOrDefault(targetId, List.of()));
+    }
+
+    public static void addScannedTarget(ResourceLocation targetId, List<ResourceLocation> aspectIds) {
+        scannedTargets.put(targetId, List.copyOf(aspectIds));
+    }
+
+    public static void updateScannedTargets(Map<ResourceLocation, List<ResourceLocation>> targets) {
+        scannedTargets = new HashMap<>(targets);
+    }
+
+    public static Map<ResourceLocation, List<ResourceLocation>> getScannedTargets() {
+        return Collections.unmodifiableMap(scannedTargets);
+    }
+
     public static void clear() {
         discoveredAspects = new HashMap<>();
         completedResearch = new HashSet<>();
         availableResearchOverrides = new HashSet<>();
         lockedResearch = new HashSet<>();
         currentTier = 1;
+        scannedTargets = new HashMap<>();
     }
 
     private ClientResearchCache() {}

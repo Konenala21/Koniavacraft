@@ -1,5 +1,8 @@
 package com.github.nalamodikk.register.client;
 
+import com.github.nalamodikk.common.item.equipment.armor.ChestplateUpgradeItem;
+import com.github.nalamodikk.common.item.equipment.armor.HelmetUpgradeItem;
+import com.github.nalamodikk.common.item.equipment.armor.LeggingsUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.boots.BootsUpgradeItem;
 import com.github.nalamodikk.common.item.wand.core.WandCoreItem;
 import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeItem;
@@ -48,6 +51,60 @@ public class ModColorHandlers {
                 ModItems.WAND_UPGRADE_COOLDOWN_MK1.get(),
                 ModItems.WAND_UPGRADE_COOLDOWN_MK2.get(),
                 ModItems.WAND_UPGRADE_COOLDOWN_MK3.get()
+        );
+
+        // 頭盔升級物品：依 behavior 染色
+        event.register(
+                (stack, tintIndex) -> {
+                    if (tintIndex == 0 && stack.getItem() instanceof HelmetUpgradeItem upg) {
+                        return upg.getBehavior().getColor();
+                    }
+                    return 0xFFFFFF;
+                },
+                ModItems.HELMET_UPGRADE_CAPACITY_MK0.get(),
+                ModItems.HELMET_UPGRADE_CAPACITY_MK1.get(),
+                ModItems.HELMET_UPGRADE_CAPACITY_MK2.get(),
+                ModItems.HELMET_UPGRADE_CAPACITY_MK3.get(),
+                ModItems.HELMET_UPGRADE_ARMOR_MK0.get(),
+                ModItems.HELMET_UPGRADE_ARMOR_MK1.get(),
+                ModItems.HELMET_UPGRADE_ARMOR_MK2.get(),
+                ModItems.HELMET_UPGRADE_ARMOR_MK3.get()
+        );
+
+        // 胸甲升級物品：依 behavior 染色
+        event.register(
+                (stack, tintIndex) -> {
+                    if (tintIndex == 0 && stack.getItem() instanceof ChestplateUpgradeItem upg) {
+                        return upg.getBehavior().getColor();
+                    }
+                    return 0xFFFFFF;
+                },
+                ModItems.CHESTPLATE_UPGRADE_CAPACITY_MK0.get(),
+                ModItems.CHESTPLATE_UPGRADE_CAPACITY_MK1.get(),
+                ModItems.CHESTPLATE_UPGRADE_CAPACITY_MK2.get(),
+                ModItems.CHESTPLATE_UPGRADE_CAPACITY_MK3.get(),
+                ModItems.CHESTPLATE_UPGRADE_ARMOR_MK0.get(),
+                ModItems.CHESTPLATE_UPGRADE_ARMOR_MK1.get(),
+                ModItems.CHESTPLATE_UPGRADE_ARMOR_MK2.get(),
+                ModItems.CHESTPLATE_UPGRADE_ARMOR_MK3.get()
+        );
+
+        // 護腿升級物品：依 behavior 染色
+        event.register(
+                (stack, tintIndex) -> {
+                    if (tintIndex == 0 && stack.getItem() instanceof LeggingsUpgradeItem upg) {
+                        return upg.getBehavior().getColor();
+                    }
+                    return 0xFFFFFF;
+                },
+                ModItems.LEGGINGS_UPGRADE_CAPACITY_MK0.get(),
+                ModItems.LEGGINGS_UPGRADE_CAPACITY_MK1.get(),
+                ModItems.LEGGINGS_UPGRADE_CAPACITY_MK2.get(),
+                ModItems.LEGGINGS_UPGRADE_CAPACITY_MK3.get(),
+                ModItems.LEGGINGS_UPGRADE_ARMOR_MK0.get(),
+                ModItems.LEGGINGS_UPGRADE_ARMOR_MK1.get(),
+                ModItems.LEGGINGS_UPGRADE_ARMOR_MK2.get(),
+                ModItems.LEGGINGS_UPGRADE_ARMOR_MK3.get()
         );
 
         // 靴子升級物品：依 behavior 染色

@@ -77,6 +77,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         createManaModel(ModBlocks.MANA_CRAFTING_TABLE_BLOCK);
         createManaModelWithFacing(ModBlocks.MANA_INFUSER);
         createManaModelWithFacing(ModBlocks.MANA_GRINDER);
+        createManaModelWithFacing(ModBlocks.MANA_PLATE_PRESS);
         createManaGeneratorModel();
         createSolarCollectorModel();
         createManaModel(ModBlocks.RESEARCH_TABLE);

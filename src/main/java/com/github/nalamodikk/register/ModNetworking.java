@@ -34,6 +34,7 @@ import com.github.nalamodikk.research.network.AspectSynthesisPacket;
 import com.github.nalamodikk.research.network.ResearchAspectPlacePacket;
 import com.github.nalamodikk.research.network.ResearchCellRevertPacket;
 import com.github.nalamodikk.research.network.ResearchCompletePacket;
+import com.github.nalamodikk.research.network.ScanResultSyncPacket;
 import com.github.nalamodikk.research.network.StartResearchPacket;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -72,6 +73,7 @@ public class ModNetworking {
         ResearchCompletePacket.registerTo(registrar);
         ResearchAspectPlacePacket.registerTo(registrar);
         ResearchCellRevertPacket.registerToClient(registrar);
+        ScanResultSyncPacket.registerToClient(registrar);
         StartResearchPacket.registerTo(registrar);
         AspectSynthesisPacket.registerTo(registrar);
         AltarUpgradeAnimPacket.registerToClient(registrar);

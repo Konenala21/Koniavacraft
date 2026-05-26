@@ -21,6 +21,7 @@ public class AltarRecipeProvider {
         registerArmor(output);
         registerCircuitMaterials(output);
         registerConduits(output);
+        registerKnowledgeItems(output);
         // 魔力水晶（催化：精煉魔力粉，底座：魔力碎片×4）
         save(output, "mana_crystal_ritual",
                 Ingredient.of(ModItems.REFINED_MANA_DUST.get()),
@@ -217,6 +218,21 @@ public class AltarRecipeProvider {
                 ),
                 new ItemStack(ModBlocks.ELITE_ARCANE_CONDUIT.get(), 8),
                 40000, 400, 3
+        );
+    }
+
+    private static void registerKnowledgeItems(RecipeOutput output) {
+        // 共識眼鏡（催化：紫水晶塊，底座：玻璃板×2 + 魔力水晶 + 魔力錠）T1
+        save(output, "consensus_glasses",
+                Ingredient.of(Items.AMETHYST_BLOCK),
+                List.of(
+                        Ingredient.of(Items.GLASS_PANE),
+                        Ingredient.of(Items.GLASS_PANE),
+                        Ingredient.of(ModItems.MANA_CRYSTAL.get()),
+                        Ingredient.of(ModItems.MANA_INGOT.get())
+                ),
+                new ItemStack(ModItems.CONSENSUS_GLASSES.get()),
+                10000, 300, 1
         );
     }
 

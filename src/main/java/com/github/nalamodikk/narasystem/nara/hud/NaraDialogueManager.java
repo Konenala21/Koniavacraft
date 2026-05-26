@@ -21,6 +21,7 @@ public class NaraDialogueManager {
     private static final Queue<NaraDialogueLine> lineQueue = new ArrayDeque<>();
     private static NaraDialogueLine currentLine = null;
     private static DialogueState dialogueState = DialogueState.INACTIVE;
+    private static List<NaraDialogueLine> pendingDialogue = null;
     private static PortraitState portraitState = PortraitState.HIDDEN;
     private static boolean overlayOnScreen = false;
 
@@ -34,6 +35,18 @@ public class NaraDialogueManager {
     private static boolean charAddedThisTick = false;
 
     public static void startDialogue(List<NaraDialogueLine> lines) {
+        if (dialogueState != DialogueState.INACTIVE) {
+            pendingDialogue = lines;
+            return;
+        }
+        lineQueue.clear();
+        lineQueue.addAll(lines);
+        charIndex = 0;
+        advanceLine();
+    }
+
+    public static void startDialogueImmediate(List<NaraDialogueLine> lines) {
+        pendingDialogue = null;
         lineQueue.clear();
         lineQueue.addAll(lines);
         charIndex = 0;
@@ -119,6 +132,13 @@ public class NaraDialogueManager {
             currentLine = null;
             dialogueState = DialogueState.INACTIVE;
             overlayOnScreen = false;
+            if (pendingDialogue != null) {
+                List<NaraDialogueLine> next = pendingDialogue;
+                pendingDialogue = null;
+                lineQueue.addAll(next);
+                charIndex = 0;
+                advanceLine();
+            }
             return;
         }
         currentLine = lineQueue.poll();
@@ -138,6 +158,7 @@ public class NaraDialogueManager {
     public static void close() {
         NaraSoundHelper.stopCurrent();
         lineQueue.clear();
+        pendingDialogue = null;
         currentLine = null;
         dialogueState = DialogueState.INACTIVE;
         choiceTimerTicks = 0;

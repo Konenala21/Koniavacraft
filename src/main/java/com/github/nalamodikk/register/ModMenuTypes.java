@@ -27,6 +27,8 @@ import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderBl
 import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderMenu;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserMenu;
+import com.github.nalamodikk.common.block.blockentity.mana_plate_press.ManaPlatePressBlockEntity;
+import com.github.nalamodikk.common.block.blockentity.mana_plate_press.ManaPlatePressMenu;
 import com.github.nalamodikk.common.block.blockentity.research.ResearchTableMenu;
 import com.github.nalamodikk.common.screen.block.shared.FallbackUpgradeMenu;
 import com.github.nalamodikk.common.screen.block.shared.UniversalConfigMenu;
@@ -132,6 +134,20 @@ public class ModMenuTypes {
                                     (be != null ? be.getClass().getSimpleName() : "null"));
                         }
                         return new ManaDeployerMenu(id, inv, deployer);
+                    });
+
+    // === 🔩 魔力壓板機菜單 ===
+    public static final DeferredHolder<MenuType<?>, MenuType<ManaPlatePressMenu>> MANA_PLATE_PRESS_MENU =
+            registerMenuType("mana_plate_press",
+                    (id, inv, buf) -> {
+                        BlockPos pos = buf.readBlockPos();
+                        Level level = inv.player.level();
+                        BlockEntity be = level.getBlockEntity(pos);
+                        if (!(be instanceof ManaPlatePressBlockEntity press)) {
+                            throw new IllegalStateException("Expected ManaPlatePressBlockEntity at " + pos + " but found " +
+                                    (be != null ? be.getClass().getSimpleName() : "null"));
+                        }
+                        return new ManaPlatePressMenu(id, inv, press);
                     });
 
     /**

@@ -101,7 +101,7 @@ public class ClientInteractiveFormationManager {
                 initialAngle,
                 FormationParticleOptions.TRACK_PLAYER,
                 radius,
-                0f
+                0.025f
         );
     }
 

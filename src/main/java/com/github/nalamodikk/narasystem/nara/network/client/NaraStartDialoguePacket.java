@@ -6,6 +6,7 @@ import com.github.nalamodikk.narasystem.nara.hud.NaraDialogueManager;
 import com.github.nalamodikk.narasystem.nara.hud.NaraDialogueLine;
 import com.github.nalamodikk.narasystem.nara.hud.NaraFirstLoginFlow;
 import com.github.nalamodikk.narasystem.nara.hud.NaraSoundHelper;
+import com.github.nalamodikk.narasystem.nara.hud.NaraWatchHighlight;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.network.FriendlyByteBuf;
@@ -58,7 +59,7 @@ public record NaraStartDialoguePacket() implements CustomPacketPayload {
         private static void handle(Punishment packet, IPayloadContext context) {
             context.enqueueWork(() -> {
                 NaraDialogueManager.setPortraitShown();
-                NaraDialogueManager.startDialogue(List.of(
+                NaraDialogueManager.startDialogueImmediate(List.of(
                         NaraDialogueLine.simple(Component.translatable("nara.dialogue.punishment.line1"))
                                 .withOnStart(() -> NaraSoundHelper.play("punishment", "line1")),
                         NaraDialogueLine.withChoices(
@@ -69,7 +70,7 @@ public record NaraStartDialoguePacket() implements CustomPacketPayload {
                         NaraDialogueLine.simple(Component.translatable("nara.dialogue.punishment.forgiven"))
                                 .withOnStart(() -> NaraSoundHelper.play("punishment", "forgiven")),
                         NaraDialogueLine.simple(Component.translatable("nara.dialogue.first_login.line8"))
-                                .withOnStart(() -> NaraSoundHelper.play("first_login", "line8"))
+                                .withOnStart(() -> { NaraWatchHighlight.show(); NaraSoundHelper.play("first_login", "line8"); })
                 ));
             });
         }

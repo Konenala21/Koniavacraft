@@ -44,6 +44,32 @@ public class ModSounds {
             {"solar_collector", "line1"}, {"solar_collector", "line2"},
     };
 
+    // ── 音樂唱片音效 ──────────────────────────────────────────────────────────
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_DISC_QUANTIFIED_MANA_A =
+            SOUND_EVENTS.register("music.disc.quantified_mana_a",
+                    () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "music.disc.quantified_mana_a")));
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_DISC_QUANTIFIED_MANA_B =
+            SOUND_EVENTS.register("music.disc.quantified_mana_b",
+                    () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "music.disc.quantified_mana_b")));
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_DISC_MEMORY_TWO_SIDES_A =
+            SOUND_EVENTS.register("music.disc.memory_two_sides_a",
+                    () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "music.disc.memory_two_sides_a")));
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_DISC_MEMORY_TWO_SIDES_B =
+            SOUND_EVENTS.register("music.disc.memory_two_sides_b",
+                    () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "music.disc.memory_two_sides_b")));
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_DISC_KNOWLEDGE_SHORTCUT_A =
+            SOUND_EVENTS.register("music.disc.knowledge_shortcut_a",
+                    () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "music.disc.knowledge_shortcut_a")));
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_DISC_KNOWLEDGE_SHORTCUT_B =
+            SOUND_EVENTS.register("music.disc.knowledge_shortcut_b",
+                    () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "music.disc.knowledge_shortcut_b")));
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_DISC_U_KEY_CORE_A =
+            SOUND_EVENTS.register("music.disc.u_key_core_a",
+                    () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "music.disc.u_key_core_a")));
+    public static final DeferredHolder<SoundEvent, SoundEvent> MUSIC_DISC_U_KEY_CORE_B =
+            SOUND_EVENTS.register("music.disc.u_key_core_b",
+                    () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "music.disc.u_key_core_b")));
+
     public static final DeferredHolder<SoundEvent, SoundEvent> TURRET_SHOOT =
             SOUND_EVENTS.register("weapon.turret.shoot",
                     () -> SoundEvent.createVariableRangeEvent(

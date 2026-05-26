@@ -9,12 +9,8 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.TieredItem;
-import net.minecraft.world.level.block.Block;
-import net.neoforged.neoforge.client.model.generators.ItemModelBuilder;
 import net.neoforged.neoforge.client.model.generators.ItemModelProvider;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
-import net.neoforged.neoforge.registries.DeferredBlock;
-import net.neoforged.neoforge.registries.DeferredItem;
 
 public class ModItemModelProvider extends ItemModelProvider {
     public ModItemModelProvider(PackOutput output, ExistingFileHelper helper) {
@@ -70,6 +66,8 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .texture("layer0", modLoc("item/mana_crystal"));
         // 研究台：BlockItem 但需要手動指定（createManaModel 不生成物品模型）
         withExistingParent("research_table", modLoc("block/research_table"));
+        // 魔力壓板機
+        withExistingParent("mana_plate_press", modLoc("block/mana_plate_press"));
 
         // 魔力發電機輸出升級
         for (int mk = 0; mk <= 3; mk++) {
@@ -121,17 +119,4 @@ public class ModItemModelProvider extends ItemModelProvider {
         });
     }
 
-
-
-    private ItemModelBuilder saplingItem(DeferredBlock<Block> item) {
-        return withExistingParent(item.getId().getPath(),
-                ResourceLocation.parse("item/generated")).texture("layer0",
-                ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID,"block/" + item.getId().getPath()));
-    }
-
-    private ItemModelBuilder handheldItem(DeferredItem<?> item) {
-        return withExistingParent(item.getId().getPath(),
-                ResourceLocation.parse("item/handheld")).texture("layer0",
-                ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID,"item/" + item.getId().getPath()));
-    }
 }

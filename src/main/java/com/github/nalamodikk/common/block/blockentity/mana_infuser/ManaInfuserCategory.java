@@ -22,6 +22,7 @@ import net.minecraft.world.item.ItemStack;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -98,9 +99,12 @@ public class ManaInfuserCategory implements IRecipeCategory<ManaInfuserRecipe> {
             return;
         }
 
-        // 📦 輸入槽 (使用你 GUI 中的實際位置)
+        int count = recipe.getInputCount();
+        List<ItemStack> inputStacks = Arrays.stream(recipe.getInput().getItems())
+                .map(s -> { ItemStack copy = s.copy(); copy.setCount(count); return copy; })
+                .toList();
         builder.addSlot(RecipeIngredientRole.INPUT, 48, 35)
-                .addIngredients(recipe.getInput())
+                .addItemStacks(inputStacks)
                 .setSlotName("input");
 
         // 📦 輸出槽 (使用你 GUI 中的實際位置)

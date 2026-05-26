@@ -340,7 +340,7 @@ public class WandUpgradeScreen extends Screen {
     private int findInventorySlot(ItemStack match) {
         Inventory inv = Minecraft.getInstance().player.getInventory();
         for (int i = 0; i < inv.getContainerSize(); i++) {
-            if (inv.getItem(i) == match) return i;
+            if (ItemStack.isSameItemSameComponents(inv.getItem(i), match)) return i;
         }
         return -1;
     }

@@ -33,31 +33,6 @@ All notable changes to this project will be documented in this file.
 - Boots Upgrade tooltip "Compatible:" item name is now highlighted in yellow.
 - 靴子升級工具提示的「適用於：」物品名稱現在以黃色標示。
 
-### Developer Notes / 開發者備註
-
-- Added `ManaPlatePressBlock/BlockEntity/Menu/Screen/Recipe` (new machine type). Simplified BE: no upgrade inventory, no research gate. Crafting chain recipe provider added. Block model is custom Blockbench (`mana_plate_press_texture.png`). GUI texture: `mana_plate_press_gui.png`.
-- Added `ManaPlatePressRenderer` (BER): parses Blockbench model at runtime, animates "壓板核心" group with `progress/maxProgress` ratio for downward press and lerp-smoothed return (`lerpFactor` 0.18 up / 0.35 down). Per-instance offset stored in `Map<BlockPos, Float>`.
-- `ManaPlatePressBlockEntity` now fully implements `IConfigurableBlock`: `setIOMap`, `getIOMap`, `setIOConfig`, `getIOConfig`. Loot table (`dropSelf`) added to `ModBlockLootTableProvider`.
-- Renamed item `mana_crystal_alloy_powder` to `mana_crystal_alloy_dust` (item ID, field name, lang key, recipe name updated across `ModItems`, `ManaGrinderRecipeProvider`, `ManaInfuserRecipeProvider`, both lang files).
-- Added four new items: `mana_iron`, `mana_crystal_alloy_dust`, `mana_alloy_ingot`, `mana_reinforced_plate`. Textures drawn by user; datagen picks up item models on next `runData`.
-- `UnifiedArmorUpgradeScreen` nav strip overhaul: side cells show item icon only (no text, no background fill), center cell fully removed. Left panel now renders one 2x-scaled item icon with `enableScissor`-clipped 180ms ease-out slide animation (`System.nanoTime` timing, per-direction). `computeUpgradeSlotsY` simplified to fixed offset. Slot `renderSlot` adds `0x88000000` dark underlay before texture blit.
-
-- Added `ManaArmorItem` (abstract base), `ManaAlloyHelmetItem`, `ManaAlloyChestplateItem`, `ManaAlloyLeggingsItem` with mana storage + dynamic armor attributes + upgrade slot system.
-- Added `HelmetUpgradeItem/ChestplateUpgradeItem/LeggingsUpgradeItem` with corresponding `*UpgradeBehavior` enums (CAPACITY, ARMOR). 24 upgrade items registered total (8 per piece).
-- Added `ArmorUpgradeSwapPacket` (C2S, registered in `ModNetworking`). Generic packet handles install/remove for all three armor slots via `EquipmentSlot` ordinal.
-- Added `ManaArmorUpgradeScreen` (reuses `wand_upgrade_gui.png`). 3-slot layout: horizontal row; 4-slot: 2x2 grid. Opens on upgrade GUI keybind when HEAD/CHEST/LEGS armor is worn.
-- `ClientTickHandler`: upgraded GUI key now also checks HEAD/CHEST/LEGS slots for `ManaArmorItem` after checking FEET for boots.
-- `ModCreativeModTabs`: `HelmetUpgradeItem`, `ChestplateUpgradeItem`, `LeggingsUpgradeItem` grouped after other items (same as wand/boots upgrades).
-- `ModItemModelProvider`: 24 armor upgrade item names added to `UPGRADE_NAMES` (use `wand_upgrade` parent model). 3 armor item textures will auto-generate when texture files are added.
-- Added `NaraTutorialFlow.BOOTS_EQUIP` trigger. Fires once via `LivingEquipmentChangeEvent` (FEET slot, `ManaSprintBootsItem`) in `NaraServerEvents`. Persisted in `ResearchSavedData` via `markTutorialSeen`. 1-line dialogue with confirm button, no sound.
-- Added shared lang key `tooltip.koniava.upgrade.compatible` = `"Compatible: %s"` / `"適用於：%s"`. Removed `tooltip.koniava.boots_upgrade.compatible` (was hardcoded, replaced by the parameterized key).
-- `WandCoreItem.appendHoverText`: appends compatible line with both rod names (yellow). `WandUpgradeItem.appendHoverText`: appends compatible line; if `mk <= 1` shows both rods, else shows resonator only. `BootsUpgradeItem.appendHoverText`: same pattern with `item.koniava.mana_sprint_boots`.
-- Added `item.koniava.wand_rod_advanced` to `en_us.json` ("Arcane Pulse Resonator"). Was previously only in `zh_tw.json`.
-
-## [0.0.1.8-2] - 2026-05-26
-
-### Player Changes / 玩家更新內容
-
 - Fixed: clicking the synthesis output in the Research Table had no effect when JEI was not installed. The knowledge sync packet was crashing silently due to a missing JEI class guard, leaving the client cache empty.
 - 修正：未安裝 JEI 時，點擊研究台的合成輸出格沒有任何反應。知識同步封包因缺少 JEI 類別保護而無聲崩潰，導致客戶端快取永遠是空的。
 
@@ -72,15 +47,30 @@ All notable changes to this project will be documented in this file.
 
 ### Developer Notes / 開發者備註
 
+- Added `ManaPlatePressBlock/BlockEntity/Menu/Screen/Recipe` (new machine type). Simplified BE: no upgrade inventory, no research gate. Crafting chain recipe provider added. Block model is custom Blockbench (`mana_plate_press_texture.png`). GUI texture: `mana_plate_press_gui.png`.
+- Added `ManaPlatePressRenderer` (BER): parses Blockbench model at runtime, animates "壓板核心" group with `progress/maxProgress` ratio for downward press and lerp-smoothed return (`lerpFactor` 0.18 up / 0.35 down). Per-instance offset stored in `Map<BlockPos, Float>`.
+- `ManaPlatePressBlockEntity` now fully implements `IConfigurableBlock`: `setIOMap`, `getIOMap`, `setIOConfig`, `getIOConfig`. Loot table (`dropSelf`) added to `ModBlockLootTableProvider`.
+- Renamed item `mana_crystal_alloy_powder` to `mana_crystal_alloy_dust` (item ID, field name, lang key, recipe name updated across `ModItems`, `ManaGrinderRecipeProvider`, `ManaInfuserRecipeProvider`, both lang files).
+- Added four new items: `mana_iron`, `mana_crystal_alloy_dust`, `mana_alloy_ingot`, `mana_reinforced_plate`. Textures drawn by user; datagen picks up item models on next `runData`.
+- `UnifiedArmorUpgradeScreen` nav strip overhaul: side cells show item icon only (no text, no background fill), center cell fully removed. Left panel now renders one 2x-scaled item icon with `enableScissor`-clipped 180ms ease-out slide animation (`System.nanoTime` timing, per-direction). `computeUpgradeSlotsY` simplified to fixed offset. Slot `renderSlot` adds `0x88000000` dark underlay before texture blit.
+- Added `ManaArmorItem` (abstract base), `ManaAlloyHelmetItem`, `ManaAlloyChestplateItem`, `ManaAlloyLeggingsItem` with mana storage + dynamic armor attributes + upgrade slot system.
+- Added `HelmetUpgradeItem/ChestplateUpgradeItem/LeggingsUpgradeItem` with corresponding `*UpgradeBehavior` enums (CAPACITY, ARMOR). 24 upgrade items registered total (8 per piece).
+- Added `ArmorUpgradeSwapPacket` (C2S, registered in `ModNetworking`). Generic packet handles install/remove for all three armor slots via `EquipmentSlot` ordinal.
+- Added `ManaArmorUpgradeScreen` (reuses `wand_upgrade_gui.png`). 3-slot layout: horizontal row; 4-slot: 2x2 grid. Opens on upgrade GUI keybind when HEAD/CHEST/LEGS armor is worn.
+- `ClientTickHandler`: upgraded GUI key now also checks HEAD/CHEST/LEGS slots for `ManaArmorItem` after checking FEET for boots.
+- `ModCreativeModTabs`: `HelmetUpgradeItem`, `ChestplateUpgradeItem`, `LeggingsUpgradeItem` grouped after other items (same as wand/boots upgrades).
+- `ModItemModelProvider`: 24 armor upgrade item names added to `UPGRADE_NAMES` (use `wand_upgrade` parent model). 3 armor item textures will auto-generate when texture files are added.
+- Added `NaraTutorialFlow.BOOTS_EQUIP` trigger. Fires once via `LivingEquipmentChangeEvent` (FEET slot, `ManaSprintBootsItem`) in `NaraServerEvents`. Persisted in `ResearchSavedData` via `markTutorialSeen`. 1-line dialogue with confirm button, no sound.
+- Added shared lang key `tooltip.koniava.upgrade.compatible` = `"Compatible: %s"` / `"適用於：%s"`. Removed `tooltip.koniava.boots_upgrade.compatible` (was hardcoded, replaced by the parameterized key).
+- `WandCoreItem.appendHoverText`: appends compatible line with both rod names (yellow). `WandUpgradeItem.appendHoverText`: appends compatible line; if `mk <= 1` shows both rods, else shows resonator only. `BootsUpgradeItem.appendHoverText`: same pattern with `item.koniava.mana_sprint_boots`.
+- Added `item.koniava.wand_rod_advanced` to `en_us.json` ("Arcane Pulse Resonator"). Was previously only in `zh_tw.json`.
 - `ResearchClientPayloadHandler`: all three handlers now guard `AspectSynthesisJEIPlugin.refreshAspectIngredients()` with `ModList.get().isLoaded("jei")` to prevent `NoClassDefFoundError: mezz/jei/api/IModPlugin` when JEI is absent.
 - `AspectSynthesisPacket.damageQuill()`: replaced `RandomGenerator.getDefault().nextInt(5)` with `player.getRandom().nextInt(5)`. `RandomGenerator.getDefault()` resolves to `L32X64MixRandom` via Java SPI, absent in some stripped JVMs; `player.getRandom()` returns Minecraft's `RandomSource` which is always available.
-- `AspectAltarBlockEntity.completeRitual()`: now reads `cachedRecipe` directly instead of calling `findMatchingRecipe()` again, eliminating the race window where changed pedestal items could produce a different recipe match.
-- `UnifiedArmorUpgradeScreen.findInventorySlot()`: changed comparison from reference equality to `ItemStack.isSameItemSameComponents()`, matching the fix already applied to the wand screen.
-- `ClientTickHandler`: added `onClientRespawn` handler (`ClientPlayerNetworkEvent.Clone`) to reset `jumpWasDown` and `airTicks` on respawn.
-- `ClientTickHandler.onClientLogOut`: added `DamageNumberRenderer.clear()`, `TurretHitEffectManager.clear()`, `TurretHitEffectRenderer.release()`, and `FloatingTurretPlayerRenderer.reset()` to prevent stale per-session state carrying over to the next login.
-- `DamageNumberRenderer`, `TurretHitEffectManager`: added `clear()` static method.
-- `FloatingTurretPlayerRenderer`: added `reset()` static method that zeroes charge smoothing state.
-- `KoniavacraftMod`: added `AltarExplosionRenderer.reload()` to the resource reload listener; it was the only altar renderer missing from the reload chain.
+- `AspectAltarBlockEntity.completeRitual()`: now reads `cachedRecipe` directly instead of calling `findMatchingRecipe()` again.
+- `UnifiedArmorUpgradeScreen.findInventorySlot()`: changed comparison from reference equality to `ItemStack.isSameItemSameComponents()`.
+- `ClientTickHandler`: added `onClientRespawn` handler; added `DamageNumberRenderer.clear()`, `TurretHitEffectManager.clear()`, `TurretHitEffectRenderer.release()`, `FloatingTurretPlayerRenderer.reset()` on logout.
+- `DamageNumberRenderer`, `TurretHitEffectManager`: added `clear()`. `FloatingTurretPlayerRenderer`: added `reset()`.
+- `KoniavacraftMod`: added `AltarExplosionRenderer.reload()` to the resource reload listener.
 
 ## [0.0.1.8-1] - 2026-05-25
 

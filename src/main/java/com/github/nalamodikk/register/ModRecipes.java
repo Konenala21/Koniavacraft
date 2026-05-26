@@ -5,6 +5,7 @@ import com.github.nalamodikk.common.block.blockentity.altar.AltarRecipe;
 import com.github.nalamodikk.common.block.blockentity.mana_crafting.ManaCraftingTableRecipe;
 import com.github.nalamodikk.common.block.blockentity.mana_generator.recipe.ManaGenFuelRecipe;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserRecipe;
+import com.github.nalamodikk.common.block.blockentity.mana_plate_press.ManaPlatePressRecipe;
 import com.github.nalamodikk.common.coreapi.recipe.ProcessingRecipe;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
@@ -76,6 +77,14 @@ public class ModRecipes {
 
     public static final Supplier<RecipeSerializer<AltarRecipe>> ALTAR_SERIALIZER =
             SERIALIZERS.register("altar_crafting", AltarRecipe.Serializer::new);
+
+    // === 🔩 魔力壓板機 ===
+    public static final Supplier<RecipeType<ManaPlatePressRecipe>> PLATE_PRESS_TYPE =
+            TYPES.register("plate_press", () -> RecipeType.simple(
+                    ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "plate_press")));
+
+    public static final Supplier<RecipeSerializer<ManaPlatePressRecipe>> PLATE_PRESS_SERIALIZER =
+            SERIALIZERS.register("plate_press", ManaPlatePressRecipe.Serializer::new);
 
     // === ⚙️ 通用加工配方系統 ===
     public static final Supplier<RecipeType<ProcessingRecipe>> PROCESSING_TYPE =

@@ -1,0 +1,6 @@
+{
+  "sound_event": "koniava:music.disc.knowledge_shortcut_a",
+  "description": { "translate": "jukebox_song.koniava.knowledge_shortcut_a" },
+  "length_in_seconds": 127.0,
+  "comparator_output": 5
+}

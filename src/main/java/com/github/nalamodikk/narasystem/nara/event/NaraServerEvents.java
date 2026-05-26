@@ -77,7 +77,8 @@ public class NaraServerEvents {
     // Machine placement tutorials (fire when player places + opens machine GUI, not on craft GUI close)
     private static final Set<UUID> pendingManaGrinderPlaced = new HashSet<>();
     private static final Set<UUID> pendingManaInfuserPlaced = new HashSet<>();
-    private static final Set<UUID> pendingManaCraftingPlaced = new HashSet<>();
+    private static final Map<UUID, Integer> pendingManaCraftingPlaced = new HashMap<>();
+    private static final Set<UUID> pendingManaCraftingWaitForPlace = new HashSet<>();
     private static final Set<UUID> pendingManaDeployerPlaced = new HashSet<>();
     private static final Set<UUID> pendingManaChargerPlaced = new HashSet<>();
     private static final Set<UUID> pendingSolarCollectorPlaced = new HashSet<>();
@@ -113,6 +114,7 @@ public class NaraServerEvents {
         pendingManaGrinderPlaced.clear();
         pendingManaInfuserPlaced.clear();
         pendingManaCraftingPlaced.clear();
+        pendingManaCraftingWaitForPlace.clear();
         pendingManaDeployerPlaced.clear();
         pendingManaChargerPlaced.clear();
         pendingSolarCollectorPlaced.clear();
@@ -155,6 +157,7 @@ public class NaraServerEvents {
         pendingManaGrinderPlaced.remove(uuid);
         pendingManaInfuserPlaced.remove(uuid);
         pendingManaCraftingPlaced.remove(uuid);
+        pendingManaCraftingWaitForPlace.remove(uuid);
         pendingManaDeployerPlaced.remove(uuid);
         pendingManaChargerPlaced.remove(uuid);
         pendingSolarCollectorPlaced.remove(uuid);
@@ -262,7 +265,7 @@ public class NaraServerEvents {
                 && !knowledge.hasSeenTutorial(NaraTutorialFlow.MANA_CRAFTING_CRAFT)) {
             knowledge.addPendingTutorial(NaraTutorialFlow.MANA_CRAFTING_CRAFT);
             savedData.setDirty();
-            pendingManaCraftingPlaced.add(sp.getUUID());
+            pendingManaCraftingPlaced.put(sp.getUUID(), GUI_CLOSE_TIMEOUT_TICKS);
         }
 
         if (event.getCrafting().getItem() == ModBlocks.MANA_DEPLOYER.get().asItem()
@@ -314,7 +317,7 @@ public class NaraServerEvents {
         checkMachinePlaced(player, level, pos, event.getPlacedBlock(),
                 ModBlocks.MANA_INFUSER.get(), pendingManaInfuserPlaced, NaraTutorialFlow.MANA_INFUSER_CRAFT);
         checkMachinePlaced(player, level, pos, event.getPlacedBlock(),
-                ModBlocks.MANA_CRAFTING_TABLE_BLOCK.get(), pendingManaCraftingPlaced, NaraTutorialFlow.MANA_CRAFTING_CRAFT);
+                ModBlocks.MANA_CRAFTING_TABLE_BLOCK.get(), pendingManaCraftingWaitForPlace, NaraTutorialFlow.MANA_CRAFTING_PLACED);
         checkMachinePlaced(player, level, pos, event.getPlacedBlock(),
                 ModBlocks.MANA_DEPLOYER.get(), pendingManaDeployerPlaced, NaraTutorialFlow.MANA_DEPLOYER_CRAFT);
         checkMachinePlaced(player, level, pos, event.getPlacedBlock(),
@@ -357,7 +360,7 @@ public class NaraServerEvents {
         if (pending.contains(NaraTutorialFlow.MANA_INFUSER_CRAFT))
             pendingManaInfuserPlaced.add(uuid);
         if (pending.contains(NaraTutorialFlow.MANA_CRAFTING_CRAFT))
-            pendingManaCraftingPlaced.add(uuid);
+            pendingManaCraftingPlaced.put(uuid, GUI_CLOSE_TIMEOUT_TICKS);
         if (pending.contains(NaraTutorialFlow.MANA_DEPLOYER_CRAFT))
             pendingManaDeployerPlaced.add(uuid);
         if (pending.contains(NaraTutorialFlow.MANA_CHARGER_CRAFT))
@@ -369,6 +372,12 @@ public class NaraServerEvents {
         if (knowledge.hasSeenTutorial(NaraTutorialFlow.MANA_GEN_CRAFT)
                 && !knowledge.hasSeenTutorial(NaraTutorialFlow.MANA_GEN_PLACED)) {
             pendingManaGenPlacement.put(uuid, GUI_CLOSE_TIMEOUT_TICKS + 1);
+        }
+
+        // Craft tutorial fired but player hasn't placed the mana crafting table yet
+        if (knowledge.hasSeenTutorial(NaraTutorialFlow.MANA_CRAFTING_CRAFT)
+                && !knowledge.hasSeenTutorial(NaraTutorialFlow.MANA_CRAFTING_PLACED)) {
+            pendingManaCraftingWaitForPlace.add(uuid);
         }
 
         // Wand rod tutorial fired but player hasn't obtained a core yet
@@ -490,6 +499,29 @@ public class NaraServerEvents {
             }
         }
 
+
+        if (!pendingManaCraftingPlaced.isEmpty()) {
+            Iterator<Map.Entry<UUID, Integer>> mcit = pendingManaCraftingPlaced.entrySet().iterator();
+            while (mcit.hasNext()) {
+                Map.Entry<UUID, Integer> entry = mcit.next();
+                UUID uuid = entry.getKey();
+                ServerPlayer player = event.getServer().getPlayerList().getPlayer(uuid);
+                if (player == null) { mcit.remove(); continue; }
+                int remaining = entry.getValue() - 1;
+                boolean timeout = remaining <= 0;
+                if (timeout || player.containerMenu == player.inventoryMenu) {
+                    mcit.remove();
+                    var savedData = ResearchSavedData.get(player.serverLevel());
+                    if (savedData.getOrCreate(player.getUUID()).markTutorialSeen(NaraTutorialFlow.MANA_CRAFTING_CRAFT)) {
+                        NaraTutorialPacket.send(player, NaraTutorialFlow.MANA_CRAFTING_CRAFT);
+                        savedData.setDirty();
+                        pendingManaCraftingWaitForPlace.add(uuid);
+                    }
+                } else {
+                    entry.setValue(remaining);
+                }
+            }
+        }
 
         // Expire the mana generator placement watch after timeout (no tutorial fired, just cleanup)
         if (!pendingManaGenPlacement.isEmpty()) {

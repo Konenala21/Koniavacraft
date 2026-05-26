@@ -3,6 +3,7 @@ package com.github.nalamodikk.research.client;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.narasystem.nara.hud.NaraDialogueManager;
 import com.github.nalamodikk.research.aspect.Aspect;
+import com.github.nalamodikk.research.aspect.ModAspects;
 import com.github.nalamodikk.research.network.StartResearchPacket;
 import com.github.nalamodikk.research.template.ResearchRegistry;
 import com.github.nalamodikk.research.template.ResearchTemplate;
@@ -11,9 +12,11 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -95,6 +98,15 @@ public class NaraWatchScreen extends Screen {
 
     private static final int GUIDE_TAB_OFFSET_Y =
             TIER_TAB_START_Y + TIER_KEYS.length * (TIER_TAB_H + TAB_GAP) + 10;
+    private static final int SCAN_LOG_TAB_OFFSET_Y =
+            GUIDE_TAB_OFFSET_Y + TIER_TAB_H + TAB_GAP;
+
+    private static final int SCAN_ENTRY_H    = 26;
+    private static final int SCAN_ICON       = 10;
+    private static final int SCAN_CELL_W     = 18;
+    private static final int SCAN_CELL_H     = 18;
+    private static final ResourceLocation HEX_CELL_TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/research/hex_cell.png");
 
     // ── State ─────────────────────────────────────────────────────────────────
 
@@ -113,6 +125,8 @@ public class NaraWatchScreen extends Screen {
 
     private int activeTierFilter   = 0; // 0=all, 1-4=specific tier
     private int activeStatusFilter = 0; // 0=all, 1=available, 2=completed
+    private boolean scanLogMode    = false;
+    private int scanLogScrollY     = 0;
 
     @Nullable private EditBox searchBox;
 
@@ -274,22 +288,26 @@ public class NaraWatchScreen extends Screen {
         g.drawCenteredString(font, title,
                 panelX + NA_X + NA_W / 2, panelY + 5, 0x2233AA);
 
-        // === Nodes (scissored to dark-purple content area) ===
+        // === Node area (or scan log) ===
         g.enableScissor(panelX + NA_X, panelY + NA_Y,
                         panelX + NA_X + NA_W, panelY + NA_Y + NA_H);
-        renderConnections(g);
         ResearchTemplate hoveredNode = null;
-        for (ResearchTemplate t : ResearchRegistry.all()) {
-            if (!isNodeVisible(t)) continue;
-            int[] pos = nodePositions.get(t.getId());
-            if (pos == null) continue;
-            int ns = scaledNodeSize();
-            int nx = sx(pos[0]), ny = sy(pos[1]);
-            if (nx + ns < panelX + NA_X || nx > panelX + NA_X + NA_W ||
-                ny + ns < panelY + NA_Y || ny > panelY + NA_Y + NA_H) continue;
-            renderNode(g, pos[0], pos[1], t, partialTick);
-            if (mouseX >= nx && mouseX < nx + ns && mouseY >= ny && mouseY < ny + ns)
-                hoveredNode = t;
+        if (scanLogMode) {
+            renderScanLog(g);
+        } else {
+            renderConnections(g);
+            for (ResearchTemplate t : ResearchRegistry.all()) {
+                if (!isNodeVisible(t)) continue;
+                int[] pos = nodePositions.get(t.getId());
+                if (pos == null) continue;
+                int ns = scaledNodeSize();
+                int nx = sx(pos[0]), ny = sy(pos[1]);
+                if (nx + ns < panelX + NA_X || nx > panelX + NA_X + NA_W ||
+                    ny + ns < panelY + NA_Y || ny > panelY + NA_Y + NA_H) continue;
+                renderNode(g, pos[0], pos[1], t, partialTick);
+                if (mouseX >= nx && mouseX < nx + ns && mouseY >= ny && mouseY < ny + ns)
+                    hoveredNode = t;
+            }
         }
         g.disableScissor();
 
@@ -307,9 +325,10 @@ public class NaraWatchScreen extends Screen {
         renderLeftTabs(g, mouseX, mouseY);
         renderRightTabs(g, mouseX, mouseY);
         renderGuideTab(g, mouseX, mouseY);
+        renderScanLogTab(g, mouseX, mouseY);
 
         // === Description panel ===
-        renderDescPanel(g, mouseX, mouseY);
+        if (!scanLogMode) renderDescPanel(g, mouseX, mouseY);
 
         // === Node hover tooltip (rendered last so it's above everything) ===
         if (hoveredNode != null) {
@@ -400,6 +419,72 @@ public class NaraWatchScreen extends Screen {
         renderSideTab(g, tx, ty, TIER_TAB_W, TIER_TAB_H,
                 Component.translatable("gui.koniava.nara_watch.guide_tab"),
                 false, hovered, false);
+    }
+
+    private void renderScanLogTab(GuiGraphics g, int mouseX, int mouseY) {
+        int tx = panelX - TIER_TAB_W;
+        int ty = panelY + SCAN_LOG_TAB_OFFSET_Y;
+        boolean hovered = mouseX >= tx && mouseX < tx + TIER_TAB_W
+                       && mouseY >= ty && mouseY < ty + TIER_TAB_H;
+        renderSideTab(g, tx, ty, TIER_TAB_W, TIER_TAB_H,
+                Component.translatable("gui.koniava.nara_watch.tab.scan_log"),
+                scanLogMode, hovered, false);
+    }
+
+    private void renderScanLog(GuiGraphics g) {
+        Map<ResourceLocation, List<ResourceLocation>> entries = ClientResearchCache.getScannedTargets();
+        int startX = panelX + NA_X + 4;
+        int startY = panelY + NA_Y + 4 - scanLogScrollY;
+        int maxX   = panelX + NA_X + NA_W - 4;
+
+        if (entries.isEmpty()) {
+            g.drawCenteredString(font,
+                    Component.translatable("gui.koniava.nara_watch.scan_log.empty"),
+                    panelX + NA_X + NA_W / 2, panelY + NA_Y + NA_H / 2, 0x445566);
+            return;
+        }
+
+        for (Map.Entry<ResourceLocation, List<ResourceLocation>> entry : entries.entrySet()) {
+            int rowTop = startY;
+            if (rowTop + SCAN_ENTRY_H < panelY + NA_Y) { startY += SCAN_ENTRY_H; continue; }
+            if (rowTop > panelY + NA_Y + NA_H) break;
+
+            // Target name
+            Component name = resolveTargetName(entry.getKey());
+            g.drawString(font, name, startX, rowTop + 2, 0xCCDDFF, false);
+
+            // Aspect icons row
+            int ix = startX;
+            for (ResourceLocation aspectId : entry.getValue()) {
+                if (ix + SCAN_ICON > maxX) break;
+                Aspect aspect = ModAspects.get(aspectId);
+                if (aspect == null) continue;
+                int c = aspect.getColor();
+                RenderSystem.setShaderColor(
+                        ((c >> 16) & 0xFF) / 255f,
+                        ((c >> 8)  & 0xFF) / 255f,
+                        (c         & 0xFF) / 255f, 0.85f);
+                g.blit(HEX_CELL_TEXTURE, ix, rowTop + 12, 0, 0, SCAN_ICON, SCAN_ICON, SCAN_CELL_W, SCAN_CELL_H);
+                RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+                String letter = aspectId.getPath().substring(0, 1).toUpperCase();
+                g.drawString(font, letter, ix + 2, rowTop + 13, 0xFFFFFF, true);
+                ix += SCAN_ICON + 2;
+            }
+
+            startY += SCAN_ENTRY_H;
+            // Divider
+            g.fill(panelX + NA_X + 2, startY - 1, panelX + NA_X + NA_W - 2, startY, 0x22334466);
+        }
+    }
+
+    private static Component resolveTargetName(ResourceLocation id) {
+        var block = BuiltInRegistries.BLOCK.getOptional(id).orElse(null);
+        if (block != null) return block.getName();
+        var entityType = BuiltInRegistries.ENTITY_TYPE.getOptional(id).orElse(null);
+        if (entityType != null) return entityType.getDescription();
+        var item = BuiltInRegistries.ITEM.getOptional(id).orElse(null);
+        if (item != null) return new ItemStack(item).getHoverName();
+        return Component.literal(id.getPath());
     }
 
     // Right tabs: status filter, protrude to the RIGHT of the panel
@@ -497,6 +582,11 @@ public class NaraWatchScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (scanLogMode && isInNodeArea(mouseX, mouseY)) {
+            int maxScroll = Math.max(0, ClientResearchCache.getScannedTargets().size() * SCAN_ENTRY_H - NA_H + 8);
+            scanLogScrollY = (int) Math.clamp(scanLogScrollY - scrollY * 12, 0, maxScroll);
+            return true;
+        }
         if (!isInNodeArea(mouseX, mouseY))
             return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
 
@@ -520,6 +610,16 @@ public class NaraWatchScreen extends Screen {
             if (mouseX >= gtx && mouseX < gtx + TIER_TAB_W
              && mouseY >= gty && mouseY < gty + TIER_TAB_H) {
                 if (minecraft != null) minecraft.setScreen(new NaraGuideScreen(this));
+                return true;
+            }
+
+            // Scan log tab
+            int sltx = panelX - TIER_TAB_W;
+            int slty = panelY + SCAN_LOG_TAB_OFFSET_Y;
+            if (mouseX >= sltx && mouseX < sltx + TIER_TAB_W
+             && mouseY >= slty && mouseY < slty + TIER_TAB_H) {
+                scanLogMode = !scanLogMode;
+                scanLogScrollY = 0;
                 return true;
             }
 

@@ -4,6 +4,7 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.item.equipment.ManaArmorItem;
 import com.github.nalamodikk.common.item.equipment.armor.ManaAlloyHelmetItem;
 import com.github.nalamodikk.common.item.equipment.armor.ManaConcentrationHelper;
+import com.github.nalamodikk.common.item.equipment.boots.ManaSprintBootsItem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -38,7 +39,9 @@ public final class ManaArmorHudRenderer {
         for (EquipmentSlot slot : new EquipmentSlot[]{
                 EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
             ItemStack stack = mc.player.getItemBySlot(slot);
-            if (!(stack.getItem() instanceof ManaArmorItem)) continue;
+            boolean isManaArmor = stack.getItem() instanceof ManaArmorItem;
+            boolean isManaBoots = stack.getItem() instanceof ManaSprintBootsItem;
+            if (!isManaArmor && !isManaBoots) continue;
 
             int mana = ManaArmorItem.getMana(stack);
             int max  = ManaArmorItem.getMaxMana(stack);

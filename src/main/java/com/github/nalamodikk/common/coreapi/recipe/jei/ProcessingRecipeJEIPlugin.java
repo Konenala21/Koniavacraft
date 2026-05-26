@@ -1,6 +1,8 @@
 package com.github.nalamodikk.common.coreapi.recipe.jei;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.block.blockentity.mana_plate_press.ManaPlatePressRecipe;
+import com.github.nalamodikk.common.block.blockentity.mana_plate_press.ManaPlatePressScreen;
 import com.github.nalamodikk.common.coreapi.recipe.ProcessingRecipe;
 import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderScreen;
 import com.github.nalamodikk.register.ModBlocks;
@@ -45,7 +47,10 @@ public class ProcessingRecipeJEIPlugin implements IModPlugin {
 
         IGuiHelper guiHelper = registration.getJeiHelpers().getGuiHelper();
 
-        registration.addRecipeCategories(new GrinderRecipeCategory(guiHelper));
+        registration.addRecipeCategories(
+                new GrinderRecipeCategory(guiHelper),
+                new PlatePressRecipeCategory(guiHelper)
+        );
 
         LOGGER.info("[JEI] Processing recipe categories registered.");
     }
@@ -60,12 +65,14 @@ public class ProcessingRecipeJEIPlugin implements IModPlugin {
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
         LOGGER.info("[JEI] Registering processing machine catalysts.");
 
-        // 粉碎機
         registration.addRecipeCatalyst(
                 new ItemStack(ModBlocks.MANA_GRINDER.get()),
                 GrinderRecipeCategory.RECIPE_TYPE
         );
-        LOGGER.debug("[JEI] Mana grinder catalyst registered.");
+        registration.addRecipeCatalyst(
+                new ItemStack(ModBlocks.MANA_PLATE_PRESS.get()),
+                PlatePressRecipeCategory.RECIPE_TYPE
+        );
 
     }
 
@@ -76,12 +83,17 @@ public class ProcessingRecipeJEIPlugin implements IModPlugin {
      */
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
-        // 粉碎機右上角配方提示區域
         registration.addRecipeClickArea(
                 ManaGrinderScreen.class,
                 149, 4,
                 21, 15,
                 GrinderRecipeCategory.RECIPE_TYPE
+        );
+        registration.addRecipeClickArea(
+                ManaPlatePressScreen.class,
+                67, 36,
+                44, 12,
+                PlatePressRecipeCategory.RECIPE_TYPE
         );
     }
 
@@ -106,11 +118,8 @@ public class ProcessingRecipeJEIPlugin implements IModPlugin {
                 .toList();
 
         if (allRecipes.isEmpty()) {
-            LOGGER.error("[JEI] No processing recipes were found. Verify that recipe data was generated and loaded.");
-            return;
+            LOGGER.warn("[JEI] No grinder processing recipes found.");
         }
-
-        LOGGER.info("[JEI] Found {} processing recipes. Grouping by machine type.", allRecipes.size());
 
         // 按機器類型分類
         List<ProcessingRecipe> grinderRecipes = allRecipes.stream()
@@ -120,6 +129,16 @@ public class ProcessingRecipeJEIPlugin implements IModPlugin {
         if (!grinderRecipes.isEmpty()) {
             LOGGER.info("[JEI] Registering {} grinder recipes.", grinderRecipes.size());
             registration.addRecipes(GrinderRecipeCategory.RECIPE_TYPE, grinderRecipes);
+        }
+
+        List<ManaPlatePressRecipe> platePressRecipes = minecraft.level.getRecipeManager()
+                .getAllRecipesFor(ModRecipes.PLATE_PRESS_TYPE.get())
+                .stream()
+                .map(RecipeHolder::value)
+                .toList();
+        if (!platePressRecipes.isEmpty()) {
+            LOGGER.info("[JEI] Registering {} plate press recipes.", platePressRecipes.size());
+            registration.addRecipes(PlatePressRecipeCategory.RECIPE_TYPE, platePressRecipes);
         }
 
         LOGGER.info("[JEI] All processing recipes registered.");

@@ -1,0 +1,6 @@
+{
+  "sound_event": "koniava:music.disc.memory_two_sides_a",
+  "description": { "translate": "jukebox_song.koniava.memory_two_sides_a" },
+  "length_in_seconds": 165.0,
+  "comparator_output": 3
+}
