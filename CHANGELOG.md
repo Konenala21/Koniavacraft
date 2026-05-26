@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Added crafting recipes for Leggings Multi-Jump Upgrade (Mk0-Mk3) and Helmet Night Vision Upgrade. Multi-jump Mk0 uses Feather and Mana Ingot; higher Mk adds Rabbit Foot, Slime Ball, and Phantom Membrane. Night Vision uses Golden Carrot and Glow Ink Sac. All crafted at Mana Crafting table. Requires runData.
+- 新增護腿多段跳升級（Mk0-Mk3）與頭盔夜視升級的合成配方。多段跳 Mk0 使用羽毛與魔力錠；高等 Mk 依序加入兔腳、黏液球、幻翼膜。夜視升級使用金胡蘿蔔與發光墨囊。均在魔力合成台製作，需跑 runData。
+
 - Added Night Vision Upgrade for Mana Alloy Helmet. Install it in an upgrade slot to unlock night vision. Toggle on/off with the "Toggle Helmet Effect" keybind (default N). The helmet tooltip shows the current state (On/Off). Requires runData to generate item model.
 - 新增魔力合金頭盔的夜視升級。安裝至升級槽後可解鎖夜視效果，按「切換頭盔效果」快捷鍵（預設 N）開關。頭盔工具提示會顯示目前狀態（已開啟/已關閉）。
 

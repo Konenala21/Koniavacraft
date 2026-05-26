@@ -32,13 +32,6 @@ public class ManaCraftingRecipeProvider {
 
 
     public static void generate(RecipeOutput output) {
-        // ✅ 無序合成配方
-        ManaCraftingRecipeBuilder.create(ModItems.MANA_DUST.get(), 1)
-                .addIngredient(Ingredient.of(Items.DIAMOND))
-                .manaCost(1500)
-                .save(output);
-
-
         // 本源底座
         ManaCraftingRecipeBuilder.create(ModBlocks.ASPECT_PEDESTAL.get(), 1)
                 .shaped(true)
@@ -79,8 +72,9 @@ public class ManaCraftingRecipeProvider {
                 .manaCost(3000)
                 .save(output, "basic_mana_circuit");
 
+        // 魔力注入機（需魔力工作台，避免 mana_crystal 循環依賴）
         ManaCraftingRecipeBuilder.create(ModBlocks.MANA_INFUSER.get(), 1)
-                .shaped(true)  // 明確設置為有序
+                .shaped(true)
                 .pattern("RGR")
                 .pattern("MIM")
                 .pattern("CDC")
@@ -92,7 +86,6 @@ public class ManaCraftingRecipeProvider {
                 .define('D', Items.DIAMOND)
                 .manaCost(3500)
                 .save(output, "mana_infuser_machine");
-
 
         // 魔力砲管
         ManaCraftingRecipeBuilder.create(ModItems.MANA_BARREL.get(), 2)
@@ -962,6 +955,63 @@ public class ManaCraftingRecipeProvider {
                 .define('A', ModItems.LEGGINGS_UPGRADE_ARMOR_MK2.get())
                 .manaCost(9000)
                 .save(output, "leggings_upgrade_armor_mk3");
+
+        // ── 護腿多段跳升級 ────────────────────────────────────────────────────
+        ManaCraftingRecipeBuilder.create(ModItems.LEGGINGS_UPGRADE_MULTI_JUMP_MK0.get(), 1)
+                .shaped(true)
+                .pattern("FMF")
+                .pattern("MUM")
+                .pattern("FMF")
+                .define('F', Items.FEATHER)
+                .define('M', ModItems.MANA_INGOT.get())
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(2000)
+                .save(output, "leggings_upgrade_multi_jump_mk0");
+
+        ManaCraftingRecipeBuilder.create(ModItems.LEGGINGS_UPGRADE_MULTI_JUMP_MK1.get(), 1)
+                .shaped(true)
+                .pattern("FRF")
+                .pattern("RAR")
+                .pattern("FRF")
+                .define('F', ModItems.MANA_CRYSTAL_FRAGMENT.get())
+                .define('R', Items.RABBIT_FOOT)
+                .define('A', ModItems.LEGGINGS_UPGRADE_MULTI_JUMP_MK0.get())
+                .manaCost(3500)
+                .save(output, "leggings_upgrade_multi_jump_mk1");
+
+        ManaCraftingRecipeBuilder.create(ModItems.LEGGINGS_UPGRADE_MULTI_JUMP_MK2.get(), 1)
+                .shaped(true)
+                .pattern("SHS")
+                .pattern("HAH")
+                .pattern("SHS")
+                .define('S', Items.SLIME_BALL)
+                .define('H', ModItems.HIGH_DENSITY_MANA_CORE.get())
+                .define('A', ModItems.LEGGINGS_UPGRADE_MULTI_JUMP_MK1.get())
+                .manaCost(5500)
+                .save(output, "leggings_upgrade_multi_jump_mk2");
+
+        ManaCraftingRecipeBuilder.create(ModItems.LEGGINGS_UPGRADE_MULTI_JUMP_MK3.get(), 1)
+                .shaped(true)
+                .pattern("VPV")
+                .pattern("PAP")
+                .pattern("VPV")
+                .define('V', Items.PHANTOM_MEMBRANE)
+                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('A', ModItems.LEGGINGS_UPGRADE_MULTI_JUMP_MK2.get())
+                .manaCost(9000)
+                .save(output, "leggings_upgrade_multi_jump_mk3");
+
+        // ── 頭盔夜視升級 ──────────────────────────────────────────────────────
+        ManaCraftingRecipeBuilder.create(ModItems.HELMET_UPGRADE_NIGHT_VISION.get(), 1)
+                .shaped(true)
+                .pattern("GIG")
+                .pattern("IUI")
+                .pattern("GIG")
+                .define('G', Items.GOLDEN_CARROT)
+                .define('I', Items.GLOW_INK_SAC)
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(2500)
+                .save(output, "helmet_upgrade_night_vision");
 
     }
 
