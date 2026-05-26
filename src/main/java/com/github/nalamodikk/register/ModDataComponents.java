@@ -112,6 +112,7 @@ public class ModDataComponents {
                     .networkSynchronized(ByteBufCodecs.VAR_INT)
                     .build();
 
+
     /** Stores which research entry a Research Note represents. */
     public static final DataComponentType<ResourceLocation> RESEARCH_ID =
             DataComponentType.<ResourceLocation>builder()
@@ -151,6 +152,12 @@ public class ModDataComponents {
                     .networkSynchronized(ByteBufCodecs.BOOL)
                     .build();
 
+    public static final DataComponentType<Boolean> NIGHT_VISION_ACTIVE =
+            DataComponentType.<Boolean>builder()
+                    .persistent(Codec.BOOL)
+                    .networkSynchronized(ByteBufCodecs.BOOL)
+                    .build();
+
 
     @SubscribeEvent
     public static void register(RegisterEvent event) {
@@ -166,6 +173,7 @@ public class ModDataComponents {
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "research_id"), RESEARCH_ID);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "aspect_id"), ASPECT_ID);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "aspect_hidden"), ASPECT_HIDDEN);
+            helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "night_vision_active"), NIGHT_VISION_ACTIVE);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "wand_core_data"), WAND_CORE_DATA);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "equipment_upgrade_data"), EQUIPMENT_UPGRADE_DATA);
         });

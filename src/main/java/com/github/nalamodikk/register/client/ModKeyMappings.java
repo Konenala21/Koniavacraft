@@ -51,6 +51,34 @@ public final class ModKeyMappings {
         CATEGORY_MOD
     );
 
+    public static final KeyMapping TOGGLE_HELMET = new KeyMapping(
+        "key.koniava.toggle_helmet",
+        InputConstants.Type.KEYSYM,
+        GLFW.GLFW_KEY_N,
+        CATEGORY_MOD
+    );
+
+    public static final KeyMapping TOGGLE_CHESTPLATE = new KeyMapping(
+        "key.koniava.toggle_chestplate",
+        InputConstants.Type.KEYSYM,
+        InputConstants.UNKNOWN.getValue(),
+        CATEGORY_MOD
+    );
+
+    public static final KeyMapping TOGGLE_LEGGINGS = new KeyMapping(
+        "key.koniava.toggle_leggings",
+        InputConstants.Type.KEYSYM,
+        InputConstants.UNKNOWN.getValue(),
+        CATEGORY_MOD
+    );
+
+    public static final KeyMapping TOGGLE_BOOTS = new KeyMapping(
+        "key.koniava.toggle_boots",
+        InputConstants.Type.KEYSYM,
+        InputConstants.UNKNOWN.getValue(),
+        CATEGORY_MOD
+    );
+
     private ModKeyMappings() {}
 
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
@@ -60,5 +88,9 @@ public final class ModKeyMappings {
         event.register(OPEN_UPGRADE_GUI);
         event.register(NARA_SKIP);
         event.register(DASH);
+        event.register(TOGGLE_HELMET);
+        event.register(TOGGLE_CHESTPLATE);
+        event.register(TOGGLE_LEGGINGS);
+        event.register(TOGGLE_BOOTS);
     }
 }

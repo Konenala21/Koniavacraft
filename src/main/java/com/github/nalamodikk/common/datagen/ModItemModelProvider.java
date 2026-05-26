@@ -33,10 +33,12 @@ public class ModItemModelProvider extends ItemModelProvider {
             "boots_upgrade_capacity_mk0",       "boots_upgrade_capacity_mk1",       "boots_upgrade_capacity_mk2",       "boots_upgrade_capacity_mk3",
             "helmet_upgrade_capacity_mk0",      "helmet_upgrade_capacity_mk1",      "helmet_upgrade_capacity_mk2",      "helmet_upgrade_capacity_mk3",
             "helmet_upgrade_armor_mk0",         "helmet_upgrade_armor_mk1",         "helmet_upgrade_armor_mk2",         "helmet_upgrade_armor_mk3",
+            "helmet_upgrade_night_vision",
             "chestplate_upgrade_capacity_mk0",  "chestplate_upgrade_capacity_mk1",  "chestplate_upgrade_capacity_mk2",  "chestplate_upgrade_capacity_mk3",
             "chestplate_upgrade_armor_mk0",     "chestplate_upgrade_armor_mk1",     "chestplate_upgrade_armor_mk2",     "chestplate_upgrade_armor_mk3",
             "leggings_upgrade_capacity_mk0",    "leggings_upgrade_capacity_mk1",    "leggings_upgrade_capacity_mk2",    "leggings_upgrade_capacity_mk3",
-            "leggings_upgrade_armor_mk0",       "leggings_upgrade_armor_mk1",       "leggings_upgrade_armor_mk2",       "leggings_upgrade_armor_mk3"
+            "leggings_upgrade_armor_mk0",       "leggings_upgrade_armor_mk1",       "leggings_upgrade_armor_mk2",       "leggings_upgrade_armor_mk3",
+            "leggings_upgrade_multi_jump_mk0",  "leggings_upgrade_multi_jump_mk1",  "leggings_upgrade_multi_jump_mk2",  "leggings_upgrade_multi_jump_mk3"
     };
 
     @Override

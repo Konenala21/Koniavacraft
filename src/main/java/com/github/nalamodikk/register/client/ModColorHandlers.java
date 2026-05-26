@@ -68,7 +68,8 @@ public class ModColorHandlers {
                 ModItems.HELMET_UPGRADE_ARMOR_MK0.get(),
                 ModItems.HELMET_UPGRADE_ARMOR_MK1.get(),
                 ModItems.HELMET_UPGRADE_ARMOR_MK2.get(),
-                ModItems.HELMET_UPGRADE_ARMOR_MK3.get()
+                ModItems.HELMET_UPGRADE_ARMOR_MK3.get(),
+                ModItems.HELMET_UPGRADE_NIGHT_VISION.get()
         );
 
         // 胸甲升級物品：依 behavior 染色
@@ -104,7 +105,11 @@ public class ModColorHandlers {
                 ModItems.LEGGINGS_UPGRADE_ARMOR_MK0.get(),
                 ModItems.LEGGINGS_UPGRADE_ARMOR_MK1.get(),
                 ModItems.LEGGINGS_UPGRADE_ARMOR_MK2.get(),
-                ModItems.LEGGINGS_UPGRADE_ARMOR_MK3.get()
+                ModItems.LEGGINGS_UPGRADE_ARMOR_MK3.get(),
+                ModItems.LEGGINGS_UPGRADE_MULTI_JUMP_MK0.get(),
+                ModItems.LEGGINGS_UPGRADE_MULTI_JUMP_MK1.get(),
+                ModItems.LEGGINGS_UPGRADE_MULTI_JUMP_MK2.get(),
+                ModItems.LEGGINGS_UPGRADE_MULTI_JUMP_MK3.get()
         );
 
         // 靴子升級物品：依 behavior 染色

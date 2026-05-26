@@ -318,6 +318,9 @@ public class ModItems {
     public static final DeferredItem<HelmetUpgradeItem> HELMET_UPGRADE_ARMOR_MK3 =
             ITEMS.register("helmet_upgrade_armor_mk3", () -> new HelmetUpgradeItem(HelmetUpgradeBehavior.ARMOR, 3, new Item.Properties().stacksTo(4)));
 
+    public static final DeferredItem<HelmetUpgradeItem> HELMET_UPGRADE_NIGHT_VISION =
+            ITEMS.register("helmet_upgrade_night_vision", () -> new HelmetUpgradeItem(HelmetUpgradeBehavior.NIGHT_VISION, 0, new Item.Properties().stacksTo(4)));
+
     // 胸甲升級
     public static final DeferredItem<ChestplateUpgradeItem> CHESTPLATE_UPGRADE_CAPACITY_MK0 =
             ITEMS.register("chestplate_upgrade_capacity_mk0", () -> new ChestplateUpgradeItem(ChestplateUpgradeBehavior.CAPACITY, 0, new Item.Properties().stacksTo(4)));
@@ -353,6 +356,14 @@ public class ModItems {
             ITEMS.register("leggings_upgrade_armor_mk2", () -> new LeggingsUpgradeItem(LeggingsUpgradeBehavior.ARMOR, 2, new Item.Properties().stacksTo(4)));
     public static final DeferredItem<LeggingsUpgradeItem> LEGGINGS_UPGRADE_ARMOR_MK3 =
             ITEMS.register("leggings_upgrade_armor_mk3", () -> new LeggingsUpgradeItem(LeggingsUpgradeBehavior.ARMOR, 3, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<LeggingsUpgradeItem> LEGGINGS_UPGRADE_MULTI_JUMP_MK0 =
+            ITEMS.register("leggings_upgrade_multi_jump_mk0", () -> new LeggingsUpgradeItem(LeggingsUpgradeBehavior.MULTI_JUMP, 0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<LeggingsUpgradeItem> LEGGINGS_UPGRADE_MULTI_JUMP_MK1 =
+            ITEMS.register("leggings_upgrade_multi_jump_mk1", () -> new LeggingsUpgradeItem(LeggingsUpgradeBehavior.MULTI_JUMP, 1, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<LeggingsUpgradeItem> LEGGINGS_UPGRADE_MULTI_JUMP_MK2 =
+            ITEMS.register("leggings_upgrade_multi_jump_mk2", () -> new LeggingsUpgradeItem(LeggingsUpgradeBehavior.MULTI_JUMP, 2, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<LeggingsUpgradeItem> LEGGINGS_UPGRADE_MULTI_JUMP_MK3 =
+            ITEMS.register("leggings_upgrade_multi_jump_mk3", () -> new LeggingsUpgradeItem(LeggingsUpgradeBehavior.MULTI_JUMP, 3, new Item.Properties().stacksTo(4)));
 
     public static final DeferredItem<DevRenderTestItem> DEV_RENDER_TEST_1 =
             ITEMS.register("dev_render_test_1", () -> new DevRenderTestItem(

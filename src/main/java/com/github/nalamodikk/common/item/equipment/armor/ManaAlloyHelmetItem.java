@@ -1,10 +1,16 @@
 package com.github.nalamodikk.common.item.equipment.armor;
 
+import com.github.nalamodikk.common.event.HelmetNightVisionHandler;
 import com.github.nalamodikk.common.item.equipment.ManaArmorItem;
 import com.github.nalamodikk.register.ModDataComponents;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+
+import java.util.List;
 
 public class ManaAlloyHelmetItem extends ManaArmorItem {
 
@@ -40,6 +46,19 @@ public class ManaAlloyHelmetItem extends ManaArmorItem {
         if (upgradeStack.getItem() instanceof HelmetUpgradeItem hu)
             return hu.getBehavior().name();
         return "";
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, TooltipContext ctx, List<Component> lines, TooltipFlag flag) {
+        super.appendHoverText(stack, ctx, lines, flag);
+        if (HelmetNightVisionHandler.hasNightVisionUpgrade(stack)) {
+            boolean active = Boolean.TRUE.equals(stack.get(ModDataComponents.NIGHT_VISION_ACTIVE));
+            if (active) {
+                lines.add(Component.translatable("tooltip.koniava.helmet.night_vision.on").withStyle(ChatFormatting.AQUA));
+            } else {
+                lines.add(Component.translatable("tooltip.koniava.helmet.night_vision.off").withStyle(ChatFormatting.GRAY));
+            }
+        }
     }
 
     @Override

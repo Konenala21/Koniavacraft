@@ -8,7 +8,9 @@ import com.github.nalamodikk.common.network.packet.client.turret.DamageNumberPac
 import com.github.nalamodikk.common.network.packet.client.turret.TurretHitPacket;
 import com.github.nalamodikk.common.network.packet.server.OpenUpgradeGuiPacket;
 import com.github.nalamodikk.common.network.packet.server.armor.ArmorUpgradeSwapPacket;
+import com.github.nalamodikk.common.network.packet.server.inventory.SortContainerPacket;
 import com.github.nalamodikk.common.network.packet.server.armor.DoubleJumpPacket;
+import com.github.nalamodikk.common.network.packet.server.armor.ToggleNightVisionPacket;
 import com.github.nalamodikk.common.network.packet.server.boots.BootsUpgradeSwapPacket;
 import com.github.nalamodikk.common.network.packet.server.boots.DashPacket;
 import com.github.nalamodikk.common.network.packet.server.wand.WandCoreSwapPacket;
@@ -85,6 +87,8 @@ public class ModNetworking {
         BootsUpgradeSwapPacket.registerTo(registrar);
         ArmorUpgradeSwapPacket.registerTo(registrar);
         DoubleJumpPacket.registerTo(registrar);
+        ToggleNightVisionPacket.registerTo(registrar);
         FormationStagePacket.registerToClient(registrar);
+        SortContainerPacket.registerTo(registrar);
     }
 }

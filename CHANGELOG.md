@@ -6,6 +6,22 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Added Night Vision Upgrade for Mana Alloy Helmet. Install it in an upgrade slot to unlock night vision. Toggle on/off with the "Toggle Helmet Effect" keybind (default N). The helmet tooltip shows the current state (On/Off). Requires runData to generate item model.
+- 新增魔力合金頭盔的夜視升級。安裝至升級槽後可解鎖夜視效果，按「切換頭盔效果」快捷鍵（預設 N）開關。頭盔工具提示會顯示目前狀態（已開啟/已關閉）。
+
+- Added four armor toggle keybinds: Toggle Helmet Effect (N), Toggle Chestplate Effect (unbound), Toggle Leggings Effect (unbound), Toggle Boots Effect (unbound). Rebind in Controls settings.
+- 新增四個裝備效果切換快捷鍵：切換頭盔效果（N）、切換胸甲效果（未綁定）、切換護腿效果（未綁定）、切換鞋子效果（未綁定），可在控制設定中自訂。
+
+### Developer Notes / 開發者備註
+
+- Added `HelmetUpgradeBehavior.NIGHT_VISION` (purple, single item, no Mk scaling). Toggle state stored as `ModDataComponents.NIGHT_VISION_ACTIVE` (Boolean, persistent, networkSynchronized) on the helmet ItemStack.
+- `ToggleNightVisionPacket` (C2S): verifies upgrade installed before toggling DataComponent.
+- `HelmetNightVisionHandler`: server-side LivingTickEvent.Post, refreshes Night Vision MobEffect only when duration < 60 ticks.
+- `ModKeyMappings`: added TOGGLE_HELMET/CHESTPLATE/LEGGINGS/BOOTS for future extensibility.
+- Run `runData` to generate `helmet_upgrade_night_vision` model JSON.
+
+---
+
 - Fixed: Mana Grass Block no longer converts to vanilla dirt when a block is placed above it. It now correctly converts to Mana Soil instead.
 - 修正：魔力草方塊在上方放置其他方塊後，不再錯誤地變成原版泥土，現在會正確地轉換為魔力泥土。
 

@@ -14,6 +14,8 @@ import com.github.nalamodikk.common.item.equipment.armor.ManaConcentrationHelper
 import com.github.nalamodikk.common.item.equipment.boots.ManaSprintBootsItem;
 import com.github.nalamodikk.common.network.packet.server.armor.DoubleJumpPacket;
 import com.github.nalamodikk.common.item.wand.WandRodItem;
+import com.github.nalamodikk.common.event.HelmetNightVisionHandler;
+import com.github.nalamodikk.common.network.packet.server.armor.ToggleNightVisionPacket;
 import com.github.nalamodikk.common.network.packet.server.boots.DashPacket;
 import net.minecraft.world.entity.EquipmentSlot;
 import com.github.nalamodikk.register.client.ModKeyMappings;
@@ -106,6 +108,17 @@ public class ClientTickHandler {
                     DoubleJumpPacket.send();
                 }
                 jumpWasDown = jumpDown;
+            }
+        }
+
+        if (ModKeyMappings.TOGGLE_HELMET.consumeClick()) {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null && mc.screen == null) {
+                var helmet = mc.player.getItemBySlot(EquipmentSlot.HEAD);
+                if (helmet.getItem() instanceof com.github.nalamodikk.common.item.equipment.armor.ManaAlloyHelmetItem
+                        && HelmetNightVisionHandler.hasNightVisionUpgrade(helmet)) {
+                    ToggleNightVisionPacket.send();
+                }
             }
         }
 
