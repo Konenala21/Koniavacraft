@@ -1014,6 +1014,7 @@
   "nara.hud.hint.choose": "↕ Scroll  [F] Confirm  [1][2] Select",
 
   "nara.hud.name": "Nara",
+  "nara.phantom.name": "Nara (Phantom)",
   "nara.hud.name.unknown": "???",
 
   "item.koniava.dev_render_test_1": "Dev Render Test Item 1",

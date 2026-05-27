@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Mirror World entry cinematic polish: the opening camera no longer pulls back as far, Nara now watches from farther away, and her phantom is rendered semi-transparent with a "(Phantom)" name tag so you will not mistake it for the real Nara.
+- 鏡中世界進場過場微調：開場鏡頭不再拉那麼遠，娜拉改在更遠處旁觀，她的幻影現在半透明顯示、名牌標示「（幻影）」，避免被當成娜拉本體。
+
 - The Mirror World clone's charged turret shots no longer destroy the arena terrain (only the clone's shots; your own turrets are unchanged).
 - 鏡中世界分身的蓄力砲彈不再破壞 arena 地形（只限分身的砲彈，你自己的浮游砲不受影響）。
 
@@ -73,6 +76,9 @@ All notable changes to this project will be documented in this file.
 - 頭盔夜視升級現在開啟時會持續消耗魔力（5 魔力/秒）。魔力耗盡後夜視自動關閉。手動關閉時效果立即移除。關閉升級不再移除藥水提供的夜視效果。
 
 ### Developer Notes / 開發者備註
+
+- Mirror World intro tweaks: `VoidMirrorIntroManager.CAM_OFFSETS` A/B pulled in (A to {0,3.2,-12}, B to {0,2.4,-7}) so the opening is less distant; `VoidMirrorTeleport.spawnNaraPhantom` moves Nara to `ARENA_Z - 26` and names her via the new `nara.phantom.name` key (zh "娜拉（幻影）" / en "Nara (Phantom)"). `NaraPhantomRenderer` overrides `getRenderType` to `entityTranslucent` and wraps the buffer with an `AlphaConsumer` that multiplies vertex alpha by 0.75 (25% transparent).
+- 鏡中世界進場微調：`VoidMirrorIntroManager.CAM_OFFSETS` A/B 拉近（A 改 {0,3.2,-12}、B 改 {0,2.4,-7}），開場不再那麼遠；`VoidMirrorTeleport.spawnNaraPhantom` 把娜拉移到 `ARENA_Z - 26`，並改用新的 `nara.phantom.name` 鍵命名（中「娜拉（幻影）」/英「Nara (Phantom)」）。`NaraPhantomRenderer` 覆寫 `getRenderType` 為 `entityTranslucent`，並用 `AlphaConsumer` 包裝 buffer 把頂點 alpha 乘 0.75（25% 透明）。
 
 - Clone turret shots (`FloatingTurretEntity.cloneOrbitTick` / `cloneHandTick`) now call `proj.setNoBlockDamage(true)` before spawning, so the charged-shot explosion uses `ExplosionInteraction.NONE` and spares arena terrain. Player-owned turrets are untouched (the flag is set only at the clone call sites, not in `shootAt`).
 - 分身砲彈（`FloatingTurretEntity.cloneOrbitTick` / `cloneHandTick`）生成前呼叫 `proj.setNoBlockDamage(true)`，使蓄力爆炸採用 `ExplosionInteraction.NONE`、不破壞 arena 地形。玩家自己的浮游砲不受影響（旗標只在分身呼叫點設定，不在 `shootAt` 內）。

@@ -105,9 +105,9 @@ public final class VoidMirrorTeleport {
         NaraPhantomEntity nara = ModEntities.NARA_PHANTOM.get().create(level);
         if (nara == null) return;
         // 站在遠處旁觀
-        nara.moveTo(ARENA_X, ARENA_Y, ARENA_Z - 18.0, 0.0F, 0.0F);
+        nara.moveTo(ARENA_X, ARENA_Y, ARENA_Z - 26.0, 0.0F, 0.0F);
         nara.setSourceUUID(sourceId);
-        nara.setCustomName(Component.translatable("nara.hud.name"));
+        nara.setCustomName(Component.translatable("nara.phantom.name"));
         nara.setCustomNameVisible(true);
         level.addFreshEntity(nara);
     }
