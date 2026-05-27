@@ -832,6 +832,8 @@ public class NaraServerEvents {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         if (event.getSlot() != EquipmentSlot.FEET) return;
         if (!(event.getTo().getItem() instanceof ManaSprintBootsItem)) return;
+        // 只在真正「換上」靴子時觸發；靴子魔力每 tick 變動也會發 equip change，要忽略
+        if (event.getFrom().getItem() instanceof ManaSprintBootsItem) return;
         var savedData = ResearchSavedData.get(player.serverLevel());
         if (savedData.getOrCreate(player.getUUID()).markTutorialSeen(NaraTutorialFlow.BOOTS_EQUIP)) {
             NaraTutorialPacket.send(player, NaraTutorialFlow.BOOTS_EQUIP);

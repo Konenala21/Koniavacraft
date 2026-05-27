@@ -35,7 +35,9 @@ public class ResearchSavedData extends SavedData {
     // ── Static accessor ──────────────────────────────────────────────────────
 
     public static ResearchSavedData get(ServerLevel level) {
-        return level.getDataStorage().computeIfAbsent(
+        // 一律存在主世界，跨維度共用同一份資料（否則進其他維度會拿到空白研究/教學資料）
+        ServerLevel overworld = level.getServer().overworld();
+        return overworld.getDataStorage().computeIfAbsent(
                 new SavedData.Factory<>(ResearchSavedData::new, ResearchSavedData::load),
                 SAVE_NAME
         );
