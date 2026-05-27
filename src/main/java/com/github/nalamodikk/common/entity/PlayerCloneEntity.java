@@ -17,6 +17,7 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -33,6 +34,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -49,6 +51,7 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Equipable;
+import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.BundleContents;
 import net.minecraft.world.item.component.ItemContainerContents;
@@ -149,6 +152,39 @@ public class PlayerCloneEntity extends Monster {
     private final List<ItemStack> mirroredHandTurrets = new ArrayList<>();  // 主手/副手 → 手持蓄力
     private boolean turretsSpawned = false; // 不存盤：重載後為 false → 重新生成砲
 
+    // ── 二階段方塊機甲（半血變身：以 BlockDisplay 偽裝方塊組成大型人形包住本體）──
+    private final java.util.List<Display.BlockDisplay> armorParts = new ArrayList<>();
+    private final java.util.List<Vec3> armorOffsets = new ArrayList<>();
+    private boolean armorTriggered = false;   // 半血只觸發一次
+    private boolean armoredDimensions = false; // 鏡像 ARMORED 給 getDimensions 用（避免在 entityData 尚未 define 時讀取）
+    private float armorHp = 0f;               // 外殼血量，與本體血量分離
+    private static final float ARMOR_MAX_HP = 120f;
+    private static final net.minecraft.world.entity.EntityDimensions ARMOR_DIMENSIONS =
+            net.minecraft.world.entity.EntityDimensions.scalable(5.0F, 16.0F); // 涵蓋機甲外殼的碰撞箱
+    private final ArrayList<Integer> armorLegSide = new ArrayList<>(); // 與 armorParts 平行：0=非腿 1=左腿 2=右腿
+    private double walkPhase = 0;                 // 走路動畫相位（移動時推進，讓雙腿前後擺動）
+    private static final int LEG_TOP_ROW = 11;    // 剪影此列(含)以下視為腿
+    private static final double LEG_HIP_Y = 4.0;  // 腿頂(髖)高度 = (rows-1) - LEG_TOP_ROW，繞此擺動
+    // 機甲剪影：b=本體核心、c=外殼方塊、'.'=空；row0 最上、腳在最後一列、b 在 row2/col2
+    private static final String[] MECH_SHAPE = {
+            "ccccc",
+            "c...c",
+            "c.b.c",
+            "ccccc",
+            "..c..",
+            "ccccc",
+            "c.c.c",
+            "c.c.c",
+            "..c..",
+            "..c..",
+            "..c..",
+            ".c.c.",
+            ".c.c.",
+            "c...c",
+            "c...c",
+            "c...c",
+    };
+
     private static final EntityDataAccessor<Optional<UUID>> SOURCE_UUID =
             SynchedEntityData.defineId(PlayerCloneEntity.class, EntityDataSerializers.OPTIONAL_UUID);
     private static final EntityDataAccessor<String> SOURCE_NAME =
@@ -158,6 +194,9 @@ public class PlayerCloneEntity extends Monster {
             SynchedEntityData.defineId(PlayerCloneEntity.class, EntityDataSerializers.INT);
     // 鏡反狀態（同步給 client 畫鏡面輪廓）：此狀態期間打 boss 會被反傷，給玩家學會停手
     private static final EntityDataAccessor<Boolean> REFLECTING =
+            SynchedEntityData.defineId(PlayerCloneEntity.class, EntityDataSerializers.BOOLEAN);
+    // 二階段方塊機甲狀態（同步給 client；機甲外殼由 BlockDisplay 組成、跟隨 boss）
+    private static final EntityDataAccessor<Boolean> ARMORED =
             SynchedEntityData.defineId(PlayerCloneEntity.class, EntityDataSerializers.BOOLEAN);
 
     // 鏡像玩家的整個主背包（快捷欄 0-8 + 背包 9-35），供疊方塊 AI 取用。不掉落、不同步。
@@ -178,6 +217,7 @@ public class PlayerCloneEntity extends Monster {
         builder.define(SOURCE_NAME, "");
         builder.define(TELEGRAPH_SKILL, 0);
         builder.define(REFLECTING, false);
+        builder.define(ARMORED, false);
     }
 
     public int getTelegraphSkill() {
@@ -188,6 +228,10 @@ public class PlayerCloneEntity extends Monster {
         return entityData.get(REFLECTING);
     }
 
+    public boolean isArmored() {
+        return entityData.get(ARMORED);
+    }
+
     public static AttributeSupplier.Builder createAttributes() {
         return Monster.createMonsterAttributes()
                 .add(Attributes.MAX_HEALTH, MAX_HP)
@@ -196,6 +240,17 @@ public class PlayerCloneEntity extends Monster {
                 .add(Attributes.ATTACK_KNOCKBACK, 0.5)
                 .add(Attributes.FOLLOW_RANGE, 48.0)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.4);
+    }
+
+    @Override
+    protected net.minecraft.world.entity.EntityDimensions getDefaultDimensions(net.minecraft.world.entity.Pose pose) {
+        return armoredDimensions ? ARMOR_DIMENSIONS : super.getDefaultDimensions(pose);
+    }
+
+    @Override
+    public AABB getBoundingBoxForCulling() {
+        // 變身期間本體被 renderer 移到頭部、外殼又大，放寬剔除框避免某些視角整隻被 frustum culling 隱藏
+        return armoredDimensions ? this.getBoundingBox().inflate(6.0) : super.getBoundingBoxForCulling();
     }
 
     @Override
@@ -523,6 +578,17 @@ public class PlayerCloneEntity extends Monster {
         if (source.getDirectEntity() instanceof FloatingTurretProjectile proj && proj.getOwner() == this) {
             return false;
         }
+        // 變身期間：傷害打在方塊外殼上（與本體血量分離），稿子高效、其他工具幾乎無效
+        if (isArmored() && level() instanceof ServerLevel armorLevel) {
+            if (source.getEntity() instanceof Player attacker && attacker.isAlive()) {
+                float dealt = attacker.getMainHandItem().getItem() instanceof PickaxeItem ? amount : amount * 0.2F;
+                armorHp -= dealt;
+                armorLevel.playSound(null, blockPosition(), SoundEvents.DEEPSLATE_BREAK, SoundSource.HOSTILE, 0.9F, 0.8F);
+                armorLevel.sendParticles(ParticleTypes.CRIT, getX(), getY() + 1.0, getZ(), 6, 0.6, 1.0, 0.6, 0.1);
+                if (armorHp <= 0F) breakArmor(armorLevel);
+            }
+            return false; // 本體血量受外殼保護
+        }
         boolean result = super.hurt(source, amount);
         // 只在鏡反狀態反傷（玩家看到鏡面輪廓就該停手），不再是純機率
         if (result && !level().isClientSide
@@ -539,6 +605,7 @@ public class PlayerCloneEntity extends Monster {
         super.die(cause);
         if (level().isClientSide || !(level() instanceof ServerLevel sl)) return;
         this.bossEvent.removeAllPlayers();
+        clearArmorParts(); // 死亡清掉殘留外殼方塊
         MinecraftServer server = sl.getServer();
         getSourceUUID().ifPresent(srcId -> {
             VoidMirrorSavedData.get(server).markCleared(srcId);
@@ -570,6 +637,7 @@ public class PlayerCloneEntity extends Monster {
     public void remove(RemovalReason reason) {
         if (!level().isClientSide) {
             this.bossEvent.removeAllPlayers();
+            clearArmorParts();
         }
         super.remove(reason);
     }
@@ -619,6 +687,39 @@ public class PlayerCloneEntity extends Monster {
         }
 
         updatePhase();
+
+        // 半血變身：召喚方塊機甲包住本體（只觸發一次）
+        if (!armorTriggered && getHealth() <= getMaxHealth() * 0.5F
+                && level() instanceof ServerLevel armorLevel) {
+            armorTriggered = true;
+            enterArmored(armorLevel);
+            return;
+        }
+        // 變身期間：外殼面向玩家、緩慢逼近並擺腿走路（外殼被挖爆才解除）
+        if (isArmored()) {
+            LivingEntity tgt = getTarget();
+            if (tgt != null && tgt.isAlive()) {
+                double dx = tgt.getX() - getX();
+                double dz = tgt.getZ() - getZ();
+                float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz)); // 面向玩家
+                setYRot(yaw);
+                this.yBodyRot = yaw;
+                this.yHeadRot = yaw;
+                if (dx * dx + dz * dz > 9.0) { // >3 格才逼近，太近就停讓玩家挖外殼
+                    Vec3 step = new Vec3(dx, 0, dz).normalize().scale(0.08);
+                    setDeltaMovement(step.x, getDeltaMovement().y, step.z);
+                    hurtMarked = true;
+                    walkPhase += 0.35; // 推進走路相位（擺腿）
+                } else {
+                    setDeltaMovement(0, getDeltaMovement().y, 0);
+                }
+            } else {
+                setDeltaMovement(0, getDeltaMovement().y, 0);
+            }
+            tickArmorFollow(); // 設好朝向後再跟隨
+            return;
+        }
+
         tickAntiPillar(); // 全階段防墊高，開場就不給 cheese
         tickPillarSkill(); // 招牌技能：墊方塊衝撞擊飛（全階段）
         tickMeleeStrafe(); // 近戰：邊繞圈邊攻擊（取代 MeleeAttackGoal 的站定揮擊）
@@ -825,6 +926,97 @@ public class PlayerCloneEntity extends Monster {
         if (level() instanceof ServerLevel sl) {
             sl.playSound(null, blockPosition(), SoundEvents.GLASS_PLACE, SoundSource.HOSTILE, 0.9F, 1.6F);
         }
+    }
+
+    // ── 二階段方塊機甲 ──────────────────────────────────────────────
+    // 半血變身：放大碰撞箱涵蓋機甲（只大碰撞箱、不碰模型），用 BlockDisplay 組人形外殼；本體保持正常大小，由 renderer 移到機甲頭部
+    private void enterArmored(ServerLevel sl) {
+        if (isArmored()) return;
+        entityData.set(ARMORED, true);
+        armorHp = ARMOR_MAX_HP;
+        // 清掉進行中的技能狀態，否則變身前正在前搖的招式會卡住、變身後一直重放同一招
+        pendingSkill = null;
+        skillChargeTicks = 0;
+        skillCooldown = SKILL_COOLDOWN;
+        entityData.set(TELEGRAPH_SKILL, 0);
+        pendingLaunchTarget = null;
+        pendingLaunchTimer = 0;
+        armoredDimensions = true; // 放大碰撞箱（getDimensions），讓玩家打得到外殼
+        refreshDimensions();
+        buildArmorShell(sl);
+        sl.playSound(null, blockPosition(), SoundEvents.IRON_GOLEM_REPAIR, SoundSource.HOSTILE, 1.2F, 0.7F);
+        sl.sendParticles(ParticleTypes.LARGE_SMOKE, getX(), getY() + 1.0, getZ(), 60, 1.5, 2.0, 1.5, 0.02);
+    }
+
+    private void buildArmorShell(ServerLevel sl) {
+        CompoundTag stateTag = new CompoundTag();
+        stateTag.put("block_state", NbtUtils.writeBlockState(Blocks.POLISHED_DEEPSLATE.defaultBlockState()));
+        // 依剪影組人形外殼（空心：只放前後兩層），下半部標記左/右腿供走路動畫擺動
+        int rows = MECH_SHAPE.length;
+        for (int row = 0; row < rows; row++) {
+            String line = MECH_SHAPE[row];
+            for (int col = 0; col < line.length(); col++) {
+                if (line.charAt(col) != 'c') continue;  // b/'.' 不放方塊（b=本體核心）
+                double ox = col - 2;                     // col2 對齊本體（水平置中）
+                double oy = (rows - 1 - row);            // 最後一列=腳=本體腳高
+                int leg = (row >= LEG_TOP_ROW) ? (col < 2 ? 1 : (col > 2 ? 2 : 0)) : 0;
+                spawnArmorPart(sl, ox, oy, 0, stateTag, leg); // 單層（一格厚）
+            }
+        }
+    }
+
+    // Display.BlockDisplay.setBlockState 是 private，只能透過 NBT（block_state）設定外觀
+    private void spawnArmorPart(ServerLevel sl, double ox, double oy, double oz, CompoundTag stateTag, int legSide) {
+        Display.BlockDisplay d = EntityType.BLOCK_DISPLAY.create(sl);
+        if (d == null) return;
+        d.load(stateTag.copy());
+        d.setPos(getX() + ox - 0.5, getY() + oy, getZ() + oz - 0.5); // 初始位置，tickArmorFollow 會依朝向修正
+        sl.addFreshEntity(d);
+        armorParts.add(d);
+        armorOffsets.add(new Vec3(ox, oy, oz)); // local 偏移（右 x、上 y、前 z），跟隨時依朝向旋轉
+        armorLegSide.add(legSide);
+    }
+
+    // 每 tick 讓外殼方塊跟著本體移動
+    private void tickArmorFollow() {
+        if (armorParts.isEmpty()) return;
+        float yawRad = getYRot() * ((float) Math.PI / 180F);
+        double sinY = Math.sin(yawRad), cosY = Math.cos(yawRad);
+        for (int i = 0; i < armorParts.size(); i++) {
+            Display.BlockDisplay d = armorParts.get(i);
+            if (d == null || !d.isAlive()) continue;
+            Vec3 o = armorOffsets.get(i);
+            double lz = o.z;
+            int leg = armorLegSide.get(i);
+            if (leg != 0) { // 腿沿前後方向繞髖擺動（越靠腳擺幅越大），左右反相
+                double phase = walkPhase + (leg == 2 ? Math.PI : 0.0);
+                lz += (LEG_HIP_Y - o.y) * Math.sin(phase) * 0.35;
+            }
+            // 依本體朝向把 local 偏移（右 x、前 z）旋轉到世界座標
+            double wx = o.x * cosY - lz * sinY;
+            double wz = o.x * sinY + lz * cosY;
+            d.setPos(getX() + wx - 0.5, getY() + o.y, getZ() + wz - 0.5);
+        }
+    }
+
+    // 外殼被挖爆：剝落外殼、本體現身落地，回到一階段（玩家型態）行為繼續被攻擊
+    private void breakArmor(ServerLevel sl) {
+        clearArmorParts();
+        entityData.set(ARMORED, false);
+        armoredDimensions = false; // 碰撞箱還原正常
+        refreshDimensions();
+        sl.playSound(null, blockPosition(), SoundEvents.IRON_GOLEM_DEATH, SoundSource.HOSTILE, 1.3F, 0.8F);
+        sl.sendParticles(ParticleTypes.EXPLOSION, getX(), getY() + 1.0, getZ(), 12, 1.5, 2.0, 1.5, 0.0);
+    }
+
+    // 清掉殘留的外殼方塊（死亡 / 離開時呼叫，不留孤兒 display）
+    private void clearArmorParts() {
+        for (Display.BlockDisplay d : armorParts) {
+            if (d != null) d.discard();
+        }
+        armorParts.clear();
+        armorOffsets.clear();
+        armorLegSide.clear();
     }
 
     // 玩家飛高（被擊飛或自行升空）時，分身墊方塊往上跳追擊，像玩家 pillar jump

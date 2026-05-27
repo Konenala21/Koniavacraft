@@ -10,6 +10,8 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
 import net.minecraft.client.renderer.entity.layers.ItemInHandLayer;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.resources.ResourceLocation;
 
@@ -37,5 +39,19 @@ public class PlayerCloneRenderer extends HumanoidMobRenderer<PlayerCloneEntity, 
             }
         }
         return DefaultPlayerSkin.get(id != null ? id : entity.getUUID()).texture();
+    }
+
+    @Override
+    public void render(PlayerCloneEntity entity, float entityYaw, float partialTicks,
+                       PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
+        if (entity.isArmored()) {
+            // 變身期間本體保持正常大小，移到機甲頭部位置渲染（像駕駛艙裡的本體）
+            poseStack.pushPose();
+            poseStack.translate(0.0, 13.0, 0.0);
+            super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
+            poseStack.popPose();
+        } else {
+            super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
+        }
     }
 }

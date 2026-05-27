@@ -24,6 +24,8 @@ import com.github.nalamodikk.common.network.packet.server.boots.DashPacket;
 import net.minecraft.world.entity.EquipmentSlot;
 import com.github.nalamodikk.register.client.ModKeyMappings;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.PostChain;
+import com.github.nalamodikk.common.entity.PlayerCloneEntity;
 import net.minecraft.world.InteractionHand;
 import com.github.nalamodikk.client.renderer.FourierCurveRenderer;
 import com.github.nalamodikk.client.renderer.FresnelSphereRenderer;
@@ -54,6 +56,7 @@ public class ClientTickHandler {
     private static boolean jumpWasDown = false;
     private static int airTicks = 0;
     private static boolean greyEffectApplied = false;
+    private static float greySaturation = 0.12f; // 鏡中世界動態飽和度（平時低、boss 危險時回色），平滑趨近目標
 
     @SubscribeEvent
     public static void onClientTickPost(ClientTickEvent.Post event) {
@@ -156,10 +159,28 @@ public class ClientTickHandler {
                 mc.gameRenderer.loadEffect(KoniavacraftMod.rl("shaders/post/grey.json"));
                 greyEffectApplied = true;
             }
+            // 動態回色：平時低飽和，boss 預兆/鏡反/變身時畫面回色當警示（平滑過渡）
+            float target = computeVoidMirrorSaturation(mc);
+            greySaturation += (target - greySaturation) * 0.08F;
+            PostChain chain = mc.gameRenderer.currentEffect();
+            if (chain != null) chain.setUniform("Saturation", greySaturation);
         } else if (greyEffectApplied) {
             mc.gameRenderer.shutdownEffect();
             greyEffectApplied = false;
+            greySaturation = 0.12F;
         }
+    }
+
+    // 依附近 boss 狀態決定畫面目標飽和度：危險時刻回色當警示
+    private static float computeVoidMirrorSaturation(Minecraft mc) {
+        float base = 0.12F;
+        if (mc.player == null || mc.level == null) return base;
+        for (PlayerCloneEntity boss : mc.level.getEntitiesOfClass(PlayerCloneEntity.class,
+                mc.player.getBoundingBox().inflate(48.0))) {
+            if (boss.getTelegraphSkill() != 0 || boss.isReflecting()) return 0.75F; // 預兆/鏡反：強回色警示
+            if (boss.isArmored()) return 0.40F;                                      // 變身期間：中等回色
+        }
+        return base;
     }
 
     @SubscribeEvent
