@@ -124,6 +124,8 @@ public class PlayerCloneEntity extends Monster {
     private int naraCheckCooldown = 0;
     // 空中追擊墊的柱：追完落地就清掉，避免殘留把 arena 弄得坑坑疤疤讓 boss 走路卡頓
     private final List<Long> chaseBlocks = new ArrayList<>();
+    // 進場結束後的緩衝：boss 站定不攻擊，給玩家準備時間（避免動畫剛完就被偷襲）
+    private int graceTicks = 0;
 
     // 進場演出（地底鑽出→飛高→浮動集氣→爆炸顯現裝備→降落→啟動），對齊過場時間軸（360t）
     private static final int INTRO_RISE_START = 430;
@@ -323,6 +325,11 @@ public class PlayerCloneEntity extends Monster {
         return introActive;
     }
 
+    /** 玩家跳過過場：直接推進到進場結尾，下次 tickIntro 立即啟動 boss。 */
+    public void skipIntro() {
+        if (introActive) introTicks = INTRO_LEN;
+    }
+
     private void tickIntro() {
         introTicks++;
         double y;
@@ -439,8 +446,8 @@ public class PlayerCloneEntity extends Monster {
             });
             for (ServerPlayer p : sl.getEntitiesOfClass(ServerPlayer.class, getBoundingBox().inflate(64))) {
                 bossEvent.addPlayer(p);
-                setTarget(p);
             }
+            graceTicks = 40; // 站定 2 秒給玩家準備，不立刻偷襲
             // 返回裂縫與娜拉幻影由 ensureCompanions（active tick）確保恰好一個
         }
         // 繞行砲由 customServerAiStep 的 turretsSpawned 守門生成（涵蓋啟動 + 重載後重生）
@@ -548,6 +555,12 @@ public class PlayerCloneEntity extends Monster {
     protected void customServerAiStep() {
         super.customServerAiStep();
         this.bossEvent.setProgress(this.getHealth() / this.getMaxHealth());
+
+        if (graceTicks > 0) {
+            graceTicks--;
+            setTarget(null); // 進場緩衝：站定不鎖定、不攻擊
+            return;
+        }
 
         // 永遠鎖定附近玩家（含創造模式，只排除旁觀），確保 boss 會主動追打
         if (getTarget() == null || !getTarget().isAlive()) {

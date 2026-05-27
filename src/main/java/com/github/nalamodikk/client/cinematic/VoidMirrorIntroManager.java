@@ -1,6 +1,7 @@
 package com.github.nalamodikk.client.cinematic;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.network.packet.server.VoidMirrorSkipIntroPacket;
 import com.github.nalamodikk.narasystem.nara.hud.NaraSoundHelper;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
@@ -18,6 +19,7 @@ import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.event.RenderPlayerEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
 
@@ -102,6 +104,11 @@ public class VoidMirrorIntroManager {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
+        // 跳過鍵（預設 R / 交換副手）：通知 server 結束 boss 進場，並跳到轉黑收尾交還控制
+        if (mc.options.keySwapOffhand.consumeClick()) {
+            PacketDistributor.sendToServer(VoidMirrorSkipIntroPacket.INSTANCE);
+            if (ticks < FADE_IN_START) ticks = FADE_IN_START;
+        }
         // 鎖定第三人稱：吞掉切換視角(F5)按鍵，並把視角強制設回
         while (mc.options.keyTogglePerspective.consumeClick()) { /* swallow */ }
         if (mc.options.getCameraType() != CameraType.THIRD_PERSON_BACK) {

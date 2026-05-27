@@ -5,6 +5,7 @@ import com.github.nalamodikk.common.network.packet.client.altar.AltarUpgradeAnim
 import com.github.nalamodikk.common.network.packet.client.FormationStagePacket;
 import com.github.nalamodikk.common.network.packet.client.altar.RitualExplosionPacket;
 import com.github.nalamodikk.common.network.packet.client.VoidMirrorIntroPacket;
+import com.github.nalamodikk.common.network.packet.server.VoidMirrorSkipIntroPacket;
 import com.github.nalamodikk.common.network.packet.client.armor.ManaShieldHitPacket;
 import com.github.nalamodikk.common.network.packet.client.turret.DamageNumberPacket;
 import com.github.nalamodikk.common.network.packet.client.turret.TurretHitPacket;
@@ -97,6 +98,7 @@ public class ModNetworking {
         SortContainerPacket.registerTo(registrar);
         ManaShieldHitPacket.registerToClient(registrar);
         VoidMirrorIntroPacket.registerToClient(registrar);
+        VoidMirrorSkipIntroPacket.registerTo(registrar);
         NaraTauntPacket.registerToClient(registrar);
     }
 }
