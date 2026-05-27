@@ -831,11 +831,11 @@ public class PlayerCloneEntity extends Monster {
                 sl.playSound(null, p.blockPosition(), SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 0.8F);
             }
             case LIFT_UP -> {
-                // 在玩家頭頂上方墊方塊（不碰地板）+ 強垂直上拋
-                BlockPos head = p.blockPosition().above(2);
-                placeSkillBlock(sl, head, block);
-                placeSkillBlock(sl, head.above(), block);
-                knockbackPlayer(p, away, 0.4, 1.3);
+                // 方塊在玩家身體位置突然冒出，用衝擊把玩家往上頂飛（不放頭頂，避免玩家往上撞方塊卡住）
+                BlockPos foot = p.blockPosition();
+                placeSkillBlock(sl, foot, block);
+                placeSkillBlock(sl, foot.above(), block);
+                knockbackPlayer(p, away, 0.5, 1.5); // 強上拋為主，帶一點水平
                 sl.playSound(null, p.blockPosition(), SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 1.2F);
             }
             case CHARGE_RAMP -> {

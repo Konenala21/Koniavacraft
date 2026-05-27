@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- The clone's lift skill now spawns the block at your body and launches you upward off its impact, instead of placing a block above your head that you bonk into and get stuck on.
+- 分身的頂起技能現在改成在你身體位置冒出方塊、用衝擊把你往上頂飛,不再是在你頭頂擺一塊讓你往上撞卡住。
+
 - Fixes: the cinematic skip now uses the mod's R keybind (it was wired to the wrong vanilla key before); the wall-ram knockback now launches you back through the air instead of stopping after one block; and the clone's floating turrets no longer blow each other or themselves up with their charged-shot explosions.
 - 修正:過場跳過改用模組的 R 鍵(之前綁錯成原版鍵);墊牆擊退現在會把你往後轟飛(離地飛遠),不再貼地一格就停;分身的浮游砲也不再被自己或同伴的蓄力彈爆炸炸掉。
 
@@ -106,6 +109,9 @@ All notable changes to this project will be documented in this file.
 - 頭盔夜視升級現在開啟時會持續消耗魔力（5 魔力/秒）。魔力耗盡後夜視自動關閉。手動關閉時效果立即移除。關閉升級不再移除藥水提供的夜視效果。
 
 ### Developer Notes / 開發者備註
+
+- `LIFT_UP` now places blocks at the player's body position (`blockPosition()` + above) instead of above the head (`above(2)`), with a stronger upward knockback (0.5 / 1.5), so the player is launched off the spawning block rather than bonking head-first into a ceiling block.
+- `LIFT_UP` 改為在玩家身體位置（`blockPosition()` + 上一格）放方塊，而非頭頂（`above(2)`），並提高上拋（0.5 / 1.5），玩家被冒出的方塊頂飛而非往上撞到天花板方塊卡住。
 
 - `VoidMirrorIntroManager` skip now uses `ModKeyMappings.NARA_SKIP` (R) instead of `keySwapOffhand` (vanilla F). `RAM_WALL` knockback raised to 2.2 horizontal / 0.45 vertical so the player leaves the ground and keeps speed (was 1.5 / 0.1, which stopped after one block). `FloatingTurretEntity.hurt` clone branch now ignores damage whose `getDirectEntity()` is a `FloatingTurretProjectile` owned by the same `cloneOwner`, so clone turrets aren't destroyed by their own/sibling charged-shot explosions.
 - `VoidMirrorIntroManager` 跳過改用 `ModKeyMappings.NARA_SKIP`（R）取代 `keySwapOffhand`（原版 F）。`RAM_WALL` 擊退提高為水平 2.2 / 垂直 0.45，玩家會離地且保速（原為 1.5 / 0.1，貼地一格就停）。`FloatingTurretEntity.hurt` 的 clone 分支忽略 `getDirectEntity()` 為同一 `cloneOwner` 所屬 `FloatingTurretProjectile` 的傷害，分身砲不再被自己或同伴的蓄力彈爆炸摧毀。
