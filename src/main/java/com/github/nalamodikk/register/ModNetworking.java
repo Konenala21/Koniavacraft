@@ -4,6 +4,7 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.network.packet.client.altar.AltarUpgradeAnimPacket;
 import com.github.nalamodikk.common.network.packet.client.FormationStagePacket;
 import com.github.nalamodikk.common.network.packet.client.altar.RitualExplosionPacket;
+import com.github.nalamodikk.common.network.packet.client.VoidMirrorIntroPacket;
 import com.github.nalamodikk.common.network.packet.client.armor.ManaShieldHitPacket;
 import com.github.nalamodikk.common.network.packet.client.turret.DamageNumberPacket;
 import com.github.nalamodikk.common.network.packet.client.turret.TurretHitPacket;
@@ -15,6 +16,7 @@ import com.github.nalamodikk.common.network.packet.server.armor.ToggleNightVisio
 import com.github.nalamodikk.common.network.packet.server.boots.BootsUpgradeSwapPacket;
 import com.github.nalamodikk.common.network.packet.server.boots.DashPacket;
 import com.github.nalamodikk.common.network.packet.server.wand.WandCoreSwapPacket;
+import com.github.nalamodikk.common.network.packet.server.turret.TurretUpgradeSwapPacket;
 import com.github.nalamodikk.common.network.packet.server.deployer.SetDeployerIntervalPacket;
 import com.github.nalamodikk.common.network.packet.server.deployer.ToggleDeployerEnabledPacket;
 import com.github.nalamodikk.common.network.packet.server.conduit.PriorityUpdatePacket;
@@ -28,6 +30,7 @@ import com.github.nalamodikk.common.network.packet.server.player.gui.OpenExtraEq
 import com.github.nalamodikk.narasystem.nara.network.client.NaraAngryPacket;
 import com.github.nalamodikk.narasystem.nara.network.client.NaraCreeperPunishPacket;
 import com.github.nalamodikk.narasystem.nara.network.client.NaraStartDialoguePacket;
+import com.github.nalamodikk.narasystem.nara.network.client.NaraTauntPacket;
 import com.github.nalamodikk.narasystem.nara.network.client.NaraTutorialPacket;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraBindRequestPacket;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraCloseDialoguePacket;
@@ -84,6 +87,7 @@ public class ModNetworking {
         TurretHitPacket.registerToClient(registrar);
         DamageNumberPacket.registerToClient(registrar);
         WandCoreSwapPacket.registerTo(registrar);
+        TurretUpgradeSwapPacket.registerTo(registrar);
         DashPacket.registerTo(registrar);
         BootsUpgradeSwapPacket.registerTo(registrar);
         ArmorUpgradeSwapPacket.registerTo(registrar);
@@ -92,5 +96,7 @@ public class ModNetworking {
         FormationStagePacket.registerToClient(registrar);
         SortContainerPacket.registerTo(registrar);
         ManaShieldHitPacket.registerToClient(registrar);
+        VoidMirrorIntroPacket.registerToClient(registrar);
+        NaraTauntPacket.registerToClient(registrar);
     }
 }

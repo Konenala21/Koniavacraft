@@ -8,7 +8,9 @@ import com.github.nalamodikk.client.renderer.altar.AltarUpgradeAnimManager;
 import com.github.nalamodikk.client.renderer.altar.AltarExplosionManager;
 import com.github.nalamodikk.client.renderer.altar.AltarExplosionRenderer;
 import com.github.nalamodikk.client.screen.armor.UnifiedArmorUpgradeScreen;
+import com.github.nalamodikk.client.screen.turret.TurretUpgradeScreen;
 import com.github.nalamodikk.client.screen.wand.WandUpgradeScreen;
+import com.github.nalamodikk.common.item.weapon.FloatingTurretItem;
 import com.github.nalamodikk.common.item.equipment.ManaArmorItem;
 import com.github.nalamodikk.common.item.equipment.armor.ManaAlloyHelmetItem;
 import com.github.nalamodikk.common.item.equipment.armor.ManaAlloyLeggingsItem;
@@ -72,6 +74,15 @@ public class ClientTickHandler {
                         mc.setScreen(new WandUpgradeScreen(hand));
                         opened = true;
                         break;
+                    }
+                }
+                if (!opened) {
+                    for (InteractionHand hand : InteractionHand.values()) {
+                        if (mc.player.getItemInHand(hand).getItem() instanceof FloatingTurretItem) {
+                            mc.setScreen(new TurretUpgradeScreen(hand));
+                            opened = true;
+                            break;
+                        }
                     }
                 }
                 if (!opened) {

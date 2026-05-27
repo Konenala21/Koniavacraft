@@ -7,6 +7,9 @@ import com.github.nalamodikk.common.multiblock.AbstractMultiblockControllerBlock
 import com.github.nalamodikk.common.multiblock.api.IWandActivatable;
 import com.github.nalamodikk.common.multiblock.api.MultiblockPattern;
 import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
+import com.github.nalamodikk.common.entity.SpaceCrackEntity;
+import com.github.nalamodikk.dimension.ModDimensions;
+import com.github.nalamodikk.register.ModEntities;
 import com.github.nalamodikk.register.ModBlockEntities;
 import com.github.nalamodikk.register.ModBlocks;
 import com.github.nalamodikk.register.ModRecipes;
@@ -569,6 +572,19 @@ public static final List<Vec3i> RING_T1 = List.of(
                 ItemEntity ie = new ItemEntity(level, dropPos.x, dropPos.y, dropPos.z, drop);
                 ie.setDefaultPickUpDelay();
                 level.addFreshEntity(ie);
+            }
+        }
+
+        // T3+ 祭壇爆炸：在核心上方 10 格撕開一道通往鏡中世界的裂縫
+        if (upgradeTier >= 3 && activatorUUID != null
+                && !serverLevel.dimension().equals(ModDimensions.VOID_MIRROR)) {
+            BlockPos crackPos = worldPosition.above(10);
+            if (!SpaceCrackEntity.existsNear(serverLevel, crackPos)) {
+                SpaceCrackEntity crack = new SpaceCrackEntity(ModEntities.SPACE_CRACK.get(), serverLevel);
+                crack.setOwnerUUID(activatorUUID);
+                crack.moveTo(crackPos.getX() + 0.5, crackPos.getY(), crackPos.getZ() + 0.5,
+                        serverLevel.random.nextFloat() * 360F, 0F);
+                serverLevel.addFreshEntity(crack);
             }
         }
     }

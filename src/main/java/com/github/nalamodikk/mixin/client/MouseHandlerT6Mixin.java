@@ -1,5 +1,6 @@
 package com.github.nalamodikk.mixin.client;
 
+import com.github.nalamodikk.client.cinematic.VoidMirrorIntroManager;
 import com.github.nalamodikk.client.renderer.altar.AltarCameraController;
 import net.minecraft.client.MouseHandler;
 import org.spongepowered.asm.mixin.Mixin;
@@ -14,7 +15,7 @@ public class MouseHandlerT6Mixin {
     // This prevents the player from accidentally rotating away from the magic circle.
     @Inject(method = "turnPlayer", at = @At("HEAD"), cancellable = true)
     private void koniava$suppressTurnForT6(double deltaTime, CallbackInfo ci) {
-        if (AltarCameraController.isCameraLocked()) {
+        if (AltarCameraController.isCameraLocked() || VoidMirrorIntroManager.isActive()) {
             ci.cancel();
         }
     }

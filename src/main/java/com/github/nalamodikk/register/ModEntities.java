@@ -3,6 +3,9 @@ package com.github.nalamodikk.register;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.entity.FloatingTurretEntity;
 import com.github.nalamodikk.common.entity.FloatingTurretProjectile;
+import com.github.nalamodikk.common.entity.SpaceCrackEntity;
+import com.github.nalamodikk.common.entity.PlayerCloneEntity;
+import com.github.nalamodikk.common.entity.NaraPhantomEntity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.neoforged.bus.api.IEventBus;
@@ -40,9 +43,36 @@ public class ModEntities {
                             .build(KoniavacraftMod.MOD_ID + ":floating_turret_projectile")
             );
 
+    public static final DeferredHolder<EntityType<?>, EntityType<SpaceCrackEntity>> SPACE_CRACK =
+            ENTITY_TYPES.register("space_crack", () ->
+                    EntityType.Builder.<SpaceCrackEntity>of(SpaceCrackEntity::new, MobCategory.MISC)
+                            .sized(1.5F, 2.0F)
+                            .clientTrackingRange(16)
+                            .updateInterval(20)
+                            .build(KoniavacraftMod.MOD_ID + ":space_crack")
+            );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<PlayerCloneEntity>> PLAYER_CLONE =
+            ENTITY_TYPES.register("player_clone", () ->
+                    EntityType.Builder.<PlayerCloneEntity>of(PlayerCloneEntity::new, MobCategory.MONSTER)
+                            .sized(0.6F, 1.8F)
+                            .clientTrackingRange(10)
+                            .build(KoniavacraftMod.MOD_ID + ":player_clone")
+            );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<NaraPhantomEntity>> NARA_PHANTOM =
+            ENTITY_TYPES.register("nara_phantom", () ->
+                    EntityType.Builder.<NaraPhantomEntity>of(NaraPhantomEntity::new, MobCategory.MISC)
+                            .sized(0.6F, 1.8F)
+                            .clientTrackingRange(16)
+                            .build(KoniavacraftMod.MOD_ID + ":nara_phantom")
+            );
+
     @SubscribeEvent
     public static void onEntityAttributeCreation(EntityAttributeCreationEvent event) {
         event.put(FLOATING_TURRET.get(), FloatingTurretEntity.createAttributes().build());
+        event.put(PLAYER_CLONE.get(), PlayerCloneEntity.createAttributes().build());
+        event.put(NARA_PHANTOM.get(), NaraPhantomEntity.createAttributes().build());
     }
 
     public static void register(IEventBus bus) {

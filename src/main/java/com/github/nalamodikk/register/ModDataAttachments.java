@@ -3,6 +3,7 @@ package com.github.nalamodikk.register;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.mojang.serialization.Codec;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
@@ -12,6 +13,7 @@ import net.neoforged.neoforge.registries.NeoForgeRegistries;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 
@@ -59,6 +61,14 @@ public class ModDataAttachments {
             ATTACHMENT_TYPES.register("last_combat_time", () ->
                     AttachmentType.<Long>builder(() -> -1L)
                             .serialize(Codec.LONG)
+                            .build()
+            );
+
+    // 進入鏡中世界前的返回點（維度 + 座標），死亡或結算時送回
+    public static final Supplier<AttachmentType<Optional<GlobalPos>>> RETURN_POINT =
+            ATTACHMENT_TYPES.register("return_point", () ->
+                    AttachmentType.<Optional<GlobalPos>>builder(Optional::empty)
+                            .serialize(GlobalPos.CODEC.optionalFieldOf("return_point").codec())
                             .build()
             );
 

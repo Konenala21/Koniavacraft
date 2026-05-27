@@ -16,7 +16,8 @@
     "client.MouseHandlerT6Mixin",
     "client.OptionsSubScreenAccessor",
     "client.SoundOptionsScreenMixin",
-    "client.ParticleEngineAddonMixin"
+    "client.ParticleEngineAddonMixin",
+    "client.CameraMixin"
   ],
   "server": [],
   "injectors": {
