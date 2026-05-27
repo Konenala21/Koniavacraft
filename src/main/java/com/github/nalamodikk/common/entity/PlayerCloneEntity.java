@@ -114,6 +114,8 @@ public class PlayerCloneEntity extends Monster {
     private static final int SKILL_TELEGRAPH = 20;  // 前搖 1 秒：站定蓄力 + 漸強預警，給玩家反應/閃避
     private static final double SKILL_RANGE_SQR = 144.0; // 12 格內才發
     private static final double SKILL_MIN_SQR = 4.0;     // 太近不發
+    private static final double SKILL_DODGE_RADIUS = 2.5; // 前搖內跑出鎖定點這個距離即閃過
+    private BlockPos skillTargetPos = BlockPos.ZERO;      // 前搖時鎖定的地點（技能對此點生效，非鎖定玩家本人）
     // 技能墊的方塊：擊飛後 1 秒（20t）開始依序快速打掉，分身收拾自己墊的方塊
     private final List<Long> skillBlocks = new ArrayList<>();
     private int skillClearTimer = -1; // -1 閒置；>0 倒數；0 清理中（每 tick 打一格）
@@ -157,11 +159,13 @@ public class PlayerCloneEntity extends Monster {
     private final java.util.List<Vec3> armorOffsets = new ArrayList<>();
     private boolean armorTriggered = false;   // 半血只觸發一次
     private boolean armoredDimensions = false; // 鏡像 ARMORED 給 getDimensions 用（避免在 entityData 尚未 define 時讀取）
+    private boolean pendingArmorRebuild = false; // 重載時若仍在外殼狀態，首次 tick 重建外殼（接續二階段）
     private float armorHp = 0f;               // 外殼血量，與本體血量分離
     private static final float ARMOR_MAX_HP = 120f;
     private static final net.minecraft.world.entity.EntityDimensions ARMOR_DIMENSIONS =
             net.minecraft.world.entity.EntityDimensions.scalable(5.0F, 16.0F); // 涵蓋機甲外殼的碰撞箱
     private final ArrayList<Integer> armorLegSide = new ArrayList<>(); // 與 armorParts 平行：0=非腿 1=左腿 2=右腿
+    private static final String ARMOR_TAG = "koniava_mecha_armor"; // 標記外殼 display，重載後清孤兒用
     private double walkPhase = 0;                 // 走路動畫相位（移動時推進，讓雙腿前後擺動）
     private static final int LEG_TOP_ROW = 11;    // 剪影此列(含)以下視為腿
     private static final double LEG_HIP_Y = 4.0;  // 腿頂(髖)高度 = (rows-1) - LEG_TOP_ROW，繞此擺動
@@ -198,6 +202,9 @@ public class PlayerCloneEntity extends Monster {
     // 二階段方塊機甲狀態（同步給 client；機甲外殼由 BlockDisplay 組成、跟隨 boss）
     private static final EntityDataAccessor<Boolean> ARMORED =
             SynchedEntityData.defineId(PlayerCloneEntity.class, EntityDataSerializers.BOOLEAN);
+    // 技能鎖定的地點（同步給 client 畫固定預兆；玩家在前搖內跑出此點即可閃避）
+    private static final EntityDataAccessor<BlockPos> SKILL_TARGET =
+            SynchedEntityData.defineId(PlayerCloneEntity.class, EntityDataSerializers.BLOCK_POS);
 
     // 鏡像玩家的整個主背包（快捷欄 0-8 + 背包 9-35），供疊方塊 AI 取用。不掉落、不同步。
     private final NonNullList<ItemStack> clonedInventory = NonNullList.withSize(36, ItemStack.EMPTY);
@@ -218,6 +225,7 @@ public class PlayerCloneEntity extends Monster {
         builder.define(TELEGRAPH_SKILL, 0);
         builder.define(REFLECTING, false);
         builder.define(ARMORED, false);
+        builder.define(SKILL_TARGET, BlockPos.ZERO);
     }
 
     public int getTelegraphSkill() {
@@ -230,6 +238,10 @@ public class PlayerCloneEntity extends Monster {
 
     public boolean isArmored() {
         return entityData.get(ARMORED);
+    }
+
+    public BlockPos getSkillTarget() {
+        return entityData.get(SKILL_TARGET);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -645,7 +657,14 @@ public class PlayerCloneEntity extends Monster {
     @Override
     protected void customServerAiStep() {
         super.customServerAiStep();
-        this.bossEvent.setProgress(this.getHealth() / this.getMaxHealth());
+        if (pendingArmorRebuild && level() instanceof ServerLevel rebuildLevel) {
+            pendingArmorRebuild = false;
+            rebuildArmor(rebuildLevel); // 重載後仍在外殼狀態 → 重建外殼接續二階段
+        }
+        // 變身期間血條顯示外殼血量（讓玩家看到挖外殼的進度），否則顯示本體血量
+        this.bossEvent.setProgress(isArmored()
+                ? Math.max(0F, armorHp / ARMOR_MAX_HP)
+                : this.getHealth() / this.getMaxHealth());
 
         if (graceTicks > 0) {
             graceTicks--;
@@ -845,6 +864,8 @@ public class PlayerCloneEntity extends Monster {
         if (d2 > SKILL_RANGE_SQR || d2 < SKILL_MIN_SQR) return;
         pendingSkill = PillarSkill.values()[this.random.nextInt(PillarSkill.values().length)];
         skillChargeTicks = SKILL_TELEGRAPH;
+        skillTargetPos = p.blockPosition();                  // 鎖定當下地點：預兆固定於此，玩家跑出即可閃避
+        entityData.set(SKILL_TARGET, skillTargetPos);
         entityData.set(TELEGRAPH_SKILL, pendingSkill.ordinal() + 1); // 同步給 client 畫預兆
         // 每招不同蓄力音，配合預兆讓玩家辨識
         net.minecraft.sounds.SoundEvent windup = switch (pendingSkill) {
@@ -934,6 +955,7 @@ public class PlayerCloneEntity extends Monster {
         if (isArmored()) return;
         entityData.set(ARMORED, true);
         armorHp = ARMOR_MAX_HP;
+        this.bossEvent.setColor(BossEvent.BossBarColor.RED); // 血條轉紅，配合顯示外殼血量提示在打外殼
         // 清掉進行中的技能狀態，否則變身前正在前搖的招式會卡住、變身後一直重放同一招
         pendingSkill = null;
         skillChargeTicks = 0;
@@ -946,6 +968,19 @@ public class PlayerCloneEntity extends Monster {
         buildArmorShell(sl);
         sl.playSound(null, blockPosition(), SoundEvents.IRON_GOLEM_REPAIR, SoundSource.HOSTILE, 1.2F, 0.7F);
         sl.sendParticles(ParticleTypes.LARGE_SMOKE, getX(), getY() + 1.0, getZ(), 60, 1.5, 2.0, 1.5, 0.02);
+    }
+
+    // 重載後仍在外殼狀態：清掉存盤殘留的孤兒外殼並重建，接續二階段（不重播變身演出，armorHp 維持讀回值）
+    private void rebuildArmor(ServerLevel sl) {
+        for (Display.BlockDisplay d : sl.getEntitiesOfClass(Display.BlockDisplay.class,
+                this.getBoundingBox().inflate(24.0), e -> e.getTags().contains(ARMOR_TAG))) {
+            d.discard();
+        }
+        entityData.set(ARMORED, true);
+        armoredDimensions = true;
+        refreshDimensions();
+        this.bossEvent.setColor(BossEvent.BossBarColor.RED);
+        buildArmorShell(sl);
     }
 
     private void buildArmorShell(ServerLevel sl) {
@@ -970,6 +1005,7 @@ public class PlayerCloneEntity extends Monster {
         Display.BlockDisplay d = EntityType.BLOCK_DISPLAY.create(sl);
         if (d == null) return;
         d.load(stateTag.copy());
+        d.addTag(ARMOR_TAG);
         d.setPos(getX() + ox - 0.5, getY() + oy, getZ() + oz - 0.5); // 初始位置，tickArmorFollow 會依朝向修正
         sl.addFreshEntity(d);
         armorParts.add(d);
@@ -1001,10 +1037,19 @@ public class PlayerCloneEntity extends Monster {
 
     // 外殼被挖爆：剝落外殼、本體現身落地，回到一階段（玩家型態）行為繼續被攻擊
     private void breakArmor(ServerLevel sl) {
+        // 剝落：每塊外殼位置噴深邃石碎裂粒子，再移除（比單一爆炸更像機甲崩解）
+        net.minecraft.core.particles.BlockParticleOption crumble =
+                new net.minecraft.core.particles.BlockParticleOption(ParticleTypes.BLOCK,
+                        Blocks.POLISHED_DEEPSLATE.defaultBlockState());
+        for (Display.BlockDisplay d : armorParts) {
+            if (d == null || !d.isAlive()) continue;
+            sl.sendParticles(crumble, d.getX(), d.getY() + 0.5, d.getZ(), 6, 0.2, 0.2, 0.2, 0.12);
+        }
         clearArmorParts();
         entityData.set(ARMORED, false);
         armoredDimensions = false; // 碰撞箱還原正常
         refreshDimensions();
+        this.bossEvent.setColor(BossEvent.BossBarColor.WHITE); // 外殼破，血條恢復白色顯示本體血量
         sl.playSound(null, blockPosition(), SoundEvents.IRON_GOLEM_DEATH, SoundSource.HOSTILE, 1.3F, 0.8F);
         sl.sendParticles(ParticleTypes.EXPLOSION, getX(), getY() + 1.0, getZ(), 12, 1.5, 2.0, 1.5, 0.0);
     }
@@ -1064,6 +1109,13 @@ public class PlayerCloneEntity extends Monster {
         if (naraCheckCooldown > 0) { naraCheckCooldown--; return; }
         if (!(level() instanceof ServerLevel sl)) return;
         naraCheckCooldown = 40;
+        // 非變身狀態下清掉殘留的孤兒外殼方塊（重載後 armorParts 會清空，但 BlockDisplay 本身會存盤）
+        if (!isArmored()) {
+            for (Display.BlockDisplay d : sl.getEntitiesOfClass(Display.BlockDisplay.class,
+                    this.getBoundingBox().inflate(24.0), e -> e.getTags().contains(ARMOR_TAG))) {
+                d.discard();
+            }
+        }
         UUID id = getSourceUUID().orElse(null);
         if (id == null) return;
         // 娜拉幻影（不存盤）
@@ -1093,46 +1145,51 @@ public class PlayerCloneEntity extends Monster {
 
     private void executeSkill(ServerLevel sl, PillarSkill skill, Player p) {
         clearSkillBlocksNow(sl); // 先收掉上次技能殘留的方塊，避免堆積
-        Vec3 away = p.position().subtract(this.position()); // 玩家遠離分身方向
-        Vec3 d = horizUnit(away);
+        BlockPos target = skillTargetPos;                     // 前搖鎖定的地點（非玩家當下位置）
+        Vec3 targetCenter = Vec3.atCenterOf(target);
+        // 玩家在前搖內跑出鎖定點即閃過：方塊照放（撲空），但不擊飛（只看水平距離）
+        boolean dodged = p.position().distanceToSqr(targetCenter.x, p.getY(), targetCenter.z)
+                > SKILL_DODGE_RADIUS * SKILL_DODGE_RADIUS;
+        Vec3 awayFromClone = p.position().subtract(this.position()); // 命中時的擊退方向（玩家當下位置）
+        Vec3 d = horizUnit(targetCenter.subtract(this.position()));
         BlockState block = takeWallBlock();
         switch (skill) {
             case RAM_WALL -> {
-                // 從玩家朝分身方向水平排 3 格方塊（側視 P C C C . B），把玩家往反方向擊退
-                Direction toClone = Direction.getNearest(this.getX() - p.getX(), 0, this.getZ() - p.getZ());
-                int height = 1 + this.random.nextInt(2); // 隨機 1 或 2 格高
+                // 從鎖定點朝分身方向水平排 3 格方塊，命中的玩家往反方向擊退
+                Direction toClone = Direction.getNearest(this.getX() - targetCenter.x, 0, this.getZ() - targetCenter.z);
+                int height = 1 + this.random.nextInt(2);
                 for (int i = 1; i <= 3; i++) {
-                    BlockPos col = p.blockPosition().relative(toClone, i).above(1); // 玩家身體高度，不貼地
-                    for (int dy = 0; dy < height; dy++) {
-                        placeSkillBlock(sl, col.above(dy), block);
-                    }
+                    BlockPos col = target.relative(toClone, i).above(1);
+                    for (int dy = 0; dy < height; dy++) placeSkillBlock(sl, col.above(dy), block);
                 }
-                knockbackPlayer(p, away, 0.3, 0.85); // 先把玩家拋飛離地（地面水平擊退會被摩擦吃掉）
-                pendingLaunchTarget = p;
-                pendingLaunchDir = away;
-                pendingLaunchTimer = 6;              // 6t 後玩家在空中，再強力水平轟飛（無摩擦飛得誇張）
-                sl.playSound(null, p.blockPosition(), SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 0.8F);
+                if (!dodged) {
+                    knockbackPlayer(p, awayFromClone, 0.3, 0.85);
+                    pendingLaunchTarget = p;
+                    pendingLaunchDir = awayFromClone;
+                    pendingLaunchTimer = 6;
+                }
+                sl.playSound(null, target, SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 0.8F);
             }
             case LIFT_UP -> {
-                // 方塊在玩家身體位置突然冒出，用衝擊把玩家往上頂飛（不放頭頂，避免玩家往上撞方塊卡住）
-                BlockPos foot = p.blockPosition();
-                placeSkillBlock(sl, foot, block);
-                placeSkillBlock(sl, foot.above(), block);
-                knockbackPlayer(p, away, 0.5, 1.5); // 強上拋為主，帶一點水平
-                sl.playSound(null, p.blockPosition(), SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 1.2F);
+                // 鎖定點冒方塊往上頂飛命中的玩家
+                placeSkillBlock(sl, target, block);
+                placeSkillBlock(sl, target.above(), block);
+                if (!dodged) knockbackPlayer(p, awayFromClone, 0.5, 1.5);
+                sl.playSound(null, target, SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 1.2F);
             }
             case CHARGE_RAMP -> {
-                // 從分身身體高度往玩家方向排空中方塊（不碰地板）+ 逼近一步，強水平擊飛
+                // 從分身身體高度往鎖定點方向排空中方塊 + 逼近一步，撞到的玩家強水平擊飛
                 for (int i = 1; i <= 3; i++) {
                     BlockPos bp = BlockPos.containing(getX() + d.x * i, getY() + 1, getZ() + d.z * i);
                     placeSkillBlock(sl, bp, block);
                 }
                 this.setDeltaMovement(d.x * 0.8, this.getDeltaMovement().y, d.z * 0.8); // 平滑衝刺逼近，不瞬移
                 this.hurtMarked = true;
-                if (this.distanceToSqr(p) <= 25.0) knockbackPlayer(p, away, 1.6, 0.6);
+                if (!dodged && this.distanceToSqr(p) <= 25.0) knockbackPlayer(p, awayFromClone, 1.6, 0.6);
                 sl.playSound(null, blockPosition(), SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 0.6F);
             }
         }
+        entityData.set(SKILL_TARGET, BlockPos.ZERO); // 清鎖定點（client 停止畫預兆）
         skillClearTimer = SKILL_BLOCK_LIFETIME; // 擊飛後 1 秒開始依序打掉
     }
 
@@ -1311,6 +1368,9 @@ public class PlayerCloneEntity extends Monster {
         ContainerHelper.saveAllItems(invTag, clonedInventory, this.registryAccess());
         tag.put("ClonedInventory", invTag);
         tag.putInt("Phase", phase.ordinal());
+        tag.putBoolean("ArmorTriggered", armorTriggered); // 重載後不重複觸發變身
+        tag.putBoolean("Armored", isArmored());           // 仍在外殼狀態 → 重載時重建外殼接續二階段
+        tag.putFloat("ArmorHp", armorHp);
         long[] walls = new long[placedWalls.size()];
         int wi = 0;
         for (long l : placedWalls) walls[wi++] = l;
@@ -1346,6 +1406,11 @@ public class PlayerCloneEntity extends Monster {
             Phase[] values = Phase.values();
             int ord = tag.getInt("Phase");
             phase = ord >= 0 && ord < values.length ? values[ord] : Phase.NORMAL;
+        }
+        armorTriggered = tag.getBoolean("ArmorTriggered");
+        if (tag.getBoolean("Armored")) {
+            armorHp = tag.getFloat("ArmorHp");
+            pendingArmorRebuild = true; // 首次 tick 重建外殼（此時 level 可能尚未 ready）
         }
         placedWalls.clear();
         for (long l : tag.getLongArray("PlacedWalls")) placedWalls.add(l);

@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- The clone's launch skills can now actually be dodged: instead of locking onto you (the telegraph followed you and was unavoidable), each skill now locks a spot on the ground with the telegraph fixed there, so you can run out of that spot during the 1-second wind-up to avoid it entirely.
+- 分身的擊飛技能現在真的可以閃躲了:不再鎖定你本人(之前預兆會跟著你跑、躲不掉),而是鎖定地上一個點、預兆固定在那,你在 1 秒前搖內跑出那個點就能完全閃過。
+
+- During the mecha phase the boss bar now turns red and shows the shell's health so you can see your mining progress, and breaking the shell scatters block-crumble particles per piece. Reloading mid-fight while the shell is still up now rebuilds the shell and keeps the boss in the mecha phase (instead of dropping it to a 50%-HP first phase), and no longer leaves orphan shell blocks behind.
+- 機甲階段的 boss 血條現在會變紅並顯示外殼血量,讓你看到挖外殼的進度;外殼破掉時每塊會噴方塊碎屑。在外殼還在時存檔重進,現在會重建外殼、維持機甲階段(而不是掉回 50% 血的第一階段),也不再殘留孤兒外殼方塊。
+
 - The Mirror World is no longer flatly grayscale: it keeps a hint of color most of the time, and the screen briefly regains color as a warning when the clone is dangerous (winding up a skill, in its mirror-reflect state, or transformed into the mecha). Color becomes a danger signal instead of everything being dead gray.
 - 鏡中世界不再死板的全灰:平時保留一點顏色,當分身有威脅時(蓄力技能、鏡反狀態、變身成機甲)畫面會短暫回色當警示。顏色變成危險的訊號,而不是一切都死灰。
 
@@ -141,6 +147,12 @@ All notable changes to this project will be documented in this file.
 - 頭盔夜視升級現在開啟時會持續消耗魔力（5 魔力/秒）。魔力耗盡後夜視自動關閉。手動關閉時效果立即移除。關閉升級不再移除藥水提供的夜視效果。
 
 ### Developer Notes / 開發者備註
+
+- Launch skills now target a locked ground position instead of the player entity: `tickPillarSkill` records `skillTargetPos` (synced via the `SKILL_TARGET` BlockPos entityData) when the wind-up starts; `executeSkill` places blocks at that spot and only knocks back if the player is still within `SKILL_DODGE_RADIUS` (2.5, horizontal) of it, otherwise it whiffs (blocks still placed). `CloneTelegraphRenderer` draws the telegraph at `getSkillTarget()` (fixed) instead of the local player, so the danger zone reads as a fixed spot the player can walk out of. `SKILL_TARGET` is cleared to `ZERO` after execution.
+- 擊飛技能改為鎖定地面定點而非玩家實體:`tickPillarSkill` 在前搖開始時記錄 `skillTargetPos`（透過 `SKILL_TARGET` BlockPos entityData 同步）；`executeSkill` 在該點放方塊，且只有玩家仍在其 `SKILL_DODGE_RADIUS`（2.5，水平）內才擊退，否則撲空（方塊照放）。`CloneTelegraphRenderer` 改在 `getSkillTarget()`（固定）畫預兆而非本機玩家，使危險區呈現為一個玩家能跑出的固定點。執行後 `SKILL_TARGET` 清為 `ZERO`。
+
+- Phase-2 mecha polish: the boss bar shows `armorHp / ARMOR_MAX_HP` and turns RED while armored (back to WHITE on break); `breakArmor` emits a per-part deepslate `BlockParticleOption` crumble before discarding. Armor `Display.BlockDisplay` parts get scoreboard tag `ARMOR_TAG`; `ensureCompanions` (40t) discards tagged displays while not armored. `armorTriggered` / `Armored` / `armorHp` are persisted in NBT: reloading while still shelled runs `rebuildArmor` on the first tick (clears orphan tagged displays, re-enters armored at the saved `armorHp`) so the mecha phase continues instead of dropping to a 50%-HP phase-1; reload after the shell already broke stays in phase-1.
+- 二階段機甲收尾:boss 血條顯示 `armorHp / ARMOR_MAX_HP` 且變身期間轉紅（破殼恢復白）；`breakArmor` 在移除前對每塊噴深邃石 `BlockParticleOption` 碎屑。外殼 `Display.BlockDisplay` 加 scoreboard tag `ARMOR_TAG`；`ensureCompanions`（40t）在非變身狀態清掉帶標記的孤兒 display。`armorTriggered` / `Armored` / `armorHp` 都存進 NBT:在外殼仍在時重載會於首次 tick 跑 `rebuildArmor`（清孤兒、以存回的 `armorHp` 重新進入外殼狀態），延續機甲階段而非掉回 50% 血的一階段;外殼已破後重載則維持一階段。
 
 - Mirror World grayscale is now dynamic: `ClientTickHandler` smoothly lerps the `grey.json` post effect's `Saturation` uniform (`chain.setUniform`) toward a target from `computeVoidMirrorSaturation` (base 0.12; 0.75 when a nearby clone is telegraphing or reflecting; 0.40 while armored), reset on exit. Also added a `getBoundingBoxForCulling` override on `PlayerCloneEntity` (inflate 6 while armored) so the head-rendered body plus large shell is not frustum-culled at edge angles.
 - 鏡中世界灰階改為動態:`ClientTickHandler` 平滑把 `grey.json` 後處理的 `Saturation` uniform（`chain.setUniform`）趨近 `computeVoidMirrorSaturation` 的目標值（基礎 0.12；附近分身在預兆或鏡反時 0.75；變身期間 0.40），離開時重置。另在 `PlayerCloneEntity` 加 `getBoundingBoxForCulling` override（變身期間 inflate 6），避免頭部渲染的本體加大型外殼在某些視角被 frustum culling 剔除。

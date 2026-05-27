@@ -45,13 +45,17 @@ public class CloneTelegraphRenderer {
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         VertexConsumer vc = buffers.getBuffer(RenderType.lines());
 
-        Player target = mc.player; // 1 對 1 假設：預兆畫在本機玩家（招式目標）
         for (PlayerCloneEntity boss : bosses) {
             if (boss.isReflecting()) drawReflectBox(vc, m, boss); // 鏡反：boss 身上鏡面框（此時打它會反傷）
-            switch (boss.getTelegraphSkill()) {
-                case 1 -> drawRamWall(vc, m, boss, target);   // 面前一道牆輪廓
-                case 2 -> drawLiftCircle(vc, m, target);      // 腳下一個圈
-                case 3 -> drawChargeLine(vc, m, boss, target); // 衝刺路徑線
+            int skill = boss.getTelegraphSkill();
+            if (skill == 0) continue;
+            net.minecraft.core.BlockPos tp = boss.getSkillTarget();
+            if (tp.equals(net.minecraft.core.BlockPos.ZERO)) continue; // 尚未鎖定地點
+            Vec3 st = Vec3.atCenterOf(tp); // 預兆畫在鎖定的地點（固定、不跟玩家），玩家跑出即可閃避
+            switch (skill) {
+                case 1 -> drawRamWall(vc, m, boss, st);    // 鎖定點一道牆輪廓
+                case 2 -> drawLiftCircle(vc, m, st);       // 鎖定點一個圈
+                case 3 -> drawChargeLine(vc, m, boss, st); // boss → 鎖定點 路徑線
                 default -> { }
             }
         }
@@ -61,8 +65,7 @@ public class CloneTelegraphRenderer {
     }
 
     // 玩家面前（朝 boss 那側）一道 3 寬 2 高的牆框
-    private static void drawRamWall(VertexConsumer vc, Matrix4f m, PlayerCloneEntity boss, Player target) {
-        Vec3 tp = target.position();
+    private static void drawRamWall(VertexConsumer vc, Matrix4f m, PlayerCloneEntity boss, Vec3 tp) {
         Vec3 toBoss = horiz(boss.position().subtract(tp));
         Vec3 side = new Vec3(-toBoss.z, 0, toBoss.x);
         Vec3 center = tp.add(toBoss); // 玩家前方一格
@@ -77,8 +80,7 @@ public class CloneTelegraphRenderer {
     }
 
     // 玩家腳下一個圈
-    private static void drawLiftCircle(VertexConsumer vc, Matrix4f m, Player target) {
-        Vec3 c = target.position();
+    private static void drawLiftCircle(VertexConsumer vc, Matrix4f m, Vec3 c) {
         int seg = 28;
         double rad = 1.3, y = c.y + 0.05;
         double px = c.x + rad, pz = c.z;
@@ -91,8 +93,8 @@ public class CloneTelegraphRenderer {
     }
 
     // boss → 玩家 的衝刺路徑線
-    private static void drawChargeLine(VertexConsumer vc, Matrix4f m, PlayerCloneEntity boss, Player target) {
-        Vec3 b = boss.position(), t = target.position();
+    private static void drawChargeLine(VertexConsumer vc, Matrix4f m, PlayerCloneEntity boss, Vec3 t) {
+        Vec3 b = boss.position();
         line(vc, m, b.x, b.y + 0.15, b.z, t.x, t.y + 0.15, t.z);
     }
 
