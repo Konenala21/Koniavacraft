@@ -11,9 +11,11 @@ import com.github.nalamodikk.narasystem.nara.network.client.NaraTauntPacket;
 import com.github.nalamodikk.register.ModDataAttachments;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
@@ -51,13 +53,24 @@ public class VoidMirrorEvents {
         if (isShulkerItem(event.getItemStack())
                 || event.getLevel().getBlockState(event.getPos()).getBlock() instanceof ShulkerBoxBlock) {
             event.setCanceled(true);
+            notifyContainerBlocked(event.getEntity());
         }
     }
 
     @SubscribeEvent
     public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
         if (!event.getLevel().dimension().equals(ModDimensions.VOID_MIRROR)) return;
-        if (isShulkerItem(event.getItemStack())) event.setCanceled(true);
+        if (isShulkerItem(event.getItemStack())) {
+            event.setCanceled(true);
+            notifyContainerBlocked(event.getEntity());
+        }
+    }
+
+    private static void notifyContainerBlocked(Player player) {
+        if (player instanceof ServerPlayer sp) {
+            sp.displayClientMessage(
+                    Component.translatable("message.koniava.void_mirror.container_disabled"), true);
+        }
     }
 
     // 玩家在鏡中世界放置方塊 → 記錄，重製時清除

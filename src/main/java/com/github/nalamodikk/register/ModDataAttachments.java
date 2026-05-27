@@ -69,6 +69,7 @@ public class ModDataAttachments {
             ATTACHMENT_TYPES.register("return_point", () ->
                     AttachmentType.<Optional<GlobalPos>>builder(Optional::empty)
                             .serialize(GlobalPos.CODEC.optionalFieldOf("return_point").codec())
+                            .copyOnDeath() // 死亡後保留，否則 respawn 時 onPlayerRespawn 讀不到、娜拉不嘲諷
                             .build()
             );
 

@@ -3,6 +3,7 @@ package com.github.nalamodikk.common.item.equipment.boots;
 import com.github.nalamodikk.common.item.equipment.ManaArmorItem;
 import com.github.nalamodikk.common.item.equipment.armor.ArmorCapacityUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.armor.ArmorDefenseUpgradeItem;
+import com.github.nalamodikk.dimension.ModDimensions;
 import com.github.nalamodikk.register.ModDataComponents;
 import com.github.nalamodikk.register.ModMobEffects;
 import com.github.nalamodikk.register.client.ModKeyMappings;
@@ -96,6 +97,11 @@ public class ManaSprintBootsItem extends ManaArmorItem {
     // ── Server-side dash ─────────────────────────────────────────────────────
 
     public static boolean performDash(ServerPlayer player, ItemStack boots) {
+        if (player.level().dimension().equals(ModDimensions.VOID_MIRROR)) {
+            player.displayClientMessage(
+                    Component.translatable("message.koniava.void_mirror.ability_disabled"), true);
+            return false;
+        }
         if (player.hasEffect(ModMobEffects.SPRINT_COOLDOWN)) return false;
         if (player.hasEffect(ModMobEffects.ROOT)) return false;
         if (player.isInWater() || player.isInLava()) {

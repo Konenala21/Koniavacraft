@@ -5,6 +5,7 @@ import com.github.nalamodikk.common.item.equipment.ManaArmorItem;
 import com.github.nalamodikk.common.item.equipment.armor.LeggingsUpgradeBehavior;
 import com.github.nalamodikk.common.item.equipment.armor.LeggingsUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.armor.ManaAlloyLeggingsItem;
+import com.github.nalamodikk.dimension.ModDimensions;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -32,6 +33,11 @@ public class LeggingsDoubleJumpHandler {
 
     public static void handleDoubleJump(ServerPlayer player) {
         if (player.getAbilities().flying || player.isSpectator()) return;
+        if (player.level().dimension().equals(ModDimensions.VOID_MIRROR)) {
+            player.displayClientMessage(
+                    Component.translatable("message.koniava.void_mirror.ability_disabled"), true);
+            return;
+        }
 
         ItemStack leggings = player.getItemBySlot(EquipmentSlot.LEGS);
         if (!(leggings.getItem() instanceof ManaAlloyLeggingsItem)) return;

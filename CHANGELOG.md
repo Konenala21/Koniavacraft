@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- In the Mirror World, the leggings multi-jump and boots dash abilities are now disabled (with an on-screen notice), so you cannot use them to escape the fight; the existing container restriction now also shows a notice when blocked. Fixed: Nara did not taunt after you died inside, because the return point was lost on death.
+- 鏡中世界內現在禁止使用護腿多段跳與鞋子衝刺(會有畫面提示),避免用來逃離戰鬥;既有的容器限制被擋時現在也會提示。修正:在裡面死亡後娜拉沒有出來嘲諷的問題(返回點在死亡時遺失)。
+
 - Fixed: the Mirror World clone could be killed by its own charged-shot explosions; it is now immune to its own turret damage. The arena return rift now appears when the boss starts attacking (after the cinematic) instead of during it, so it no longer shows up twice.
 - 修正:鏡中世界分身會被自己蓄力彈的爆炸炸死,現在免疫自己浮游砲的傷害。arena 返回裂縫改成 boss 開始進攻時(過場結束後)才出現,不再在過場中重複顯示兩個。
 
@@ -82,6 +85,9 @@ All notable changes to this project will be documented in this file.
 - 頭盔夜視升級現在開啟時會持續消耗魔力（5 魔力/秒）。魔力耗盡後夜視自動關閉。手動關閉時效果立即移除。關閉升級不再移除藥水提供的夜視效果。
 
 ### Developer Notes / 開發者備註
+
+- `LeggingsDoubleJumpHandler.handleDoubleJump` and `ManaSprintBootsItem.performDash` early-return with an actionbar notice when in `VOID_MIRROR`. `VoidMirrorEvents` shulker place/open cancels now call `notifyContainerBlocked`. The `RETURN_POINT` attachment gained `.copyOnDeath()` so `onPlayerRespawn` still sees it and fires `exit` + `NaraTauntPacket` (without it the new player had an empty `RETURN_POINT`, so the taunt never sent). New lang keys `message.koniava.void_mirror.ability_disabled` / `.container_disabled`.
+- `LeggingsDoubleJumpHandler.handleDoubleJump` 與 `ManaSprintBootsItem.performDash` 在 `VOID_MIRROR` 內提前 return 並送 actionbar 提示。`VoidMirrorEvents` 的界伏盒放置/開啟取消改為呼叫 `notifyContainerBlocked`。`RETURN_POINT` attachment 加上 `.copyOnDeath()`，否則死亡後新 player 的 `RETURN_POINT` 為空，`onPlayerRespawn` 讀不到、嘲諷不會發送。新增 lang 鍵 `message.koniava.void_mirror.ability_disabled` / `.container_disabled`。
 
 - `PlayerCloneEntity.hurt` now ignores damage whose direct entity is a `FloatingTurretProjectile` it owns (covers charged-shot explosion self-damage). The return-rift `SpaceCrackEntity` is spawned in `activateAfterIntro` (owner = source UUID, arena center) instead of `VoidMirrorTeleport.enter`, so it no longer overlaps the emerge crack during the cinematic; `spawnExitCrack` was removed.
 - `PlayerCloneEntity.hurt` 現在忽略 direct entity 為自己擁有的 `FloatingTurretProjectile` 的傷害（涵蓋蓄力彈爆炸自傷）。返回裂縫 `SpaceCrackEntity` 改在 `activateAfterIntro` 生成（owner = 來源 UUID、arena 中心），不再在 `VoidMirrorTeleport.enter`，避免過場中與走出裂縫重疊；移除了 `spawnExitCrack`。
