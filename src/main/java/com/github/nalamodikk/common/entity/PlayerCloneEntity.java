@@ -41,8 +41,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
-import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
-import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
@@ -127,6 +126,8 @@ public class PlayerCloneEntity extends Monster {
     private final List<Long> chaseBlocks = new ArrayList<>();
     // 進場結束後的緩衝：boss 站定不攻擊，給玩家準備時間（避免動畫剛完就被偷襲）
     private int graceTicks = 0;
+    // 近戰攻擊冷卻（邊繞圈邊攻擊，取代 MeleeAttackGoal 的站定揮擊）
+    private int attackCooldown = 0;
 
     // 進場演出（地底鑽出→飛高→浮動集氣→爆炸顯現裝備→降落→啟動），對齊過場時間軸（360t）
     private static final int INTRO_RISE_START = 430;
@@ -180,8 +181,7 @@ public class PlayerCloneEntity extends Monster {
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
-        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.1, true));
-        this.goalSelector.addGoal(7, new LookAtPlayerGoal(this, Player.class, 12.0F));
+        // 近戰改由 customServerAiStep 的 tickMeleeStrafe 處理（邊繞圈邊攻擊，不站定揮擊）
         this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
 
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
@@ -599,6 +599,7 @@ public class PlayerCloneEntity extends Monster {
         updatePhase();
         tickAntiPillar(); // 全階段防墊高，開場就不給 cheese
         tickPillarSkill(); // 招牌技能：墊方塊衝撞擊飛（全階段）
+        tickMeleeStrafe(); // 近戰：邊繞圈邊攻擊（取代 MeleeAttackGoal 的站定揮擊）
         tickAirChase(); // 玩家飛高時墊方塊往上跳追擊（像玩家 pillar jump）
         tickPendingLaunch(); // RAM_WALL 橫向擊退後的第二段上彈
         tickSkillBlockClear(); // 擊飛後依序打掉技能墊的方塊
@@ -744,6 +745,32 @@ public class PlayerCloneEntity extends Monster {
         Vec3 m = p.getDeltaMovement();
         p.setDeltaMovement(h.x * 3.0 * mult, Math.max(m.y, 0.2), h.z * 3.0 * mult);
         p.hurtMarked = true;
+    }
+
+    // 近戰：太遠就追，進入攻擊距離就繞著玩家側移 + 揮擊（邊走邊打，不站定揮擊）
+    private void tickMeleeStrafe() {
+        if (graceTicks > 0 || pendingSkill != null) return; // 緩衝期/技能前搖時不近戰
+        if (!(getTarget() instanceof LivingEntity tgt) || !tgt.isAlive()) return;
+        if (attackCooldown > 0) attackCooldown--;
+        getLookControl().setLookAt(tgt, 30f, 30f);
+        double d2 = this.distanceToSqr(tgt);
+        double reach = this.getBbWidth() * 2.0 + tgt.getBbWidth();
+        if (d2 > reach * reach) {
+            this.getNavigation().moveTo(tgt, 1.15); // 太遠：直接追
+            return;
+        }
+        // 進入攻擊距離：繞著玩家側移（strafe）+ 略保持貼近
+        this.getNavigation().stop();
+        Vec3 toT = tgt.position().subtract(this.position());
+        Vec3 side = horizUnit(new Vec3(-toT.z, 0, toT.x)); // 垂直連線 = 繞圈方向
+        Vec3 toward = horizUnit(toT);
+        Vec3 want = this.position().add(side.scale(0.9)).add(toward.scale(0.2));
+        this.getMoveControl().setWantedPosition(want.x, this.getY(), want.z, 1.0);
+        if (attackCooldown <= 0) {
+            this.swing(InteractionHand.MAIN_HAND);
+            this.doHurtTarget(tgt);
+            attackCooldown = 16;
+        }
     }
 
     // 玩家飛高（被擊飛或自行升空）時，分身墊方塊往上跳追擊，像玩家 pillar jump

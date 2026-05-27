@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- The clone no longer stops to swing when attacking: in melee range it now circles around you (strafes) while striking, instead of planting itself and standing still, so it feels like a real opponent.
+- 分身近戰不再停下來揮擊:進入攻擊距離後會繞著你側移、邊繞邊打,而不是站定原地揮,打起來更像真正的對手。
+
 - The clone's pillar-charge skills now have a 1-second wind-up: it stands still and charges (facing you with intensifying particles) before striking, giving you time to react or dodge.
 - 分身的墊方塊衝撞技能現在有 1 秒前搖:發動前會站定蓄力(面向你、粒子漸強),給你時間反應或閃避。
 
@@ -115,6 +118,9 @@ All notable changes to this project will be documented in this file.
 - 頭盔夜視升級現在開啟時會持續消耗魔力（5 魔力/秒）。魔力耗盡後夜視自動關閉。手動關閉時效果立即移除。關閉升級不再移除藥水提供的夜視效果。
 
 ### Developer Notes / 開發者備註
+
+- Replaced `MeleeAttackGoal` + `LookAtPlayerGoal` with a custom `tickMeleeStrafe` in `customServerAiStep`: out of reach it `moveTo`s the target; in reach it `getNavigation().stop()` then strafes via `getMoveControl().setWantedPosition` (perpendicular to the target line, slight inward bias) while swinging + `doHurtTarget` on a 16t `attackCooldown`. Skipped during grace and skill wind-up.
+- 以 `customServerAiStep` 中的自訂 `tickMeleeStrafe` 取代 `MeleeAttackGoal` + `LookAtPlayerGoal`:超出攻擊距離時 `moveTo` 追擊；進入距離則 `getNavigation().stop()` 後用 `getMoveControl().setWantedPosition`（垂直連線方向、略帶內傾）繞圈側移，並以 16t `attackCooldown` 揮手 + `doHurtTarget`。緩衝期與技能前搖期間跳過。
 
 - `SKILL_TELEGRAPH` raised 12 to 20 (1s). During the wind-up the clone zeroes horizontal motion + `getNavigation().stop()` + looks at the player (stand-and-charge), and emits intensifying `CRIT` (count/speed scale with progress) + `ENCHANTED_HIT` particles before the skill fires.
 - `SKILL_TELEGRAPH` 由 12 提高到 20（1 秒）。前搖期間分身水平速度歸零 + `getNavigation().stop()` + 面向玩家（站定蓄力），並噴漸強的 `CRIT`（數量/速度隨進度增加）+ `ENCHANTED_HIT` 粒子，再發動技能。
