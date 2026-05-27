@@ -26,8 +26,12 @@ public class SpaceCrackRenderer extends EntityRenderer<SpaceCrackEntity> {
                        PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         poseStack.pushPose();
         poseStack.translate(0.0, 1.1, 0.0);
-        // 只繞 Y 軸面向相機（直立的撕裂，不再貼著視角俯仰/打滾）
-        poseStack.mulPose(Axis.YP.rotationDegrees(-Minecraft.getInstance().gameRenderer.getMainCamera().getYRot()));
+        // 只繞 Y 軸正對相機（直立的撕裂，不再貼著視角俯仰/打滾）
+        var cam = Minecraft.getInstance().gameRenderer.getMainCamera();
+        double dxCam = cam.getPosition().x - entity.getX();
+        double dzCam = cam.getPosition().z - entity.getZ();
+        float yawToCam = (float) (Math.atan2(dxCam, dzCam) * (180.0 / Math.PI));
+        poseStack.mulPose(Axis.YP.rotationDegrees(yawToCam));
 
         float t = entity.tickCount + partialTick;
         Matrix4f pose = poseStack.last().pose();
