@@ -20,9 +20,8 @@ public class ManaAlloyChestplateItem extends ManaArmorItem {
     public void recalculateMaxMana(ItemStack armor) {
         int max = BASE_MAX_MANA;
         for (ItemStack upg : getData(armor).upgrades().values()) {
-            if (upg.getItem() instanceof ChestplateUpgradeItem cu
-                    && cu.getBehavior() == ChestplateUpgradeBehavior.CAPACITY) {
-                max += cu.getBehavior().getBonusForMk(cu.getMk());
+            if (upg.getItem() instanceof ArmorCapacityUpgradeItem acu) {
+                max += acu.getBonus();
             }
         }
         armor.set(ModDataComponents.MAX_MANA, max);
@@ -32,13 +31,16 @@ public class ManaAlloyChestplateItem extends ManaArmorItem {
 
     @Override
     public boolean isValidUpgradeItem(ItemStack stack) {
-        return stack.getItem() instanceof ChestplateUpgradeItem;
+        return stack.getItem() instanceof ChestplateUpgradeItem
+                || stack.getItem() instanceof ArmorCapacityUpgradeItem;
     }
 
     @Override
     public String getUpgradeBehaviorKey(ItemStack upgradeStack) {
         if (upgradeStack.getItem() instanceof ChestplateUpgradeItem cu)
             return cu.getBehavior().name();
+        if (upgradeStack.getItem() instanceof ArmorCapacityUpgradeItem)
+            return "CAPACITY";
         return "";
     }
 

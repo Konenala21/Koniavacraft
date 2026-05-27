@@ -25,9 +25,8 @@ public class ManaAlloyLeggingsItem extends ManaArmorItem {
     public void recalculateMaxMana(ItemStack armor) {
         int max = BASE_MAX_MANA;
         for (ItemStack upg : getData(armor).upgrades().values()) {
-            if (upg.getItem() instanceof LeggingsUpgradeItem lu
-                    && lu.getBehavior() == LeggingsUpgradeBehavior.CAPACITY) {
-                max += lu.getBehavior().getBonusForMk(lu.getMk());
+            if (upg.getItem() instanceof ArmorCapacityUpgradeItem acu) {
+                max += acu.getBonus();
             }
         }
         armor.set(ModDataComponents.MAX_MANA, max);
@@ -37,13 +36,16 @@ public class ManaAlloyLeggingsItem extends ManaArmorItem {
 
     @Override
     public boolean isValidUpgradeItem(ItemStack stack) {
-        return stack.getItem() instanceof LeggingsUpgradeItem;
+        return stack.getItem() instanceof LeggingsUpgradeItem
+                || stack.getItem() instanceof ArmorCapacityUpgradeItem;
     }
 
     @Override
     public String getUpgradeBehaviorKey(ItemStack upgradeStack) {
         if (upgradeStack.getItem() instanceof LeggingsUpgradeItem lu)
             return lu.getBehavior().name();
+        if (upgradeStack.getItem() instanceof ArmorCapacityUpgradeItem)
+            return "CAPACITY";
         return "";
     }
 

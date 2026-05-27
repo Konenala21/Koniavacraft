@@ -18,17 +18,41 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID)
 public class HelmetNightVisionHandler {
 
+    private static final int MANA_DRAIN_INTERVAL = 4; // 1 mana per 4 ticks = 5 mana/s
+    private static final int MANA_DRAIN_AMOUNT = 1;
+
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         ItemStack helmet = player.getItemBySlot(EquipmentSlot.HEAD);
         if (!(helmet.getItem() instanceof ManaAlloyHelmetItem)) return;
-        if (!Boolean.TRUE.equals(helmet.get(ModDataComponents.NIGHT_VISION_ACTIVE))) return;
         if (!hasNightVisionUpgrade(helmet)) return;
 
-        var existing = player.getEffect(MobEffects.NIGHT_VISION);
-        if (existing == null || existing.getDuration() < 60) {
-            player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 400, 0, false, false));
+        boolean active = Boolean.TRUE.equals(helmet.get(ModDataComponents.NIGHT_VISION_ACTIVE));
+        if (active) {
+            int mana = ManaArmorItem.getMana(helmet);
+            if (mana <= 0) {
+                helmet.set(ModDataComponents.NIGHT_VISION_ACTIVE, false);
+                deactivateEffect(player, helmet);
+                return;
+            }
+            if (player.tickCount % MANA_DRAIN_INTERVAL == 0) {
+                ManaArmorItem.setMana(helmet, mana - MANA_DRAIN_AMOUNT);
+            }
+            var existing = player.getEffect(MobEffects.NIGHT_VISION);
+            if (existing == null || existing.getDuration() < 60) {
+                player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 400, 0, false, false));
+                helmet.set(ModDataComponents.NIGHT_VISION_WE_APPLIED, true);
+            }
+        } else {
+            deactivateEffect(player, helmet);
+        }
+    }
+
+    private static void deactivateEffect(ServerPlayer player, ItemStack helmet) {
+        if (Boolean.TRUE.equals(helmet.get(ModDataComponents.NIGHT_VISION_WE_APPLIED))) {
+            player.removeEffect(MobEffects.NIGHT_VISION);
+            helmet.remove(ModDataComponents.NIGHT_VISION_WE_APPLIED);
         }
     }
 

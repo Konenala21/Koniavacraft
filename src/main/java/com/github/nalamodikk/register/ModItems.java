@@ -34,6 +34,7 @@ import com.github.nalamodikk.common.item.equipment.armor.HelmetUpgradeBehavior;
 import com.github.nalamodikk.common.item.equipment.armor.HelmetUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.armor.ChestplateUpgradeBehavior;
 import com.github.nalamodikk.common.item.equipment.armor.ChestplateUpgradeItem;
+import com.github.nalamodikk.common.item.equipment.armor.ArmorCapacityUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.armor.LeggingsUpgradeBehavior;
 import com.github.nalamodikk.common.item.equipment.armor.LeggingsUpgradeItem;
 import com.github.nalamodikk.common.item.weapon.FloatingTurretItem;
@@ -264,15 +265,6 @@ public class ModItems {
     public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_MANA_EFFICIENCY_MK3 =
             ITEMS.register("boots_upgrade_mana_efficiency_mk3", () -> new BootsUpgradeItem(BootsUpgradeBehavior.MANA_EFFICIENCY, 3, new Item.Properties().stacksTo(4)));
 
-    // 魔力容量升級
-    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_CAPACITY_MK0 =
-            ITEMS.register("boots_upgrade_capacity_mk0", () -> new BootsUpgradeItem(BootsUpgradeBehavior.CAPACITY, 0, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_CAPACITY_MK1 =
-            ITEMS.register("boots_upgrade_capacity_mk1", () -> new BootsUpgradeItem(BootsUpgradeBehavior.CAPACITY, 1, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_CAPACITY_MK2 =
-            ITEMS.register("boots_upgrade_capacity_mk2", () -> new BootsUpgradeItem(BootsUpgradeBehavior.CAPACITY, 2, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_CAPACITY_MK3 =
-            ITEMS.register("boots_upgrade_capacity_mk3", () -> new BootsUpgradeItem(BootsUpgradeBehavior.CAPACITY, 3, new Item.Properties().stacksTo(4)));
 
     // ── 魔力合金裝備套組 ────────────────────────────────────────────────────────
 
@@ -300,15 +292,17 @@ public class ModItems {
                             .component(ModDataComponents.MANA_STORED, 0)
                             .component(ModDataComponents.MAX_MANA, ManaAlloyLeggingsItem.BASE_MAX_MANA)));
 
+    // 通用魔力容量升級（適用於所有魔力盔甲）
+    public static final DeferredItem<ArmorCapacityUpgradeItem> ARMOR_UPGRADE_CAPACITY_MK0 =
+            ITEMS.register("armor_upgrade_capacity_mk0", () -> new ArmorCapacityUpgradeItem(0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<ArmorCapacityUpgradeItem> ARMOR_UPGRADE_CAPACITY_MK1 =
+            ITEMS.register("armor_upgrade_capacity_mk1", () -> new ArmorCapacityUpgradeItem(1, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<ArmorCapacityUpgradeItem> ARMOR_UPGRADE_CAPACITY_MK2 =
+            ITEMS.register("armor_upgrade_capacity_mk2", () -> new ArmorCapacityUpgradeItem(2, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<ArmorCapacityUpgradeItem> ARMOR_UPGRADE_CAPACITY_MK3 =
+            ITEMS.register("armor_upgrade_capacity_mk3", () -> new ArmorCapacityUpgradeItem(3, new Item.Properties().stacksTo(4)));
+
     // 頭盔升級
-    public static final DeferredItem<HelmetUpgradeItem> HELMET_UPGRADE_CAPACITY_MK0 =
-            ITEMS.register("helmet_upgrade_capacity_mk0", () -> new HelmetUpgradeItem(HelmetUpgradeBehavior.CAPACITY, 0, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<HelmetUpgradeItem> HELMET_UPGRADE_CAPACITY_MK1 =
-            ITEMS.register("helmet_upgrade_capacity_mk1", () -> new HelmetUpgradeItem(HelmetUpgradeBehavior.CAPACITY, 1, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<HelmetUpgradeItem> HELMET_UPGRADE_CAPACITY_MK2 =
-            ITEMS.register("helmet_upgrade_capacity_mk2", () -> new HelmetUpgradeItem(HelmetUpgradeBehavior.CAPACITY, 2, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<HelmetUpgradeItem> HELMET_UPGRADE_CAPACITY_MK3 =
-            ITEMS.register("helmet_upgrade_capacity_mk3", () -> new HelmetUpgradeItem(HelmetUpgradeBehavior.CAPACITY, 3, new Item.Properties().stacksTo(4)));
     public static final DeferredItem<HelmetUpgradeItem> HELMET_UPGRADE_ARMOR_MK0 =
             ITEMS.register("helmet_upgrade_armor_mk0", () -> new HelmetUpgradeItem(HelmetUpgradeBehavior.ARMOR, 0, new Item.Properties().stacksTo(4)));
     public static final DeferredItem<HelmetUpgradeItem> HELMET_UPGRADE_ARMOR_MK1 =
@@ -322,14 +316,6 @@ public class ModItems {
             ITEMS.register("helmet_upgrade_night_vision", () -> new HelmetUpgradeItem(HelmetUpgradeBehavior.NIGHT_VISION, 0, new Item.Properties().stacksTo(4)));
 
     // 胸甲升級
-    public static final DeferredItem<ChestplateUpgradeItem> CHESTPLATE_UPGRADE_CAPACITY_MK0 =
-            ITEMS.register("chestplate_upgrade_capacity_mk0", () -> new ChestplateUpgradeItem(ChestplateUpgradeBehavior.CAPACITY, 0, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<ChestplateUpgradeItem> CHESTPLATE_UPGRADE_CAPACITY_MK1 =
-            ITEMS.register("chestplate_upgrade_capacity_mk1", () -> new ChestplateUpgradeItem(ChestplateUpgradeBehavior.CAPACITY, 1, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<ChestplateUpgradeItem> CHESTPLATE_UPGRADE_CAPACITY_MK2 =
-            ITEMS.register("chestplate_upgrade_capacity_mk2", () -> new ChestplateUpgradeItem(ChestplateUpgradeBehavior.CAPACITY, 2, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<ChestplateUpgradeItem> CHESTPLATE_UPGRADE_CAPACITY_MK3 =
-            ITEMS.register("chestplate_upgrade_capacity_mk3", () -> new ChestplateUpgradeItem(ChestplateUpgradeBehavior.CAPACITY, 3, new Item.Properties().stacksTo(4)));
     public static final DeferredItem<ChestplateUpgradeItem> CHESTPLATE_UPGRADE_ARMOR_MK0 =
             ITEMS.register("chestplate_upgrade_armor_mk0", () -> new ChestplateUpgradeItem(ChestplateUpgradeBehavior.ARMOR, 0, new Item.Properties().stacksTo(4)));
     public static final DeferredItem<ChestplateUpgradeItem> CHESTPLATE_UPGRADE_ARMOR_MK1 =
@@ -340,14 +326,6 @@ public class ModItems {
             ITEMS.register("chestplate_upgrade_armor_mk3", () -> new ChestplateUpgradeItem(ChestplateUpgradeBehavior.ARMOR, 3, new Item.Properties().stacksTo(4)));
 
     // 護腿升級
-    public static final DeferredItem<LeggingsUpgradeItem> LEGGINGS_UPGRADE_CAPACITY_MK0 =
-            ITEMS.register("leggings_upgrade_capacity_mk0", () -> new LeggingsUpgradeItem(LeggingsUpgradeBehavior.CAPACITY, 0, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<LeggingsUpgradeItem> LEGGINGS_UPGRADE_CAPACITY_MK1 =
-            ITEMS.register("leggings_upgrade_capacity_mk1", () -> new LeggingsUpgradeItem(LeggingsUpgradeBehavior.CAPACITY, 1, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<LeggingsUpgradeItem> LEGGINGS_UPGRADE_CAPACITY_MK2 =
-            ITEMS.register("leggings_upgrade_capacity_mk2", () -> new LeggingsUpgradeItem(LeggingsUpgradeBehavior.CAPACITY, 2, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<LeggingsUpgradeItem> LEGGINGS_UPGRADE_CAPACITY_MK3 =
-            ITEMS.register("leggings_upgrade_capacity_mk3", () -> new LeggingsUpgradeItem(LeggingsUpgradeBehavior.CAPACITY, 3, new Item.Properties().stacksTo(4)));
     public static final DeferredItem<LeggingsUpgradeItem> LEGGINGS_UPGRADE_ARMOR_MK0 =
             ITEMS.register("leggings_upgrade_armor_mk0", () -> new LeggingsUpgradeItem(LeggingsUpgradeBehavior.ARMOR, 0, new Item.Properties().stacksTo(4)));
     public static final DeferredItem<LeggingsUpgradeItem> LEGGINGS_UPGRADE_ARMOR_MK1 =

@@ -1,6 +1,7 @@
 package com.github.nalamodikk.common.item.equipment.boots;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.item.equipment.armor.ArmorCapacityUpgradeItem;
 import com.github.nalamodikk.common.item.upgrade.EquipmentUpgradeData;
 import com.github.nalamodikk.register.ModDataComponents;
 import com.github.nalamodikk.register.ModMobEffects;
@@ -53,8 +54,8 @@ public class ManaSprintBootsItem extends ArmorItem {
     public static void recalculateMaxMana(ItemStack boots) {
         int max = BASE_MAX_MANA;
         for (ItemStack upg : getData(boots).upgrades().values()) {
-            if (upg.getItem() instanceof BootsUpgradeItem bu && bu.getBehavior() == BootsUpgradeBehavior.CAPACITY) {
-                max += BootsUpgradeBehavior.CAPACITY.getBonusForMk(bu.getMk());
+            if (upg.getItem() instanceof ArmorCapacityUpgradeItem acu) {
+                max += acu.getBonus();
             }
         }
         boots.set(ModDataComponents.MAX_MANA, max);

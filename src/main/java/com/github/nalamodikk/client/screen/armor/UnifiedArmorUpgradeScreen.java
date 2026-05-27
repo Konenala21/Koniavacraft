@@ -2,6 +2,7 @@ package com.github.nalamodikk.client.screen.armor;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.item.equipment.ManaArmorItem;
+import com.github.nalamodikk.common.item.equipment.armor.ArmorCapacityUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.boots.BootsUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.boots.ManaSprintBootsItem;
 import com.github.nalamodikk.common.item.upgrade.EquipmentUpgradeData;
@@ -133,15 +134,19 @@ public class UnifiedArmorUpgradeScreen extends Screen {
 
     private boolean isValidUpgrade(EquipmentSlot slot, ItemStack upgradeStack) {
         ItemStack s = stackFor(slot);
-        if (s.getItem() instanceof ManaSprintBootsItem) return upgradeStack.getItem() instanceof BootsUpgradeItem;
+        if (s.getItem() instanceof ManaSprintBootsItem)
+            return upgradeStack.getItem() instanceof BootsUpgradeItem
+                    || upgradeStack.getItem() instanceof ArmorCapacityUpgradeItem;
         if (s.getItem() instanceof ManaArmorItem m) return m.isValidUpgradeItem(upgradeStack);
         return false;
     }
 
     private String getBehaviorKey(EquipmentSlot slot, ItemStack upgradeStack) {
         ItemStack s = stackFor(slot);
-        if (s.getItem() instanceof ManaSprintBootsItem && upgradeStack.getItem() instanceof BootsUpgradeItem bu)
-            return "boots_" + bu.getBehavior().name();
+        if (s.getItem() instanceof ManaSprintBootsItem) {
+            if (upgradeStack.getItem() instanceof ArmorCapacityUpgradeItem) return "CAPACITY";
+            if (upgradeStack.getItem() instanceof BootsUpgradeItem bu) return "boots_" + bu.getBehavior().name();
+        }
         if (s.getItem() instanceof ManaArmorItem m) return m.getUpgradeBehaviorKey(upgradeStack);
         return upgradeStack.getDescriptionId();
     }
