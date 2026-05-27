@@ -1,4 +1,4 @@
-package com.github.nalamodikk.common.item.equipment.armor;
+package com.github.nalamodikk.common.item.weapon.turret;
 
 import com.github.nalamodikk.common.item.upgrade.IModUpgrade;
 import net.minecraft.ChatFormatting;
@@ -9,18 +9,18 @@ import net.minecraft.world.item.TooltipFlag;
 
 import java.util.List;
 
-public class ChestplateUpgradeItem extends Item implements IModUpgrade {
+public class TurretUpgradeItem extends Item implements IModUpgrade {
 
-    private final ChestplateUpgradeBehavior behavior;
+    private final TurretUpgradeBehavior behavior;
     private final int mk;
 
-    public ChestplateUpgradeItem(ChestplateUpgradeBehavior behavior, int mk, Properties properties) {
+    public TurretUpgradeItem(TurretUpgradeBehavior behavior, int mk, Properties properties) {
         super(properties);
         this.behavior = behavior;
         this.mk = mk;
     }
 
-    public ChestplateUpgradeBehavior getBehavior() { return behavior; }
+    public TurretUpgradeBehavior getBehavior() { return behavior; }
     public int getMk() { return mk; }
 
     @Override
@@ -31,10 +31,16 @@ public class ChestplateUpgradeItem extends Item implements IModUpgrade {
         if (mk > 0) lines.add(Component.translatable("tooltip.koniava.wand_upgrade.mk_level", mk));
         lines.add(Component.translatable("tooltip.koniava.wand_upgrade.type", behavior.getDisplayName()));
         lines.add(behavior.getEffectTooltip(mk));
-        Component extra = behavior.getExtraTooltip(mk);
-        if (extra != null) lines.add(extra.copy().withStyle(ChatFormatting.LIGHT_PURPLE));
+        if (behavior.isControl()) {
+            lines.add(Component.translatable("tooltip.koniava.turret_upgrade.boss_resistant")
+                    .withStyle(ChatFormatting.DARK_RED));
+        }
+        if (behavior.isEntityOnly()) {
+            lines.add(Component.translatable("tooltip.koniava.turret_upgrade.entity_only")
+                    .withStyle(ChatFormatting.GRAY));
+        }
         lines.add(Component.translatable("tooltip.koniava.upgrade.compatible",
-                Component.translatable("item.koniava.mana_alloy_chestplate").withStyle(ChatFormatting.YELLOW)
+                Component.translatable("item.koniava.floating_turret").withStyle(ChatFormatting.YELLOW)
         ).withStyle(ChatFormatting.GRAY));
     }
 }

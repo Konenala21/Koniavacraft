@@ -4,6 +4,7 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.entity.FloatingTurretEntity;
 import com.github.nalamodikk.common.entity.FloatingTurretProjectile;
 import com.github.nalamodikk.common.item.weapon.FloatingTurretItem;
+import com.github.nalamodikk.common.item.weapon.turret.TurretUpgradeBehavior;
 import com.github.nalamodikk.register.ModDataAttachments;
 import com.github.nalamodikk.register.ModEntities;
 import net.minecraft.ChatFormatting;
@@ -18,6 +19,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
@@ -41,6 +43,14 @@ public class FloatingTurretEventHandler {
 
     // Registry: ownerUUID → (slotIndex → entity); avoids spatial BBox search
     private static final Map<UUID, Map<Integer, FloatingTurretEntity>> TURRET_REGISTRY = new HashMap<>();
+
+    // 玩家鎖定升級：ownerUUID → 最近攻擊過 owner 的玩家 UUID
+    private static final Map<UUID, UUID> LAST_ATTACKER = new HashMap<>();
+
+    @Nullable
+    public static UUID getLockedAttacker(UUID ownerUUID) {
+        return LAST_ATTACKER.get(ownerUUID);
+    }
 
     public static void registerTurret(UUID ownerUUID, int slotIndex, FloatingTurretEntity entity) {
         TURRET_REGISTRY.computeIfAbsent(ownerUUID, k -> new HashMap<>()).put(slotIndex, entity);
@@ -134,12 +144,16 @@ public class FloatingTurretEventHandler {
     public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         TURRET_REGISTRY.remove(player.getUUID());
+        LAST_ATTACKER.remove(player.getUUID());
     }
 
     @SubscribeEvent
     public static void onPlayerDamaged(LivingDamageEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         player.setData(ModDataAttachments.LAST_COMBAT_TIME.get(), player.level().getGameTime());
+        if (event.getSource().getEntity() instanceof Player attacker && attacker != player) {
+            LAST_ATTACKER.put(player.getUUID(), attacker.getUUID());
+        }
     }
 
     // 玩家攻擊實體：更新戰鬥時間
@@ -147,6 +161,30 @@ public class FloatingTurretEventHandler {
     public static void onPlayerAttack(AttackEntityEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         player.setData(ModDataAttachments.LAST_COMBAT_TIME.get(), player.level().getGameTime());
+    }
+
+    // 保護使用者升級：怪物若鎖定有保護砲的玩家，改鎖定浮游砲
+    @SubscribeEvent
+    public static void onChangeTarget(LivingChangeTargetEvent event) {
+        if (!(event.getNewAboutToBeSetTarget() instanceof ServerPlayer player)) return;
+        FloatingTurretEntity turret = findProtectTurret(player);
+        if (turret != null) event.setNewAboutToBeSetTarget(turret);
+    }
+
+    @Nullable
+    private static FloatingTurretEntity findProtectTurret(ServerPlayer player) {
+        NonNullList<ItemStack> equipment = player.getData(ModDataAttachments.EXTRA_EQUIPMENT.get());
+        for (int i = 0; i < TURRET_SLOT_COUNT; i++) {
+            int dataIdx = TURRET_SLOT_START + i;
+            if (dataIdx >= equipment.size()) break;
+            ItemStack stack = equipment.get(dataIdx);
+            if (stack.getItem() instanceof FloatingTurretItem
+                    && FloatingTurretItem.hasUpgrade(stack, TurretUpgradeBehavior.PROTECT)) {
+                FloatingTurretEntity e = getTurretEntity(player.getUUID(), i);
+                if (e != null) return e;
+            }
+        }
+        return null;
     }
 
     private static final int PVP_VARIANTS  = 5;
@@ -199,6 +237,7 @@ public class FloatingTurretEventHandler {
 
         entity.setOwnerUUID(player.getUUID());
         entity.setSlotIndex(slotIndex);
+        entity.applyUpgradesFromOwner(player);
 
         float phase = slotIndex == 0 ? 0.0F : (float) Math.PI;
         entity.setPos(

@@ -2,6 +2,9 @@ package com.github.nalamodikk.common.item.weapon;
 
 import com.github.nalamodikk.common.entity.FloatingTurretProjectile;
 import com.github.nalamodikk.common.event.FloatingTurretEventHandler;
+import com.github.nalamodikk.common.item.upgrade.EquipmentUpgradeData;
+import com.github.nalamodikk.common.item.weapon.turret.TurretUpgradeBehavior;
+import com.github.nalamodikk.common.item.weapon.turret.TurretUpgradeItem;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.RandomSource;
 import com.github.nalamodikk.common.player.equipment.EquipmentType;
@@ -29,6 +32,9 @@ import java.util.List;
 public class FloatingTurretItem extends Item implements ISpecificEquipment {
 
     public static final int DEFAULT_MAX_MANA = 15000;
+    public static final int MAX_UPGRADE_SLOTS = 6;
+    public static final int HEAL_INTERVAL_TICKS = 40;
+    public static final int HEAL_MANA_COST = 300;
 
     // 單手普通發射
     private static final int HAND_MANA_COST = 120;
@@ -202,8 +208,8 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
 
         int mainMana = mainStack.getOrDefault(ModDataComponents.MANA_STORED, 0);
         if (mainMana >= HAND_MANA_COST) {
-            level.addFreshEntity(FloatingTurretProjectile.shoot(level, player,
-                    turretPos(player, FloatingTurretEventHandler.HAND_MAIN_SLOT, 0f)));
+            level.addFreshEntity(makeShot(level, player, mainStack,
+                    turretPos(player, FloatingTurretEventHandler.HAND_MAIN_SLOT, 0f), 0f));
             mainStack.set(ModDataComponents.MANA_STORED, mainMana - HAND_MANA_COST);
             if (mainStack.isDamageableItem() && player instanceof ServerPlayer sp)
                 mainStack.hurtAndBreak(1, sp, EquipmentSlot.MAINHAND);
@@ -212,8 +218,8 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
 
         int offMana = offStack.getOrDefault(ModDataComponents.MANA_STORED, 0);
         if (offMana >= HAND_MANA_COST) {
-            level.addFreshEntity(FloatingTurretProjectile.shoot(level, player,
-                    turretPos(player, FloatingTurretEventHandler.HAND_OFF_SLOT, 0f)));
+            level.addFreshEntity(makeShot(level, player, offStack,
+                    turretPos(player, FloatingTurretEventHandler.HAND_OFF_SLOT, 0f), 0f));
             offStack.set(ModDataComponents.MANA_STORED, offMana - HAND_MANA_COST);
             if (offStack.isDamageableItem() && player instanceof ServerPlayer sp)
                 offStack.hurtAndBreak(1, sp, EquipmentSlot.OFFHAND);
@@ -226,6 +232,42 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
         }
     }
 
+    // ── 自動瞄準輔助 ──────────────────────────────────────────────────────────
+
+    private static final double AUTO_AIM_RANGE = 32.0;
+    private static final double AUTO_AIM_CONE = 0.5; // cos(60°)
+
+    @org.jetbrains.annotations.Nullable
+    private static Vec3 findAutoAimTarget(ServerLevel level, Player player) {
+        Vec3 eye = player.getEyePosition();
+        Vec3 look = player.getLookAngle();
+        net.minecraft.world.entity.LivingEntity best = null;
+        double bestDist = Double.MAX_VALUE;
+        var box = player.getBoundingBox().inflate(AUTO_AIM_RANGE);
+        for (var m : level.getEntitiesOfClass(net.minecraft.world.entity.monster.Monster.class, box,
+                net.minecraft.world.entity.LivingEntity::isAlive)) {
+            Vec3 toTarget = m.getBoundingBox().getCenter().subtract(eye);
+            double dist = toTarget.length();
+            if (dist > AUTO_AIM_RANGE || dist < 0.001) continue;
+            if (look.dot(toTarget.scale(1.0 / dist)) < AUTO_AIM_CONE) continue;
+            if (dist < bestDist) { bestDist = dist; best = m; }
+        }
+        return best != null ? best.getBoundingBox().getCenter() : null;
+    }
+
+    private static FloatingTurretProjectile makeShot(ServerLevel level, Player player, ItemStack stack,
+                                                     Vec3 spawnPos, float chargeRatio) {
+        Vec3 target = hasUpgrade(stack, TurretUpgradeBehavior.AUTO_AIM)
+                ? findAutoAimTarget(level, player) : null;
+        FloatingTurretProjectile proj = target != null
+                ? FloatingTurretProjectile.shootAt(level, player, spawnPos, target, chargeRatio)
+                : (chargeRatio > 0
+                        ? FloatingTurretProjectile.shootCharged(level, player, chargeRatio, spawnPos)
+                        : FloatingTurretProjectile.shoot(level, player, spawnPos));
+        if (hasUpgrade(stack, TurretUpgradeBehavior.NO_BLOCK_DAMAGE)) proj.setNoBlockDamage(true);
+        return proj;
+    }
+
     private void fireNormalShot(ServerLevel level, Player player, ItemStack stack, InteractionHand hand) {
         int mana = stack.getOrDefault(ModDataComponents.MANA_STORED, 0);
         if (mana < HAND_MANA_COST) return;
@@ -233,7 +275,7 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
         int slotIndex = hand == InteractionHand.MAIN_HAND
                 ? FloatingTurretEventHandler.HAND_MAIN_SLOT
                 : FloatingTurretEventHandler.HAND_OFF_SLOT;
-        level.addFreshEntity(FloatingTurretProjectile.shoot(level, player, turretPos(player, slotIndex, 0f)));
+        level.addFreshEntity(makeShot(level, player, stack, turretPos(player, slotIndex, 0f), 0f));
 
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 ModSounds.TURRET_SHOOT.get(), SoundSource.PLAYERS, 0.6F, 1.0F);
@@ -266,10 +308,94 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
         Vec3 mainPos  = turretPos(player, FloatingTurretEventHandler.HAND_MAIN_SLOT, chargeRatio);
         Vec3 offPos   = turretPos(player, FloatingTurretEventHandler.HAND_OFF_SLOT, chargeRatio);
         Vec3 spawnPos = mainPos.add(offPos).scale(0.5);
-        level.addFreshEntity(FloatingTurretProjectile.shootCharged(level, player, chargeRatio, spawnPos));
+        Vec3 aimTarget = (hasUpgrade(mainStack, TurretUpgradeBehavior.AUTO_AIM)
+                || hasUpgrade(offStack, TurretUpgradeBehavior.AUTO_AIM))
+                ? findAutoAimTarget(level, player) : null;
+        FloatingTurretProjectile chargedProj = aimTarget != null
+                ? FloatingTurretProjectile.shootAt(level, player, spawnPos, aimTarget, chargeRatio)
+                : FloatingTurretProjectile.shootCharged(level, player, chargeRatio, spawnPos);
+        if (hasUpgrade(mainStack, TurretUpgradeBehavior.NO_BLOCK_DAMAGE)
+                || hasUpgrade(offStack, TurretUpgradeBehavior.NO_BLOCK_DAMAGE)) {
+            chargedProj.setNoBlockDamage(true);
+        }
+        level.addFreshEntity(chargedProj);
 
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 ModSounds.TURRET_SHOOT_CHARGED.get(), SoundSource.PLAYERS, 1.2F, 0.7F + chargeRatio * 0.4F);
+    }
+
+    // ── 升級插件 ──────────────────────────────────────────────────────────────
+
+    public static EquipmentUpgradeData getData(ItemStack stack) {
+        return stack.getOrDefault(ModDataComponents.TURRET_UPGRADE_DATA, EquipmentUpgradeData.empty());
+    }
+
+    public static void setData(ItemStack stack, EquipmentUpgradeData data) {
+        stack.set(ModDataComponents.TURRET_UPGRADE_DATA, data);
+    }
+
+    public int getMaxUpgradeSlots() {
+        return MAX_UPGRADE_SLOTS;
+    }
+
+    public boolean isValidUpgradeItem(ItemStack stack) {
+        return stack.getItem() instanceof TurretUpgradeItem;
+    }
+
+    public String getUpgradeBehaviorKey(ItemStack upgradeStack) {
+        if (upgradeStack.getItem() instanceof TurretUpgradeItem tu) return tu.getBehavior().name();
+        return "";
+    }
+
+    private static int sumBonus(ItemStack turret, TurretUpgradeBehavior behavior) {
+        int total = 0;
+        for (ItemStack upg : getData(turret).upgrades().values()) {
+            if (upg.getItem() instanceof TurretUpgradeItem tu && tu.getBehavior() == behavior) {
+                total += tu.getBehavior().getBonusForMk(tu.getMk());
+            }
+        }
+        return total;
+    }
+
+    public static void recalculateMaxMana(ItemStack turret) {
+        int max = DEFAULT_MAX_MANA + sumBonus(turret, TurretUpgradeBehavior.CAPACITY);
+        turret.set(ModDataComponents.MAX_MANA, max);
+        int stored = turret.getOrDefault(ModDataComponents.MANA_STORED, 0);
+        if (stored > max) turret.set(ModDataComponents.MANA_STORED, max);
+    }
+
+    /** 自走砲實體額外血量（HEALTH 升級總和）。 */
+    public static int getHealthBonus(ItemStack turret) {
+        return sumBonus(turret, TurretUpgradeBehavior.HEALTH);
+    }
+
+    /** 傷害減免比例 0..1（DEFENSE 升級總和，上限 90%）。 */
+    public static float getDamageReduction(ItemStack turret) {
+        int pct = sumBonus(turret, TurretUpgradeBehavior.DEFENSE);
+        return Math.min(0.90f, pct / 100f);
+    }
+
+    /** 每個治療週期回復的血量（HEALING 升級總和），0 表示未安裝。 */
+    public static int getHealAmount(ItemStack turret) {
+        return sumBonus(turret, TurretUpgradeBehavior.HEALING);
+    }
+
+    public static boolean hasUpgrade(ItemStack turret, TurretUpgradeBehavior behavior) {
+        for (ItemStack upg : getData(turret).upgrades().values()) {
+            if (upg.getItem() instanceof TurretUpgradeItem tu && tu.getBehavior() == behavior) return true;
+        }
+        return false;
+    }
+
+    /** 已安裝該升級的最高 Mk，未安裝回 -1。 */
+    public static int getUpgradeMk(ItemStack turret, TurretUpgradeBehavior behavior) {
+        int mk = -1;
+        for (ItemStack upg : getData(turret).upgrades().values()) {
+            if (upg.getItem() instanceof TurretUpgradeItem tu && tu.getBehavior() == behavior) {
+                mk = Math.max(mk, tu.getMk());
+            }
+        }
+        return mk;
     }
 
     @Override
@@ -277,6 +403,10 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
         int mana    = stack.getOrDefault(ModDataComponents.MANA_STORED, 0);
         int maxMana = stack.getOrDefault(ModDataComponents.MAX_MANA, DEFAULT_MAX_MANA);
         lines.add(Component.translatable("item.koniava.floating_turret.tooltip.mana", mana, maxMana));
+        int upgrades = (int) getData(stack).upgrades().values().stream().filter(s -> !s.isEmpty()).count();
+        if (upgrades > 0) {
+            lines.add(Component.translatable("tooltip.koniava.floating_turret.upgrades", upgrades, MAX_UPGRADE_SLOTS));
+        }
         lines.add(Component.translatable("item.koniava.floating_turret.tooltip.hint"));
     }
 }

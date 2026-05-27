@@ -2,6 +2,7 @@ package com.github.nalamodikk.common.network.packet.server.armor;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.item.equipment.ManaArmorItem;
+import com.github.nalamodikk.common.item.equipment.armor.ChestplateUpgradeItem;
 import com.github.nalamodikk.common.item.upgrade.EquipmentUpgradeData;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -84,6 +85,19 @@ public record ArmorUpgradeSwapPacket(EquipmentSlot equipmentSlot, int slot, int 
             if (i == slot) continue;
             ItemStack existing = data.getUpgrade(i);
             if (!existing.isEmpty() && armorItem.getUpgradeBehaviorKey(existing).equals(newKey)) return;
+        }
+
+        // 護盾兩型互斥：已裝一種護盾就不能再裝另一種
+        if (fromInv.getItem() instanceof ChestplateUpgradeItem incoming && incoming.getBehavior().isShield()) {
+            for (int i = 0; i < armorItem.getMaxUpgradeSlots(); i++) {
+                if (i == slot) continue;
+                ItemStack existing = data.getUpgrade(i);
+                if (existing.getItem() instanceof ChestplateUpgradeItem cu
+                        && cu.getBehavior().isShield()
+                        && cu.getBehavior() != incoming.getBehavior()) {
+                    return;
+                }
+            }
         }
 
         ItemStack current = data.getUpgrade(slot);

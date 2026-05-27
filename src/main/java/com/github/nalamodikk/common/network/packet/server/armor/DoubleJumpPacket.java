@@ -24,8 +24,10 @@ public record DoubleJumpPacket() implements CustomPacketPayload {
 
     public static void handle(DoubleJumpPacket packet, IPayloadContext ctx) {
         ctx.enqueueWork(() -> {
-            if (ctx.player() instanceof ServerPlayer player)
+            if (ctx.player() instanceof ServerPlayer player) {
+                if (player.hasEffect(com.github.nalamodikk.register.ModMobEffects.ROOT)) return;
                 LeggingsDoubleJumpHandler.handleDoubleJump(player);
+            }
         });
     }
 

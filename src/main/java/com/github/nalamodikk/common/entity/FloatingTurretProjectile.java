@@ -42,10 +42,37 @@ public class FloatingTurretProjectile extends ThrowableProjectile {
             SynchedEntityData.defineId(FloatingTurretProjectile.class, EntityDataSerializers.FLOAT);
 
     private int lifetime = 0;
+    private boolean noBlockDamage = false;
+
+    // 控制彈酬載：命中時套用效果而非造成傷害
+    @org.jetbrains.annotations.Nullable
+    private net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> controlEffect = null;
+    private int controlDuration = 0;
 
     public FloatingTurretProjectile(EntityType<? extends FloatingTurretProjectile> type, Level level) {
         super(type, level);
         this.setNoGravity(true);
+    }
+
+    public FloatingTurretProjectile setNoBlockDamage(boolean value) {
+        this.noBlockDamage = value;
+        return this;
+    }
+
+    public FloatingTurretProjectile setControl(net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> effect, int durationTicks) {
+        this.controlEffect = effect;
+        this.controlDuration = durationTicks;
+        return this;
+    }
+
+    // 控制彈：從砲管朝目標，命中套效果不造成傷害
+    public static FloatingTurretProjectile shootControl(Level level, net.minecraft.world.entity.LivingEntity owner,
+                                                        Vec3 spawnPos, Vec3 targetPos,
+                                                        net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> effect,
+                                                        int durationTicks) {
+        FloatingTurretProjectile p = shootAt(level, owner, spawnPos, targetPos, 0.0F);
+        p.setControl(effect, durationTicks);
+        return p;
     }
 
     @Override
@@ -66,14 +93,20 @@ public class FloatingTurretProjectile extends ThrowableProjectile {
     }
 
     // 裝備槽被動攻擊用：從砲管直接瞄準目標位置，不走玩家視線 raycast
-    public static FloatingTurretProjectile shootAt(Level level, Player owner, Vec3 spawnPos, Vec3 targetPos) {
+    // owner 用 LivingEntity，讓分身（非玩家）也能當砲的擁有者
+    public static FloatingTurretProjectile shootAt(Level level, net.minecraft.world.entity.LivingEntity owner, Vec3 spawnPos, Vec3 targetPos) {
+        return shootAt(level, owner, spawnPos, targetPos, 0.0F);
+    }
+
+    // 帶蓄力比例的版本（分身繞行砲偶爾發蓄力彈）
+    public static FloatingTurretProjectile shootAt(Level level, net.minecraft.world.entity.LivingEntity owner, Vec3 spawnPos, Vec3 targetPos, float chargeRatio) {
         FloatingTurretProjectile p = new FloatingTurretProjectile(
                 ModEntities.FLOATING_TURRET_PROJECTILE.get(), level);
         p.setOwner(owner);
         p.setPos(spawnPos.x, spawnPos.y, spawnPos.z);
         Vec3 dir = targetPos.subtract(spawnPos);
         p.setDeltaMovement((dir.lengthSqr() < 0.001 ? new Vec3(0, 1, 0) : dir.normalize()).scale(BOLT_SPEED));
-        p.setChargeRatio(0.0F);
+        p.setChargeRatio(chargeRatio);
         return p;
     }
 
@@ -125,6 +158,17 @@ public class FloatingTurretProjectile extends ThrowableProjectile {
         if (level().isClientSide) return;
         Entity target = result.getEntity();
         if (target == getOwner()) return;
+
+        // 控制彈：套用效果（boss 免疫 / 同種不疊加由 helper 處理），不造成傷害
+        if (controlEffect != null) {
+            if (target instanceof net.minecraft.world.entity.LivingEntity living) {
+                com.github.nalamodikk.common.entity.control.TurretControlHelper.applyControl(
+                        living, controlEffect, controlDuration);
+            }
+            showHitEffect(result.getLocation());
+            this.discard();
+            return;
+        }
 
         float ratio = getChargeRatio();
         float dmg = ratio > 0
@@ -186,8 +230,9 @@ public class FloatingTurretProjectile extends ThrowableProjectile {
         float ratio = getChargeRatio();
         if (ratio > 0) {
             float radius = 1.0F + ratio * 1.5F;
-            level().explode(this, pos.x, pos.y, pos.z,
-                    radius, false, Level.ExplosionInteraction.BLOCK);
+            Level.ExplosionInteraction interaction = noBlockDamage
+                    ? Level.ExplosionInteraction.NONE : Level.ExplosionInteraction.BLOCK;
+            level().explode(this, pos.x, pos.y, pos.z, radius, false, interaction);
         }
     }
 

@@ -32,7 +32,18 @@ public class ModItemModelProvider extends ItemModelProvider {
             "helmet_upgrade_night_vision",
             "leggings_upgrade_multi_jump_mk0",  "leggings_upgrade_multi_jump_mk1",  "leggings_upgrade_multi_jump_mk2",  "leggings_upgrade_multi_jump_mk3",
             "armor_upgrade_capacity_mk0",       "armor_upgrade_capacity_mk1",       "armor_upgrade_capacity_mk2",       "armor_upgrade_capacity_mk3",
-            "armor_upgrade_defense_mk0",        "armor_upgrade_defense_mk1",        "armor_upgrade_defense_mk2",        "armor_upgrade_defense_mk3"
+            "armor_upgrade_defense_mk0",        "armor_upgrade_defense_mk1",        "armor_upgrade_defense_mk2",        "armor_upgrade_defense_mk3",
+            "turret_upgrade_capacity_mk0",      "turret_upgrade_capacity_mk1",      "turret_upgrade_capacity_mk2",      "turret_upgrade_capacity_mk3",
+            "turret_upgrade_healing_mk0",       "turret_upgrade_healing_mk1",       "turret_upgrade_healing_mk2",       "turret_upgrade_healing_mk3",
+            "turret_upgrade_health_mk0",        "turret_upgrade_health_mk1",        "turret_upgrade_health_mk2",
+            "turret_upgrade_defense_mk0",       "turret_upgrade_defense_mk1",
+            "turret_upgrade_auto_aim",          "turret_upgrade_no_block_damage",   "turret_upgrade_player_lock",
+            "turret_upgrade_protect_mk0",       "turret_upgrade_protect_mk1",
+            "turret_upgrade_slow",              "turret_upgrade_root",              "turret_upgrade_levitate",
+            "chestplate_upgrade_shield_reduction_mk0", "chestplate_upgrade_shield_reduction_mk1",
+            "chestplate_upgrade_shield_reduction_mk2", "chestplate_upgrade_shield_reduction_mk3",
+            "chestplate_upgrade_shield_absorb_mk0",    "chestplate_upgrade_shield_absorb_mk1",
+            "chestplate_upgrade_shield_absorb_mk2",    "chestplate_upgrade_shield_absorb_mk3"
     };
 
     @Override

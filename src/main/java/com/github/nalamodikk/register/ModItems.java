@@ -39,6 +39,8 @@ import com.github.nalamodikk.common.item.equipment.armor.ArmorDefenseUpgradeItem
 import com.github.nalamodikk.common.item.equipment.armor.LeggingsUpgradeBehavior;
 import com.github.nalamodikk.common.item.equipment.armor.LeggingsUpgradeItem;
 import com.github.nalamodikk.common.item.weapon.FloatingTurretItem;
+import com.github.nalamodikk.common.item.weapon.turret.TurretUpgradeBehavior;
+import com.github.nalamodikk.common.item.weapon.turret.TurretUpgradeItem;
 import com.github.nalamodikk.common.utils.upgrade.UpgradeType;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Rarity;
@@ -111,6 +113,55 @@ public class ModItems {
                             .durability(500)
                             .component(ModDataComponents.MANA_STORED, 0)
                             .component(ModDataComponents.MAX_MANA,  FloatingTurretItem.DEFAULT_MAX_MANA)));
+
+    // 浮游砲升級插件（USB 形狀）
+    public static final DeferredItem<TurretUpgradeItem> TURRET_UPGRADE_CAPACITY_MK0 =
+            ITEMS.register("turret_upgrade_capacity_mk0", () -> new TurretUpgradeItem(TurretUpgradeBehavior.CAPACITY, 0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<TurretUpgradeItem> TURRET_UPGRADE_CAPACITY_MK1 =
+            ITEMS.register("turret_upgrade_capacity_mk1", () -> new TurretUpgradeItem(TurretUpgradeBehavior.CAPACITY, 1, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<TurretUpgradeItem> TURRET_UPGRADE_CAPACITY_MK2 =
+            ITEMS.register("turret_upgrade_capacity_mk2", () -> new TurretUpgradeItem(TurretUpgradeBehavior.CAPACITY, 2, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<TurretUpgradeItem> TURRET_UPGRADE_CAPACITY_MK3 =
+            ITEMS.register("turret_upgrade_capacity_mk3", () -> new TurretUpgradeItem(TurretUpgradeBehavior.CAPACITY, 3, new Item.Properties().stacksTo(4)));
+
+    public static final DeferredItem<TurretUpgradeItem> TURRET_UPGRADE_HEALING_MK0 =
+            ITEMS.register("turret_upgrade_healing_mk0", () -> new TurretUpgradeItem(TurretUpgradeBehavior.HEALING, 0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<TurretUpgradeItem> TURRET_UPGRADE_HEALING_MK1 =
+            ITEMS.register("turret_upgrade_healing_mk1", () -> new TurretUpgradeItem(TurretUpgradeBehavior.HEALING, 1, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<TurretUpgradeItem> TURRET_UPGRADE_HEALING_MK2 =
+            ITEMS.register("turret_upgrade_healing_mk2", () -> new TurretUpgradeItem(TurretUpgradeBehavior.HEALING, 2, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<TurretUpgradeItem> TURRET_UPGRADE_HEALING_MK3 =
+            ITEMS.register("turret_upgrade_healing_mk3", () -> new TurretUpgradeItem(TurretUpgradeBehavior.HEALING, 3, new Item.Properties().stacksTo(4)));
+
+    public static final DeferredItem<TurretUpgradeItem> TURRET_UPGRADE_HEALTH_MK0 =
+            ITEMS.register("turret_upgrade_health_mk0", () -> new TurretUpgradeItem(TurretUpgradeBehavior.HEALTH, 0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<TurretUpgradeItem> TURRET_UPGRADE_HEALTH_MK1 =
+            ITEMS.register("turret_upgrade_health_mk1", () -> new TurretUpgradeItem(TurretUpgradeBehavior.HEALTH, 1, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<TurretUpgradeItem> TURRET_UPGRADE_HEALTH_MK2 =
+            ITEMS.register("turret_upgrade_health_mk2", () -> new TurretUpgradeItem(TurretUpgradeBehavior.HEALTH, 2, new Item.Properties().stacksTo(4)));
+
+    public static final DeferredItem<TurretUpgradeItem> TURRET_UPGRADE_DEFENSE_MK0 =
+            ITEMS.register("turret_upgrade_defense_mk0", () -> new TurretUpgradeItem(TurretUpgradeBehavior.DEFENSE, 0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<TurretUpgradeItem> TURRET_UPGRADE_DEFENSE_MK1 =
+            ITEMS.register("turret_upgrade_defense_mk1", () -> new TurretUpgradeItem(TurretUpgradeBehavior.DEFENSE, 1, new Item.Properties().stacksTo(4)));
+
+    public static final DeferredItem<TurretUpgradeItem> TURRET_UPGRADE_AUTO_AIM =
+            ITEMS.register("turret_upgrade_auto_aim", () -> new TurretUpgradeItem(TurretUpgradeBehavior.AUTO_AIM, 0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<TurretUpgradeItem> TURRET_UPGRADE_NO_BLOCK_DAMAGE =
+            ITEMS.register("turret_upgrade_no_block_damage", () -> new TurretUpgradeItem(TurretUpgradeBehavior.NO_BLOCK_DAMAGE, 0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<TurretUpgradeItem> TURRET_UPGRADE_PLAYER_LOCK =
+            ITEMS.register("turret_upgrade_player_lock", () -> new TurretUpgradeItem(TurretUpgradeBehavior.PLAYER_LOCK, 0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<TurretUpgradeItem> TURRET_UPGRADE_PROTECT_MK0 =
+            ITEMS.register("turret_upgrade_protect_mk0", () -> new TurretUpgradeItem(TurretUpgradeBehavior.PROTECT, 0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<TurretUpgradeItem> TURRET_UPGRADE_PROTECT_MK1 =
+            ITEMS.register("turret_upgrade_protect_mk1", () -> new TurretUpgradeItem(TurretUpgradeBehavior.PROTECT, 1, new Item.Properties().stacksTo(4)));
+
+    public static final DeferredItem<TurretUpgradeItem> TURRET_UPGRADE_SLOW =
+            ITEMS.register("turret_upgrade_slow", () -> new TurretUpgradeItem(TurretUpgradeBehavior.SLOW, 0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<TurretUpgradeItem> TURRET_UPGRADE_ROOT =
+            ITEMS.register("turret_upgrade_root", () -> new TurretUpgradeItem(TurretUpgradeBehavior.ROOT, 0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<TurretUpgradeItem> TURRET_UPGRADE_LEVITATE =
+            ITEMS.register("turret_upgrade_levitate", () -> new TurretUpgradeItem(TurretUpgradeBehavior.LEVITATE, 0, new Item.Properties().stacksTo(4)));
 
     /***
      * 工具
@@ -314,6 +365,24 @@ public class ModItems {
             ITEMS.register("armor_upgrade_defense_mk2", () -> new ArmorDefenseUpgradeItem(2, new Item.Properties().stacksTo(4)));
     public static final DeferredItem<ArmorDefenseUpgradeItem> ARMOR_UPGRADE_DEFENSE_MK3 =
             ITEMS.register("armor_upgrade_defense_mk3", () -> new ArmorDefenseUpgradeItem(3, new Item.Properties().stacksTo(4)));
+
+    // 胸甲護盾升級（兩種互斥）
+    public static final DeferredItem<ChestplateUpgradeItem> CHESTPLATE_UPGRADE_SHIELD_REDUCTION_MK0 =
+            ITEMS.register("chestplate_upgrade_shield_reduction_mk0", () -> new ChestplateUpgradeItem(ChestplateUpgradeBehavior.SHIELD_REDUCTION, 0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<ChestplateUpgradeItem> CHESTPLATE_UPGRADE_SHIELD_REDUCTION_MK1 =
+            ITEMS.register("chestplate_upgrade_shield_reduction_mk1", () -> new ChestplateUpgradeItem(ChestplateUpgradeBehavior.SHIELD_REDUCTION, 1, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<ChestplateUpgradeItem> CHESTPLATE_UPGRADE_SHIELD_REDUCTION_MK2 =
+            ITEMS.register("chestplate_upgrade_shield_reduction_mk2", () -> new ChestplateUpgradeItem(ChestplateUpgradeBehavior.SHIELD_REDUCTION, 2, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<ChestplateUpgradeItem> CHESTPLATE_UPGRADE_SHIELD_REDUCTION_MK3 =
+            ITEMS.register("chestplate_upgrade_shield_reduction_mk3", () -> new ChestplateUpgradeItem(ChestplateUpgradeBehavior.SHIELD_REDUCTION, 3, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<ChestplateUpgradeItem> CHESTPLATE_UPGRADE_SHIELD_ABSORB_MK0 =
+            ITEMS.register("chestplate_upgrade_shield_absorb_mk0", () -> new ChestplateUpgradeItem(ChestplateUpgradeBehavior.SHIELD_ABSORB, 0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<ChestplateUpgradeItem> CHESTPLATE_UPGRADE_SHIELD_ABSORB_MK1 =
+            ITEMS.register("chestplate_upgrade_shield_absorb_mk1", () -> new ChestplateUpgradeItem(ChestplateUpgradeBehavior.SHIELD_ABSORB, 1, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<ChestplateUpgradeItem> CHESTPLATE_UPGRADE_SHIELD_ABSORB_MK2 =
+            ITEMS.register("chestplate_upgrade_shield_absorb_mk2", () -> new ChestplateUpgradeItem(ChestplateUpgradeBehavior.SHIELD_ABSORB, 2, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<ChestplateUpgradeItem> CHESTPLATE_UPGRADE_SHIELD_ABSORB_MK3 =
+            ITEMS.register("chestplate_upgrade_shield_absorb_mk3", () -> new ChestplateUpgradeItem(ChestplateUpgradeBehavior.SHIELD_ABSORB, 3, new Item.Properties().stacksTo(4)));
 
     // 頭盔升級
     public static final DeferredItem<HelmetUpgradeItem> HELMET_UPGRADE_NIGHT_VISION =

@@ -7,6 +7,7 @@ import com.github.nalamodikk.common.item.equipment.armor.ArmorDefenseUpgradeItem
 import com.github.nalamodikk.common.item.equipment.armor.ChestplateUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.armor.HelmetUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.armor.LeggingsUpgradeItem;
+import com.github.nalamodikk.common.item.weapon.turret.TurretUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.boots.BootsUpgradeItem;
 import com.github.nalamodikk.common.item.wand.core.WandCoreItem;
 import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeItem;
@@ -58,7 +59,8 @@ public class ModCreativeModTabs {
                                     Item i = item.get();
                                     if (i instanceof WandCoreItem || i instanceof WandUpgradeItem || i instanceof BootsUpgradeItem
                             || i instanceof HelmetUpgradeItem || i instanceof ChestplateUpgradeItem || i instanceof LeggingsUpgradeItem
-                            || i instanceof ArmorCapacityUpgradeItem || i instanceof ArmorDefenseUpgradeItem) {
+                            || i instanceof ArmorCapacityUpgradeItem || i instanceof ArmorDefenseUpgradeItem
+                            || i instanceof TurretUpgradeItem) {
                                         upgradeItems.add(i);
                                     } else {
                                         output.accept(i);

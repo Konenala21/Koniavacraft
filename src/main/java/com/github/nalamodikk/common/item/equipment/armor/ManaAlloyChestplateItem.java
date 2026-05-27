@@ -1,6 +1,5 @@
 package com.github.nalamodikk.common.item.equipment.armor;
 
-import com.github.nalamodikk.common.event.ChestplateManaShieldHandler;
 import com.github.nalamodikk.common.item.equipment.ManaArmorItem;
 import com.github.nalamodikk.register.ModDataComponents;
 import net.minecraft.ChatFormatting;
@@ -53,16 +52,39 @@ public class ManaAlloyChestplateItem extends ManaArmorItem {
         return "";
     }
 
+    /** 取得已安裝的護盾插件（無則 null）。 */
+    @org.jetbrains.annotations.Nullable
+    public static ChestplateUpgradeItem getShieldUpgrade(ItemStack chest) {
+        for (ItemStack upg : getData(chest).upgrades().values()) {
+            if (upg.getItem() instanceof ChestplateUpgradeItem cu && cu.getBehavior().isShield()) {
+                return cu;
+            }
+        }
+        return null;
+    }
+
+    public static int getShieldEnergy(ItemStack chest) {
+        return chest.getOrDefault(ModDataComponents.SHIELD_ENERGY, 0);
+    }
+
+    public static void setShieldEnergy(ItemStack chest, int value) {
+        chest.set(ModDataComponents.SHIELD_ENERGY, Math.max(0, value));
+    }
+
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext ctx, List<Component> lines, TooltipFlag flag) {
         super.appendHoverText(stack, ctx, lines, flag);
-        int mana = getMana(stack);
-        if (mana > 0) {
-            lines.add(Component.translatable("tooltip.koniava.chestplate.mana_shield",
-                    (int)(ChestplateManaShieldHandler.SHIELD_RATE * 100)).withStyle(ChatFormatting.AQUA));
-        } else {
-            lines.add(Component.translatable("tooltip.koniava.chestplate.mana_shield_empty")
+        ChestplateUpgradeItem shield = getShieldUpgrade(stack);
+        if (shield == null) {
+            lines.add(Component.translatable("tooltip.koniava.chestplate.mana_shield_none")
                     .withStyle(ChatFormatting.DARK_GRAY));
+        } else if (shield.getBehavior().isShieldAbsorb()) {
+            int cap = shield.getBehavior().getBonusForMk(shield.getMk());
+            lines.add(Component.translatable("tooltip.koniava.chestplate.shield_absorb_status",
+                    getShieldEnergy(stack), cap).withStyle(ChatFormatting.AQUA));
+        } else {
+            lines.add(Component.translatable("tooltip.koniava.chestplate.shield_reduction_status",
+                    shield.getBehavior().getBonusForMk(shield.getMk())).withStyle(ChatFormatting.AQUA));
         }
     }
 

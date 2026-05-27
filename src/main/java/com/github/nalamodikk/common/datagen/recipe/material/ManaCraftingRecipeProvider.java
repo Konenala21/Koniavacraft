@@ -682,6 +682,203 @@ public class ManaCraftingRecipeProvider {
                 .manaCost(9000)
                 .save(output, "armor_upgrade_defense_mk3");
 
+        // ── 浮游砲升級插件 ────────────────────────────────────────────────────
+        // 魔力容量 Mk0-3
+        ManaCraftingRecipeBuilder.create(ModItems.TURRET_UPGRADE_CAPACITY_MK0.get(), 1)
+                .shaped(true).pattern("FMF").pattern("MUM").pattern("FMF")
+                .define('F', ModItems.MANA_CRYSTAL_FRAGMENT.get())
+                .define('M', ModItems.MANA_INGOT.get())
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(2000).save(output, "turret_upgrade_capacity_mk0");
+        ManaCraftingRecipeBuilder.create(ModItems.TURRET_UPGRADE_CAPACITY_MK1.get(), 1)
+                .shaped(true).pattern("CMC").pattern("CAC").pattern("CMC")
+                .define('C', ModItems.MANA_CRYSTAL_FRAGMENT.get())
+                .define('M', ModItems.MANA_INGOT.get())
+                .define('A', ModItems.TURRET_UPGRADE_CAPACITY_MK0.get())
+                .manaCost(3500).save(output, "turret_upgrade_capacity_mk1");
+        ManaCraftingRecipeBuilder.create(ModItems.TURRET_UPGRADE_CAPACITY_MK2.get(), 1)
+                .shaped(true).pattern("CMC").pattern("CAC").pattern("CMC")
+                .define('C', ModItems.MANA_CRYSTAL.get())
+                .define('M', ModItems.MANA_INGOT.get())
+                .define('A', ModItems.TURRET_UPGRADE_CAPACITY_MK1.get())
+                .manaCost(5500).save(output, "turret_upgrade_capacity_mk2");
+        ManaCraftingRecipeBuilder.create(ModItems.TURRET_UPGRADE_CAPACITY_MK3.get(), 1)
+                .shaped(true).pattern("HPH").pattern("PAP").pattern("HPH")
+                .define('H', ModItems.HIGH_DENSITY_MANA_CORE.get())
+                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('A', ModItems.TURRET_UPGRADE_CAPACITY_MK2.get())
+                .manaCost(9000).save(output, "turret_upgrade_capacity_mk3");
+
+        // 治療 Mk0-3
+        ManaCraftingRecipeBuilder.create(ModItems.TURRET_UPGRADE_HEALING_MK0.get(), 1)
+                .shaped(true).pattern("GMG").pattern("MUM").pattern("GMG")
+                .define('G', Items.GLISTERING_MELON_SLICE)
+                .define('M', ModItems.MANA_INGOT.get())
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(2000).save(output, "turret_upgrade_healing_mk0");
+        ManaCraftingRecipeBuilder.create(ModItems.TURRET_UPGRADE_HEALING_MK1.get(), 1)
+                .shaped(true).pattern("GTG").pattern("TAT").pattern("GTG")
+                .define('G', Items.GLISTERING_MELON_SLICE)
+                .define('T', Items.GHAST_TEAR)
+                .define('A', ModItems.TURRET_UPGRADE_HEALING_MK0.get())
+                .manaCost(3500).save(output, "turret_upgrade_healing_mk1");
+        ManaCraftingRecipeBuilder.create(ModItems.TURRET_UPGRADE_HEALING_MK2.get(), 1)
+                .shaped(true).pattern("CTC").pattern("TAT").pattern("CTC")
+                .define('C', ModItems.MANA_CRYSTAL.get())
+                .define('T', Items.GHAST_TEAR)
+                .define('A', ModItems.TURRET_UPGRADE_HEALING_MK1.get())
+                .manaCost(5500).save(output, "turret_upgrade_healing_mk2");
+        ManaCraftingRecipeBuilder.create(ModItems.TURRET_UPGRADE_HEALING_MK3.get(), 1)
+                .shaped(true).pattern("EPE").pattern("PAP").pattern("EPE")
+                .define('E', Items.ENCHANTED_GOLDEN_APPLE)
+                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('A', ModItems.TURRET_UPGRADE_HEALING_MK2.get())
+                .manaCost(9000).save(output, "turret_upgrade_healing_mk3");
+
+        // 強化骨架（HP）Mk0-2
+        ManaCraftingRecipeBuilder.create(ModItems.TURRET_UPGRADE_HEALTH_MK0.get(), 1)
+                .shaped(true).pattern("IPI").pattern("PUP").pattern("IPI")
+                .define('I', Items.IRON_INGOT)
+                .define('P', ModItems.MANA_REINFORCED_PLATE.get())
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(2000).save(output, "turret_upgrade_health_mk0");
+        ManaCraftingRecipeBuilder.create(ModItems.TURRET_UPGRADE_HEALTH_MK1.get(), 1)
+                .shaped(true).pattern("BPB").pattern("PAP").pattern("BPB")
+                .define('B', Items.IRON_BLOCK)
+                .define('P', ModItems.MANA_REINFORCED_PLATE.get())
+                .define('A', ModItems.TURRET_UPGRADE_HEALTH_MK0.get())
+                .manaCost(4000).save(output, "turret_upgrade_health_mk1");
+        ManaCraftingRecipeBuilder.create(ModItems.TURRET_UPGRADE_HEALTH_MK2.get(), 1)
+                .shaped(true).pattern("NPN").pattern("PAP").pattern("NPN")
+                .define('N', Items.NETHERITE_INGOT)
+                .define('P', ModItems.MANA_REINFORCED_PLATE.get())
+                .define('A', ModItems.TURRET_UPGRADE_HEALTH_MK1.get())
+                .manaCost(7000).save(output, "turret_upgrade_health_mk2");
+
+        // 裝甲板（防禦）Mk0-1
+        ManaCraftingRecipeBuilder.create(ModItems.TURRET_UPGRADE_DEFENSE_MK0.get(), 1)
+                .shaped(true).pattern("IPI").pattern("PUP").pattern("IPI")
+                .define('I', ModItems.MANA_INGOT.get())
+                .define('P', ModItems.MANA_REINFORCED_PLATE.get())
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(2500).save(output, "turret_upgrade_defense_mk0");
+        ManaCraftingRecipeBuilder.create(ModItems.TURRET_UPGRADE_DEFENSE_MK1.get(), 1)
+                .shaped(true).pattern("NPN").pattern("PAP").pattern("NPN")
+                .define('N', Items.NETHERITE_INGOT)
+                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('A', ModItems.TURRET_UPGRADE_DEFENSE_MK0.get())
+                .manaCost(6000).save(output, "turret_upgrade_defense_mk1");
+
+        // 自動瞄準
+        ManaCraftingRecipeBuilder.create(ModItems.TURRET_UPGRADE_AUTO_AIM.get(), 1)
+                .shaped(true).pattern("ERE").pattern("RUR").pattern("ERE")
+                .define('E', Items.ENDER_EYE)
+                .define('R', Items.REDSTONE)
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(4000).save(output, "turret_upgrade_auto_aim");
+
+        // 防止破壞方塊
+        ManaCraftingRecipeBuilder.create(ModItems.TURRET_UPGRADE_NO_BLOCK_DAMAGE.get(), 1)
+                .shaped(true).pattern("OWO").pattern("WUW").pattern("OWO")
+                .define('O', Items.OBSIDIAN)
+                .define('W', ModItems.MANA_WIRE.get())
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(3000).save(output, "turret_upgrade_no_block_damage");
+
+        // 玩家鎖定
+        ManaCraftingRecipeBuilder.create(ModItems.TURRET_UPGRADE_PLAYER_LOCK.get(), 1)
+                .shaped(true).pattern("ECE").pattern("CUC").pattern("ECE")
+                .define('E', Items.ENDER_EYE)
+                .define('C', ModItems.MANA_CRYSTAL.get())
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(5000).save(output, "turret_upgrade_player_lock");
+
+        // 保護使用者 Mk0-1
+        ManaCraftingRecipeBuilder.create(ModItems.TURRET_UPGRADE_PROTECT_MK0.get(), 1)
+                .shaped(true).pattern("IPI").pattern("PUP").pattern("IPI")
+                .define('I', Items.IRON_INGOT)
+                .define('P', ModItems.MANA_REINFORCED_PLATE.get())
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(4000).save(output, "turret_upgrade_protect_mk0");
+        ManaCraftingRecipeBuilder.create(ModItems.TURRET_UPGRADE_PROTECT_MK1.get(), 1)
+                .shaped(true).pattern("NPN").pattern("PAP").pattern("NPN")
+                .define('N', Items.NETHERITE_INGOT)
+                .define('P', ModItems.MANA_REINFORCED_PLATE.get())
+                .define('A', ModItems.TURRET_UPGRADE_PROTECT_MK0.get())
+                .manaCost(7000).save(output, "turret_upgrade_protect_mk1");
+
+        // 控制彈：緩速 / 定身 / 漂浮
+        ManaCraftingRecipeBuilder.create(ModItems.TURRET_UPGRADE_SLOW.get(), 1)
+                .shaped(true).pattern("SCS").pattern("CUC").pattern("SCS")
+                .define('S', Items.SOUL_SAND)
+                .define('C', ModItems.MANA_CRYSTAL_FRAGMENT.get())
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(4000).save(output, "turret_upgrade_slow");
+        ManaCraftingRecipeBuilder.create(ModItems.TURRET_UPGRADE_ROOT.get(), 1)
+                .shaped(true).pattern("HCH").pattern("CUC").pattern("HCH")
+                .define('H', Items.HONEY_BLOCK)
+                .define('C', ModItems.MANA_CRYSTAL.get())
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(6000).save(output, "turret_upgrade_root");
+        ManaCraftingRecipeBuilder.create(ModItems.TURRET_UPGRADE_LEVITATE.get(), 1)
+                .shaped(true).pattern("SCS").pattern("CUC").pattern("SCS")
+                .define('S', Items.SHULKER_SHELL)
+                .define('C', ModItems.MANA_CRYSTAL.get())
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(6000).save(output, "turret_upgrade_levitate");
+
+        // ── 胸甲護盾插件：減免型 Mk0-3 ────────────────────────────────────────
+        ManaCraftingRecipeBuilder.create(ModItems.CHESTPLATE_UPGRADE_SHIELD_REDUCTION_MK0.get(), 1)
+                .shaped(true).pattern("IPI").pattern("PUP").pattern("IPI")
+                .define('I', Items.IRON_INGOT)
+                .define('P', ModItems.MANA_REINFORCED_PLATE.get())
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(3000).save(output, "chestplate_upgrade_shield_reduction_mk0");
+        ManaCraftingRecipeBuilder.create(ModItems.CHESTPLATE_UPGRADE_SHIELD_REDUCTION_MK1.get(), 1)
+                .shaped(true).pattern("FPF").pattern("PAP").pattern("FPF")
+                .define('F', ModItems.MANA_CRYSTAL_FRAGMENT.get())
+                .define('P', ModItems.MANA_REINFORCED_PLATE.get())
+                .define('A', ModItems.CHESTPLATE_UPGRADE_SHIELD_REDUCTION_MK0.get())
+                .manaCost(5000).save(output, "chestplate_upgrade_shield_reduction_mk1");
+        ManaCraftingRecipeBuilder.create(ModItems.CHESTPLATE_UPGRADE_SHIELD_REDUCTION_MK2.get(), 1)
+                .shaped(true).pattern("CPC").pattern("PAP").pattern("CPC")
+                .define('C', ModItems.MANA_CRYSTAL.get())
+                .define('P', ModItems.MANA_REINFORCED_PLATE.get())
+                .define('A', ModItems.CHESTPLATE_UPGRADE_SHIELD_REDUCTION_MK1.get())
+                .manaCost(7500).save(output, "chestplate_upgrade_shield_reduction_mk2");
+        ManaCraftingRecipeBuilder.create(ModItems.CHESTPLATE_UPGRADE_SHIELD_REDUCTION_MK3.get(), 1)
+                .shaped(true).pattern("NPN").pattern("PAP").pattern("NPN")
+                .define('N', Items.NETHERITE_INGOT)
+                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('A', ModItems.CHESTPLATE_UPGRADE_SHIELD_REDUCTION_MK2.get())
+                .manaCost(11000).save(output, "chestplate_upgrade_shield_reduction_mk3");
+
+        // ── 胸甲護盾插件：吸收型 Mk0-3 ────────────────────────────────────────
+        ManaCraftingRecipeBuilder.create(ModItems.CHESTPLATE_UPGRADE_SHIELD_ABSORB_MK0.get(), 1)
+                .shaped(true).pattern("FCF").pattern("CUC").pattern("FCF")
+                .define('F', ModItems.MANA_CRYSTAL_FRAGMENT.get())
+                .define('C', ModItems.MANA_CRYSTAL.get())
+                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
+                .manaCost(3500).save(output, "chestplate_upgrade_shield_absorb_mk0");
+        ManaCraftingRecipeBuilder.create(ModItems.CHESTPLATE_UPGRADE_SHIELD_ABSORB_MK1.get(), 1)
+                .shaped(true).pattern("CWC").pattern("WAW").pattern("CWC")
+                .define('C', ModItems.MANA_CRYSTAL.get())
+                .define('W', ModItems.MANA_WIRE.get())
+                .define('A', ModItems.CHESTPLATE_UPGRADE_SHIELD_ABSORB_MK0.get())
+                .manaCost(5500).save(output, "chestplate_upgrade_shield_absorb_mk1");
+        ManaCraftingRecipeBuilder.create(ModItems.CHESTPLATE_UPGRADE_SHIELD_ABSORB_MK2.get(), 1)
+                .shaped(true).pattern("HPH").pattern("PAP").pattern("HPH")
+                .define('H', ModItems.HIGH_DENSITY_MANA_CORE.get())
+                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('A', ModItems.CHESTPLATE_UPGRADE_SHIELD_ABSORB_MK1.get())
+                .manaCost(8000).save(output, "chestplate_upgrade_shield_absorb_mk2");
+        ManaCraftingRecipeBuilder.create(ModItems.CHESTPLATE_UPGRADE_SHIELD_ABSORB_MK3.get(), 1)
+                .shaped(true).pattern("NHN").pattern("HAH").pattern("NHN")
+                .define('N', Items.NETHERITE_INGOT)
+                .define('H', ModItems.HIGH_DENSITY_MANA_CORE.get())
+                .define('A', ModItems.CHESTPLATE_UPGRADE_SHIELD_ABSORB_MK2.get())
+                .manaCost(11000).save(output, "chestplate_upgrade_shield_absorb_mk3");
+
         // ── 護腿多段跳升級 ────────────────────────────────────────────────────
         ManaCraftingRecipeBuilder.create(ModItems.LEGGINGS_UPGRADE_MULTI_JUMP_MK0.get(), 1)
                 .shaped(true)

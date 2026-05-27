@@ -97,6 +97,7 @@ public class ManaSprintBootsItem extends ManaArmorItem {
 
     public static boolean performDash(ServerPlayer player, ItemStack boots) {
         if (player.hasEffect(ModMobEffects.SPRINT_COOLDOWN)) return false;
+        if (player.hasEffect(ModMobEffects.ROOT)) return false;
         if (player.isInWater() || player.isInLava()) {
             player.displayClientMessage(
                     Component.translatable("message.koniava.boots.in_liquid"), true

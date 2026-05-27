@@ -1,6 +1,7 @@
 package com.github.nalamodikk.register;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.effect.RootMobEffect;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.effect.MobEffect;
@@ -23,6 +24,11 @@ public class ModMobEffects {
     public static final DeferredHolder<MobEffect, MobEffect> SPRINT_COOLDOWN =
             MOB_EFFECTS.register("sprint_cooldown", () ->
                     new MobEffect(MobEffectCategory.NEUTRAL, 0x44AAFF) {});
+
+    // 定身：浮游砲控制彈用，封鎖移動
+    public static final DeferredHolder<MobEffect, MobEffect> ROOT =
+            MOB_EFFECTS.register("root", () ->
+                    new RootMobEffect(MobEffectCategory.HARMFUL, 0x66405A));
 
     public static void register(IEventBus bus) {
         MOB_EFFECTS.register(bus);

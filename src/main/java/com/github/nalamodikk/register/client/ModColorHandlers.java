@@ -4,7 +4,9 @@ import com.github.nalamodikk.common.item.equipment.armor.ArmorCapacityUpgradeIte
 import com.github.nalamodikk.common.item.equipment.armor.ArmorDefenseUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.armor.HelmetUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.armor.LeggingsUpgradeItem;
+import com.github.nalamodikk.common.item.equipment.armor.ChestplateUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.boots.BootsUpgradeItem;
+import com.github.nalamodikk.common.item.weapon.turret.TurretUpgradeItem;
 import com.github.nalamodikk.common.item.wand.core.WandCoreItem;
 import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeItem;
 import com.github.nalamodikk.register.ModItems;
@@ -95,6 +97,55 @@ public class ModColorHandlers {
                 ModItems.ARMOR_UPGRADE_DEFENSE_MK1.get(),
                 ModItems.ARMOR_UPGRADE_DEFENSE_MK2.get(),
                 ModItems.ARMOR_UPGRADE_DEFENSE_MK3.get()
+        );
+
+        // 胸甲護盾升級物品：依 behavior 染色
+        event.register(
+                (stack, tintIndex) -> {
+                    if (tintIndex == 0 && stack.getItem() instanceof ChestplateUpgradeItem upg) {
+                        return upg.getBehavior().getColor();
+                    }
+                    return 0xFFFFFF;
+                },
+                ModItems.CHESTPLATE_UPGRADE_SHIELD_REDUCTION_MK0.get(),
+                ModItems.CHESTPLATE_UPGRADE_SHIELD_REDUCTION_MK1.get(),
+                ModItems.CHESTPLATE_UPGRADE_SHIELD_REDUCTION_MK2.get(),
+                ModItems.CHESTPLATE_UPGRADE_SHIELD_REDUCTION_MK3.get(),
+                ModItems.CHESTPLATE_UPGRADE_SHIELD_ABSORB_MK0.get(),
+                ModItems.CHESTPLATE_UPGRADE_SHIELD_ABSORB_MK1.get(),
+                ModItems.CHESTPLATE_UPGRADE_SHIELD_ABSORB_MK2.get(),
+                ModItems.CHESTPLATE_UPGRADE_SHIELD_ABSORB_MK3.get()
+        );
+
+        // 浮游砲升級物品：依 behavior 染色
+        event.register(
+                (stack, tintIndex) -> {
+                    if (tintIndex == 0 && stack.getItem() instanceof TurretUpgradeItem upg) {
+                        return upg.getBehavior().getColor();
+                    }
+                    return 0xFFFFFF;
+                },
+                ModItems.TURRET_UPGRADE_CAPACITY_MK0.get(),
+                ModItems.TURRET_UPGRADE_CAPACITY_MK1.get(),
+                ModItems.TURRET_UPGRADE_CAPACITY_MK2.get(),
+                ModItems.TURRET_UPGRADE_CAPACITY_MK3.get(),
+                ModItems.TURRET_UPGRADE_HEALING_MK0.get(),
+                ModItems.TURRET_UPGRADE_HEALING_MK1.get(),
+                ModItems.TURRET_UPGRADE_HEALING_MK2.get(),
+                ModItems.TURRET_UPGRADE_HEALING_MK3.get(),
+                ModItems.TURRET_UPGRADE_HEALTH_MK0.get(),
+                ModItems.TURRET_UPGRADE_HEALTH_MK1.get(),
+                ModItems.TURRET_UPGRADE_HEALTH_MK2.get(),
+                ModItems.TURRET_UPGRADE_DEFENSE_MK0.get(),
+                ModItems.TURRET_UPGRADE_DEFENSE_MK1.get(),
+                ModItems.TURRET_UPGRADE_AUTO_AIM.get(),
+                ModItems.TURRET_UPGRADE_NO_BLOCK_DAMAGE.get(),
+                ModItems.TURRET_UPGRADE_PLAYER_LOCK.get(),
+                ModItems.TURRET_UPGRADE_PROTECT_MK0.get(),
+                ModItems.TURRET_UPGRADE_PROTECT_MK1.get(),
+                ModItems.TURRET_UPGRADE_SLOW.get(),
+                ModItems.TURRET_UPGRADE_ROOT.get(),
+                ModItems.TURRET_UPGRADE_LEVITATE.get()
         );
 
         // 靴子升級物品：依 behavior 染色
