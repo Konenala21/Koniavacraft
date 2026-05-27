@@ -432,6 +432,7 @@ public class PlayerCloneEntity extends Monster {
     private void activateAfterIntro() {
         introActive = false;
         introTicks = 0;
+        revealEquipment(); // 保險：跳過動畫時不會經過 REVEAL_TICK，這裡補套裝備（冪等）
         setNoAi(false);
         setNoGravity(false);
         setInvulnerable(false);

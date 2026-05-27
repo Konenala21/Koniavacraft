@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Fixed: skipping the intro cinematic left the clone without its mirrored armor/weapon (the reveal moment was skipped). The equipment is now applied when the boss activates, so skipping still shows full gear.
+- 修正:跳過進場過場後分身沒有顯現鏡像的盔甲/武器(因為跳過了顯現那一刻)。裝備改成在 boss 啟動時套上,所以跳過後也會帶齊裝備。
+
 - The clone no longer stops to swing when attacking: in melee range it now circles around you (strafes) while striking, instead of planting itself and standing still, so it feels like a real opponent.
 - 分身近戰不再停下來揮擊:進入攻擊距離後會繞著你側移、邊繞邊打,而不是站定原地揮,打起來更像真正的對手。
 
@@ -118,6 +121,9 @@ All notable changes to this project will be documented in this file.
 - 頭盔夜視升級現在開啟時會持續消耗魔力（5 魔力/秒）。魔力耗盡後夜視自動關閉。手動關閉時效果立即移除。關閉升級不再移除藥水提供的夜視效果。
 
 ### Developer Notes / 開發者備註
+
+- `activateAfterIntro` now calls `revealEquipment()` up front (idempotent). Skipping the cinematic sets `introTicks = INTRO_LEN`, which bypassed the `INTRO_REVEAL_TICK` reveal, so the clone activated without its `pendingEquipment` applied; revealing on activation covers both the normal and skip paths.
+- `activateAfterIntro` 開頭補呼叫 `revealEquipment()`（冪等）。跳過過場會把 `introTicks` 設成 `INTRO_LEN`，因而略過 `INTRO_REVEAL_TICK` 的顯現，導致分身啟動時沒套上 `pendingEquipment`；改在啟動時顯現可同時涵蓋正常與跳過路徑。
 
 - Replaced `MeleeAttackGoal` + `LookAtPlayerGoal` with a custom `tickMeleeStrafe` in `customServerAiStep`: out of reach it `moveTo`s the target; in reach it `getNavigation().stop()` then strafes via `getMoveControl().setWantedPosition` (perpendicular to the target line, slight inward bias) while swinging + `doHurtTarget` on a 16t `attackCooldown`. Skipped during grace and skill wind-up.
 - 以 `customServerAiStep` 中的自訂 `tickMeleeStrafe` 取代 `MeleeAttackGoal` + `LookAtPlayerGoal`:超出攻擊距離時 `moveTo` 追擊；進入距離則 `getNavigation().stop()` 後用 `getMoveControl().setWantedPosition`（垂直連線方向、略帶內傾）繞圈側移，並以 16t `attackCooldown` 揮手 + `doHurtTarget`。緩衝期與技能前搖期間跳過。
