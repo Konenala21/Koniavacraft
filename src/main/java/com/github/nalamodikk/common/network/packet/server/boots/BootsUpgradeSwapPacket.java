@@ -1,8 +1,7 @@
 package com.github.nalamodikk.common.network.packet.server.boots;
 
 import com.github.nalamodikk.KoniavacraftMod;
-import com.github.nalamodikk.common.item.equipment.boots.BootsUpgradeBehavior;
-import com.github.nalamodikk.common.item.equipment.boots.BootsUpgradeItem;
+import com.github.nalamodikk.common.item.equipment.ManaArmorItem;
 import com.github.nalamodikk.common.item.equipment.boots.ManaSprintBootsItem;
 import com.github.nalamodikk.common.item.upgrade.EquipmentUpgradeData;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -45,23 +44,24 @@ public record BootsUpgradeSwapPacket(int slot, int inventorySlot) implements Cus
             ItemStack boots = player.getItemBySlot(EquipmentSlot.FEET);
             if (!(boots.getItem() instanceof ManaSprintBootsItem bootsItem)) return;
 
-            EquipmentUpgradeData data = ManaSprintBootsItem.getData(boots);
+            EquipmentUpgradeData data = ManaArmorItem.getData(boots);
 
             if (packet.inventorySlot() == -1) {
-                removeFromBoots(player, boots, data, packet.slot());
+                removeFromBoots(player, boots, data, packet.slot(), bootsItem);
             } else {
                 installToBoots(player, boots, data, packet.slot(), packet.inventorySlot(), bootsItem);
             }
         });
     }
 
-    private static void removeFromBoots(ServerPlayer player, ItemStack boots, EquipmentUpgradeData data, int slot) {
+    private static void removeFromBoots(ServerPlayer player, ItemStack boots, EquipmentUpgradeData data,
+                                         int slot, ManaSprintBootsItem bootsItem) {
         ItemStack current = data.getUpgrade(slot);
         if (current.isEmpty()) return;
         ItemStack toReturn = current.copy();
         if (!player.addItem(toReturn)) player.drop(toReturn, false);
-        ManaSprintBootsItem.setData(boots, data.withUpgrade(slot, ItemStack.EMPTY));
-        ManaSprintBootsItem.recalculateMaxMana(boots);
+        ManaArmorItem.setData(boots, data.withUpgrade(slot, ItemStack.EMPTY));
+        bootsItem.recalculateMaxMana(boots);
     }
 
     private static void installToBoots(ServerPlayer player, ItemStack boots, EquipmentUpgradeData data,
@@ -69,25 +69,23 @@ public record BootsUpgradeSwapPacket(int slot, int inventorySlot) implements Cus
         if (invSlot < 0 || invSlot >= player.getInventory().getContainerSize()) return;
         ItemStack fromInv = player.getInventory().getItem(invSlot);
         if (fromInv.isEmpty()) return;
-        if (!(fromInv.getItem() instanceof BootsUpgradeItem newUpg)) return;
+        if (!bootsItem.isValidUpgradeItem(fromInv)) return;
         if (slot < 0 || slot >= bootsItem.getMaxUpgradeSlots()) return;
 
-        // Reject if another slot already has the same behavior type
-        BootsUpgradeBehavior newBehavior = newUpg.getBehavior();
+        String newKey = bootsItem.getUpgradeBehaviorKey(fromInv);
         for (int i = 0; i < bootsItem.getMaxUpgradeSlots(); i++) {
             if (i == slot) continue;
             ItemStack existing = data.getUpgrade(i);
-            if (!existing.isEmpty() && existing.getItem() instanceof BootsUpgradeItem existingUpg
-                    && existingUpg.getBehavior() == newBehavior) return;
+            if (!existing.isEmpty() && bootsItem.getUpgradeBehaviorKey(existing).equals(newKey)) return;
         }
 
         ItemStack current = data.getUpgrade(slot);
         if (!current.isEmpty() && !player.addItem(current.copy())) {
             player.drop(current.copy(), false);
         }
-        ManaSprintBootsItem.setData(boots, data.withUpgrade(slot, fromInv.copyWithCount(1)));
+        ManaArmorItem.setData(boots, data.withUpgrade(slot, fromInv.copyWithCount(1)));
         fromInv.shrink(1);
-        ManaSprintBootsItem.recalculateMaxMana(boots);
+        bootsItem.recalculateMaxMana(boots);
     }
 
     public static void registerTo(PayloadRegistrar registrar) {

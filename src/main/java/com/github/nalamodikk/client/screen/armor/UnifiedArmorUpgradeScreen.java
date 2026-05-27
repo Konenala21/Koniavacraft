@@ -2,9 +2,6 @@ package com.github.nalamodikk.client.screen.armor;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.item.equipment.ManaArmorItem;
-import com.github.nalamodikk.common.item.equipment.armor.ArmorCapacityUpgradeItem;
-import com.github.nalamodikk.common.item.equipment.boots.BootsUpgradeItem;
-import com.github.nalamodikk.common.item.equipment.boots.ManaSprintBootsItem;
 import com.github.nalamodikk.common.item.upgrade.EquipmentUpgradeData;
 import com.github.nalamodikk.common.network.packet.server.armor.ArmorUpgradeSwapPacket;
 import com.github.nalamodikk.common.network.packet.server.boots.BootsUpgradeSwapPacket;
@@ -115,38 +112,29 @@ public class UnifiedArmorUpgradeScreen extends Screen {
     }
 
     private boolean isManaEquip(ItemStack s) {
-        return s.getItem() instanceof ManaArmorItem || s.getItem() instanceof ManaSprintBootsItem;
+        return s.getItem() instanceof ManaArmorItem;
     }
 
     private EquipmentUpgradeData getUpgradeData(EquipmentSlot slot) {
         ItemStack s = stackFor(slot);
-        if (s.getItem() instanceof ManaSprintBootsItem) return ManaSprintBootsItem.getData(s);
         if (s.getItem() instanceof ManaArmorItem) return ManaArmorItem.getData(s);
         return EquipmentUpgradeData.empty();
     }
 
     private int getMaxUpgradeSlots(EquipmentSlot slot) {
         ItemStack s = stackFor(slot);
-        if (s.getItem() instanceof ManaSprintBootsItem b) return b.getMaxUpgradeSlots();
         if (s.getItem() instanceof ManaArmorItem m) return m.getMaxUpgradeSlots();
         return 0;
     }
 
     private boolean isValidUpgrade(EquipmentSlot slot, ItemStack upgradeStack) {
         ItemStack s = stackFor(slot);
-        if (s.getItem() instanceof ManaSprintBootsItem)
-            return upgradeStack.getItem() instanceof BootsUpgradeItem
-                    || upgradeStack.getItem() instanceof ArmorCapacityUpgradeItem;
         if (s.getItem() instanceof ManaArmorItem m) return m.isValidUpgradeItem(upgradeStack);
         return false;
     }
 
     private String getBehaviorKey(EquipmentSlot slot, ItemStack upgradeStack) {
         ItemStack s = stackFor(slot);
-        if (s.getItem() instanceof ManaSprintBootsItem) {
-            if (upgradeStack.getItem() instanceof ArmorCapacityUpgradeItem) return "CAPACITY";
-            if (upgradeStack.getItem() instanceof BootsUpgradeItem bu) return "boots_" + bu.getBehavior().name();
-        }
         if (s.getItem() instanceof ManaArmorItem m) return m.getUpgradeBehaviorKey(upgradeStack);
         return upgradeStack.getDescriptionId();
     }
