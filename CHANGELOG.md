@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Fixed two Nara phantoms appearing after reloading the world while still inside the Mirror World. The phantom no longer saves to disk; the boss keeps exactly one alive and clears any duplicates.
+- 修正在鏡中世界內重新載入世界後出現兩支娜拉幻影的問題。幻影改為不存檔,由 boss 維持恰好一支並清除多餘的。
+
 - The space rift now stands upright and only turns to face you horizontally, instead of always flattening to your camera so it looked like it followed you. Nara's death taunt now says "Zako" in English (was "Small fry").
 - 空間裂縫現在直立、只水平轉向你,不再永遠貼平你的視角(之前看起來像黏著你走)。娜拉死亡嘲諷的英文版改為「Zako」(原為「Small fry」)。
 
@@ -88,6 +91,9 @@ All notable changes to this project will be documented in this file.
 - 頭盔夜視升級現在開啟時會持續消耗魔力（5 魔力/秒）。魔力耗盡後夜視自動關閉。手動關閉時效果立即移除。關閉升級不再移除藥水提供的夜視效果。
 
 ### Developer Notes / 開發者備註
+
+- `NaraPhantomEntity.shouldBeSaved` now returns `false` (no longer persisted). `PlayerCloneEntity.ensureNaraPhantom` (every 40t while active) spawns one if none of the same source exists and discards extras, so a reload can't leave a stale/duplicate phantom. `VoidMirrorTeleport.spawnNaraPhantom` is now `public static` taking a `UUID` so the boss can reuse it.
+- `NaraPhantomEntity.shouldBeSaved` 改為回傳 `false`（不再存檔）。`PlayerCloneEntity.ensureNaraPhantom`（active 時每 40t）在同源娜拉不存在時生成一支、有多餘則清除，因此重載不會殘留或重複。`VoidMirrorTeleport.spawnNaraPhantom` 改為 `public static` 吃 `UUID`，供 boss 重用。
 
 - `SpaceCrackRenderer` now billboards only around the Y axis (`Axis.YP.rotationDegrees(-camera.getYRot())`) instead of the full `camera.rotation()`, so the rift stays upright. English `nara.dialogue.void_mirror.death_taunt` changed "Small fry" to "Zako" (audio unchanged).
 - `SpaceCrackRenderer` 改為只繞 Y 軸 billboard（`Axis.YP.rotationDegrees(-camera.getYRot())`），不再用完整 `camera.rotation()`，使裂縫保持直立。英文 `nara.dialogue.void_mirror.death_taunt` 的「Small fry」改為「Zako」（音檔不變）。

@@ -54,7 +54,7 @@ public final class VoidMirrorTeleport {
         clearExistingFor(target, player.getUUID());
 
         // 娜拉一開始就在場（過場從她的視角開始）
-        spawnNaraPhantom(target, player);
+        spawnNaraPhantom(target, player.getUUID());
         // 玩家走出用的裝飾裂縫（不傳送、會自己消失）
         spawnEmergeCrack(target);
         // 返回裂縫改由 boss 開始進攻時（PlayerCloneEntity.activateAfterIntro）生成，避免過場中與走出裂縫重複
@@ -91,8 +91,8 @@ public final class VoidMirrorTeleport {
         level.addFreshEntity(crack);
     }
 
-    private static void spawnNaraPhantom(ServerLevel level, ServerPlayer source) {
-        UUID sourceId = source.getUUID();
+    // public：供 boss（PlayerCloneEntity）在進攻中確保娜拉存在時重用
+    public static void spawnNaraPhantom(ServerLevel level, UUID sourceId) {
         NaraPhantomEntity nara = ModEntities.NARA_PHANTOM.get().create(level);
         if (nara == null) return;
         // 站在遠處旁觀

@@ -61,6 +61,11 @@ public class NaraPhantomEntity extends PathfinderMob {
     }
 
     @Override
+    public boolean shouldBeSaved() {
+        return false; // 不存盤：由 boss（PlayerCloneEntity）在進攻中確保恰好一個同源娜拉，避免重載殘留/重複
+    }
+
+    @Override
     public void checkDespawn() {
         // 不自然消失
     }

@@ -2,6 +2,7 @@ package com.github.nalamodikk.common.entity;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.dimension.VoidMirrorSavedData;
+import com.github.nalamodikk.common.dimension.VoidMirrorTeleport;
 import com.github.nalamodikk.common.event.VoidMirrorEvents;
 import com.github.nalamodikk.common.item.upgrade.EquipmentUpgradeData;
 import com.github.nalamodikk.common.item.weapon.FloatingTurretItem;
@@ -120,6 +121,8 @@ public class PlayerCloneEntity extends Monster {
     // 分段擊飛（RAM_WALL）：先橫向擊退，數 tick 後再往上彈
     @Nullable private Player pendingLaunchTarget = null;
     private int pendingLaunchTimer = 0;
+    // 確保同源娜拉幻影恰好一個（娜拉不存盤，重載後由 boss 重建）
+    private int naraCheckCooldown = 0;
 
     // 進場演出（地底鑽出→飛高→浮動集氣→爆炸顯現裝備→降落→啟動），對齊過場時間軸（360t）
     private static final int INTRO_RISE_START = 430;
@@ -584,6 +587,7 @@ public class PlayerCloneEntity extends Monster {
         tickPillarSkill(); // 招牌技能：墊方塊衝撞擊飛（全階段）
         tickPendingLaunch(); // RAM_WALL 橫向擊退後的第二段上彈
         tickSkillBlockClear(); // 擊飛後依序打掉技能墊的方塊
+        ensureNaraPhantom(); // 確保同源娜拉幻影恰好一個（重載後重建）
         if (phase == Phase.WALLING) {
             tickWallBuilding();
             tickBreakSurroundings();
@@ -717,6 +721,23 @@ public class PlayerCloneEntity extends Monster {
         Vec3 m = p.getDeltaMovement();
         p.setDeltaMovement(m.x, up, m.z);
         p.hurtMarked = true;
+    }
+
+    // 娜拉幻影不存盤，重載後由活著的 boss 重建並去重（同源恰好一個）
+    private void ensureNaraPhantom() {
+        if (naraCheckCooldown > 0) { naraCheckCooldown--; return; }
+        if (!(level() instanceof ServerLevel sl)) return;
+        naraCheckCooldown = 40;
+        UUID id = getSourceUUID().orElse(null);
+        if (id == null) return;
+        List<NaraPhantomEntity> naras = sl.getEntitiesOfClass(NaraPhantomEntity.class,
+                getBoundingBox().inflate(300),
+                n -> n.getSourceUUID().map(id::equals).orElse(false));
+        if (naras.isEmpty()) {
+            VoidMirrorTeleport.spawnNaraPhantom(sl, id);
+        } else {
+            for (int i = 1; i < naras.size(); i++) naras.get(i).discard(); // 多餘的清掉
+        }
     }
 
     private void executeSkill(ServerLevel sl, PillarSkill skill, Player p) {
