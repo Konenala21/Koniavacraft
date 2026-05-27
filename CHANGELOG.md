@@ -21,11 +21,18 @@ All notable changes to this project will be documented in this file.
 - Added four armor toggle keybinds: Toggle Helmet Effect (N), Toggle Chestplate Effect (unbound), Toggle Leggings Effect (unbound), Toggle Boots Effect (unbound). Rebind in Controls settings.
 - 新增四個裝備效果切換快捷鍵：切換頭盔效果（N）、切換胸甲效果（未綁定）、切換護腿效果（未綁定）、切換鞋子效果（未綁定），可在控制設定中自訂。
 
+- Merged all per-armor capacity upgrades into a single universal item. There is now one Mana Capacity Upgrade per Mk level (Mk0-Mk3) that works for all mana armor pieces (helmet, chestplate, leggings, boots). Capacity bonus is now uniform: +1000 / +2000 / +3500 / +5500 per Mk. Requires runData.
+- 將各部位獨立的容量升級合併為通用物品。現在每個 Mk 等級（Mk0-Mk3）只有一個「魔力容量升級」，適用於所有魔力盔甲（頭盔、胸甲、護腿、靴子）。容量加成統一為 +1000 / +2000 / +3500 / +5500。需跑 runData。
+
+- Helmet Night Vision upgrade now drains mana while active (5 mana/second). When mana runs out, night vision turns off automatically. Toggling off instantly removes the effect. The upgrade no longer removes potion-based night vision when deactivated.
+- 頭盔夜視升級現在開啟時會持續消耗魔力（5 魔力/秒）。魔力耗盡後夜視自動關閉。手動關閉時效果立即移除。關閉升級不再移除藥水提供的夜視效果。
+
 ### Developer Notes / 開發者備註
 
 - Added `HelmetUpgradeBehavior.NIGHT_VISION` (purple, single item, no Mk scaling). Toggle state stored as `ModDataComponents.NIGHT_VISION_ACTIVE` (Boolean, persistent, networkSynchronized) on the helmet ItemStack.
 - `ToggleNightVisionPacket` (C2S): verifies upgrade installed before toggling DataComponent.
-- `HelmetNightVisionHandler`: server-side PlayerTickEvent.Post, refreshes Night Vision MobEffect only when duration < 60 ticks.
+- `HelmetNightVisionHandler`: server-side PlayerTickEvent.Post, refreshes Night Vision MobEffect only when duration < 60 ticks. Drains 1 mana per 4 ticks (5/s). Uses `NIGHT_VISION_WE_APPLIED` DataComponent to track whether we applied the effect, preventing removal of potion-based night vision on deactivation. Auto-sets `NIGHT_VISION_ACTIVE` false when mana hits 0.
+- `ArmorCapacityUpgradeItem`: universal capacity upgrade class replacing 16 per-armor variants. `BONUS_PER_MK = [1000, 2000, 3500, 5500]`. Each armor piece's `isValidUpgradeItem`/`recalculateMaxMana`/`getUpgradeBehaviorKey` updated to accept it. `UnifiedArmorUpgradeScreen` boots branch also updated.
 - `ModKeyMappings`: added TOGGLE_HELMET/CHESTPLATE/LEGGINGS/BOOTS for future extensibility.
 - Run `runData` to generate `helmet_upgrade_night_vision` and `leggings_upgrade_multi_jump_mk0-mk3` model JSONs.
 - `LeggingsUpgradeBehavior.MULTI_JUMP`: jumpVelocityPerMk [0.42, 0.52, 0.62, 0.72], manaCostPerMk [14, 7, 5, 4] (per 7000-unit bar), color 0xFF00EEFF.
