@@ -113,6 +113,10 @@ public class PlayerCloneEntity extends Monster {
     private static final int SKILL_TELEGRAPH = 12;  // 前搖：給玩家時間蹲下緩衝
     private static final double SKILL_RANGE_SQR = 144.0; // 12 格內才發
     private static final double SKILL_MIN_SQR = 4.0;     // 太近不發
+    // 技能墊的方塊：擊飛後 1 秒（20t）開始依序快速打掉，分身收拾自己墊的方塊
+    private final List<Long> skillBlocks = new ArrayList<>();
+    private int skillClearTimer = -1; // -1 閒置；>0 倒數；0 清理中（每 tick 打一格）
+    private static final int SKILL_BLOCK_LIFETIME = 20;
 
     // 進場演出（地底鑽出→飛高→浮動集氣→爆炸顯現裝備→降落→啟動），對齊過場時間軸（360t）
     private static final int INTRO_RISE_START = 430;
@@ -564,6 +568,7 @@ public class PlayerCloneEntity extends Monster {
         updatePhase();
         tickAntiPillar(); // 全階段防墊高，開場就不給 cheese
         tickPillarSkill(); // 招牌技能：墊方塊衝撞擊飛（全階段）
+        tickSkillBlockClear(); // 擊飛後依序打掉技能墊的方塊
         if (phase == Phase.WALLING) {
             tickWallBuilding();
             tickBreakSurroundings();
@@ -687,19 +692,20 @@ public class PlayerCloneEntity extends Monster {
     }
 
     private void executeSkill(ServerLevel sl, PillarSkill skill, Player p) {
+        clearSkillBlocksNow(sl); // 先收掉上次技能殘留的方塊，避免堆積
         Vec3 away = p.position().subtract(this.position()); // 玩家遠離分身方向
         Vec3 d = horizUnit(away);
         BlockState block = takeWallBlock();
         switch (skill) {
             case RAM_WALL -> {
-                // 從分身腳邊往玩家方向逐格墊 3 格牆，撞上玩家擊飛
-                for (int i = 1; i <= 3; i++) {
-                    BlockPos bp = BlockPos.containing(getX() + d.x * i, getY(), getZ() + d.z * i);
-                    placeSkillBlock(sl, bp, block);
-                    placeSkillBlock(sl, bp.above(), block);
+                // 在玩家面前（朝分身那側）玩家高度起墊 3 格高的牆，撞上玩家擊飛
+                Vec3 toClone = horizUnit(this.position().subtract(p.position()));
+                BlockPos base = BlockPos.containing(p.getX() + toClone.x, p.getBlockY(), p.getZ() + toClone.z);
+                for (int dy = 0; dy < 3; dy++) {
+                    placeSkillBlock(sl, base.above(dy), block);
                 }
-                if (this.distanceToSqr(p) <= 16.0) knockbackPlayer(p, away, 1.4, 0.8);
-                sl.playSound(null, blockPosition(), SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 0.8F);
+                knockbackPlayer(p, away, 1.4, 0.8);
+                sl.playSound(null, p.blockPosition(), SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 0.8F);
             }
             case LIFT_UP -> {
                 // 玩家腳下墊方塊把他往上頂，偏垂直擊飛
@@ -720,14 +726,40 @@ public class PlayerCloneEntity extends Monster {
                 sl.playSound(null, blockPosition(), SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 0.6F);
             }
         }
+        skillClearTimer = SKILL_BLOCK_LIFETIME; // 擊飛後 1 秒開始依序打掉
     }
 
     private void placeSkillBlock(ServerLevel sl, BlockPos p, BlockState block) {
         if (!sl.getWorldBorder().isWithinBounds(p)) return;
         if (!sl.getBlockState(p).canBeReplaced()) return;
         sl.setBlockAndUpdate(p, block);
-        placedWalls.add(p.asLong());
-        VoidMirrorEvents.addModifiedBlock(p.asLong());
+        long key = p.asLong();
+        placedWalls.add(key);
+        skillBlocks.add(key);
+        VoidMirrorEvents.addModifiedBlock(key);
+    }
+
+    // 技能墊的方塊：倒數後每 tick 依序打掉一格（快速、按放置順序）
+    private void tickSkillBlockClear() {
+        if (skillClearTimer < 0) return;
+        if (skillClearTimer > 0) { skillClearTimer--; return; }
+        if (!(level() instanceof ServerLevel sl)) return;
+        if (skillBlocks.isEmpty()) { skillClearTimer = -1; return; }
+        long key = skillBlocks.remove(0);
+        BlockPos bp = BlockPos.of(key);
+        sl.destroyBlock(bp, false);
+        placedWalls.remove(key);
+        if (skillBlocks.isEmpty()) skillClearTimer = -1;
+    }
+
+    private void clearSkillBlocksNow(ServerLevel sl) {
+        for (long key : skillBlocks) {
+            BlockPos bp = BlockPos.of(key);
+            if (sl.isLoaded(bp)) sl.setBlockAndUpdate(bp, Blocks.AIR.defaultBlockState());
+            placedWalls.remove(key);
+        }
+        skillBlocks.clear();
+        skillClearTimer = -1;
     }
 
     private void updatePhase() {

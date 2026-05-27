@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- The clone's pillar-charge skill now has a variant that slams a 3-block-high wall right in front of you at body height to launch you, and all three variants' placed blocks are now quickly torn down by the clone in sequence one second after the launch, so they do not litter the arena.
+- 分身的墊方塊衝撞技能新增一種:在你面前你的身體高度直接墊起一道 3 格高的牆把你撞飛,而且三種技能墊的方塊現在都會在撞飛一秒後被分身依序快速打掉,不會殘留在場地上。
+
 - Mirror World entry cinematic polish: the opening camera no longer pulls back as far, Nara now watches from farther away, and her phantom is rendered semi-transparent with a "(Phantom)" name tag so you will not mistake it for the real Nara.
 - 鏡中世界進場過場微調：開場鏡頭不再拉那麼遠，娜拉改在更遠處旁觀，她的幻影現在半透明顯示、名牌標示「（幻影）」，避免被當成娜拉本體。
 
@@ -76,6 +79,9 @@ All notable changes to this project will be documented in this file.
 - 頭盔夜視升級現在開啟時會持續消耗魔力（5 魔力/秒）。魔力耗盡後夜視自動關閉。手動關閉時效果立即移除。關閉升級不再移除藥水提供的夜視效果。
 
 ### Developer Notes / 開發者備註
+
+- `PlayerCloneEntity` `RAM_WALL` now places a 3-block-high wall one block in front of the player toward the clone (base at the player's foot Y, `dy` 0-2) and always launches; the from-clone-feet ramp version was replaced. All skill blocks are tracked in `skillBlocks`; `executeSkill` sets `skillClearTimer = SKILL_BLOCK_LIFETIME` (20t) and `tickSkillBlockClear` then destroys one block per tick in placement order. `clearSkillBlocksNow` wipes leftovers at the start of the next skill. `placeSkillBlock` records into both `placedWalls` and `skillBlocks`.
+- `PlayerCloneEntity` 的 `RAM_WALL` 改為在玩家前方朝分身那側、玩家腳部 Y 起墊 3 格高（`dy` 0-2）的牆並必定擊飛；取代了原本從分身腳邊延伸的斜坡式。所有技能方塊記入 `skillBlocks`；`executeSkill` 設 `skillClearTimer = SKILL_BLOCK_LIFETIME`（20t），`tickSkillBlockClear` 之後每 tick 依放置順序打掉一格。`clearSkillBlocksNow` 在下次技能開始前清掉殘留。`placeSkillBlock` 同時記入 `placedWalls` 與 `skillBlocks`。
 
 - Mirror World intro tweaks: `VoidMirrorIntroManager.CAM_OFFSETS` A/B pulled in (A to {0,3.2,-12}, B to {0,2.4,-7}) so the opening is less distant; `VoidMirrorTeleport.spawnNaraPhantom` moves Nara to `ARENA_Z - 26` and names her via the new `nara.phantom.name` key (zh "娜拉（幻影）" / en "Nara (Phantom)"). `NaraPhantomRenderer` overrides `getRenderType` to `entityTranslucent` and wraps the buffer with an `AlphaConsumer` that multiplies vertex alpha by 0.75 (25% transparent).
 - 鏡中世界進場微調：`VoidMirrorIntroManager.CAM_OFFSETS` A/B 拉近（A 改 {0,3.2,-12}、B 改 {0,2.4,-7}），開場不再那麼遠；`VoidMirrorTeleport.spawnNaraPhantom` 把娜拉移到 `ARENA_Z - 26`，並改用新的 `nara.phantom.name` 鍵命名（中「娜拉（幻影）」/英「Nara (Phantom)」）。`NaraPhantomRenderer` 覆寫 `getRenderType` 為 `entityTranslucent`，並用 `AlphaConsumer` 包裝 buffer 把頂點 alpha 乘 0.75（25% 透明）。
