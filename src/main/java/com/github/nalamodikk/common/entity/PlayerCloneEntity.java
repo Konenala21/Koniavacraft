@@ -90,8 +90,7 @@ public class PlayerCloneEntity extends Monster {
     private static final AttributeModifier BERSERK_SPEED =
             new AttributeModifier(BERSERK_SPEED_ID, 0.4, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
 
-    // 防風箏：目標離太遠時暫時加速追上
-    private static final double ANTI_KITE_DIST_SQR = 100.0; // >10 格
+    // 防風箏：目標離太遠時暫時加速追上（距離判斷用遲滯，見 customServerAiStep）
     private static final ResourceLocation ANTI_KITE_SPEED_ID =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "clone_anti_kite_speed");
     private static final AttributeModifier ANTI_KITE_SPEED =
@@ -564,10 +563,15 @@ public class PlayerCloneEntity extends Monster {
         AttributeInstance speed = getAttribute(Attributes.MOVEMENT_SPEED);
         if (speed != null) {
             LivingEntity tgt = getTarget();
-            boolean far = tgt != null && tgt.isAlive() && this.distanceToSqr(tgt) > ANTI_KITE_DIST_SQR;
             boolean has = speed.hasModifier(ANTI_KITE_SPEED_ID);
-            if (far && !has) speed.addTransientModifier(ANTI_KITE_SPEED);
-            else if (!far && has) speed.removeModifier(ANTI_KITE_SPEED_ID);
+            if (tgt != null && tgt.isAlive()) {
+                double d2 = this.distanceToSqr(tgt);
+                // 遲滯：>12 格才開加速、<8 格才關，避免在邊界反覆開關造成走停抖動
+                if (!has && d2 > 144.0) speed.addTransientModifier(ANTI_KITE_SPEED);
+                else if (has && d2 < 64.0) speed.removeModifier(ANTI_KITE_SPEED_ID);
+            } else if (has) {
+                speed.removeModifier(ANTI_KITE_SPEED_ID);
+            }
         }
 
         // 啟動後（或重載後）生成繞行砲，只做一次
@@ -771,17 +775,17 @@ public class PlayerCloneEntity extends Monster {
                 sl.playSound(null, p.blockPosition(), SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 0.8F);
             }
             case LIFT_UP -> {
-                // 玩家腳下墊方塊把他往上頂，偏垂直擊飛
-                BlockPos foot = p.blockPosition().below();
-                placeSkillBlock(sl, foot, block);
-                placeSkillBlock(sl, foot.below(), block);
-                knockbackPlayer(p, away, 0.6, 1.2);
+                // 在玩家頭頂上方墊方塊（不碰地板）+ 強垂直上拋
+                BlockPos head = p.blockPosition().above(2);
+                placeSkillBlock(sl, head, block);
+                placeSkillBlock(sl, head.above(), block);
+                knockbackPlayer(p, away, 0.4, 1.3);
                 sl.playSound(null, p.blockPosition(), SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 1.2F);
             }
             case CHARGE_RAMP -> {
-                // 分身腳下往玩家方向墊階梯 + 逼近一步，強水平擊飛
-                for (int i = 0; i < 3; i++) {
-                    BlockPos bp = BlockPos.containing(getX() + d.x * i, getY() - 1, getZ() + d.z * i);
+                // 從分身身體高度往玩家方向排空中方塊（不碰地板）+ 逼近一步，強水平擊飛
+                for (int i = 1; i <= 3; i++) {
+                    BlockPos bp = BlockPos.containing(getX() + d.x * i, getY() + 1, getZ() + d.z * i);
                     placeSkillBlock(sl, bp, block);
                 }
                 this.setPos(getX() + d.x * 1.5, getY(), getZ() + d.z * 1.5);
@@ -794,7 +798,7 @@ public class PlayerCloneEntity extends Monster {
 
     private void placeSkillBlock(ServerLevel sl, BlockPos p, BlockState block) {
         if (!sl.getWorldBorder().isWithinBounds(p)) return;
-        if (sl.getBlockState(p).getDestroySpeed(sl, p) < 0) return; // 只跳過不可破壞方塊，其餘直接覆蓋
+        if (!sl.getBlockState(p).canBeReplaced()) return; // 只放在空氣/可替換處，不覆蓋地板或既有方塊
         sl.setBlockAndUpdate(p, block);
         long key = p.asLong();
         placedWalls.add(key);

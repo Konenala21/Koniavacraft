@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- The Mirror World clone's block skills no longer dig up or cover the arena floor: all three variants now place blocks in the air at body or head height. The clone also moves more smoothly (its anti-kite speed boost no longer flickers on and off around the 10-block mark, which caused a stop-start stutter).
+- 鏡中世界分身的墊方塊技能不再破壞或覆蓋 arena 地板:三種形態現在都改在空中(身體或頭部高度)墊方塊。分身移動也更順(防風箏加速不再在約 10 格距離忽開忽關,先前那會造成一頓一頓的卡頓)。
+
 - Fixed duplicate or stale Nara phantoms and return rifts after reloading the world or dying and re-entering. The phantom no longer saves to disk, and the boss now keeps exactly one phantom and one return rift, recreating them if missing and clearing any extras.
 - 修正重載世界或死亡後重新進入時,娜拉幻影與返回裂縫重複或殘留的問題。幻影改為不存檔,並由 boss 維持恰好一支娜拉與一個返回裂縫,缺少就重建、多餘就清除。
 
@@ -91,6 +94,9 @@ All notable changes to this project will be documented in this file.
 - 頭盔夜視升級現在開啟時會持續消耗魔力（5 魔力/秒）。魔力耗盡後夜視自動關閉。手動關閉時效果立即移除。關閉升級不再移除藥水提供的夜視效果。
 
 ### Developer Notes / 開發者備註
+
+- `placeSkillBlock` reverted to a `canBeReplaced` check (air/replaceable only), so skill blocks never overwrite the floor or existing blocks. `LIFT_UP` now stacks blocks above the player's head (`above(2)`) with a strong vertical pop; `CHARGE_RAMP` places its row at the clone's body height (`getY()+1`); `RAM_WALL` already sat at body height. Anti-kite now uses hysteresis (enable >144 d², disable <64 d²) instead of a single threshold, removing the boundary flicker; the unused `ANTI_KITE_DIST_SQR` was removed.
+- `placeSkillBlock` 改回 `canBeReplaced` 檢查（只放空氣/可替換），技能方塊不再覆蓋地板或既有方塊。`LIFT_UP` 改為在玩家頭頂上方（`above(2)`）疊方塊 + 強垂直上拋；`CHARGE_RAMP` 的方塊排改在分身身體高度（`getY()+1`）；`RAM_WALL` 本來就在身體高度。防風箏改用遲滯（>144 d² 開、<64 d² 關）取代單一閾值，消除邊界抖動；移除未使用的 `ANTI_KITE_DIST_SQR`。
 
 - `NaraPhantomEntity.shouldBeSaved` now returns `false` (no longer persisted). `PlayerCloneEntity.ensureCompanions` (every 40t while active) keeps exactly one same-source Nara phantom and one return-rift `SpaceCrackEntity` (spawns if missing, discards extras); the return rift is no longer spawned in `activateAfterIntro`, so a reload or death-reentry can't leave stale/duplicate companions. `VoidMirrorTeleport.spawnNaraPhantom` is `public static` taking a `UUID` so the boss can reuse it.
 - `NaraPhantomEntity.shouldBeSaved` 改為回傳 `false`（不再存檔）。`PlayerCloneEntity.ensureCompanions`（active 時每 40t）維持同源恰好一支娜拉幻影與一個返回裂縫 `SpaceCrackEntity`（缺少則生成、多餘則清除）；返回裂縫不再於 `activateAfterIntro` 生成，因此重載或死亡重進入都不會殘留/重複。`VoidMirrorTeleport.spawnNaraPhantom` 為 `public static` 吃 `UUID`，供 boss 重用。
