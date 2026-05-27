@@ -730,7 +730,7 @@ public class PlayerCloneEntity extends Monster {
                 Direction toClone = Direction.getNearest(this.getX() - p.getX(), 0, this.getZ() - p.getZ());
                 int height = 1 + this.random.nextInt(2); // 隨機 1 或 2 格高
                 for (int i = 1; i <= 3; i++) {
-                    BlockPos col = p.blockPosition().relative(toClone, i);
+                    BlockPos col = p.blockPosition().relative(toClone, i).above(1); // 玩家身體高度，不貼地
                     for (int dy = 0; dy < height; dy++) {
                         placeSkillBlock(sl, col.above(dy), block);
                     }
