@@ -14,12 +14,16 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.ShulkerBoxBlock;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 
 import java.util.HashSet;
@@ -34,6 +38,26 @@ public class VoidMirrorEvents {
 
     public static void addModifiedBlock(long packedPos) {
         MODIFIED_BLOCKS.add(packedPos);
+    }
+
+    private static boolean isShulkerItem(ItemStack stack) {
+        return stack.getItem() instanceof BlockItem bi && bi.getBlock() instanceof ShulkerBoxBlock;
+    }
+
+    // 鏡中世界禁止放置/開啟界伏盒子：杜絕把裝備藏盒子規避鏡像、再於場內取出的逃課
+    @SubscribeEvent
+    public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+        if (!event.getLevel().dimension().equals(ModDimensions.VOID_MIRROR)) return;
+        if (isShulkerItem(event.getItemStack())
+                || event.getLevel().getBlockState(event.getPos()).getBlock() instanceof ShulkerBoxBlock) {
+            event.setCanceled(true);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
+        if (!event.getLevel().dimension().equals(ModDimensions.VOID_MIRROR)) return;
+        if (isShulkerItem(event.getItemStack())) event.setCanceled(true);
     }
 
     // 玩家在鏡中世界放置方塊 → 記錄，重製時清除

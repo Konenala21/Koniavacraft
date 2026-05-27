@@ -13,6 +13,7 @@ import com.github.nalamodikk.register.ModEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -47,7 +48,10 @@ import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.BundleContents;
+import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -94,6 +98,9 @@ public class PlayerCloneEntity extends Monster {
     private int wallCooldown = 0;
     private int drainCooldown = 0;
     private int breakCooldown = 0;
+    private int antiPillarCooldown = 0;
+    // 玩家高出分身達此格數 → 視為墊柱逃避，從腳下往下連拆整段支撐讓他摔回地面
+    private static final int PILLAR_HEIGHT_TRIGGER = 3;
 
     // 進場演出（地底鑽出→飛高→浮動集氣→爆炸顯現裝備→降落→啟動），對齊過場時間軸（360t）
     private static final int INTRO_RISE_START = 255;
@@ -158,36 +165,94 @@ public class PlayerCloneEntity extends Monster {
     public void mirrorFrom(Player player) {
         setSourceUUID(player.getUUID());
         setSourceName(player.getGameProfile().getName());
-        // 裝備先存起來，進場演出爆炸那刻才顯現（revealEquipment）
+
+        // 收集玩家「擁有的全部物品」：穿戴 + 主副手 + 背包 + 額外裝備槽，再遞迴展開容器內容
+        // （界伏盒/潛影盒/收納袋/巢狀），杜絕把裝備藏進盒子讓 boss 鏡像不到的逃課
+        List<ItemStack> pool = new ArrayList<>();
+        for (EquipmentSlot slot : EquipmentSlot.values()) pool.add(player.getItemBySlot(slot));
+        pool.addAll(player.getInventory().items);
+        NonNullList<ItemStack> extra = player.getData(ModDataAttachments.EXTRA_EQUIPMENT.get());
+        pool.addAll(extra);
+        List<ItemStack> contained = new ArrayList<>();
+        for (ItemStack s : pool) collectContained(s, contained, 0);
+        pool.addAll(contained);
+
+        // 裝備：每個防具槽鏡像「擁有的最強」（藏在盒子裡的也算進來），進場爆炸那刻才顯現
         for (EquipmentSlot slot : EquipmentSlot.values()) {
-            pendingEquipment.put(slot, player.getItemBySlot(slot).copy());
+            if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
+                ItemStack best = ItemStack.EMPTY;
+                double bestScore = -1;
+                for (ItemStack s : pool) {
+                    double sc = armorScore(s, slot);
+                    if (sc > bestScore) { bestScore = sc; best = s; }
+                }
+                pendingEquipment.put(slot, best.copy());
+            } else {
+                // 主/副手先放玩家當下手持（供下方手持砲判定），武器最強由 equipBestWeapon 補
+                pendingEquipment.put(slot, player.getItemBySlot(slot).copy());
+            }
             this.setDropChance(slot, 0.0F);
         }
-        // 複製整個主背包（快捷欄 + 背包），供疊方塊 AI 取用
-        var items = player.getInventory().items;
-        for (int i = 0; i < clonedInventory.size(); i++) {
-            clonedInventory.set(i, i < items.size() ? items.get(i).copy() : ItemStack.EMPTY);
+
+        // clonedInventory：把擁有的物品填進去（供疊牆 AI 取方塊、equipBestWeapon 選到盒裡的武器）
+        int idx = 0;
+        for (ItemStack s : pool) {
+            if (idx >= clonedInventory.size()) break;
+            if (s.isEmpty()) continue;
+            clonedInventory.set(idx++, s.copy());
         }
-        // 鏡像浮游砲：依玩家「怎麼帶」決定模式
+        while (idx < clonedInventory.size()) clonedInventory.set(idx++, ItemStack.EMPTY);
+
+        // 鏡像浮游砲：手持(主副手) + 自走(其餘來源，含盒子內)
         mirroredTurrets.clear();
         mirroredHandTurrets.clear();
-        // 手持模式：主手/副手拿著砲 → 分身雙手持砲蓄力
         ItemStack mainHand = player.getMainHandItem();
         ItemStack offHand = player.getOffhandItem();
         if (mainHand.getItem() instanceof FloatingTurretItem) mirroredHandTurrets.add(filterMirroredTurret(mainHand));
         if (offHand.getItem() instanceof FloatingTurretItem) mirroredHandTurrets.add(filterMirroredTurret(offHand));
-        // 自走砲模式：裝備槽 8/9 + 背包其他的砲（排除主手 = items[selected]，副手已算手持）
-        NonNullList<ItemStack> extra = player.getData(ModDataAttachments.EXTRA_EQUIPMENT.get());
-        if (extra.size() > 8) addMirroredTurret(extra.get(8));
-        if (extra.size() > 9) addMirroredTurret(extra.get(9));
-        int sel = player.getInventory().selected;
-        for (int i = 0; i < items.size(); i++) {
-            if (i == sel) continue; // 主手已算手持
-            addMirroredTurret(items.get(i));
+        for (ItemStack s : pool) {
+            if (s == mainHand || s == offHand) continue; // 主副手已算手持
+            addMirroredTurret(s);
         }
 
         this.setHealth(this.getMaxHealth());
         this.bossEvent.setName(player.getDisplayName());
+    }
+
+    private static final int CONTAINER_DEPTH_CAP = 4;
+
+    // 遞迴展開容器物品內容：界伏盒/潛影盒等（CONTAINER component）+ 收納袋（BUNDLE_CONTENTS）
+    private static void collectContained(ItemStack stack, List<ItemStack> out, int depth) {
+        if (stack.isEmpty() || depth >= CONTAINER_DEPTH_CAP) return;
+        ItemContainerContents container = stack.get(DataComponents.CONTAINER);
+        if (container != null) {
+            for (ItemStack inner : container.nonEmptyItems()) {
+                out.add(inner);
+                collectContained(inner, out, depth + 1);
+            }
+        }
+        BundleContents bundle = stack.get(DataComponents.BUNDLE_CONTENTS);
+        if (bundle != null) {
+            bundle.itemCopyStream().forEach(inner -> {
+                out.add(inner);
+                collectContained(inner, out, depth + 1);
+            });
+        }
+    }
+
+    // 該物品作為指定防具槽的防護評分（ARMOR + ARMOR_TOUGHNESS），非該槽可穿戴回 -1
+    private static double armorScore(ItemStack stack, EquipmentSlot slot) {
+        if (stack.isEmpty()) return -1;
+        Equipable eq = Equipable.get(stack);
+        if (eq == null || eq.getEquipmentSlot() != slot) return -1;
+        double v = 0;
+        for (var e : stack.getAttributeModifiers().modifiers()) {
+            if (!e.slot().test(slot)) continue;
+            if (e.attribute().equals(Attributes.ARMOR) || e.attribute().equals(Attributes.ARMOR_TOUGHNESS)) {
+                v += e.modifier().amount();
+            }
+        }
+        return v;
     }
 
     private void addMirroredTurret(ItemStack stack) {
@@ -474,32 +539,61 @@ public class PlayerCloneEntity extends Monster {
         }
 
         updatePhase();
+        tickAntiPillar(); // 全階段防墊高，開場就不給 cheese
         if (phase == Phase.WALLING) {
             tickWallBuilding();
-            tickBlockBreaking();
+            tickBreakSurroundings();
         } else if (phase == Phase.BERSERK) {
             tickManaDrain();
-            tickBlockBreaking();
+            tickBreakSurroundings();
         }
     }
 
-    // 拆玩家蓋的防禦工事 / 逃跑路線（地表 Y>=64 以上、非分身自己疊的方塊）
-    private void tickBlockBreaking() {
-        if (breakCooldown > 0) { breakCooldown--; return; }
+    // 反 pillar：玩家墊方塊升高 → 拆腳下支撐讓他掉下來；墊太高就一次連拆整段柱摔回地面
+    private void tickAntiPillar() {
+        if (antiPillarCooldown > 0) { antiPillarCooldown--; return; }
         if (!(level() instanceof ServerLevel sl)) return;
         LivingEntity target = getTarget();
         if (!(target instanceof Player)) return;
 
-        // 反 pillar：玩家墊高站在放置方塊上（腳下方塊在地表以上）→ 先拆腳下支撐讓他掉下來
         BlockPos support = target.blockPosition().below();
-        if (support.getY() >= 64) {
-            BlockState st = sl.getBlockState(support);
-            if (!st.isAir() && st.getDestroySpeed(sl, support) >= 0) {
-                sl.destroyBlock(support, false);
-                breakCooldown = 10;
-                return;
+        if (support.getY() < 64) return; // 站在地形上、沒墊高 → 不處理
+
+        int heightAbove = target.blockPosition().getY() - this.blockPosition().getY();
+        if (heightAbove >= PILLAR_HEIGHT_TRIGGER) {
+            // 墊柱逃避：從腳下往下連拆，一次解決整段支撐，讓玩家直接摔回分身高度
+            BlockPos.MutableBlockPos p = support.mutable();
+            int broken = 0;
+            for (int i = 0; i < 8 && p.getY() >= 64; i++) {
+                if (!placedWalls.contains(p.asLong())) {
+                    BlockState st = sl.getBlockState(p);
+                    if (!st.isAir() && st.getDestroySpeed(sl, p) >= 0) {
+                        sl.destroyBlock(p, false);
+                        broken++;
+                    }
+                }
+                p.move(Direction.DOWN);
             }
+            antiPillarCooldown = broken > 0 ? 4 : 8;
+            return;
         }
+
+        // 一般情形：拆腳下支撐一格
+        BlockState st = sl.getBlockState(support);
+        if (!st.isAir() && st.getDestroySpeed(sl, support) >= 0 && !placedWalls.contains(support.asLong())) {
+            sl.destroyBlock(support, false);
+            antiPillarCooldown = 6;
+        } else {
+            antiPillarCooldown = 8;
+        }
+    }
+
+    // 拆玩家蓋的防禦工事 / 逃跑路線（地表 Y>=64 以上、非分身自己疊的方塊）
+    private void tickBreakSurroundings() {
+        if (breakCooldown > 0) { breakCooldown--; return; }
+        if (!(level() instanceof ServerLevel sl)) return;
+        LivingEntity target = getTarget();
+        if (!(target instanceof Player)) return;
 
         BlockPos center = target.blockPosition();
         BlockPos found = null;
@@ -523,7 +617,7 @@ public class PlayerCloneEntity extends Monster {
         if (found != null) {
             sl.destroyBlock(found, false); // 不掉落，避免玩家撿回
         }
-        breakCooldown = 15;
+        breakCooldown = 10;
     }
 
     private void updatePhase() {
