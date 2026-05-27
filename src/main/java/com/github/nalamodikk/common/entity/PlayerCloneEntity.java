@@ -440,13 +440,7 @@ public class PlayerCloneEntity extends Monster {
                 bossEvent.addPlayer(p);
                 setTarget(p);
             }
-            // boss 開始進攻才生成返回裂縫（過場中不顯示，避免和走出裂縫重複）
-            SpaceCrackEntity exit = ModEntities.SPACE_CRACK.get().create(sl);
-            if (exit != null) {
-                exit.moveTo(0.5, 64.0, 0.5, 0.0F, 0.0F);
-                getSourceUUID().ifPresent(exit::setOwnerUUID);
-                sl.addFreshEntity(exit);
-            }
+            // 返回裂縫與娜拉幻影由 ensureCompanions（active tick）確保恰好一個
         }
         // 繞行砲由 customServerAiStep 的 turretsSpawned 守門生成（涵蓋啟動 + 重載後重生）
     }
@@ -587,7 +581,7 @@ public class PlayerCloneEntity extends Monster {
         tickPillarSkill(); // 招牌技能：墊方塊衝撞擊飛（全階段）
         tickPendingLaunch(); // RAM_WALL 橫向擊退後的第二段上彈
         tickSkillBlockClear(); // 擊飛後依序打掉技能墊的方塊
-        ensureNaraPhantom(); // 確保同源娜拉幻影恰好一個（重載後重建）
+        ensureCompanions(); // 確保同源娜拉幻影 + 返回裂縫各恰好一個（重載/死亡重進入後重建、去重）
         if (phase == Phase.WALLING) {
             tickWallBuilding();
             tickBreakSurroundings();
@@ -723,20 +717,35 @@ public class PlayerCloneEntity extends Monster {
         p.hurtMarked = true;
     }
 
-    // 娜拉幻影不存盤，重載後由活著的 boss 重建並去重（同源恰好一個）
-    private void ensureNaraPhantom() {
+    // 娜拉幻影 + 返回裂縫由活著的 boss 確保同源恰好一個（重建/去重），重載與死亡重進入都不殘留
+    private void ensureCompanions() {
         if (naraCheckCooldown > 0) { naraCheckCooldown--; return; }
         if (!(level() instanceof ServerLevel sl)) return;
         naraCheckCooldown = 40;
         UUID id = getSourceUUID().orElse(null);
         if (id == null) return;
+        // 娜拉幻影（不存盤）
         List<NaraPhantomEntity> naras = sl.getEntitiesOfClass(NaraPhantomEntity.class,
                 getBoundingBox().inflate(300),
                 n -> n.getSourceUUID().map(id::equals).orElse(false));
         if (naras.isEmpty()) {
             VoidMirrorTeleport.spawnNaraPhantom(sl, id);
         } else {
-            for (int i = 1; i < naras.size(); i++) naras.get(i).discard(); // 多餘的清掉
+            for (int i = 1; i < naras.size(); i++) naras.get(i).discard();
+        }
+        // 返回裂縫（boss 進攻中才有）
+        List<SpaceCrackEntity> cracks = sl.getEntitiesOfClass(SpaceCrackEntity.class,
+                getBoundingBox().inflate(300),
+                c -> c.getOwnerUUID().map(id::equals).orElse(false));
+        if (cracks.isEmpty()) {
+            SpaceCrackEntity exit = ModEntities.SPACE_CRACK.get().create(sl);
+            if (exit != null) {
+                exit.moveTo(0.5, 64.0, 0.5, 0.0F, 0.0F);
+                exit.setOwnerUUID(id);
+                sl.addFreshEntity(exit);
+            }
+        } else {
+            for (int i = 1; i < cracks.size(); i++) cracks.get(i).discard();
         }
     }
 

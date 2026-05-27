@@ -6,8 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
-- Fixed two Nara phantoms appearing after reloading the world while still inside the Mirror World. The phantom no longer saves to disk; the boss keeps exactly one alive and clears any duplicates.
-- 修正在鏡中世界內重新載入世界後出現兩支娜拉幻影的問題。幻影改為不存檔,由 boss 維持恰好一支並清除多餘的。
+- Fixed duplicate or stale Nara phantoms and return rifts after reloading the world or dying and re-entering. The phantom no longer saves to disk, and the boss now keeps exactly one phantom and one return rift, recreating them if missing and clearing any extras.
+- 修正重載世界或死亡後重新進入時,娜拉幻影與返回裂縫重複或殘留的問題。幻影改為不存檔,並由 boss 維持恰好一支娜拉與一個返回裂縫,缺少就重建、多餘就清除。
 
 - The space rift now stands upright and only turns to face you horizontally, instead of always flattening to your camera so it looked like it followed you. Nara's death taunt now says "Zako" in English (was "Small fry").
 - 空間裂縫現在直立、只水平轉向你,不再永遠貼平你的視角(之前看起來像黏著你走)。娜拉死亡嘲諷的英文版改為「Zako」(原為「Small fry」)。
@@ -92,8 +92,8 @@ All notable changes to this project will be documented in this file.
 
 ### Developer Notes / 開發者備註
 
-- `NaraPhantomEntity.shouldBeSaved` now returns `false` (no longer persisted). `PlayerCloneEntity.ensureNaraPhantom` (every 40t while active) spawns one if none of the same source exists and discards extras, so a reload can't leave a stale/duplicate phantom. `VoidMirrorTeleport.spawnNaraPhantom` is now `public static` taking a `UUID` so the boss can reuse it.
-- `NaraPhantomEntity.shouldBeSaved` 改為回傳 `false`（不再存檔）。`PlayerCloneEntity.ensureNaraPhantom`（active 時每 40t）在同源娜拉不存在時生成一支、有多餘則清除，因此重載不會殘留或重複。`VoidMirrorTeleport.spawnNaraPhantom` 改為 `public static` 吃 `UUID`，供 boss 重用。
+- `NaraPhantomEntity.shouldBeSaved` now returns `false` (no longer persisted). `PlayerCloneEntity.ensureCompanions` (every 40t while active) keeps exactly one same-source Nara phantom and one return-rift `SpaceCrackEntity` (spawns if missing, discards extras); the return rift is no longer spawned in `activateAfterIntro`, so a reload or death-reentry can't leave stale/duplicate companions. `VoidMirrorTeleport.spawnNaraPhantom` is `public static` taking a `UUID` so the boss can reuse it.
+- `NaraPhantomEntity.shouldBeSaved` 改為回傳 `false`（不再存檔）。`PlayerCloneEntity.ensureCompanions`（active 時每 40t）維持同源恰好一支娜拉幻影與一個返回裂縫 `SpaceCrackEntity`（缺少則生成、多餘則清除）；返回裂縫不再於 `activateAfterIntro` 生成，因此重載或死亡重進入都不會殘留/重複。`VoidMirrorTeleport.spawnNaraPhantom` 為 `public static` 吃 `UUID`，供 boss 重用。
 
 - `SpaceCrackRenderer` now billboards only around the Y axis (`Axis.YP.rotationDegrees(-camera.getYRot())`) instead of the full `camera.rotation()`, so the rift stays upright. English `nara.dialogue.void_mirror.death_taunt` changed "Small fry" to "Zako" (audio unchanged).
 - `SpaceCrackRenderer` 改為只繞 Y 軸 billboard（`Axis.YP.rotationDegrees(-camera.getYRot())`），不再用完整 `camera.rotation()`，使裂縫保持直立。英文 `nara.dialogue.void_mirror.death_taunt` 的「Small fry」改為「Zako」（音檔不變）。
