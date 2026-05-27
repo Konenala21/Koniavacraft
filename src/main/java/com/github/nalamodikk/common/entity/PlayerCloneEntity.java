@@ -122,6 +122,8 @@ public class PlayerCloneEntity extends Monster {
     private int pendingLaunchTimer = 0;
     // 確保同源娜拉幻影恰好一個（娜拉不存盤，重載後由 boss 重建）
     private int naraCheckCooldown = 0;
+    // 空中追擊墊的柱：追完落地就清掉，避免殘留把 arena 弄得坑坑疤疤讓 boss 走路卡頓
+    private final List<Long> chaseBlocks = new ArrayList<>();
 
     // 進場演出（地底鑽出→飛高→浮動集氣→爆炸顯現裝備→降落→啟動），對齊過場時間軸（360t）
     private static final int INTRO_RISE_START = 430;
@@ -728,19 +730,33 @@ public class PlayerCloneEntity extends Monster {
         if (!(getTarget() instanceof Player p) || !p.isAlive()) return;
         if (!this.onGround()) return; // 落在地面/方塊上才墊跳
         int dh = p.blockPosition().getY() - this.blockPosition().getY();
-        if (dh < 3) return; // 玩家沒高出夠多就不空中追
+        if (dh < 3) {
+            if (!chaseBlocks.isEmpty()) clearChaseBlocks(sl); // 追完落地就收掉墊的柱，不殘留卡地形
+            return;
+        }
         placeChaseBlock(sl, this.blockPosition(), takeWallBlock()); // 腳下放方塊
         this.setDeltaMovement(this.getDeltaMovement().x, 0.42, this.getDeltaMovement().z); // 跳起，落到新方塊上升一格
         this.hurtMarked = true;
     }
 
-    // 追擊柱用的方塊：進 placedWalls（anti-pillar 不拆自己）+ 重製清除，但不進 1 秒清理（分身站其上）
+    // 追擊柱用的方塊：記進 chaseBlocks（追完清）+ placedWalls（anti-pillar 不拆自己）+ 重製清除
     private void placeChaseBlock(ServerLevel sl, BlockPos p, BlockState block) {
         if (!sl.getWorldBorder().isWithinBounds(p)) return;
         if (!sl.getBlockState(p).canBeReplaced()) return;
         sl.setBlockAndUpdate(p, block);
-        placedWalls.add(p.asLong());
-        VoidMirrorEvents.addModifiedBlock(p.asLong());
+        long key = p.asLong();
+        chaseBlocks.add(key);
+        placedWalls.add(key);
+        VoidMirrorEvents.addModifiedBlock(key);
+    }
+
+    private void clearChaseBlocks(ServerLevel sl) {
+        for (long l : chaseBlocks) {
+            BlockPos bp = BlockPos.of(l);
+            if (sl.isLoaded(bp)) sl.setBlockAndUpdate(bp, Blocks.AIR.defaultBlockState());
+            placedWalls.remove(l);
+        }
+        chaseBlocks.clear();
     }
 
     @Override
@@ -815,7 +831,8 @@ public class PlayerCloneEntity extends Monster {
                     BlockPos bp = BlockPos.containing(getX() + d.x * i, getY() + 1, getZ() + d.z * i);
                     placeSkillBlock(sl, bp, block);
                 }
-                this.setPos(getX() + d.x * 1.5, getY(), getZ() + d.z * 1.5);
+                this.setDeltaMovement(d.x * 0.8, this.getDeltaMovement().y, d.z * 0.8); // 平滑衝刺逼近，不瞬移
+                this.hurtMarked = true;
                 if (this.distanceToSqr(p) <= 25.0) knockbackPlayer(p, away, 1.6, 0.6);
                 sl.playSound(null, blockPosition(), SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 0.6F);
             }
