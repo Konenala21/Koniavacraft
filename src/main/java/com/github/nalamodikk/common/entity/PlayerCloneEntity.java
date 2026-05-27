@@ -117,9 +117,10 @@ public class PlayerCloneEntity extends Monster {
     private final List<Long> skillBlocks = new ArrayList<>();
     private int skillClearTimer = -1; // -1 閒置；>0 倒數；0 清理中（每 tick 打一格）
     private static final int SKILL_BLOCK_LIFETIME = 20;
-    // 分段擊飛（RAM_WALL）：先橫向擊退，數 tick 後再往上彈
+    // 分段擊飛（RAM_WALL）：先把玩家拋飛離地，數 tick 後玩家在空中時再強水平轟飛（空中無摩擦才飛得誇張）
     @Nullable private Player pendingLaunchTarget = null;
     private int pendingLaunchTimer = 0;
+    private Vec3 pendingLaunchDir = Vec3.ZERO;
     // 確保同源娜拉幻影恰好一個（娜拉不存盤，重載後由 boss 重建）
     private int naraCheckCooldown = 0;
     // 空中追擊墊的柱：追完落地就清掉，避免殘留把 arena 弄得坑坑疤疤讓 boss 走路卡頓
@@ -724,16 +725,17 @@ public class PlayerCloneEntity extends Monster {
         p.hurtMarked = true; // server 同步速度給 client
     }
 
-    // RAM_WALL 的第二段：橫向擊退數 tick 後再往上彈（蹲下緩衝）
+    // RAM_WALL 的第二段：拋飛後玩家在空中時，再強力水平轟飛（空中無摩擦才飛得遠，蹲下緩衝）
     private void tickPendingLaunch() {
         if (pendingLaunchTimer <= 0) return;
         if (--pendingLaunchTimer > 0) return;
         Player p = pendingLaunchTarget;
         pendingLaunchTarget = null;
         if (p == null || !p.isAlive()) return;
-        double up = p.isCrouching() ? 0.25 : 0.75;
+        double mult = p.isCrouching() ? 0.35 : 1.0;
+        Vec3 h = horizUnit(pendingLaunchDir);
         Vec3 m = p.getDeltaMovement();
-        p.setDeltaMovement(m.x, up, m.z);
+        p.setDeltaMovement(h.x * 3.0 * mult, Math.max(m.y, 0.2), h.z * 3.0 * mult);
         p.hurtMarked = true;
     }
 
@@ -825,9 +827,10 @@ public class PlayerCloneEntity extends Monster {
                         placeSkillBlock(sl, col.above(dy), block);
                     }
                 }
-                knockbackPlayer(p, away, 2.2, 0.45); // 先往後轟飛（離地，空中保速才飛得遠，不會貼地一格就停）
+                knockbackPlayer(p, away, 0.3, 0.85); // 先把玩家拋飛離地（地面水平擊退會被摩擦吃掉）
                 pendingLaunchTarget = p;
-                pendingLaunchTimer = 4;              // 4t 後再往上頂高
+                pendingLaunchDir = away;
+                pendingLaunchTimer = 6;              // 6t 後玩家在空中，再強力水平轟飛（無摩擦飛得誇張）
                 sl.playSound(null, p.blockPosition(), SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 0.8F);
             }
             case LIFT_UP -> {

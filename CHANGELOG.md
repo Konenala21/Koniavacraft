@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- The wall-ram knockback is now much more dramatic: the clone first pops you off the ground, then hits you with a strong horizontal blast while you are airborne (no ground friction to eat it), so you actually get flung far back instead of sliding a block.
+- 墊牆擊退現在誇張多了:分身會先把你拋離地面,趁你在空中時再給一記強力水平轟飛(沒有地面摩擦吃掉力道),所以你會真的被轟飛很遠,而不是滑一格就停。
+
 - The clone's lift skill now spawns the block at your body and launches you upward off its impact, instead of placing a block above your head that you bonk into and get stuck on.
 - 分身的頂起技能現在改成在你身體位置冒出方塊、用衝擊把你往上頂飛,不再是在你頭頂擺一塊讓你往上撞卡住。
 
@@ -109,6 +112,9 @@ All notable changes to this project will be documented in this file.
 - 頭盔夜視升級現在開啟時會持續消耗魔力（5 魔力/秒）。魔力耗盡後夜視自動關閉。手動關閉時效果立即移除。關閉升級不再移除藥水提供的夜視效果。
 
 ### Developer Notes / 開發者備註
+
+- `RAM_WALL` knockback is now two-stage and physics-aware: first a mostly-vertical pop (0.3/0.85) to get the player off the ground, then after 6t `tickPendingLaunch` applies a strong horizontal blast (`pendingLaunchDir` × 3.0, preserving upward y) while the player is airborne so ground friction doesn't kill it. New `pendingLaunchDir` field stores the away direction.
+- `RAM_WALL` 擊退改為兩段且符合物理:先一記偏垂直的拋飛（0.3/0.85）讓玩家離地，6t 後 `tickPendingLaunch` 趁玩家在空中給強力水平轟飛（`pendingLaunchDir` × 3.0，保留向上 y），地面摩擦才不會吃掉力道。新增 `pendingLaunchDir` 欄位存擊退方向。
 
 - `LIFT_UP` now places blocks at the player's body position (`blockPosition()` + above) instead of above the head (`above(2)`), with a stronger upward knockback (0.5 / 1.5), so the player is launched off the spawning block rather than bonking head-first into a ceiling block.
 - `LIFT_UP` 改為在玩家身體位置（`blockPosition()` + 上一格）放方塊，而非頭頂（`above(2)`），並提高上拋（0.5 / 1.5），玩家被冒出的方塊頂飛而非往上撞到天花板方塊卡住。
