@@ -13,6 +13,7 @@ import java.util.List;
 public class ArmorCapacityUpgradeItem extends Item implements IModUpgrade {
 
     public static final int[] BONUS_PER_MK = {1000, 2000, 3500, 5500};
+    public static final int COLOR = 0xFF44FFAA;
 
     private final int mk;
 

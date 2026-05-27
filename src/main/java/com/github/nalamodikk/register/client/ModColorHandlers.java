@@ -1,5 +1,6 @@
 package com.github.nalamodikk.register.client;
 
+import com.github.nalamodikk.common.item.equipment.armor.ArmorCapacityUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.armor.ChestplateUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.armor.HelmetUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.armor.LeggingsUpgradeItem;
@@ -61,10 +62,6 @@ public class ModColorHandlers {
                     }
                     return 0xFFFFFF;
                 },
-                ModItems.HELMET_UPGRADE_CAPACITY_MK0.get(),
-                ModItems.HELMET_UPGRADE_CAPACITY_MK1.get(),
-                ModItems.HELMET_UPGRADE_CAPACITY_MK2.get(),
-                ModItems.HELMET_UPGRADE_CAPACITY_MK3.get(),
                 ModItems.HELMET_UPGRADE_ARMOR_MK0.get(),
                 ModItems.HELMET_UPGRADE_ARMOR_MK1.get(),
                 ModItems.HELMET_UPGRADE_ARMOR_MK2.get(),
@@ -80,10 +77,7 @@ public class ModColorHandlers {
                     }
                     return 0xFFFFFF;
                 },
-                ModItems.CHESTPLATE_UPGRADE_CAPACITY_MK0.get(),
-                ModItems.CHESTPLATE_UPGRADE_CAPACITY_MK1.get(),
-                ModItems.CHESTPLATE_UPGRADE_CAPACITY_MK2.get(),
-                ModItems.CHESTPLATE_UPGRADE_CAPACITY_MK3.get(),
+
                 ModItems.CHESTPLATE_UPGRADE_ARMOR_MK0.get(),
                 ModItems.CHESTPLATE_UPGRADE_ARMOR_MK1.get(),
                 ModItems.CHESTPLATE_UPGRADE_ARMOR_MK2.get(),
@@ -98,10 +92,6 @@ public class ModColorHandlers {
                     }
                     return 0xFFFFFF;
                 },
-                ModItems.LEGGINGS_UPGRADE_CAPACITY_MK0.get(),
-                ModItems.LEGGINGS_UPGRADE_CAPACITY_MK1.get(),
-                ModItems.LEGGINGS_UPGRADE_CAPACITY_MK2.get(),
-                ModItems.LEGGINGS_UPGRADE_CAPACITY_MK3.get(),
                 ModItems.LEGGINGS_UPGRADE_ARMOR_MK0.get(),
                 ModItems.LEGGINGS_UPGRADE_ARMOR_MK1.get(),
                 ModItems.LEGGINGS_UPGRADE_ARMOR_MK2.get(),
@@ -110,6 +100,15 @@ public class ModColorHandlers {
                 ModItems.LEGGINGS_UPGRADE_MULTI_JUMP_MK1.get(),
                 ModItems.LEGGINGS_UPGRADE_MULTI_JUMP_MK2.get(),
                 ModItems.LEGGINGS_UPGRADE_MULTI_JUMP_MK3.get()
+        );
+
+        // 通用容量升級：固定顏色（與各部位 CAPACITY 行為一致）
+        event.register(
+                (stack, tintIndex) -> tintIndex == 0 ? ArmorCapacityUpgradeItem.COLOR : 0xFFFFFF,
+                ModItems.ARMOR_UPGRADE_CAPACITY_MK0.get(),
+                ModItems.ARMOR_UPGRADE_CAPACITY_MK1.get(),
+                ModItems.ARMOR_UPGRADE_CAPACITY_MK2.get(),
+                ModItems.ARMOR_UPGRADE_CAPACITY_MK3.get()
         );
 
         // 靴子升級物品：依 behavior 染色
@@ -131,11 +130,7 @@ public class ModColorHandlers {
                 ModItems.BOOTS_UPGRADE_MANA_EFFICIENCY_MK0.get(),
                 ModItems.BOOTS_UPGRADE_MANA_EFFICIENCY_MK1.get(),
                 ModItems.BOOTS_UPGRADE_MANA_EFFICIENCY_MK2.get(),
-                ModItems.BOOTS_UPGRADE_MANA_EFFICIENCY_MK3.get(),
-                ModItems.BOOTS_UPGRADE_CAPACITY_MK0.get(),
-                ModItems.BOOTS_UPGRADE_CAPACITY_MK1.get(),
-                ModItems.BOOTS_UPGRADE_CAPACITY_MK2.get(),
-                ModItems.BOOTS_UPGRADE_CAPACITY_MK3.get()
+                ModItems.BOOTS_UPGRADE_MANA_EFFICIENCY_MK3.get()
         );
     }
 }
