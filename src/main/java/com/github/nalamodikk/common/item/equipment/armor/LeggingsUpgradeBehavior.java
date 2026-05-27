@@ -9,10 +9,6 @@ public enum LeggingsUpgradeBehavior {
         @Override public Component getDisplayName() { return Component.translatable("item.koniava.leggings_upgrade_capacity"); }
         @Override public int getColor() { return 0xFF44FFAA; }
     },
-    ARMOR(new int[]{1, 2, 3, 4}, "armor", null, null) {
-        @Override public Component getDisplayName() { return Component.translatable("item.koniava.leggings_upgrade_armor"); }
-        @Override public int getColor() { return 0xFF8888FF; }
-    },
     MULTI_JUMP(new int[]{1, 2, 3, 4}, "multi_jump",
             new double[]{0.42, 0.52, 0.62, 0.72},
             new int[]{14, 7, 5, 4}) {

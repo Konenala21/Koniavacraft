@@ -4,7 +4,6 @@ import com.github.nalamodikk.common.inventory.sort.SortMode;
 import com.github.nalamodikk.common.inventory.sort.SortTarget;
 import com.github.nalamodikk.common.network.packet.server.inventory.SortContainerPacket;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractButton;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -23,6 +22,7 @@ public class SortButton extends AbstractButton {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (!this.active || !this.visible) return false;
         if (!this.clicked(mouseX, mouseY)) return false;
         if (button == 0) {
             this.playDownSound(Minecraft.getInstance().getSoundManager());
@@ -60,8 +60,4 @@ public class SortButton extends AbstractButton {
         defaultButtonNarrationText(output);
     }
 
-    @Override
-    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        super.renderWidget(graphics, mouseX, mouseY, partialTick);
-    }
 }

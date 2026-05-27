@@ -38,7 +38,8 @@ public class ManaAlloyHelmetItem extends ManaArmorItem {
     @Override
     public boolean isValidUpgradeItem(ItemStack stack) {
         return stack.getItem() instanceof HelmetUpgradeItem
-                || stack.getItem() instanceof ArmorCapacityUpgradeItem;
+                || stack.getItem() instanceof ArmorCapacityUpgradeItem
+                || stack.getItem() instanceof ArmorDefenseUpgradeItem;
     }
 
     @Override
@@ -47,6 +48,8 @@ public class ManaAlloyHelmetItem extends ManaArmorItem {
             return hu.getBehavior().name();
         if (upgradeStack.getItem() instanceof ArmorCapacityUpgradeItem)
             return "CAPACITY";
+        if (upgradeStack.getItem() instanceof ArmorDefenseUpgradeItem)
+            return "DEFENSE";
         return "";
     }
 
@@ -67,9 +70,8 @@ public class ManaAlloyHelmetItem extends ManaArmorItem {
     protected int getArmorBonus(ItemStack stack) {
         int bonus = 0;
         for (ItemStack upg : getData(stack).upgrades().values()) {
-            if (upg.getItem() instanceof HelmetUpgradeItem hu
-                    && hu.getBehavior() == HelmetUpgradeBehavior.ARMOR) {
-                bonus += hu.getBehavior().getBonusForMk(hu.getMk());
+            if (upg.getItem() instanceof ArmorDefenseUpgradeItem adu) {
+                bonus += adu.getBonus();
             }
         }
         return bonus;

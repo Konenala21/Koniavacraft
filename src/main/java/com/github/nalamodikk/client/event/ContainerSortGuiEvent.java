@@ -19,7 +19,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 
-import java.util.OptionalInt;
 
 @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID, value = Dist.CLIENT)
 @OnlyIn(Dist.CLIENT)
@@ -48,27 +47,27 @@ public class ContainerSortGuiEvent {
 
         net.minecraft.world.entity.player.Inventory playerInv = mc.player.getInventory();
 
-        OptionalInt containerMinY = menu.slots.stream()
-            .filter(slot -> slot.container != playerInv)
-            .mapToInt(slot -> slot.y)
-            .min();
-
-        OptionalInt playerInvMinY = menu.slots.stream()
-            .filter(slot -> slot.container == playerInv && slot.getContainerSlot() >= 9)
-            .mapToInt(slot -> slot.y)
-            .min();
+        int containerMinY = Integer.MAX_VALUE;
+        int playerInvMinY = Integer.MAX_VALUE;
+        for (var slot : menu.slots) {
+            if (slot.container != playerInv) {
+                if (slot.y < containerMinY) containerMinY = slot.y;
+            } else if (slot.getContainerSlot() >= 9) {
+                if (slot.y < playerInvMinY) playerInvMinY = slot.y;
+            }
+        }
 
         int guiLeft = screen.getGuiLeft();
         int guiTop = screen.getGuiTop();
 
-        if (containerMinY.isPresent()) {
-            int btnY = guiTop + containerMinY.getAsInt() - 14;
-            event.addListener(new SortButton(guiLeft + 156, btnY, 16, 12, SortTarget.CONTAINER));
+        if (containerMinY != Integer.MAX_VALUE) {
+            int btnY = guiTop + containerMinY - 6;
+            event.addListener(new SortButton(guiLeft + 156, btnY, 12, 10, SortTarget.CONTAINER));
         }
 
-        if (playerInvMinY.isPresent()) {
-            int btnY = guiTop + playerInvMinY.getAsInt() - 14;
-            event.addListener(new SortButton(guiLeft + 156, btnY, 16, 12, SortTarget.PLAYER_INVENTORY));
+        if (playerInvMinY != Integer.MAX_VALUE) {
+            int btnY = guiTop + playerInvMinY - 6;
+            event.addListener(new SortButton(guiLeft + 156, btnY, 12, 10, SortTarget.PLAYER_INVENTORY));
         }
     }
 

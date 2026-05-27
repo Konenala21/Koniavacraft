@@ -89,57 +89,61 @@ public class AltarRecipeProvider {
     }
 
     private static void registerArmor(RecipeOutput output) {
-        // 魔力合金頭盔 T1 祭壇：鐵頭盔 + 魔力強化板 ×5
+        // 頭盔激活 T1 祭壇：底殼 + 魔力之眼 ×2 + 魔力線 ×2 + 晶片 ×2 + 精煉粉 ×2
         save(output, "mana_alloy_helmet",
-                Ingredient.of(Items.IRON_HELMET),
+                Ingredient.of(ModItems.MANA_ALLOY_HELMET_BASE.get()),
                 List.of(
-                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
-                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
-                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
-                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
-                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get())
+                        Ingredient.of(ModItems.MANA_EYE.get()),
+                        Ingredient.of(ModItems.MANA_EYE.get()),
+                        Ingredient.of(ModItems.MANA_WIRE.get()),
+                        Ingredient.of(ModItems.MANA_WIRE.get()),
+                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
+                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
+                        Ingredient.of(ModItems.REFINED_MANA_DUST.get()),
+                        Ingredient.of(ModItems.REFINED_MANA_DUST.get())
                 ),
                 new ItemStack(ModItems.MANA_ALLOY_HELMET.get()),
-                8000, 140, 1
+                10000, 160, 1
         );
 
-        // 魔力合金胸甲 T1 祭壇：鐵胸甲 + 魔力強化板 ×8
+        // 胸甲激活 T1 祭壇：底殼 + 盾牌 + 魔力水晶 ×2 + 強化板 ×2 + 魔力錠 ×2 + 魔力線
         save(output, "mana_alloy_chestplate",
-                Ingredient.of(Items.IRON_CHESTPLATE),
+                Ingredient.of(ModItems.MANA_ALLOY_CHESTPLATE_BASE.get()),
                 List.of(
+                        Ingredient.of(Items.SHIELD),
+                        Ingredient.of(ModItems.MANA_CRYSTAL.get()),
+                        Ingredient.of(ModItems.MANA_CRYSTAL.get()),
                         Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
                         Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
-                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
-                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
-                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
-                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
-                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
-                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get())
+                        Ingredient.of(ModItems.MANA_INGOT.get()),
+                        Ingredient.of(ModItems.MANA_INGOT.get()),
+                        Ingredient.of(ModItems.MANA_WIRE.get())
                 ),
                 new ItemStack(ModItems.MANA_ALLOY_CHESTPLATE.get()),
-                12000, 180, 1
+                15000, 200, 1
         );
 
-        // 魔力合金護腿 T1 祭壇：鐵護腿 + 魔力強化板 ×7
+        // 護腿激活 T1 祭壇：底殼 + 兔足 + 黏液球 ×2 + 晶片 ×2 + 魔力線 ×2 + 魔力錠
         save(output, "mana_alloy_leggings",
-                Ingredient.of(Items.IRON_LEGGINGS),
+                Ingredient.of(ModItems.MANA_ALLOY_LEGGINGS_BASE.get()),
                 List.of(
-                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
-                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
-                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
-                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
-                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
-                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
-                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get())
+                        Ingredient.of(Items.RABBIT_FOOT),
+                        Ingredient.of(Items.SLIME_BALL),
+                        Ingredient.of(Items.SLIME_BALL),
+                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
+                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
+                        Ingredient.of(ModItems.MANA_WIRE.get()),
+                        Ingredient.of(ModItems.MANA_WIRE.get()),
+                        Ingredient.of(ModItems.MANA_INGOT.get())
                 ),
                 new ItemStack(ModItems.MANA_ALLOY_LEGGINGS.get()),
-                10000, 160, 1
+                12000, 180, 1
         );
     }
 
     private static void registerBoots(RecipeOutput output) {
-        // 魔力衝刺靴（未完成）T1 祭壇
-        save(output, "mana_sprint_boots_unfinished",
+        // 魔力衝刺靴底殼 T1 祭壇
+        save(output, "mana_sprint_boots_base",
                 Ingredient.of(ModItems.MANA_CRYSTAL.get()),
                 List.of(
                         Ingredient.of(Items.LEATHER_BOOTS),
@@ -151,13 +155,13 @@ public class AltarRecipeProvider {
                         Ingredient.of(Items.FEATHER),
                         Ingredient.of(Items.FEATHER)
                 ),
-                new ItemStack(ModItems.MANA_SPRINT_BOOTS_UNFINISHED.get()),
+                new ItemStack(ModItems.MANA_SPRINT_BOOTS_BASE.get()),
                 10000, 160, 1
         );
 
-        // 魔力衝刺靴激活 T1 祭壇（未完成→完成）
+        // 魔力衝刺靴激活 T1 祭壇（底殼→完成）
         save(output, "mana_sprint_boots_activate",
-                Ingredient.of(ModItems.MANA_SPRINT_BOOTS_UNFINISHED.get()),
+                Ingredient.of(ModItems.MANA_SPRINT_BOOTS_BASE.get()),
                 List.of(
                         Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
                         Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),

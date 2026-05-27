@@ -8,10 +8,6 @@ public enum ChestplateUpgradeBehavior {
     CAPACITY(new int[]{1500, 3000, 5000, 7500}, "capacity") {
         @Override public Component getDisplayName() { return Component.translatable("item.koniava.chestplate_upgrade_capacity"); }
         @Override public int getColor() { return 0xFF44FFAA; }
-    },
-    ARMOR(new int[]{1, 2, 3, 4}, "armor") {
-        @Override public Component getDisplayName() { return Component.translatable("item.koniava.chestplate_upgrade_armor"); }
-        @Override public int getColor() { return 0xFF8888FF; }
     };
 
     private final int[] bonusPerMk;

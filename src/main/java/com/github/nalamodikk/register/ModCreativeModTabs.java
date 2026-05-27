@@ -3,6 +3,7 @@ package com.github.nalamodikk.register;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.block.blockentity.manabase.BaseMachineBlock;
 import com.github.nalamodikk.common.item.equipment.armor.ArmorCapacityUpgradeItem;
+import com.github.nalamodikk.common.item.equipment.armor.ArmorDefenseUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.armor.ChestplateUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.armor.HelmetUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.armor.LeggingsUpgradeItem;
@@ -57,7 +58,7 @@ public class ModCreativeModTabs {
                                     Item i = item.get();
                                     if (i instanceof WandCoreItem || i instanceof WandUpgradeItem || i instanceof BootsUpgradeItem
                             || i instanceof HelmetUpgradeItem || i instanceof ChestplateUpgradeItem || i instanceof LeggingsUpgradeItem
-                            || i instanceof ArmorCapacityUpgradeItem) {
+                            || i instanceof ArmorCapacityUpgradeItem || i instanceof ArmorDefenseUpgradeItem) {
                                         upgradeItems.add(i);
                                     } else {
                                         output.accept(i);

@@ -1,10 +1,16 @@
 package com.github.nalamodikk.common.item.equipment.armor;
 
+import com.github.nalamodikk.common.event.ChestplateManaShieldHandler;
 import com.github.nalamodikk.common.item.equipment.ManaArmorItem;
 import com.github.nalamodikk.register.ModDataComponents;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+
+import java.util.List;
 
 public class ManaAlloyChestplateItem extends ManaArmorItem {
 
@@ -32,7 +38,8 @@ public class ManaAlloyChestplateItem extends ManaArmorItem {
     @Override
     public boolean isValidUpgradeItem(ItemStack stack) {
         return stack.getItem() instanceof ChestplateUpgradeItem
-                || stack.getItem() instanceof ArmorCapacityUpgradeItem;
+                || stack.getItem() instanceof ArmorCapacityUpgradeItem
+                || stack.getItem() instanceof ArmorDefenseUpgradeItem;
     }
 
     @Override
@@ -41,16 +48,30 @@ public class ManaAlloyChestplateItem extends ManaArmorItem {
             return cu.getBehavior().name();
         if (upgradeStack.getItem() instanceof ArmorCapacityUpgradeItem)
             return "CAPACITY";
+        if (upgradeStack.getItem() instanceof ArmorDefenseUpgradeItem)
+            return "DEFENSE";
         return "";
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, TooltipContext ctx, List<Component> lines, TooltipFlag flag) {
+        super.appendHoverText(stack, ctx, lines, flag);
+        int mana = getMana(stack);
+        if (mana > 0) {
+            lines.add(Component.translatable("tooltip.koniava.chestplate.mana_shield",
+                    (int)(ChestplateManaShieldHandler.SHIELD_RATE * 100)).withStyle(ChatFormatting.AQUA));
+        } else {
+            lines.add(Component.translatable("tooltip.koniava.chestplate.mana_shield_empty")
+                    .withStyle(ChatFormatting.DARK_GRAY));
+        }
     }
 
     @Override
     protected int getArmorBonus(ItemStack stack) {
         int bonus = 0;
         for (ItemStack upg : getData(stack).upgrades().values()) {
-            if (upg.getItem() instanceof ChestplateUpgradeItem cu
-                    && cu.getBehavior() == ChestplateUpgradeBehavior.ARMOR) {
-                bonus += cu.getBehavior().getBonusForMk(cu.getMk());
+            if (upg.getItem() instanceof ArmorDefenseUpgradeItem adu) {
+                bonus += adu.getBonus();
             }
         }
         return bonus;

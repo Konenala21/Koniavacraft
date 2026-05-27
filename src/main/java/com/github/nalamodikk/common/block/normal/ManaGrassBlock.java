@@ -72,7 +72,7 @@ public class ManaGrassBlock extends GrassBlock {
             return;
         }
 
-        if (level.getMaxLocalRawBrightness(pos) >= 9) {
+        if (level.getMaxLocalRawBrightness(pos.above()) >= 9) {
             for (int i = 0; i < 4; ++i) {
                 BlockPos targetPos = pos.offset(
                         random.nextInt(3) - 1,
@@ -95,7 +95,7 @@ public class ManaGrassBlock extends GrassBlock {
         if (aboveState.is(Blocks.SNOW) && aboveState.getValue(SnowLayerBlock.LAYERS) == 1) {
             return true;
         }
-        if (aboveState.getFluidState().getAmount() == 8) {
+        if (!aboveState.getFluidState().isEmpty()) {
             return false;
         }
         return aboveState.getLightBlock(level, above) < level.getMaxLightLevel();

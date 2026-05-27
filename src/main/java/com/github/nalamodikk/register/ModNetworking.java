@@ -4,6 +4,7 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.network.packet.client.altar.AltarUpgradeAnimPacket;
 import com.github.nalamodikk.common.network.packet.client.FormationStagePacket;
 import com.github.nalamodikk.common.network.packet.client.altar.RitualExplosionPacket;
+import com.github.nalamodikk.common.network.packet.client.armor.ManaShieldHitPacket;
 import com.github.nalamodikk.common.network.packet.client.turret.DamageNumberPacket;
 import com.github.nalamodikk.common.network.packet.client.turret.TurretHitPacket;
 import com.github.nalamodikk.common.network.packet.server.OpenUpgradeGuiPacket;
@@ -90,5 +91,6 @@ public class ModNetworking {
         ToggleNightVisionPacket.registerTo(registrar);
         FormationStagePacket.registerToClient(registrar);
         SortContainerPacket.registerTo(registrar);
+        ManaShieldHitPacket.registerToClient(registrar);
     }
 }

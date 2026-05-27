@@ -35,6 +35,7 @@ import com.github.nalamodikk.common.item.equipment.armor.HelmetUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.armor.ChestplateUpgradeBehavior;
 import com.github.nalamodikk.common.item.equipment.armor.ChestplateUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.armor.ArmorCapacityUpgradeItem;
+import com.github.nalamodikk.common.item.equipment.armor.ArmorDefenseUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.armor.LeggingsUpgradeBehavior;
 import com.github.nalamodikk.common.item.equipment.armor.LeggingsUpgradeItem;
 import com.github.nalamodikk.common.item.weapon.FloatingTurretItem;
@@ -63,6 +64,17 @@ public class ModItems {
     // ── 感知系中間材料 ────────────────────────────────────────────────────────
     public static final DeferredItem<Item> MANA_EYE =
             ITEMS.register("mana_eye", () -> new Item(new Item.Properties()));
+
+    // ── 魔力合金套裝底殼（激活前中間品）────────────────────────────────────────
+    public static final DeferredItem<Item> MANA_ALLOY_HELMET_BASE =
+            ITEMS.register("mana_alloy_helmet_base", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> MANA_ALLOY_CHESTPLATE_BASE =
+            ITEMS.register("mana_alloy_chestplate_base", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> MANA_ALLOY_LEGGINGS_BASE =
+            ITEMS.register("mana_alloy_leggings_base", () -> new Item(new Item.Properties()));
+    public static final DeferredItem<Item> MANA_SPRINT_BOOTS_BASE =
+            ITEMS.registerSimpleItem("mana_sprint_boots_base", new Item.Properties().stacksTo(1));
+
 
     // ── 魔力合金套裝中間材料 ─────────────────────────────────────────────────────
     public static final DeferredItem<Item> MANA_IRON =
@@ -226,28 +238,6 @@ public class ModItems {
             ITEMS.register("source_tome", () -> new SourceTomeItem(
                     new Item.Properties().stacksTo(1)));
 
-    // ── 魔力衝刺靴 ──────────────────────────────────────────────────────────
-
-    public static final DeferredItem<Item> MANA_SPRINT_BOOTS_UNFINISHED =
-            ITEMS.registerSimpleItem("mana_sprint_boots_unfinished", new Item.Properties().stacksTo(1));
-
-    public static final DeferredItem<ManaSprintBootsItem> MANA_SPRINT_BOOTS =
-            ITEMS.register("mana_sprint_boots", () -> new ManaSprintBootsItem(
-                    ModArmorMaterials.MANA_ALLOY,
-                    new Item.Properties()
-                            .durability(429)
-                            .component(ModDataComponents.MANA_STORED, 0)
-                            .component(ModDataComponents.MAX_MANA, ManaSprintBootsItem.BASE_MAX_MANA)));
-
-    // 防禦升級
-    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_ARMOR_MK0 =
-            ITEMS.register("boots_upgrade_armor_mk0", () -> new BootsUpgradeItem(BootsUpgradeBehavior.ARMOR, 0, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_ARMOR_MK1 =
-            ITEMS.register("boots_upgrade_armor_mk1", () -> new BootsUpgradeItem(BootsUpgradeBehavior.ARMOR, 1, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_ARMOR_MK2 =
-            ITEMS.register("boots_upgrade_armor_mk2", () -> new BootsUpgradeItem(BootsUpgradeBehavior.ARMOR, 2, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_ARMOR_MK3 =
-            ITEMS.register("boots_upgrade_armor_mk3", () -> new BootsUpgradeItem(BootsUpgradeBehavior.ARMOR, 3, new Item.Properties().stacksTo(4)));
 
     // 衝刺距離升級
     public static final DeferredItem<BootsUpgradeItem> BOOTS_UPGRADE_DASH_DISTANCE_MK0 =
@@ -296,6 +286,15 @@ public class ModItems {
                             .component(ModDataComponents.MANA_STORED, 0)
                             .component(ModDataComponents.MAX_MANA, ManaAlloyLeggingsItem.BASE_MAX_MANA)));
 
+    public static final DeferredItem<ManaSprintBootsItem> MANA_SPRINT_BOOTS =
+            ITEMS.register("mana_sprint_boots", () -> new ManaSprintBootsItem(
+                    ModArmorMaterials.MANA_ALLOY,
+                    new Item.Properties()
+                            .durability(429)
+                            .component(ModDataComponents.MANA_STORED, 0)
+                            .component(ModDataComponents.MAX_MANA, ManaSprintBootsItem.BASE_MAX_MANA)));
+
+
     // 通用魔力容量升級（適用於所有魔力盔甲）
     public static final DeferredItem<ArmorCapacityUpgradeItem> ARMOR_UPGRADE_CAPACITY_MK0 =
             ITEMS.register("armor_upgrade_capacity_mk0", () -> new ArmorCapacityUpgradeItem(0, new Item.Properties().stacksTo(4)));
@@ -306,38 +305,21 @@ public class ModItems {
     public static final DeferredItem<ArmorCapacityUpgradeItem> ARMOR_UPGRADE_CAPACITY_MK3 =
             ITEMS.register("armor_upgrade_capacity_mk3", () -> new ArmorCapacityUpgradeItem(3, new Item.Properties().stacksTo(4)));
 
-    // 頭盔升級
-    public static final DeferredItem<HelmetUpgradeItem> HELMET_UPGRADE_ARMOR_MK0 =
-            ITEMS.register("helmet_upgrade_armor_mk0", () -> new HelmetUpgradeItem(HelmetUpgradeBehavior.ARMOR, 0, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<HelmetUpgradeItem> HELMET_UPGRADE_ARMOR_MK1 =
-            ITEMS.register("helmet_upgrade_armor_mk1", () -> new HelmetUpgradeItem(HelmetUpgradeBehavior.ARMOR, 1, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<HelmetUpgradeItem> HELMET_UPGRADE_ARMOR_MK2 =
-            ITEMS.register("helmet_upgrade_armor_mk2", () -> new HelmetUpgradeItem(HelmetUpgradeBehavior.ARMOR, 2, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<HelmetUpgradeItem> HELMET_UPGRADE_ARMOR_MK3 =
-            ITEMS.register("helmet_upgrade_armor_mk3", () -> new HelmetUpgradeItem(HelmetUpgradeBehavior.ARMOR, 3, new Item.Properties().stacksTo(4)));
+    // 通用防禦升級（適用於所有魔力盔甲）
+    public static final DeferredItem<ArmorDefenseUpgradeItem> ARMOR_UPGRADE_DEFENSE_MK0 =
+            ITEMS.register("armor_upgrade_defense_mk0", () -> new ArmorDefenseUpgradeItem(0, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<ArmorDefenseUpgradeItem> ARMOR_UPGRADE_DEFENSE_MK1 =
+            ITEMS.register("armor_upgrade_defense_mk1", () -> new ArmorDefenseUpgradeItem(1, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<ArmorDefenseUpgradeItem> ARMOR_UPGRADE_DEFENSE_MK2 =
+            ITEMS.register("armor_upgrade_defense_mk2", () -> new ArmorDefenseUpgradeItem(2, new Item.Properties().stacksTo(4)));
+    public static final DeferredItem<ArmorDefenseUpgradeItem> ARMOR_UPGRADE_DEFENSE_MK3 =
+            ITEMS.register("armor_upgrade_defense_mk3", () -> new ArmorDefenseUpgradeItem(3, new Item.Properties().stacksTo(4)));
 
+    // 頭盔升級
     public static final DeferredItem<HelmetUpgradeItem> HELMET_UPGRADE_NIGHT_VISION =
             ITEMS.register("helmet_upgrade_night_vision", () -> new HelmetUpgradeItem(HelmetUpgradeBehavior.NIGHT_VISION, 0, new Item.Properties().stacksTo(4)));
 
-    // 胸甲升級
-    public static final DeferredItem<ChestplateUpgradeItem> CHESTPLATE_UPGRADE_ARMOR_MK0 =
-            ITEMS.register("chestplate_upgrade_armor_mk0", () -> new ChestplateUpgradeItem(ChestplateUpgradeBehavior.ARMOR, 0, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<ChestplateUpgradeItem> CHESTPLATE_UPGRADE_ARMOR_MK1 =
-            ITEMS.register("chestplate_upgrade_armor_mk1", () -> new ChestplateUpgradeItem(ChestplateUpgradeBehavior.ARMOR, 1, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<ChestplateUpgradeItem> CHESTPLATE_UPGRADE_ARMOR_MK2 =
-            ITEMS.register("chestplate_upgrade_armor_mk2", () -> new ChestplateUpgradeItem(ChestplateUpgradeBehavior.ARMOR, 2, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<ChestplateUpgradeItem> CHESTPLATE_UPGRADE_ARMOR_MK3 =
-            ITEMS.register("chestplate_upgrade_armor_mk3", () -> new ChestplateUpgradeItem(ChestplateUpgradeBehavior.ARMOR, 3, new Item.Properties().stacksTo(4)));
-
     // 護腿升級
-    public static final DeferredItem<LeggingsUpgradeItem> LEGGINGS_UPGRADE_ARMOR_MK0 =
-            ITEMS.register("leggings_upgrade_armor_mk0", () -> new LeggingsUpgradeItem(LeggingsUpgradeBehavior.ARMOR, 0, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<LeggingsUpgradeItem> LEGGINGS_UPGRADE_ARMOR_MK1 =
-            ITEMS.register("leggings_upgrade_armor_mk1", () -> new LeggingsUpgradeItem(LeggingsUpgradeBehavior.ARMOR, 1, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<LeggingsUpgradeItem> LEGGINGS_UPGRADE_ARMOR_MK2 =
-            ITEMS.register("leggings_upgrade_armor_mk2", () -> new LeggingsUpgradeItem(LeggingsUpgradeBehavior.ARMOR, 2, new Item.Properties().stacksTo(4)));
-    public static final DeferredItem<LeggingsUpgradeItem> LEGGINGS_UPGRADE_ARMOR_MK3 =
-            ITEMS.register("leggings_upgrade_armor_mk3", () -> new LeggingsUpgradeItem(LeggingsUpgradeBehavior.ARMOR, 3, new Item.Properties().stacksTo(4)));
     public static final DeferredItem<LeggingsUpgradeItem> LEGGINGS_UPGRADE_MULTI_JUMP_MK0 =
             ITEMS.register("leggings_upgrade_multi_jump_mk0", () -> new LeggingsUpgradeItem(LeggingsUpgradeBehavior.MULTI_JUMP, 0, new Item.Properties().stacksTo(4)));
     public static final DeferredItem<LeggingsUpgradeItem> LEGGINGS_UPGRADE_MULTI_JUMP_MK1 =

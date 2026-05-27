@@ -27,15 +27,12 @@ public class ModItemModelProvider extends ItemModelProvider {
             "wand_upgrade_efficiency_mk0","wand_upgrade_efficiency_mk1","wand_upgrade_efficiency_mk2","wand_upgrade_efficiency_mk3",
             "wand_upgrade_range_mk0",     "wand_upgrade_range_mk1",     "wand_upgrade_range_mk2",     "wand_upgrade_range_mk3",
             "wand_upgrade_cooldown_mk0",  "wand_upgrade_cooldown_mk1",  "wand_upgrade_cooldown_mk2",  "wand_upgrade_cooldown_mk3",
-            "boots_upgrade_armor_mk0",         "boots_upgrade_armor_mk1",         "boots_upgrade_armor_mk2",         "boots_upgrade_armor_mk3",
             "boots_upgrade_dash_distance_mk0", "boots_upgrade_dash_distance_mk1", "boots_upgrade_dash_distance_mk2", "boots_upgrade_dash_distance_mk3",
             "boots_upgrade_mana_efficiency_mk0","boots_upgrade_mana_efficiency_mk1","boots_upgrade_mana_efficiency_mk2","boots_upgrade_mana_efficiency_mk3",
-            "helmet_upgrade_armor_mk0",         "helmet_upgrade_armor_mk1",         "helmet_upgrade_armor_mk2",         "helmet_upgrade_armor_mk3",
             "helmet_upgrade_night_vision",
-            "chestplate_upgrade_armor_mk0",     "chestplate_upgrade_armor_mk1",     "chestplate_upgrade_armor_mk2",     "chestplate_upgrade_armor_mk3",
-            "leggings_upgrade_armor_mk0",       "leggings_upgrade_armor_mk1",       "leggings_upgrade_armor_mk2",       "leggings_upgrade_armor_mk3",
             "leggings_upgrade_multi_jump_mk0",  "leggings_upgrade_multi_jump_mk1",  "leggings_upgrade_multi_jump_mk2",  "leggings_upgrade_multi_jump_mk3",
-            "armor_upgrade_capacity_mk0",       "armor_upgrade_capacity_mk1",       "armor_upgrade_capacity_mk2",       "armor_upgrade_capacity_mk3"
+            "armor_upgrade_capacity_mk0",       "armor_upgrade_capacity_mk1",       "armor_upgrade_capacity_mk2",       "armor_upgrade_capacity_mk3",
+            "armor_upgrade_defense_mk0",        "armor_upgrade_defense_mk1",        "armor_upgrade_defense_mk2",        "armor_upgrade_defense_mk3"
     };
 
     @Override

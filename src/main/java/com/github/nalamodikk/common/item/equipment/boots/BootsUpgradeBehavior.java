@@ -5,10 +5,6 @@ import net.minecraft.util.Mth;
 
 public enum BootsUpgradeBehavior {
 
-    ARMOR(new int[]{1, 2, 3, 4}, "armor") {
-        @Override public Component getDisplayName() { return Component.translatable("item.koniava.boots_upgrade_armor"); }
-        @Override public int getColor() { return 0xFF8888FF; }
-    },
     DASH_DISTANCE(new int[]{1, 2, 3, 4}, "dash_distance") {
         @Override public Component getDisplayName() { return Component.translatable("item.koniava.boots_upgrade_dash_distance"); }
         @Override public int getColor() { return 0xFFFFAA22; }

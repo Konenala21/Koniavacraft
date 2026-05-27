@@ -128,7 +128,7 @@ public class ManaCraftingRecipeProvider {
         // === 中間材料 ===
         // 魔力之眼（頭盔激活材料）
         ManaCraftingRecipeBuilder.shapeless(ModItems.MANA_EYE.get(), 1)
-                .addIngredient(Ingredient.of(net.minecraft.world.item.Items.ENDER_EYE))
+                .addIngredient(Ingredient.of(Items.ENDER_EYE))
                 .addIngredient(Ingredient.of(ModItems.MANA_CRYSTAL_ALLOY_DUST.get()))
                 .manaCost(2000)
                 .save(output, "mana_eye");
@@ -494,56 +494,6 @@ public class ManaCraftingRecipeProvider {
 
         // ── 靴子升級插件 ─────────────────────────────────────────────────────
 
-        // 防甲升級 Mk0
-        ManaCraftingRecipeBuilder.create(ModItems.BOOTS_UPGRADE_ARMOR_MK0.get(), 1)
-                .shaped(true)
-                .pattern("IMI")
-                .pattern("MUM")
-                .pattern("IMI")
-                .define('I', Items.IRON_INGOT)
-                .define('M', ModItems.MANA_INGOT.get())
-                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
-                .manaCost(2000)
-                .save(output, "boots_upgrade_armor_mk0");
-
-        // 防甲升級 Mk1
-        ManaCraftingRecipeBuilder.create(ModItems.BOOTS_UPGRADE_ARMOR_MK1.get(), 1)
-                .shaped(true)
-                .pattern("IMI")
-                .pattern("FAF")
-                .pattern("IMI")
-                .define('I', Items.IRON_INGOT)
-                .define('M', ModItems.MANA_INGOT.get())
-                .define('F', ModItems.MANA_CRYSTAL_FRAGMENT.get())
-                .define('A', ModItems.BOOTS_UPGRADE_ARMOR_MK0.get())
-                .manaCost(3500)
-                .save(output, "boots_upgrade_armor_mk1");
-
-        // 防甲升級 Mk2
-        ManaCraftingRecipeBuilder.create(ModItems.BOOTS_UPGRADE_ARMOR_MK2.get(), 1)
-                .shaped(true)
-                .pattern("IMI")
-                .pattern("CAC")
-                .pattern("IMI")
-                .define('I', Items.IRON_INGOT)
-                .define('M', ModItems.MANA_INGOT.get())
-                .define('C', ModItems.MANA_CRYSTAL.get())
-                .define('A', ModItems.BOOTS_UPGRADE_ARMOR_MK1.get())
-                .manaCost(5500)
-                .save(output, "boots_upgrade_armor_mk2");
-
-        // 防甲升級 Mk3
-        ManaCraftingRecipeBuilder.create(ModItems.BOOTS_UPGRADE_ARMOR_MK3.get(), 1)
-                .shaped(true)
-                .pattern("NPN")
-                .pattern("PAP")
-                .pattern("NPN")
-                .define('N', Items.NETHERITE_INGOT)
-                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
-                .define('A', ModItems.BOOTS_UPGRADE_ARMOR_MK2.get())
-                .manaCost(9000)
-                .save(output, "boots_upgrade_armor_mk3");
-
         // 衝刺距離升級 Mk0
         ManaCraftingRecipeBuilder.create(ModItems.BOOTS_UPGRADE_DASH_DISTANCE_MK0.get(), 1)
                 .shaped(true)
@@ -685,9 +635,8 @@ public class ManaCraftingRecipeProvider {
                 .manaCost(9000)
                 .save(output, "armor_upgrade_capacity_mk3");
 
-        // ── 頭盔升級 ──────────────────────────────────────────────────────────
-        // 防甲 Mk0
-        ManaCraftingRecipeBuilder.create(ModItems.HELMET_UPGRADE_ARMOR_MK0.get(), 1)
+        // ── 通用防禦升級（適用於所有魔力盔甲）────────────────────────────────────
+        ManaCraftingRecipeBuilder.create(ModItems.ARMOR_UPGRADE_DEFENSE_MK0.get(), 1)
                 .shaped(true)
                 .pattern("IMI")
                 .pattern("MUM")
@@ -696,9 +645,9 @@ public class ManaCraftingRecipeProvider {
                 .define('M', ModItems.MANA_INGOT.get())
                 .define('U', ModItems.BASIC_UPGRADE_CASING.get())
                 .manaCost(2000)
-                .save(output, "helmet_upgrade_armor_mk0");
+                .save(output, "armor_upgrade_defense_mk0");
 
-        ManaCraftingRecipeBuilder.create(ModItems.HELMET_UPGRADE_ARMOR_MK1.get(), 1)
+        ManaCraftingRecipeBuilder.create(ModItems.ARMOR_UPGRADE_DEFENSE_MK1.get(), 1)
                 .shaped(true)
                 .pattern("IMI")
                 .pattern("FAF")
@@ -706,11 +655,11 @@ public class ManaCraftingRecipeProvider {
                 .define('I', Items.IRON_INGOT)
                 .define('M', ModItems.MANA_INGOT.get())
                 .define('F', ModItems.MANA_CRYSTAL_FRAGMENT.get())
-                .define('A', ModItems.HELMET_UPGRADE_ARMOR_MK0.get())
+                .define('A', ModItems.ARMOR_UPGRADE_DEFENSE_MK0.get())
                 .manaCost(3500)
-                .save(output, "helmet_upgrade_armor_mk1");
+                .save(output, "armor_upgrade_defense_mk1");
 
-        ManaCraftingRecipeBuilder.create(ModItems.HELMET_UPGRADE_ARMOR_MK2.get(), 1)
+        ManaCraftingRecipeBuilder.create(ModItems.ARMOR_UPGRADE_DEFENSE_MK2.get(), 1)
                 .shaped(true)
                 .pattern("IMI")
                 .pattern("CAC")
@@ -718,114 +667,20 @@ public class ManaCraftingRecipeProvider {
                 .define('I', Items.IRON_INGOT)
                 .define('M', ModItems.MANA_INGOT.get())
                 .define('C', ModItems.MANA_CRYSTAL.get())
-                .define('A', ModItems.HELMET_UPGRADE_ARMOR_MK1.get())
+                .define('A', ModItems.ARMOR_UPGRADE_DEFENSE_MK1.get())
                 .manaCost(5500)
-                .save(output, "helmet_upgrade_armor_mk2");
+                .save(output, "armor_upgrade_defense_mk2");
 
-        ManaCraftingRecipeBuilder.create(ModItems.HELMET_UPGRADE_ARMOR_MK3.get(), 1)
+        ManaCraftingRecipeBuilder.create(ModItems.ARMOR_UPGRADE_DEFENSE_MK3.get(), 1)
                 .shaped(true)
                 .pattern("NPN")
                 .pattern("PAP")
                 .pattern("NPN")
                 .define('N', Items.NETHERITE_INGOT)
                 .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
-                .define('A', ModItems.HELMET_UPGRADE_ARMOR_MK2.get())
+                .define('A', ModItems.ARMOR_UPGRADE_DEFENSE_MK2.get())
                 .manaCost(9000)
-                .save(output, "helmet_upgrade_armor_mk3");
-
-        // ── 胸甲升級 ──────────────────────────────────────────────────────────
-        ManaCraftingRecipeBuilder.create(ModItems.CHESTPLATE_UPGRADE_ARMOR_MK0.get(), 1)
-                .shaped(true)
-                .pattern("IMI")
-                .pattern("MUM")
-                .pattern("IMI")
-                .define('I', Items.IRON_INGOT)
-                .define('M', ModItems.MANA_INGOT.get())
-                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
-                .manaCost(2000)
-                .save(output, "chestplate_upgrade_armor_mk0");
-
-        ManaCraftingRecipeBuilder.create(ModItems.CHESTPLATE_UPGRADE_ARMOR_MK1.get(), 1)
-                .shaped(true)
-                .pattern("IMI")
-                .pattern("FAF")
-                .pattern("IMI")
-                .define('I', Items.IRON_INGOT)
-                .define('M', ModItems.MANA_INGOT.get())
-                .define('F', ModItems.MANA_CRYSTAL_FRAGMENT.get())
-                .define('A', ModItems.CHESTPLATE_UPGRADE_ARMOR_MK0.get())
-                .manaCost(3500)
-                .save(output, "chestplate_upgrade_armor_mk1");
-
-        ManaCraftingRecipeBuilder.create(ModItems.CHESTPLATE_UPGRADE_ARMOR_MK2.get(), 1)
-                .shaped(true)
-                .pattern("IMI")
-                .pattern("CAC")
-                .pattern("IMI")
-                .define('I', Items.IRON_INGOT)
-                .define('M', ModItems.MANA_INGOT.get())
-                .define('C', ModItems.MANA_CRYSTAL.get())
-                .define('A', ModItems.CHESTPLATE_UPGRADE_ARMOR_MK1.get())
-                .manaCost(5500)
-                .save(output, "chestplate_upgrade_armor_mk2");
-
-        ManaCraftingRecipeBuilder.create(ModItems.CHESTPLATE_UPGRADE_ARMOR_MK3.get(), 1)
-                .shaped(true)
-                .pattern("NPN")
-                .pattern("PAP")
-                .pattern("NPN")
-                .define('N', Items.NETHERITE_INGOT)
-                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
-                .define('A', ModItems.CHESTPLATE_UPGRADE_ARMOR_MK2.get())
-                .manaCost(9000)
-                .save(output, "chestplate_upgrade_armor_mk3");
-
-        // ── 護腿升級 ──────────────────────────────────────────────────────────
-        ManaCraftingRecipeBuilder.create(ModItems.LEGGINGS_UPGRADE_ARMOR_MK0.get(), 1)
-                .shaped(true)
-                .pattern("IMI")
-                .pattern("MUM")
-                .pattern("IMI")
-                .define('I', Items.IRON_INGOT)
-                .define('M', ModItems.MANA_INGOT.get())
-                .define('U', ModItems.BASIC_UPGRADE_CASING.get())
-                .manaCost(2000)
-                .save(output, "leggings_upgrade_armor_mk0");
-
-        ManaCraftingRecipeBuilder.create(ModItems.LEGGINGS_UPGRADE_ARMOR_MK1.get(), 1)
-                .shaped(true)
-                .pattern("IMI")
-                .pattern("FAF")
-                .pattern("IMI")
-                .define('I', Items.IRON_INGOT)
-                .define('M', ModItems.MANA_INGOT.get())
-                .define('F', ModItems.MANA_CRYSTAL_FRAGMENT.get())
-                .define('A', ModItems.LEGGINGS_UPGRADE_ARMOR_MK0.get())
-                .manaCost(3500)
-                .save(output, "leggings_upgrade_armor_mk1");
-
-        ManaCraftingRecipeBuilder.create(ModItems.LEGGINGS_UPGRADE_ARMOR_MK2.get(), 1)
-                .shaped(true)
-                .pattern("IMI")
-                .pattern("CAC")
-                .pattern("IMI")
-                .define('I', Items.IRON_INGOT)
-                .define('M', ModItems.MANA_INGOT.get())
-                .define('C', ModItems.MANA_CRYSTAL.get())
-                .define('A', ModItems.LEGGINGS_UPGRADE_ARMOR_MK1.get())
-                .manaCost(5500)
-                .save(output, "leggings_upgrade_armor_mk2");
-
-        ManaCraftingRecipeBuilder.create(ModItems.LEGGINGS_UPGRADE_ARMOR_MK3.get(), 1)
-                .shaped(true)
-                .pattern("NPN")
-                .pattern("PAP")
-                .pattern("NPN")
-                .define('N', Items.NETHERITE_INGOT)
-                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
-                .define('A', ModItems.LEGGINGS_UPGRADE_ARMOR_MK2.get())
-                .manaCost(9000)
-                .save(output, "leggings_upgrade_armor_mk3");
+                .save(output, "armor_upgrade_defense_mk3");
 
         // ── 護腿多段跳升級 ────────────────────────────────────────────────────
         ManaCraftingRecipeBuilder.create(ModItems.LEGGINGS_UPGRADE_MULTI_JUMP_MK0.get(), 1)
@@ -883,6 +738,36 @@ public class ManaCraftingRecipeProvider {
                 .define('U', ModItems.BASIC_UPGRADE_CASING.get())
                 .manaCost(2500)
                 .save(output, "helmet_upgrade_night_vision");
+
+        // ── 裝甲底殼（兩步合成第一步）────────────────────────────────────────
+        ManaCraftingRecipeBuilder.create(ModItems.MANA_ALLOY_HELMET_BASE.get(), 1)
+                .shaped(true)
+                .pattern("PPP")
+                .pattern("PHP")
+                .define('H', Items.IRON_HELMET)
+                .define('P', ModItems.MANA_REINFORCED_PLATE.get())
+                .manaCost(800)
+                .save(output, "mana_alloy_helmet_base");
+
+        ManaCraftingRecipeBuilder.create(ModItems.MANA_ALLOY_CHESTPLATE_BASE.get(), 1)
+                .shaped(true)
+                .pattern("PCP")
+                .pattern("PPP")
+                .pattern("PPP")
+                .define('C', Items.IRON_CHESTPLATE)
+                .define('P', ModItems.MANA_REINFORCED_PLATE.get())
+                .manaCost(1200)
+                .save(output, "mana_alloy_chestplate_base");
+
+        ManaCraftingRecipeBuilder.create(ModItems.MANA_ALLOY_LEGGINGS_BASE.get(), 1)
+                .shaped(true)
+                .pattern("PPP")
+                .pattern("PLP")
+                .pattern("P P")
+                .define('L', Items.IRON_LEGGINGS)
+                .define('P', ModItems.MANA_REINFORCED_PLATE.get())
+                .manaCost(1000)
+                .save(output, "mana_alloy_leggings_base");
 
     }
 

@@ -9,10 +9,6 @@ public enum HelmetUpgradeBehavior {
         @Override public Component getDisplayName() { return Component.translatable("item.koniava.helmet_upgrade_capacity"); }
         @Override public int getColor() { return 0xFF44FFAA; }
     },
-    ARMOR(new int[]{1, 2, 3, 4}, "armor") {
-        @Override public Component getDisplayName() { return Component.translatable("item.koniava.helmet_upgrade_armor"); }
-        @Override public int getColor() { return 0xFF8888FF; }
-    },
     NIGHT_VISION(new int[]{0, 0, 0, 0}, "night_vision") {
         @Override public Component getDisplayName() { return Component.translatable("item.koniava.helmet_upgrade_night_vision"); }
         @Override public int getColor() { return 0xFF9944FF; }

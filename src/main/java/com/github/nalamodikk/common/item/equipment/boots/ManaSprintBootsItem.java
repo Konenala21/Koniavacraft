@@ -2,6 +2,7 @@ package com.github.nalamodikk.common.item.equipment.boots;
 
 import com.github.nalamodikk.common.item.equipment.ManaArmorItem;
 import com.github.nalamodikk.common.item.equipment.armor.ArmorCapacityUpgradeItem;
+import com.github.nalamodikk.common.item.equipment.armor.ArmorDefenseUpgradeItem;
 import com.github.nalamodikk.register.ModDataComponents;
 import com.github.nalamodikk.register.ModMobEffects;
 import com.github.nalamodikk.register.client.ModKeyMappings;
@@ -47,12 +48,14 @@ public class ManaSprintBootsItem extends ManaArmorItem {
     @Override
     public boolean isValidUpgradeItem(ItemStack stack) {
         return stack.getItem() instanceof BootsUpgradeItem
-                || stack.getItem() instanceof ArmorCapacityUpgradeItem;
+                || stack.getItem() instanceof ArmorCapacityUpgradeItem
+                || stack.getItem() instanceof ArmorDefenseUpgradeItem;
     }
 
     @Override
     public String getUpgradeBehaviorKey(ItemStack upgradeStack) {
         if (upgradeStack.getItem() instanceof ArmorCapacityUpgradeItem) return "CAPACITY";
+        if (upgradeStack.getItem() instanceof ArmorDefenseUpgradeItem) return "DEFENSE";
         if (upgradeStack.getItem() instanceof BootsUpgradeItem bu) return "boots_" + bu.getBehavior().name();
         return "";
     }
@@ -61,8 +64,8 @@ public class ManaSprintBootsItem extends ManaArmorItem {
     protected int getArmorBonus(ItemStack stack) {
         int bonus = 0;
         for (ItemStack upg : getData(stack).upgrades().values()) {
-            if (upg.getItem() instanceof BootsUpgradeItem bu && bu.getBehavior() == BootsUpgradeBehavior.ARMOR) {
-                bonus += bu.getBehavior().getBonusForMk(bu.getMk());
+            if (upg.getItem() instanceof ArmorDefenseUpgradeItem adu) {
+                bonus += adu.getBonus();
             }
         }
         return bonus;
