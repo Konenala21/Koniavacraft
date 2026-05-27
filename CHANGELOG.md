@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- More work on the clone's stutter: the pillars it builds while air-chasing are now cleared once it lands back within reach (they used to pile up and clutter the arena with columns it stumbled over), and its charging skill now dashes smoothly instead of teleporting.
+- 繼續改善分身的卡頓:它空中追擊時墊的柱現在會在落回攻擊距離後清除(之前會堆積、把場地塞滿讓它走起來一頓一頓),衝刺技能也改成平滑移動而非瞬移。
+
 - The Mirror World clone can now chase you into the air: when you get more than 3 blocks above it, it pillar-jumps up by placing blocks under itself (like a player MLG pillar) to reach your height. It takes no fall damage when coming back down.
 - 鏡中世界分身現在會追進空中:當你高出它 3 格以上時,它會像玩家那樣往腳下墊方塊往上跳,爬到你的高度。落下時不受墜落傷害。
 
@@ -97,6 +100,9 @@ All notable changes to this project will be documented in this file.
 - 頭盔夜視升級現在開啟時會持續消耗魔力（5 魔力/秒）。魔力耗盡後夜視自動關閉。手動關閉時效果立即移除。關閉升級不再移除藥水提供的夜視效果。
 
 ### Developer Notes / 開發者備註
+
+- Air-chase pillars are tracked in `chaseBlocks` and torn down in `tickAirChase` once the target drops below the 3-block threshold while the clone is grounded (also removed from `placedWalls`). `CHARGE_RAMP` now uses `setDeltaMovement` (smooth dash) instead of `setPos` (teleport), removing the position-jump stutter.
+- 空中追擊墊的柱記入 `chaseBlocks`，在 `tickAirChase` 中當目標低於 3 格門檻且分身落地時清除（同時從 `placedWalls` 移除）。`CHARGE_RAMP` 改用 `setDeltaMovement`（平滑衝刺）取代 `setPos`（瞬移），消除位置跳動造成的卡頓。
 
 - Added `tickAirChase`: when the target is 3+ blocks above the grounded clone, it places a block at its feet (`placeChaseBlock`) and jumps (y velocity 0.42), pillar-jumping up to the player. Chase-pillar blocks go into `placedWalls` + `addModifiedBlock` (so anti-pillar won't tear its own column and resetArena clears it) but not into the 1s `skillBlocks` clear. `causeFallDamage` overridden to return false so the clone takes no fall damage from its block mobility.
 - 新增 `tickAirChase`:當目標高出在地面的分身 3 格以上時，分身在腳下放方塊（`placeChaseBlock`）並跳躍（y 速度 0.42），像 pillar jump 往玩家爬。追擊柱方塊進 `placedWalls` + `addModifiedBlock`（anti-pillar 不拆自己的柱、resetArena 會清），但不進 1 秒的 `skillBlocks` 清理。覆寫 `causeFallDamage` 回傳 false，分身墊方塊機動時不受墜落傷害。
