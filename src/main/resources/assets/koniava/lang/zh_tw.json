@@ -1115,5 +1115,7 @@
   "tooltip.koniava.sort_mode.by_name": "模式：依名稱",
   "tooltip.koniava.sort_mode.by_count": "模式：依數量",
   "tooltip.koniava.sort_right_click_hint": "右鍵切換排序模式",
-  "koniava.config.inventory.sortButtonEnabled": "啟用整理按鈕"
+  "koniava.config.inventory.sortButtonEnabled": "啟用整理按鈕",
+  "dimension.koniava.void_mirror": "鏡中世界",
+  "biome.koniava.void_mirror": "鏡中世界"
 }

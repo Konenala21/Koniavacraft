@@ -1088,5 +1088,7 @@
   "tooltip.koniava.sort_mode.by_name": "Mode: By Name",
   "tooltip.koniava.sort_mode.by_count": "Mode: By Count",
   "tooltip.koniava.sort_right_click_hint": "Right-click to change mode",
-  "koniava.config.inventory.sortButtonEnabled": "Enable Sort Buttons"
+  "koniava.config.inventory.sortButtonEnabled": "Enable Sort Buttons",
+  "dimension.koniava.void_mirror": "Mirror World",
+  "biome.koniava.void_mirror": "Mirror World"
 }

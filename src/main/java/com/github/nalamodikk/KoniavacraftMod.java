@@ -15,6 +15,8 @@ import com.github.nalamodikk.client.renderer.entity.FloatingTurretProjectileRend
 import com.github.nalamodikk.client.renderer.entity.FloatingTurretRenderer;
 import com.github.nalamodikk.client.renderer.item.FloatingTurretBEWLR;
 import com.github.nalamodikk.client.renderer.turret.TurretHitEffectRenderer;
+import com.github.nalamodikk.dimension.BoundedFlatChunkGenerator;
+import com.github.nalamodikk.dimension.ModDimensions;
 import com.github.nalamodikk.register.ModEntities;
 import com.github.nalamodikk.register.ModMobEffects;
 import com.github.nalamodikk.register.ModSounds;
@@ -40,7 +42,10 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.border.WorldBorder;
 import org.slf4j.Logger;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
@@ -90,6 +95,7 @@ public class KoniavacraftMod {
         ModMobEffects.register(modEventBus);
         ModSounds.register(modEventBus);
         ModParticles.register(modEventBus);
+        ModChunkGenerators.register(modEventBus);
         if (FMLEnvironment.dist == Dist.CLIENT) {
             NeoForge.EVENT_BUS.register(ClientInteractiveFormationManager.class);
             modEventBus.addListener(ModParticles::registerProviders);
@@ -144,6 +150,16 @@ public class KoniavacraftMod {
     public void onServerStarting(ServerStartingEvent event) {
         // Do something when the server starts
         LOGGER.info("Server starting.");
+    }
+
+    @SubscribeEvent
+    public void onLevelLoad(LevelEvent.Load event) {
+        if (event.getLevel() instanceof ServerLevel serverLevel
+                && serverLevel.dimension().equals(ModDimensions.VOID_MIRROR)) {
+            WorldBorder border = serverLevel.getWorldBorder();
+            border.setCenter(0, 0);
+            border.setSize(BoundedFlatChunkGenerator.HALF_SIZE * 2);
+        }
     }
 
     // You can use EventBusSubscriber to automatically register all static methods

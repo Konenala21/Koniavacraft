@@ -1,0 +1,23 @@
+{
+    "targets": [
+        "swap"
+    ],
+    "passes": [
+        {
+            "name": "koniava:grey",
+            "intarget": "minecraft:main",
+            "outtarget": "swap",
+            "uniforms": [
+                {
+                    "name": "Saturation",
+                    "values": [ 0.0 ]
+                }
+            ]
+        },
+        {
+            "name": "minecraft:blit",
+            "intarget": "swap",
+            "outtarget": "minecraft:main"
+        }
+    ]
+}

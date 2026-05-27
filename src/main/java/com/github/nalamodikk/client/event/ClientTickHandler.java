@@ -1,6 +1,7 @@
 package com.github.nalamodikk.client.event;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.dimension.ModDimensions;
 import com.github.nalamodikk.client.renderer.altar.AltarCameraController;
 import com.github.nalamodikk.client.renderer.altar.AltarFadeRenderer;
 import com.github.nalamodikk.client.renderer.altar.AltarUpgradeAnimManager;
@@ -9,6 +10,7 @@ import com.github.nalamodikk.client.renderer.altar.AltarExplosionRenderer;
 import com.github.nalamodikk.client.screen.armor.UnifiedArmorUpgradeScreen;
 import com.github.nalamodikk.client.screen.wand.WandUpgradeScreen;
 import com.github.nalamodikk.common.item.equipment.ManaArmorItem;
+import com.github.nalamodikk.common.item.equipment.armor.ManaAlloyHelmetItem;
 import com.github.nalamodikk.common.item.equipment.armor.ManaAlloyLeggingsItem;
 import com.github.nalamodikk.common.item.equipment.armor.ManaConcentrationHelper;
 import com.github.nalamodikk.common.item.equipment.boots.ManaSprintBootsItem;
@@ -29,6 +31,8 @@ import com.github.nalamodikk.client.renderer.RippleRenderer;
 import com.github.nalamodikk.client.renderer.SpiralCurveRenderer;
 import com.github.nalamodikk.client.renderer.DamageNumberRenderer;
 import com.github.nalamodikk.client.renderer.entity.FloatingTurretPlayerRenderer;
+import com.github.nalamodikk.client.renderer.armor.ManaShieldEffectManager;
+import com.github.nalamodikk.client.renderer.armor.ManaShieldEffectRenderer;
 import com.github.nalamodikk.client.renderer.turret.TurretHitEffectManager;
 import com.github.nalamodikk.client.renderer.turret.TurretHitEffectRenderer;
 import com.github.nalamodikk.client.renderer.ManaStrikeShaderRenderer;
@@ -47,6 +51,7 @@ public class ClientTickHandler {
 
     private static boolean jumpWasDown = false;
     private static int airTicks = 0;
+    private static boolean greyEffectApplied = false;
 
     @SubscribeEvent
     public static void onClientTickPost(ClientTickEvent.Post event) {
@@ -55,6 +60,8 @@ public class ClientTickHandler {
 
         Minecraft mcTick = Minecraft.getInstance();
         if (mcTick.player != null) ManaConcentrationHelper.clientTick(mcTick.player);
+
+        updateVoidMirrorEffect(mcTick);
 
         if (ModKeyMappings.OPEN_UPGRADE_GUI.consumeClick()) {
             Minecraft mc = Minecraft.getInstance();
@@ -115,7 +122,7 @@ public class ClientTickHandler {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player != null && mc.screen == null) {
                 var helmet = mc.player.getItemBySlot(EquipmentSlot.HEAD);
-                if (helmet.getItem() instanceof com.github.nalamodikk.common.item.equipment.armor.ManaAlloyHelmetItem
+                if (helmet.getItem() instanceof ManaAlloyHelmetItem
                         && HelmetNightVisionHandler.hasNightVisionUpgrade(helmet)) {
                     ToggleNightVisionPacket.send();
                 }
@@ -130,6 +137,20 @@ public class ClientTickHandler {
         }
     }
 
+    private static void updateVoidMirrorEffect(Minecraft mc) {
+        boolean inVoidMirror = mc.player != null
+                && mc.player.level().dimension().equals(ModDimensions.VOID_MIRROR);
+        if (inVoidMirror) {
+            if (!greyEffectApplied || mc.gameRenderer.currentEffect() == null) {
+                mc.gameRenderer.loadEffect(KoniavacraftMod.rl("shaders/post/grey.json"));
+                greyEffectApplied = true;
+            }
+        } else if (greyEffectApplied) {
+            mc.gameRenderer.shutdownEffect();
+            greyEffectApplied = false;
+        }
+    }
+
     @SubscribeEvent
     public static void onClientRespawn(ClientPlayerNetworkEvent.Clone event) {
         jumpWasDown = false;
@@ -141,6 +162,10 @@ public class ClientTickHandler {
         ManaConcentrationHelper.reset();
         jumpWasDown = false;
         airTicks = 0;
+        if (greyEffectApplied) {
+            Minecraft.getInstance().gameRenderer.shutdownEffect();
+            greyEffectApplied = false;
+        }
         NaraTutorialFlow.resetSessionFlags();
         NaraFirstLoginFlow.resetIgnoreCount();
         AltarUpgradeAnimManager.clear();
@@ -160,6 +185,8 @@ public class ClientTickHandler {
         DamageNumberRenderer.clear();
         TurretHitEffectManager.clear();
         TurretHitEffectRenderer.release();
+        ManaShieldEffectManager.clear();
+        ManaShieldEffectRenderer.release();
         FloatingTurretPlayerRenderer.reset();
     }
 }

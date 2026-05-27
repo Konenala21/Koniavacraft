@@ -1,7 +1,10 @@
 package com.github.nalamodikk.register.client;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.client.dimension.VoidMirrorDimensionEffects;
+import com.github.nalamodikk.dimension.ModDimensions;
 import com.mojang.logging.LogUtils;
+import net.neoforged.neoforge.client.event.RegisterDimensionSpecialEffectsEvent;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -18,6 +21,11 @@ public class ClientModEvents {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     @SubscribeEvent
+    public static void onRegisterDimensionEffects(RegisterDimensionSpecialEffectsEvent event) {
+        event.register(ModDimensions.VOID_MIRROR_EFFECTS, new VoidMirrorDimensionEffects());
+    }
+
+    @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         ModContainer modContainer = ModLoadingContext.get().getActiveContainer();
         modContainer.registerExtensionPoint(
@@ -26,8 +34,6 @@ public class ClientModEvents {
         );
 
         // 在 mod 主類的 FMLClientSetupEvent 中註冊 runtime handler
-
-        // Some client setup code
 
         LOGGER.info("HELLO FROM CLIENT SETUP");
         LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
