@@ -3,6 +3,7 @@ package com.github.nalamodikk.client.renderer.entity;
 import com.github.nalamodikk.common.entity.SpaceCrackEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -25,7 +26,8 @@ public class SpaceCrackRenderer extends EntityRenderer<SpaceCrackEntity> {
                        PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         poseStack.pushPose();
         poseStack.translate(0.0, 1.1, 0.0);
-        poseStack.mulPose(Minecraft.getInstance().gameRenderer.getMainCamera().rotation());
+        // 只繞 Y 軸面向相機（直立的撕裂，不再貼著視角俯仰/打滾）
+        poseStack.mulPose(Axis.YP.rotationDegrees(-Minecraft.getInstance().gameRenderer.getMainCamera().getYRot()));
 
         float t = entity.tickCount + partialTick;
         Matrix4f pose = poseStack.last().pose();

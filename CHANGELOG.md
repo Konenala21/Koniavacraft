@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- The space rift now stands upright and only turns to face you horizontally, instead of always flattening to your camera so it looked like it followed you. Nara's death taunt now says "Zako" in English (was "Small fry").
+- 空間裂縫現在直立、只水平轉向你,不再永遠貼平你的視角(之前看起來像黏著你走)。娜拉死亡嘲諷的英文版改為「Zako」(原為「Small fry」)。
+
 - In the Mirror World, the leggings multi-jump and boots dash abilities are now disabled (with an on-screen notice), so you cannot use them to escape the fight; the existing container restriction now also shows a notice when blocked. Fixed: Nara did not taunt after you died inside, because the return point was lost on death.
 - 鏡中世界內現在禁止使用護腿多段跳與鞋子衝刺(會有畫面提示),避免用來逃離戰鬥;既有的容器限制被擋時現在也會提示。修正:在裡面死亡後娜拉沒有出來嘲諷的問題(返回點在死亡時遺失)。
 
@@ -85,6 +88,9 @@ All notable changes to this project will be documented in this file.
 - 頭盔夜視升級現在開啟時會持續消耗魔力（5 魔力/秒）。魔力耗盡後夜視自動關閉。手動關閉時效果立即移除。關閉升級不再移除藥水提供的夜視效果。
 
 ### Developer Notes / 開發者備註
+
+- `SpaceCrackRenderer` now billboards only around the Y axis (`Axis.YP.rotationDegrees(-camera.getYRot())`) instead of the full `camera.rotation()`, so the rift stays upright. English `nara.dialogue.void_mirror.death_taunt` changed "Small fry" to "Zako" (audio unchanged).
+- `SpaceCrackRenderer` 改為只繞 Y 軸 billboard（`Axis.YP.rotationDegrees(-camera.getYRot())`），不再用完整 `camera.rotation()`，使裂縫保持直立。英文 `nara.dialogue.void_mirror.death_taunt` 的「Small fry」改為「Zako」（音檔不變）。
 
 - `LeggingsDoubleJumpHandler.handleDoubleJump` and `ManaSprintBootsItem.performDash` early-return with an actionbar notice when in `VOID_MIRROR`. `VoidMirrorEvents` shulker place/open cancels now call `notifyContainerBlocked`. The `RETURN_POINT` attachment gained `.copyOnDeath()` so `onPlayerRespawn` still sees it and fires `exit` + `NaraTauntPacket` (without it the new player had an empty `RETURN_POINT`, so the taunt never sent). New lang keys `message.koniava.void_mirror.ability_disabled` / `.container_disabled`.
 - `LeggingsDoubleJumpHandler.handleDoubleJump` 與 `ManaSprintBootsItem.performDash` 在 `VOID_MIRROR` 內提前 return 並送 actionbar 提示。`VoidMirrorEvents` 的界伏盒放置/開啟取消改為呼叫 `notifyContainerBlocked`。`RETURN_POINT` attachment 加上 `.copyOnDeath()`，否則死亡後新 player 的 `RETURN_POINT` 為空，`onPlayerRespawn` 讀不到、嘲諷不會發送。新增 lang 鍵 `message.koniava.void_mirror.ability_disabled` / `.container_disabled`。
