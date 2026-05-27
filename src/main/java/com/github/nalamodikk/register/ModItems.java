@@ -60,6 +60,10 @@ public class ModItems {
     public static final DeferredItem<Item> REFINED_MANA_DUST = ITEMS.register("refined_mana_dust", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> MANA_CRYSTAL = ITEMS.register("mana_crystal", () -> new Item(new Item.Properties()));
 
+    // ── 感知系中間材料 ────────────────────────────────────────────────────────
+    public static final DeferredItem<Item> MANA_EYE =
+            ITEMS.register("mana_eye", () -> new Item(new Item.Properties()));
+
     // ── 魔力合金套裝中間材料 ─────────────────────────────────────────────────────
     public static final DeferredItem<Item> MANA_IRON =
             ITEMS.register("mana_iron", () -> new Item(new Item.Properties()));

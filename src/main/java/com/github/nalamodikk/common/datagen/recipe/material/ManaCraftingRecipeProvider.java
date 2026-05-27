@@ -126,6 +126,13 @@ public class ManaCraftingRecipeProvider {
                 .save(output, "mana_charger");
 
         // === 中間材料 ===
+        // 魔力之眼（頭盔激活材料）
+        ManaCraftingRecipeBuilder.shapeless(ModItems.MANA_EYE.get(), 1)
+                .addIngredient(Ingredient.of(net.minecraft.world.item.Items.ENDER_EYE))
+                .addIngredient(Ingredient.of(ModItems.MANA_CRYSTAL_ALLOY_DUST.get()))
+                .manaCost(2000)
+                .save(output, "mana_eye");
+
         // 空白核心（所有核心插件的前置）
         ManaCraftingRecipeBuilder.create(ModItems.BLANK_CORE.get(), 1)
                 .shaped(true)

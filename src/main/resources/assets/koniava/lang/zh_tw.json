@@ -528,6 +528,7 @@
   "block.koniava.mana_plate_press": "魔力壓板機",
   "item.koniava.mana_iron": "魔力鐵",
   "item.koniava.mana_crystal_alloy_dust": "魔力水晶合金粉",
+  "item.koniava.mana_eye": "魔力之眼",
   "item.koniava.mana_alloy_ingot": "魔力合金錠",
   "item.koniava.mana_reinforced_plate": "魔力強化板",
   "gui.koniava.mana_plate_press.progress": "進度：%d%%",

@@ -501,6 +501,7 @@
   "block.koniava.mana_plate_press": "Mana Plate Press",
   "item.koniava.mana_iron": "Mana Iron",
   "item.koniava.mana_crystal_alloy_dust": "Mana Crystal Alloy Dust",
+  "item.koniava.mana_eye": "Mana Eye",
   "item.koniava.mana_alloy_ingot": "Mana Alloy Ingot",
   "item.koniava.mana_reinforced_plate": "Mana Reinforced Plate",
   "gui.koniava.mana_plate_press.progress": "Progress: %d%%",
