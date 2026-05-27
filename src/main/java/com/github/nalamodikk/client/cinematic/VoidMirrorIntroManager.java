@@ -13,6 +13,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
@@ -211,6 +212,12 @@ public class VoidMirrorIntroManager {
             g.drawString(mc.font, l, x + 8, ty, 0xFFFFFFFF, false);
             ty += mc.font.lineHeight + 1;
         }
+    }
+
+    // 過場期間吞掉攻擊/使用/撿取鍵，避免玩家在動畫中左右鍵打斷演出
+    @SubscribeEvent
+    public static void onInteractionKey(InputEvent.InteractionKeyMappingTriggered event) {
+        if (active) event.setCanceled(true);
     }
 
     @SubscribeEvent
