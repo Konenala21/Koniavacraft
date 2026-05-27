@@ -158,12 +158,6 @@ public class ModDataComponents {
                     .networkSynchronized(ByteBufCodecs.BOOL)
                     .build();
 
-    public static final DataComponentType<Integer> SHIELD_ENERGY =
-            DataComponentType.<Integer>builder()
-                    .persistent(Codec.INT)
-                    .networkSynchronized(ByteBufCodecs.VAR_INT)
-                    .build();
-
     public static final DataComponentType<Boolean> NIGHT_VISION_ACTIVE =
             DataComponentType.<Boolean>builder()
                     .persistent(Codec.BOOL)
@@ -191,7 +185,6 @@ public class ModDataComponents {
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "research_id"), RESEARCH_ID);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "aspect_id"), ASPECT_ID);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "aspect_hidden"), ASPECT_HIDDEN);
-            helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "shield_energy"), SHIELD_ENERGY);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "night_vision_active"), NIGHT_VISION_ACTIVE);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "night_vision_we_applied"), NIGHT_VISION_WE_APPLIED);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "wand_core_data"), WAND_CORE_DATA);

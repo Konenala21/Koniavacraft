@@ -24,13 +24,13 @@ import java.util.UUID;
 @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID)
 public class ChestplateManaShieldHandler {
 
-    // 類型一回血
+    // 類型一：每 1 點「減傷後傷害」消耗的魔力 + Mk3 回血
+    public static final float REDUCTION_MANA_PER_DAMAGE = 7.5f;
     public static final int   HEAL_MK = 3;
     public static final float HEAL_FRACTION = 0.5f;
     public static final int   HEAL_DURATION_TICKS = 60; // 3 秒
 
-    // 類型二吸收盾
-    public static final int ABSORB_MANA_PER_POINT = 75;
+    // 類型二：Mk3 每擊固定免傷
     public static final int ABSORB_FLAT_IMMUNE_MK = 3;
     public static final int ABSORB_FLAT_IMMUNE    = 20;
 
@@ -47,6 +47,9 @@ public class ChestplateManaShieldHandler {
         ChestplateUpgradeItem shield = ManaAlloyChestplateItem.getShieldUpgrade(chest);
         if (shield == null) return;
 
+        int mana = ManaArmorItem.getMana(chest);
+        if (mana <= 0) return; // 魔力耗盡 → 護盾失效
+
         float incoming = event.getNewDamage();
         if (incoming <= 0) return;
 
@@ -56,61 +59,39 @@ public class ChestplateManaShieldHandler {
         if (behavior.isShieldReduction()) {
             float pct = behavior.getBonusForMk(mk) / 100f;
             float taken = incoming * (1f - pct);
+            int cost = Math.round(taken * REDUCTION_MANA_PER_DAMAGE);
+            ManaArmorItem.setMana(chest, Math.max(0, mana - cost));
             event.setNewDamage(Math.max(0f, taken));
             playBlock(player);
             if (mk >= HEAL_MK && taken > 0) {
                 scheduleHeal(player, taken * HEAL_FRACTION);
             }
         } else if (behavior.isShieldAbsorb()) {
-            float taken = absorb(player, chest, behavior, mk, incoming);
-            event.setNewDamage(Math.max(0f, taken));
-        }
-    }
+            int ratio = behavior.getBonusForMk(mk); // 魔力 / 1 點傷害
+            float remaining = incoming;
 
-    private static float absorb(ServerPlayer player, ItemStack chest,
-                                ChestplateUpgradeBehavior behavior, int mk, float incoming) {
-        int cap = behavior.getBonusForMk(mk);
-        int energy = Math.min(ManaAlloyChestplateItem.getShieldEnergy(chest), cap);
+            // Mk3：先免傷 20（免費，不耗魔力）
+            if (mk >= ABSORB_FLAT_IMMUNE_MK) {
+                remaining = Math.max(0f, remaining - ABSORB_FLAT_IMMUNE);
+                if (remaining <= 0f) {
+                    event.setNewDamage(0f);
+                    playBlock(player);
+                    return;
+                }
+            }
 
-        float remaining = incoming;
-
-        // Mk3：盾有值時，每次受擊先免傷 20（不扣盾）
-        if (mk >= ABSORB_FLAT_IMMUNE_MK && energy > 0) {
-            remaining = Math.max(0f, remaining - ABSORB_FLAT_IMMUNE);
-            if (remaining <= 0f) {
-                ManaAlloyChestplateItem.setShieldEnergy(chest, energy);
+            // 用魔力擋剩餘傷害：每 1 點傷害扣 ratio 魔力
+            int blockable = mana / ratio;                 // 目前魔力最多能擋幾點
+            int toBlock = (int) Math.min(blockable, Math.ceil(remaining));
+            if (toBlock > 0) {
+                ManaArmorItem.setMana(chest, mana - toBlock * ratio);
+                remaining -= toBlock;
                 playBlock(player);
-                return 0f;
+            } else if (mk >= ABSORB_FLAT_IMMUNE_MK) {
+                playBlock(player); // 免傷 20 已生效
             }
+            event.setNewDamage(Math.max(0f, remaining));
         }
-
-        boolean blocked = false;
-
-        // 先用現有盾值吸收
-        if (energy > 0) {
-            int used = (int) Math.min(energy, Math.ceil(remaining));
-            energy -= used;
-            remaining -= used;
-            blocked = true;
-        }
-
-        // 盾不足 → 燒魔力補盾（補到上限，受魔力限制）後繼續吸收
-        if (remaining > 0 && energy == 0) {
-            int mana = ManaArmorItem.getMana(chest);
-            int refill = Math.min(cap, mana / ABSORB_MANA_PER_POINT);
-            if (refill > 0) {
-                ManaArmorItem.setMana(chest, mana - refill * ABSORB_MANA_PER_POINT);
-                energy = refill;
-                int used = (int) Math.min(energy, Math.ceil(remaining));
-                energy -= used;
-                remaining -= used;
-                blocked = true;
-            }
-        }
-
-        ManaAlloyChestplateItem.setShieldEnergy(chest, energy);
-        if (blocked) playBlock(player);
-        return remaining;
     }
 
     private static void scheduleHeal(ServerPlayer player, float total) {

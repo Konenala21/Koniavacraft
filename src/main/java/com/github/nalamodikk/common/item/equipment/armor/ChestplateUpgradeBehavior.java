@@ -19,8 +19,8 @@ public enum ChestplateUpgradeBehavior {
             return mk >= 3 ? Component.translatable("tooltip.koniava.chestplate_upgrade.shield_reduction.heal") : null;
         }
     },
-    // 護盾類型二：100% 吸收盾，打空自動燒魔力補盾，Mk3 盾有值時每次受擊額外免傷 20
-    SHIELD_ABSORB(new int[]{100, 150, 200, 200}, "shield_absorb") {
+    // 護盾類型二：100% 擋傷，每擋 1 點傷害消耗 N 魔力（150/100/75/75），Mk3 每擊免傷 20
+    SHIELD_ABSORB(new int[]{150, 100, 75, 75}, "shield_absorb") {
         @Override public Component getDisplayName() { return Component.translatable("item.koniava.chestplate_upgrade_shield_absorb"); }
         @Override public int getColor() { return 0xFF4488FF; }
         @Override public boolean isShieldAbsorb() { return true; }

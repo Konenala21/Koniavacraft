@@ -63,14 +63,6 @@ public class ManaAlloyChestplateItem extends ManaArmorItem {
         return null;
     }
 
-    public static int getShieldEnergy(ItemStack chest) {
-        return chest.getOrDefault(ModDataComponents.SHIELD_ENERGY, 0);
-    }
-
-    public static void setShieldEnergy(ItemStack chest, int value) {
-        chest.set(ModDataComponents.SHIELD_ENERGY, Math.max(0, value));
-    }
-
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext ctx, List<Component> lines, TooltipFlag flag) {
         super.appendHoverText(stack, ctx, lines, flag);
@@ -79,9 +71,8 @@ public class ManaAlloyChestplateItem extends ManaArmorItem {
             lines.add(Component.translatable("tooltip.koniava.chestplate.mana_shield_none")
                     .withStyle(ChatFormatting.DARK_GRAY));
         } else if (shield.getBehavior().isShieldAbsorb()) {
-            int cap = shield.getBehavior().getBonusForMk(shield.getMk());
             lines.add(Component.translatable("tooltip.koniava.chestplate.shield_absorb_status",
-                    getShieldEnergy(stack), cap).withStyle(ChatFormatting.AQUA));
+                    shield.getBehavior().getBonusForMk(shield.getMk())).withStyle(ChatFormatting.AQUA));
         } else {
             lines.add(Component.translatable("tooltip.koniava.chestplate.shield_reduction_status",
                     shield.getBehavior().getBonusForMk(shield.getMk())).withStyle(ChatFormatting.AQUA));
