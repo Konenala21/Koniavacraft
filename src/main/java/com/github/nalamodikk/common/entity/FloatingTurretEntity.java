@@ -299,6 +299,7 @@ public class FloatingTurretEntity extends PathfinderMob {
                 float charge = (cloneShotCount % 4 == 0) ? 1.0F : 0.0F;
                 FloatingTurretProjectile proj = FloatingTurretProjectile.shootAt(
                         sl, cloneOwner, this.position(), target.getBoundingBox().getCenter(), charge);
+                proj.setNoBlockDamage(true); // 分身砲不破壞 arena 地形
                 sl.addFreshEntity(proj);
                 attackTimer = PASSIVE_ATTACK_COOLDOWN;
             }
@@ -332,6 +333,7 @@ public class FloatingTurretEntity extends PathfinderMob {
             if (target != null && level() instanceof ServerLevel sl) {
                 FloatingTurretProjectile proj = FloatingTurretProjectile.shootAt(
                         sl, cloneOwner, this.position(), target.getBoundingBox().getCenter(), 1.0F);
+                proj.setNoBlockDamage(true); // 分身砲不破壞 arena 地形
                 sl.addFreshEntity(proj);
                 attackTimer = CLONE_HAND_CHARGE_COOLDOWN;
             }

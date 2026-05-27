@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- The Mirror World clone's charged turret shots no longer destroy the arena terrain (only the clone's shots; your own turrets are unchanged).
+- 鏡中世界分身的蓄力砲彈不再破壞 arena 地形（只限分身的砲彈，你自己的浮游砲不受影響）。
+
 - You can now leave the Mirror World on your own: a return rift opens at the arena center, right-click it to go back to the overworld. Fixed a bug where the boss vanished if you left the Mirror World and re-entered. The entry camera now moves together with your walk-out instead of staying still.
 - 現在可以自己離開鏡中世界：arena 中心會開一道返回裂縫，右鍵即可回到主世界。修正離開鏡中世界後再進入時 boss 消失的問題。進場鏡頭現在會和你走出來的動作同步運鏡，不再呆在原地。
 
@@ -70,6 +73,9 @@ All notable changes to this project will be documented in this file.
 - 頭盔夜視升級現在開啟時會持續消耗魔力（5 魔力/秒）。魔力耗盡後夜視自動關閉。手動關閉時效果立即移除。關閉升級不再移除藥水提供的夜視效果。
 
 ### Developer Notes / 開發者備註
+
+- Clone turret shots (`FloatingTurretEntity.cloneOrbitTick` / `cloneHandTick`) now call `proj.setNoBlockDamage(true)` before spawning, so the charged-shot explosion uses `ExplosionInteraction.NONE` and spares arena terrain. Player-owned turrets are untouched (the flag is set only at the clone call sites, not in `shootAt`).
+- 分身砲彈（`FloatingTurretEntity.cloneOrbitTick` / `cloneHandTick`）生成前呼叫 `proj.setNoBlockDamage(true)`，使蓄力爆炸採用 `ExplosionInteraction.NONE`、不破壞 arena 地形。玩家自己的浮游砲不受影響（旗標只在分身呼叫點設定，不在 `shootAt` 內）。
 
 - `SpaceCrackEntity.interact` now branches on dimension: in `VOID_MIRROR` it calls `VoidMirrorTeleport.exit()`, elsewhere `enter()`. `enter()` spawns a non-decorative owner-tagged exit crack at the arena center, calls `clearExistingFor` (discards the player's residual clone / Nara / crack via `getEntitiesOfClass` + `getAllEntities`), and then spawns unconditionally. The old `alreadyExists` skip-guards in `spawnClone` / `spawnNaraPhantom` were removed: they were what skipped boss spawn on re-entry when a residual clone lingered. `activateAfterIntro` adds a same-source dedupe pass as a backstop for chunk-load timing. Intro camera `CAM_OFFSETS` A/B changed from a static pose to a dolly-in ({0,4.5,-22} to {0,2.4,-9}) so the opening segment moves together with the player's walk-out window.
 - `SpaceCrackEntity.interact` 改為依維度分支：在 `VOID_MIRROR` 呼叫 `VoidMirrorTeleport.exit()`，否則 `enter()`。`enter()` 會在 arena 中心生成一個非裝飾、帶 owner 的出口裂縫，呼叫 `clearExistingFor`（用 `getEntitiesOfClass` + `getAllEntities` 清掉該玩家殘留的 clone / 娜拉 / 裂縫），然後無條件生成。移除了 `spawnClone` / `spawnNaraPhantom` 舊的 `alreadyExists` 守門：殘留 clone 時它會跳過 boss 生成，正是「再進入 boss 消失」的元兇。`activateAfterIntro` 加同源去重作為 chunk 載入時序的保險。進場鏡頭 `CAM_OFFSETS` A/B 從定點改為推軌（{0,4.5,-22} 到 {0,2.4,-9}），讓開場段與玩家走出窗同步移動。
