@@ -2,9 +2,14 @@ package com.github.nalamodikk.common.item.equipment.armor;
 
 import com.github.nalamodikk.common.item.equipment.ManaArmorItem;
 import com.github.nalamodikk.register.ModDataComponents;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+
+import java.util.List;
 
 public class ManaAlloyLeggingsItem extends ManaArmorItem {
 
@@ -52,5 +57,24 @@ public class ManaAlloyLeggingsItem extends ManaArmorItem {
             }
         }
         return bonus;
+    }
+
+    public static int getMaxExtraJumps(ItemStack leggings) {
+        for (ItemStack upg : getData(leggings).upgrades().values()) {
+            if (upg.getItem() instanceof LeggingsUpgradeItem lu
+                    && lu.getBehavior() == LeggingsUpgradeBehavior.MULTI_JUMP) {
+                return lu.getBehavior().getBonusForMk(lu.getMk());
+            }
+        }
+        return 1; // base double jump
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, TooltipContext ctx, List<Component> lines, TooltipFlag flag) {
+        super.appendHoverText(stack, ctx, lines, flag);
+        int totalJumps = 1 + getMaxExtraJumps(stack);
+        lines.add(lines.size() - 1,
+                Component.translatable("tooltip.koniava.leggings.jump_ability", totalJumps)
+                        .withStyle(ChatFormatting.AQUA));
     }
 }

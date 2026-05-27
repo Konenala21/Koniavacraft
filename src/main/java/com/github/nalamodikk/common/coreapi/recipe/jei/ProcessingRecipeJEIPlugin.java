@@ -91,8 +91,8 @@ public class ProcessingRecipeJEIPlugin implements IModPlugin {
         );
         registration.addRecipeClickArea(
                 ManaPlatePressScreen.class,
-                67, 36,
-                44, 12,
+                149, 4,
+                21, 15,
                 PlatePressRecipeCategory.RECIPE_TYPE
         );
     }

@@ -11,7 +11,10 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.GrassBlock;
+import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class ManaGrassBlock extends GrassBlock {
@@ -61,7 +64,7 @@ public class ManaGrassBlock extends GrassBlock {
 
     @Override
     public void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        if (!GrassBlock.canBeGrass(state, level, pos)) {
+        if (!canBeGrass(state, level, pos)) {
             if (!level.isAreaLoaded(pos, 3)) {
                 return;
             }
@@ -84,6 +87,18 @@ public class ManaGrassBlock extends GrassBlock {
                 }
             }
         }
+    }
+
+    private static boolean canBeGrass(BlockState state, LevelReader level, BlockPos pos) {
+        BlockPos above = pos.above();
+        BlockState aboveState = level.getBlockState(above);
+        if (aboveState.is(Blocks.SNOW) && aboveState.getValue(SnowLayerBlock.LAYERS) == 1) {
+            return true;
+        }
+        if (aboveState.getFluidState().getAmount() == 8) {
+            return false;
+        }
+        return aboveState.getLightBlock(level, above) < level.getMaxLightLevel();
     }
 
     // 🌍 魔力草可以轉換回魔力土壤

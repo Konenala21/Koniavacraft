@@ -178,6 +178,7 @@
   "tooltip.koniava.chestplate_upgrade.effect.armor": "+%s armor",
   "item.koniava.leggings_upgrade_capacity": "Leggings Capacity Upgrade",
   "item.koniava.leggings_upgrade_armor": "Leggings Armor Upgrade",
+  "item.koniava.leggings_upgrade_multi_jump": "Leggings Multi-Jump Upgrade",
   "item.koniava.leggings_upgrade_capacity_mk0": "Leggings Capacity Upgrade Mk0",
   "item.koniava.leggings_upgrade_capacity_mk1": "Leggings Capacity Upgrade Mk1",
   "item.koniava.leggings_upgrade_capacity_mk2": "Leggings Capacity Upgrade Mk2",
@@ -186,8 +187,14 @@
   "item.koniava.leggings_upgrade_armor_mk1": "Leggings Armor Upgrade Mk1",
   "item.koniava.leggings_upgrade_armor_mk2": "Leggings Armor Upgrade Mk2",
   "item.koniava.leggings_upgrade_armor_mk3": "Leggings Armor Upgrade Mk3",
+  "item.koniava.leggings_upgrade_multi_jump_mk0": "Leggings Multi-Jump Upgrade Mk0",
+  "item.koniava.leggings_upgrade_multi_jump_mk1": "Leggings Multi-Jump Upgrade Mk1",
+  "item.koniava.leggings_upgrade_multi_jump_mk2": "Leggings Multi-Jump Upgrade Mk2",
+  "item.koniava.leggings_upgrade_multi_jump_mk3": "Leggings Multi-Jump Upgrade Mk3",
   "tooltip.koniava.leggings_upgrade.effect.capacity": "+%s max mana",
   "tooltip.koniava.leggings_upgrade.effect.armor": "+%s armor",
+  "tooltip.koniava.leggings_upgrade.effect.multi_jump": "+%s extra jump(s)",
+  "tooltip.koniava.leggings.jump_ability": "Ability: %s-segment jump",
   "item.koniava.blank_core": "Blank Core",
   "item.koniava.basic_upgrade_casing": "Basic Upgrade Casing",
   "item.koniava.wand_rod": "Arcane Pulse Modulator",
@@ -1100,5 +1107,14 @@
   "command.koniava.nara.player_only": "Must be executed by a player",
   "command.koniava.nara.replay_success": "Replaying Nara dialogue",
   "command.koniava.nara.test_bind_success": "Test: advancement + fireworks",
-  "command.koniava.nara.tutorial_success": "Replaying tutorial: %s"
+  "command.koniava.nara.tutorial_success": "Replaying tutorial: %s",
+
+  "//25": "=== INVENTORY SORT ===",
+  "tooltip.koniava.sort_container": "Sort Container",
+  "tooltip.koniava.sort_player_inventory": "Sort Inventory",
+  "tooltip.koniava.sort_mode.by_type": "Mode: By Type",
+  "tooltip.koniava.sort_mode.by_name": "Mode: By Name",
+  "tooltip.koniava.sort_mode.by_count": "Mode: By Count",
+  "tooltip.koniava.sort_right_click_hint": "Right-click to change mode",
+  "koniava.config.inventory.sortButtonEnabled": "Enable Sort Buttons"
 }

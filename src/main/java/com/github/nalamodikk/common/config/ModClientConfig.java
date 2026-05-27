@@ -22,8 +22,17 @@ public class ModClientConfig {
     public final ModConfigSpec.IntValue reducedAnimationDistance;
     public final ModConfigSpec.DoubleValue reducedAnimationScale;
     public final ModConfigSpec.DoubleValue naraVoiceVolume;
+    public final ModConfigSpec.BooleanValue sortButtonEnabled;
 
     private ModClientConfig(ModConfigSpec.Builder builder) {
+        builder.push("inventory");
+
+        sortButtonEnabled = builder
+                .comment("Show sort buttons in container GUIs (left-click sorts, right-click cycles mode)")
+                .translation("koniava.config.inventory.sortButtonEnabled")
+                .define("sortButtonEnabled", true);
+
+        builder.pop();
         builder.push("nara");
 
         naraVoiceVolume = builder
@@ -58,11 +67,12 @@ public class ModClientConfig {
             return;
         }
         KoniavacraftMod.LOGGER.info(
-                "載入客戶端設定: fullDistance={}, reducedDistance={}, reducedScale={}, naraVoiceVolume={}",
+                "載入客戶端設定: fullDistance={}, reducedDistance={}, reducedScale={}, naraVoiceVolume={}, sortButton={}",
                 INSTANCE.fullAnimationDistance.get(),
                 INSTANCE.reducedAnimationDistance.get(),
                 INSTANCE.reducedAnimationScale.get(),
-                INSTANCE.naraVoiceVolume.get()
+                INSTANCE.naraVoiceVolume.get(),
+                INSTANCE.sortButtonEnabled.get()
         );
     }
 
@@ -72,11 +82,12 @@ public class ModClientConfig {
             return;
         }
         KoniavacraftMod.LOGGER.info(
-                "重新載入客戶端設定: fullDistance={}, reducedDistance={}, reducedScale={}, naraVoiceVolume={}",
+                "重新載入客戶端設定: fullDistance={}, reducedDistance={}, reducedScale={}, naraVoiceVolume={}, sortButton={}",
                 INSTANCE.fullAnimationDistance.get(),
                 INSTANCE.reducedAnimationDistance.get(),
                 INSTANCE.reducedAnimationScale.get(),
-                INSTANCE.naraVoiceVolume.get()
+                INSTANCE.naraVoiceVolume.get(),
+                INSTANCE.sortButtonEnabled.get()
         );
     }
 }

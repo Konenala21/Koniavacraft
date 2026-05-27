@@ -148,18 +148,6 @@ public class ModRecipeProvider extends RecipeProvider {
                 .unlockedBy("has_mana_ingot", has(ModItems.MANA_INGOT.get()))
                 .save(output, "research_table");
 
-        // 🔬 魔力注入器
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.MANA_INFUSER.get())
-                .pattern("CMC")
-                .pattern("IBI")
-                .pattern("CMC")
-                .define('C', ModItems.MANA_CRYSTAL.get())
-                .define('M', ModItems.MANA_INGOT.get())
-                .define('I', Items.IRON_INGOT)
-                .define('B', Blocks.IRON_BLOCK)
-                .unlockedBy("has_mana_crystal", has(ModItems.MANA_CRYSTAL.get()))
-                .save(output, "mana_infuser");
-
         // 🔩 魔力壓板機
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.MANA_PLATE_PRESS.get())
                 .pattern("IMI")

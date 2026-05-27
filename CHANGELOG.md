@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Added Leggings Multi-Jump Upgrade (Mk0-Mk3). Install in the leggings upgrade slot to unlock multi-segment jumping. Each extra jump consumes mana (less per jump at higher Mk). Higher Mk adds more jumps, greater height, and lower mana cost per jump. Fall damage is cancelled while the upgrade is installed. A 1.5-second cooldown applies after using the extra jumps, starting when you land. The leggings tooltip shows how many jump segments are available.
+- 新增護腿多段跳升級（Mk0-Mk3）。安裝至護腿升級槽後可解鎖多段跳躍，每次額外跳躍消耗魔力（高 Mk 每跳消耗更低）。高等 Mk 增加跳躍次數、高度並降低每跳魔力消耗。安裝升級後墜落傷害歸零。使用額外跳躍後落地才開始計算 1.5 秒冷卻時間。護腿工具提示會顯示目前可用的跳躍段數。
+
+- Added a container sort button. A small sort button now appears in supported container GUIs (chests, barrels, etc.). Left-click to sort the container, right-click to cycle sort mode (By Type, By Name, By Count). A second button sorts the player inventory. Can be disabled in the mod config under "inventory.sortButtonEnabled". The player inventory and creative/survival inventory screens are excluded.
+- 新增容器整理按鈕。在支援的容器介面（箱子、木桶等）中會顯示一個小整理按鈕。左鍵整理容器，右鍵切換排序模式（依類型、依名稱、依數量）。另有一個按鈕整理玩家物品欄。可在模組設定的 inventory.sortButtonEnabled 關閉。玩家物品欄介面和創造模式介面不包含此功能。
+
 - Added crafting recipes for Leggings Multi-Jump Upgrade (Mk0-Mk3) and Helmet Night Vision Upgrade. Multi-jump Mk0 uses Feather and Mana Ingot; higher Mk adds Rabbit Foot, Slime Ball, and Phantom Membrane. Night Vision uses Golden Carrot and Glow Ink Sac. All crafted at Mana Crafting table. Requires runData.
 - 新增護腿多段跳升級（Mk0-Mk3）與頭盔夜視升級的合成配方。多段跳 Mk0 使用羽毛與魔力錠；高等 Mk 依序加入兔腳、黏液球、幻翼膜。夜視升級使用金胡蘿蔔與發光墨囊。均在魔力合成台製作，需跑 runData。
 
@@ -19,9 +25,12 @@ All notable changes to this project will be documented in this file.
 
 - Added `HelmetUpgradeBehavior.NIGHT_VISION` (purple, single item, no Mk scaling). Toggle state stored as `ModDataComponents.NIGHT_VISION_ACTIVE` (Boolean, persistent, networkSynchronized) on the helmet ItemStack.
 - `ToggleNightVisionPacket` (C2S): verifies upgrade installed before toggling DataComponent.
-- `HelmetNightVisionHandler`: server-side LivingTickEvent.Post, refreshes Night Vision MobEffect only when duration < 60 ticks.
+- `HelmetNightVisionHandler`: server-side PlayerTickEvent.Post, refreshes Night Vision MobEffect only when duration < 60 ticks.
 - `ModKeyMappings`: added TOGGLE_HELMET/CHESTPLATE/LEGGINGS/BOOTS for future extensibility.
-- Run `runData` to generate `helmet_upgrade_night_vision` model JSON.
+- Run `runData` to generate `helmet_upgrade_night_vision` and `leggings_upgrade_multi_jump_mk0-mk3` model JSONs.
+- `LeggingsUpgradeBehavior.MULTI_JUMP`: jumpVelocityPerMk [0.42, 0.52, 0.62, 0.72], manaCostPerMk [14, 7, 5, 4] (per 7000-unit bar), color 0xFF00EEFF.
+- `LeggingsDoubleJumpHandler`: cooldown 30 ticks (post-landing), fall damage zeroed via LivingFallEvent when MULTI_JUMP installed.
+- `ContainerSortGuiEvent` + `SortButton` + `InventorySorter`: sort injected via ScreenEvent.Init.Post into non-vanilla, non-mod-specific AbstractContainerScreen instances. Server-side sort via `SortContainerPacket` (C2S). Config: `ModClientConfig.sortButtonEnabled`.
 
 ---
 
@@ -67,8 +76,8 @@ All notable changes to this project will be documented in this file.
 - Mana Alloy Leggings now support double jump. Press jump again while in the air to consume 300 mana and jump a second time. Resets on landing.
 - 魔力合金護腿現在支援二段跳。在空中再次按跳躍鍵消耗 300 魔力進行二段跳，落地後重置。
 
-- Added Mana Alloy Helmet, Mana Alloy Chestplate, and Mana Alloy Leggings. All three store mana and support upgrade slots (Capacity and Armor upgrades, Mk0-Mk3 each). Open the upgrade interface with the same keybind as boots/wand (default U). Craft at the Altar (T1) using iron armor + mana ingots + mana crystal fragments + refined mana dust.
-- 新增魔力合金頭盔、魔力合金胸甲、魔力合金護腿。三件均可儲存魔力並支援升級槽（容量升級和防甲升級各 Mk0-Mk3）。與靴子/法杖相同的按鍵（預設 U）可開啟升級介面。在 T1 祭壇合成，材料為鐵盔甲 + 魔力錠 + 魔力晶體碎片 + 精煉魔力粉。
+- Added Mana Alloy Helmet, Mana Alloy Chestplate, and Mana Alloy Leggings. All three store mana and support upgrade slots (Capacity and Armor upgrades, Mk0-Mk3 each). Open the upgrade interface with the same keybind as boots/wand (default U). Craft at the Altar (T1): center is the corresponding iron armor piece, surrounded by Mana Reinforced Plates (5 for Helmet, 8 for Chestplate, 7 for Leggings).
+- 新增魔力合金頭盔、魔力合金胸甲、魔力合金護腿。三件均可儲存魔力並支援升級槽（容量升級和防甲升級各 Mk0-Mk3）。與靴子/法杖相同的按鍵（預設 U）可開啟升級介面。在 T1 祭壇合成：中心放對應鐵裝備，圍繞魔力強化板（頭盔 5 塊、胸甲 8 塊、護腿 7 塊）。
 
 - Wand Core and Wand Upgrade tooltips now show a "Compatible:" line listing the wand rods they can be installed into, with the item names highlighted in yellow. Mk0-Mk1 upgrades list both rods; Mk2-Mk3 upgrades list the Arcane Pulse Resonator only.
 - 法杖核心和法杖升級工具提示現在顯示「適用於：」欄位，列出可安裝的法杖柄，物品名稱以黃色標示。Mk0-Mk1 升級列出兩支杖柄；Mk2-Mk3 只列出術式脈衝諧振器。

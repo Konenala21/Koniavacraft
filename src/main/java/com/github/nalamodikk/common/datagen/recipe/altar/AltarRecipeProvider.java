@@ -35,31 +35,6 @@ public class AltarRecipeProvider {
                 8000, 120
         );
 
-        // 魔力錠（催化：魔力水晶，底座：鐵錠×4）
-        save(output, "mana_ingot_ritual",
-                Ingredient.of(ModItems.MANA_CRYSTAL.get()),
-                List.of(
-                        Ingredient.of(Items.IRON_INGOT),
-                        Ingredient.of(Items.IRON_INGOT),
-                        Ingredient.of(Items.IRON_INGOT),
-                        Ingredient.of(Items.IRON_INGOT)
-                ),
-                new ItemStack(ModItems.MANA_INGOT.get(), 4),
-                6000, 100
-        );
-
-        // 金蘋果（催化：魔力錠，底座：金錠×4）
-        save(output, "golden_apple_ritual",
-                Ingredient.of(ModItems.MANA_INGOT.get()),
-                List.of(
-                        Ingredient.of(Items.GOLD_INGOT),
-                        Ingredient.of(Items.GOLD_INGOT),
-                        Ingredient.of(Items.GOLD_INGOT),
-                        Ingredient.of(Items.APPLE)
-                ),
-                new ItemStack(Items.GOLDEN_APPLE),
-                12000, 160
-        );
     }
 
     private static void registerWeapons(RecipeOutput output) {
@@ -114,52 +89,48 @@ public class AltarRecipeProvider {
     }
 
     private static void registerArmor(RecipeOutput output) {
-        // 魔力合金頭盔 T1 祭壇
+        // 魔力合金頭盔 T1 祭壇：鐵頭盔 + 魔力強化板 ×5
         save(output, "mana_alloy_helmet",
-                Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
+                Ingredient.of(Items.IRON_HELMET),
                 List.of(
-                        Ingredient.of(Items.IRON_HELMET),
-                        Ingredient.of(ModItems.MANA_INGOT.get()),
-                        Ingredient.of(ModItems.MANA_INGOT.get()),
-                        Ingredient.of(ModItems.MANA_INGOT.get()),
-                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
-                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
-                        Ingredient.of(ModItems.REFINED_MANA_DUST.get()),
-                        Ingredient.of(ModItems.REFINED_MANA_DUST.get())
+                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
+                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
+                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
+                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
+                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get())
                 ),
                 new ItemStack(ModItems.MANA_ALLOY_HELMET.get()),
                 8000, 140, 1
         );
 
-        // 魔力合金胸甲 T1 祭壇
+        // 魔力合金胸甲 T1 祭壇：鐵胸甲 + 魔力強化板 ×8
         save(output, "mana_alloy_chestplate",
-                Ingredient.of(ModItems.MANA_CRYSTAL.get()),
+                Ingredient.of(Items.IRON_CHESTPLATE),
                 List.of(
-                        Ingredient.of(Items.IRON_CHESTPLATE),
-                        Ingredient.of(ModItems.MANA_INGOT.get()),
-                        Ingredient.of(ModItems.MANA_INGOT.get()),
-                        Ingredient.of(ModItems.MANA_INGOT.get()),
-                        Ingredient.of(ModItems.MANA_INGOT.get()),
-                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
-                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
-                        Ingredient.of(ModItems.REFINED_MANA_DUST.get())
+                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
+                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
+                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
+                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
+                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
+                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
+                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
+                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get())
                 ),
                 new ItemStack(ModItems.MANA_ALLOY_CHESTPLATE.get()),
                 12000, 180, 1
         );
 
-        // 魔力合金護腿 T1 祭壇
+        // 魔力合金護腿 T1 祭壇：鐵護腿 + 魔力強化板 ×7
         save(output, "mana_alloy_leggings",
-                Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
+                Ingredient.of(Items.IRON_LEGGINGS),
                 List.of(
-                        Ingredient.of(Items.IRON_LEGGINGS),
-                        Ingredient.of(ModItems.MANA_INGOT.get()),
-                        Ingredient.of(ModItems.MANA_INGOT.get()),
-                        Ingredient.of(ModItems.MANA_INGOT.get()),
-                        Ingredient.of(ModItems.MANA_INGOT.get()),
-                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
-                        Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),
-                        Ingredient.of(ModItems.REFINED_MANA_DUST.get())
+                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
+                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
+                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
+                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
+                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
+                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get()),
+                        Ingredient.of(ModItems.MANA_REINFORCED_PLATE.get())
                 ),
                 new ItemStack(ModItems.MANA_ALLOY_LEGGINGS.get()),
                 10000, 160, 1
