@@ -76,6 +76,9 @@ public class PlayerCloneEntity extends Monster {
 
     public enum Phase { NORMAL, WALLING, BERSERK }
 
+    // 分身招牌技能：墊方塊衝撞，三種形態隨機輪用
+    private enum PillarSkill { RAM_WALL, LIFT_UP, CHARGE_RAMP }
+
     private static final int WALL_CAP = 24;
     private static final int WALL_INTERVAL = 25;
     private static final int DRAIN_INTERVAL = 20;
@@ -102,13 +105,22 @@ public class PlayerCloneEntity extends Monster {
     // 玩家高出分身達此格數 → 視為墊柱逃避，從腳下往下連拆整段支撐讓他摔回地面
     private static final int PILLAR_HEIGHT_TRIGGER = 3;
 
+    // 墊方塊衝撞技能狀態
+    private PillarSkill pendingSkill = null;
+    private int skillChargeTicks = 0;
+    private int skillCooldown = 100; // 開場緩衝，不一進場就放
+    private static final int SKILL_COOLDOWN = 160;
+    private static final int SKILL_TELEGRAPH = 12;  // 前搖：給玩家時間蹲下緩衝
+    private static final double SKILL_RANGE_SQR = 144.0; // 12 格內才發
+    private static final double SKILL_MIN_SQR = 4.0;     // 太近不發
+
     // 進場演出（地底鑽出→飛高→浮動集氣→爆炸顯現裝備→降落→啟動），對齊過場時間軸（360t）
-    private static final int INTRO_RISE_START = 255;
-    private static final int INTRO_RISE_END = 290;
-    private static final int INTRO_FLY_END = 320;
-    private static final int INTRO_REVEAL_TICK = 335;
-    private static final int INTRO_DESCEND_START = 338;
-    private static final int INTRO_LEN = 360;
+    private static final int INTRO_RISE_START = 430;
+    private static final int INTRO_RISE_END = 480;
+    private static final int INTRO_FLY_END = 530;
+    private static final int INTRO_REVEAL_TICK = 570;
+    private static final int INTRO_DESCEND_START = 575;
+    private static final int INTRO_LEN = 620;
     private boolean introActive = false;
     private int introTicks = 0;
     private double introX, introBaseY, introZ;
@@ -336,18 +348,21 @@ public class PlayerCloneEntity extends Monster {
             } else if (introTicks >= INTRO_FLY_END && introTicks < INTRO_REVEAL_TICK) {
                 // 集氣：粒子從四周遠處慢慢飄向中心（越接近爆炸越密越快）
                 float prog = frac(introTicks, INTRO_FLY_END, INTRO_REVEAL_TICK);
-                int count = 8 + (int) (prog * 14);
-                double radius = 5.5 - prog * 2.0;
+                int count = 14 + (int) (prog * 26);
+                double radius = 7.0 - prog * 2.5;
                 for (int i = 0; i < count; i++) {
                     double a = sl.random.nextDouble() * Math.PI * 2;
-                    double h = sl.random.nextDouble() * 3.0 - 1.2;
+                    double h = sl.random.nextDouble() * 3.5 - 1.4;
                     // count=0：(dx,dy,dz) 為單位方向，speed 為速度大小 → 緩慢往中心飄
                     sl.sendParticles(ParticleTypes.REVERSE_PORTAL,
                             introX + Math.cos(a) * radius, y + h, introZ + Math.sin(a) * radius,
-                            0, -Math.cos(a), -h * 0.3, -Math.sin(a), 0.10 + prog * 0.12);
+                            0, -Math.cos(a), -h * 0.3, -Math.sin(a), 0.10 + prog * 0.14);
                 }
-                if (introTicks % 8 == 0) {
-                    sl.sendParticles(ParticleTypes.ENCHANT, introX, y + 1.0, introZ, 8, 2.0, 1.5, 2.0, 0.3);
+                if (introTicks % 5 == 0) {
+                    sl.sendParticles(ParticleTypes.ENCHANT, introX, y + 1.0, introZ, 14, 2.5, 1.8, 2.5, 0.4);
+                }
+                if (introTicks % 10 == 0) {
+                    sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, introX, y + 0.5, introZ, 6, 1.5, 1.2, 1.5, 0.02);
                 }
             }
             if (introTicks == INTRO_REVEAL_TICK) {
@@ -540,6 +555,7 @@ public class PlayerCloneEntity extends Monster {
 
         updatePhase();
         tickAntiPillar(); // 全階段防墊高，開場就不給 cheese
+        tickPillarSkill(); // 招牌技能：墊方塊衝撞擊飛（全階段）
         if (phase == Phase.WALLING) {
             tickWallBuilding();
             tickBreakSurroundings();
@@ -618,6 +634,92 @@ public class PlayerCloneEntity extends Monster {
             sl.destroyBlock(found, false); // 不掉落，避免玩家撿回
         }
         breakCooldown = 10;
+    }
+
+    // ── 招牌技能：墊方塊衝撞擊飛（三種形態隨機輪用，玩家可蹲下緩衝）──────────────
+    private void tickPillarSkill() {
+        if (skillCooldown > 0) skillCooldown--;
+        if (!(level() instanceof ServerLevel sl)) return;
+        if (!(getTarget() instanceof Player p) || !p.isAlive()) { pendingSkill = null; return; }
+
+        if (pendingSkill != null) {
+            // 前搖：朝玩家方向噴預警粒子，給玩家時間蹲下
+            Vec3 d = horizUnit(p.position().subtract(this.position()));
+            sl.sendParticles(ParticleTypes.CRIT,
+                    getX() + d.x * 0.6, getY() + 1.0, getZ() + d.z * 0.6,
+                    6, 0.3, 0.3, 0.3, 0.12);
+            if (--skillChargeTicks <= 0) {
+                executeSkill(sl, pendingSkill, p);
+                pendingSkill = null;
+                skillCooldown = SKILL_COOLDOWN;
+            }
+            return;
+        }
+
+        if (skillCooldown > 0) return;
+        double d2 = this.distanceToSqr(p);
+        if (d2 > SKILL_RANGE_SQR || d2 < SKILL_MIN_SQR) return;
+        pendingSkill = PillarSkill.values()[this.random.nextInt(PillarSkill.values().length)];
+        skillChargeTicks = SKILL_TELEGRAPH;
+        sl.playSound(null, blockPosition(), SoundEvents.WARDEN_SONIC_CHARGE, SoundSource.HOSTILE, 0.8F, 1.4F);
+    }
+
+    private static Vec3 horizUnit(Vec3 v) {
+        double len = Math.sqrt(v.x * v.x + v.z * v.z);
+        if (len < 1.0e-4) return new Vec3(0, 0, 1);
+        return new Vec3(v.x / len, 0, v.z / len);
+    }
+
+    // 對玩家施加擊退（起飛弧線）。蹲下大幅緩衝。複用 LeggingsDoubleJumpHandler 的速度同步寫法。
+    private void knockbackPlayer(Player p, Vec3 awayDir, double horizPower, double vertPower) {
+        double mult = p.isCrouching() ? 0.35 : 1.0;
+        Vec3 h = horizUnit(awayDir);
+        p.setDeltaMovement(h.x * horizPower * mult, vertPower * mult, h.z * horizPower * mult);
+        p.hurtMarked = true; // server 同步速度給 client
+    }
+
+    private void executeSkill(ServerLevel sl, PillarSkill skill, Player p) {
+        Vec3 away = p.position().subtract(this.position()); // 玩家遠離分身方向
+        Vec3 d = horizUnit(away);
+        BlockState block = takeWallBlock();
+        switch (skill) {
+            case RAM_WALL -> {
+                // 從分身腳邊往玩家方向逐格墊 3 格牆，撞上玩家擊飛
+                for (int i = 1; i <= 3; i++) {
+                    BlockPos bp = BlockPos.containing(getX() + d.x * i, getY(), getZ() + d.z * i);
+                    placeSkillBlock(sl, bp, block);
+                    placeSkillBlock(sl, bp.above(), block);
+                }
+                if (this.distanceToSqr(p) <= 16.0) knockbackPlayer(p, away, 1.4, 0.8);
+                sl.playSound(null, blockPosition(), SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 0.8F);
+            }
+            case LIFT_UP -> {
+                // 玩家腳下墊方塊把他往上頂，偏垂直擊飛
+                BlockPos foot = p.blockPosition().below();
+                placeSkillBlock(sl, foot, block);
+                placeSkillBlock(sl, foot.below(), block);
+                knockbackPlayer(p, away, 0.6, 1.2);
+                sl.playSound(null, p.blockPosition(), SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 1.2F);
+            }
+            case CHARGE_RAMP -> {
+                // 分身腳下往玩家方向墊階梯 + 逼近一步，強水平擊飛
+                for (int i = 0; i < 3; i++) {
+                    BlockPos bp = BlockPos.containing(getX() + d.x * i, getY() - 1, getZ() + d.z * i);
+                    placeSkillBlock(sl, bp, block);
+                }
+                this.setPos(getX() + d.x * 1.5, getY(), getZ() + d.z * 1.5);
+                if (this.distanceToSqr(p) <= 25.0) knockbackPlayer(p, away, 1.6, 0.6);
+                sl.playSound(null, blockPosition(), SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 0.6F);
+            }
+        }
+    }
+
+    private void placeSkillBlock(ServerLevel sl, BlockPos p, BlockState block) {
+        if (!sl.getWorldBorder().isWithinBounds(p)) return;
+        if (!sl.getBlockState(p).canBeReplaced()) return;
+        sl.setBlockAndUpdate(p, block);
+        placedWalls.add(p.asLong());
+        VoidMirrorEvents.addModifiedBlock(p.asLong());
     }
 
     private void updatePhase() {

@@ -27,6 +27,8 @@ public final class VoidMirrorTeleport {
     private static final double ARENA_X = 0.5;
     private static final double ARENA_Y = 64.0;
     private static final double ARENA_Z = 0.5;
+    // 玩家從登場點後方此距離的裂縫往前走出（對齊 client VoidMirrorIntroManager.WALK_BACK）
+    private static final double EMERGE_CRACK_BACK = 3.2;
 
     private VoidMirrorTeleport() {}
 
@@ -60,8 +62,8 @@ public final class VoidMirrorTeleport {
     private static void spawnEmergeCrack(ServerLevel level) {
         SpaceCrackEntity crack = ModEntities.SPACE_CRACK.get().create(level);
         if (crack == null) return;
-        crack.moveTo(ARENA_X, ARENA_Y, ARENA_Z, 0.0F, 0.0F);
-        crack.setDecorative(380); // 略長於過場，玩家鑽出後一段時間自動消失
+        crack.moveTo(ARENA_X, ARENA_Y, ARENA_Z - EMERGE_CRACK_BACK, 0.0F, 0.0F); // 玩家身後，供其走出
+        crack.setDecorative(640); // 略長於過場(620t)，玩家走出後一段時間自動消失
         level.addFreshEntity(crack);
     }
 

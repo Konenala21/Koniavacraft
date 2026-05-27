@@ -47,22 +47,22 @@ public class VoidMirrorIntroManager {
             {0.0, 1.0, 20.0},
             {0.0, 1.0, 20.0},
     };
-    // 各段時長（tick）：A→B 停, B→C 推進, C→D 轉前方, D→E 停（拉長讓節奏更有戲）
-    private static final int[] SEG_DURATIONS = {100, 60, 100, 100};
-    private static final int TOTAL_TICKS = 100 + 60 + 100 + 100;
-    // 幻影爆炸時的相機震動視窗（對齊 boss INTRO_REVEAL_TICK ≈ 335）
-    private static final int SHAKE_START = 333;
-    private static final int SHAKE_END = 358;
+    // 各段時長（tick）：A 玩家走出, B 停(對話), C 推進, D 轉前方+boss 登場（總長 ~31s 更史詩）
+    private static final int[] SEG_DURATIONS = {160, 90, 170, 200};
+    private static final int TOTAL_TICKS = 160 + 90 + 170 + 200; // 620
+    // 幻影爆炸時的相機震動視窗（對齊 boss INTRO_REVEAL_TICK = 570）
+    private static final int SHAKE_START = 568;
+    private static final int SHAKE_END = 595;
     // 收尾轉黑：最後 15t 淡入黑幕，結束後 15t 淡出
-    private static final int FADE_IN_START = 100 + 60 + 100 + 100 - 15;
+    private static final int FADE_IN_START = 620 - 15;
     private static final int FADE_OUT_LEN = 15;
 
-    // 玩家先從裂縫鑽出探頭（開場娜拉視角這段），之後娜拉才說話
-    private static final int EMERGE_START = 15;
-    private static final int EMERGE_END = 75;
-    private static final double EMERGE_DEPTH = -2.2;
-    // 玩家探出後娜拉才開口
-    private static final int DIALOGUE_START = 70;
+    // 玩家從身後裂縫往前走出來的時間窗（開場娜拉視角這段）
+    private static final int WALK_START = 20;
+    private static final int WALK_END = 110;
+    private static final double WALK_BACK = -3.2; // 起步點：登場點後方 3.2 格（沿玩家面向反方向）
+    // 玩家走出後娜拉才開口
+    private static final int DIALOGUE_START = 130;
 
     private static boolean active = false;
     private static int ticks = 0;
@@ -106,17 +106,19 @@ public class VoidMirrorIntroManager {
         if (mc.options.getCameraType() != CameraType.THIRD_PERSON_BACK) {
             mc.options.setCameraType(CameraType.THIRD_PERSON_BACK);
         }
-        // 裂縫粒子：玩家升出期間在腳下的裂縫位置噴發
-        if (ticks >= EMERGE_START - 10 && ticks <= EMERGE_END && mc.player != null && mc.level != null) {
-            for (int i = 0; i < 4; i++) {
+        // 走出來：裂縫在玩家身後（-Z）噴殘餘能量粒子 + 手動推進走路動畫（過場中玩家實際不動）
+        if (ticks >= WALK_START && ticks <= WALK_END && mc.player != null && mc.level != null) {
+            double crackZ = mc.player.getZ() + WALK_BACK; // 裂縫在登場點後方
+            for (int i = 0; i < 5; i++) {
                 double a = mc.level.random.nextDouble() * Math.PI * 2;
-                double r = 0.4 + mc.level.random.nextDouble() * 0.6;
+                double r = 0.4 + mc.level.random.nextDouble() * 0.7;
                 mc.level.addParticle(ParticleTypes.PORTAL,
                         mc.player.getX() + Math.cos(a) * r,
                         mc.player.getY() + 0.1,
-                        mc.player.getZ() + Math.sin(a) * r,
+                        crackZ + Math.sin(a) * r,
                         0.0, 0.05, 0.0);
             }
+            mc.player.walkAnimation.update(1.0f, 1.0f); // 驅動四肢擺動
         }
 
         if (ticks == DIALOGUE_START) {
@@ -129,13 +131,13 @@ public class VoidMirrorIntroManager {
         }
     }
 
-    // 玩家升出：渲染時把玩家模型從地下平滑升上來（真實位置仍在地表，避免窒息/卡牆）
+    // 玩家走出：渲染時把玩家模型從登場點後方平滑平移到登場點（真實位置固定，避免窒息/輸入鎖）
     @SubscribeEvent
     public static void onRenderPlayerPre(RenderPlayerEvent.Pre event) {
         if (!active || event.getEntity() != Minecraft.getInstance().player) return;
-        double off = emergeOffset(ticks + event.getPartialTick());
+        double off = walkOffset(ticks + event.getPartialTick());
         event.getPoseStack().pushPose();
-        event.getPoseStack().translate(0.0, off, 0.0);
+        event.getPoseStack().translate(0.0, 0.0, off);
     }
 
     @SubscribeEvent
@@ -144,12 +146,13 @@ public class VoidMirrorIntroManager {
         event.getPoseStack().popPose();
     }
 
-    private static double emergeOffset(float t) {
-        if (t < EMERGE_START) return EMERGE_DEPTH;       // 還埋在地底
-        if (t >= EMERGE_END) return 0.0;                 // 已站在地表
-        float s = (t - EMERGE_START) / (EMERGE_END - EMERGE_START);
+    // 走出位移：玩家從登場點後方 WALK_BACK 處沿 +Z 平滑走到登場點（0）
+    private static double walkOffset(float t) {
+        if (t < WALK_START) return WALK_BACK;            // 還在裂縫後方
+        if (t >= WALK_END) return 0.0;                   // 已走到登場點
+        float s = (t - WALK_START) / (WALK_END - WALK_START);
         s = s * s * (3f - 2f * s); // smoothstep
-        return EMERGE_DEPTH * (1.0 - s);
+        return WALK_BACK * (1.0 - s);
     }
 
     // 過場期間隱藏所有 vanilla HUD 圖層（保留 RenderGuiEvent.Post 讓字幕框能畫）
