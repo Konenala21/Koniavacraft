@@ -93,7 +93,7 @@ public class PlayerCloneEntity extends Monster {
     private static final ResourceLocation ANTI_KITE_SPEED_ID =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "clone_anti_kite_speed");
     private static final AttributeModifier ANTI_KITE_SPEED =
-            new AttributeModifier(ANTI_KITE_SPEED_ID, 1.0, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
+            new AttributeModifier(ANTI_KITE_SPEED_ID, 0.45, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
 
     private Phase phase = Phase.NORMAL;
     private final Set<Long> placedWalls = new HashSet<>();
@@ -171,7 +171,7 @@ public class PlayerCloneEntity extends Monster {
     public static AttributeSupplier.Builder createAttributes() {
         return Monster.createMonsterAttributes()
                 .add(Attributes.MAX_HEALTH, MAX_HP)
-                .add(Attributes.MOVEMENT_SPEED, 0.3)
+                .add(Attributes.MOVEMENT_SPEED, 0.27)
                 .add(Attributes.ATTACK_DAMAGE, 12.0)
                 .add(Attributes.ATTACK_KNOCKBACK, 0.5)
                 .add(Attributes.FOLLOW_RANGE, 48.0)

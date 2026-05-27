@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- The clone is no longer absurdly fast: its base move speed is slightly lower and the anti-kite chase boost was cut from +100% to +45%, so it still catches up if you run but no longer instantly glues itself to you.
+- 分身不再快得離譜:基礎移速略降,防風箏追擊加速從 +100% 砍到 +45%,所以你逃跑時它還是追得上,但不會瞬間貼死你。
+
 - Fixed: skipping the intro cinematic left the clone without its mirrored armor/weapon (the reveal moment was skipped). The equipment is now applied when the boss activates, so skipping still shows full gear.
 - 修正:跳過進場過場後分身沒有顯現鏡像的盔甲/武器(因為跳過了顯現那一刻)。裝備改成在 boss 啟動時套上,所以跳過後也會帶齊裝備。
 
@@ -121,6 +124,9 @@ All notable changes to this project will be documented in this file.
 - 頭盔夜視升級現在開啟時會持續消耗魔力（5 魔力/秒）。魔力耗盡後夜視自動關閉。手動關閉時效果立即移除。關閉升級不再移除藥水提供的夜視效果。
 
 ### Developer Notes / 開發者備註
+
+- Clone `MOVEMENT_SPEED` 0.3 to 0.27 and `ANTI_KITE_SPEED` modifier 1.0 to 0.45 (ADD_MULTIPLIED_TOTAL), so the anti-kite chase no longer doubles speed and pins the player.
+- 分身 `MOVEMENT_SPEED` 0.3 改 0.27、`ANTI_KITE_SPEED` 修飾 1.0 改 0.45（ADD_MULTIPLIED_TOTAL），防風箏追擊不再翻倍貼死玩家。
 
 - `activateAfterIntro` now calls `revealEquipment()` up front (idempotent). Skipping the cinematic sets `introTicks = INTRO_LEN`, which bypassed the `INTRO_REVEAL_TICK` reveal, so the clone activated without its `pendingEquipment` applied; revealing on activation covers both the normal and skip paths.
 - `activateAfterIntro` 開頭補呼叫 `revealEquipment()`（冪等）。跳過過場會把 `introTicks` 設成 `INTRO_LEN`，因而略過 `INTRO_REVEAL_TICK` 的顯現，導致分身啟動時沒套上 `pendingEquipment`；改在啟動時顯現可同時涵蓋正常與跳過路徑。
