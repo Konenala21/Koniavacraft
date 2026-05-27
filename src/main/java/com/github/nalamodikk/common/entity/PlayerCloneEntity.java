@@ -108,7 +108,7 @@ public class PlayerCloneEntity extends Monster {
     private PillarSkill pendingSkill = null;
     private int skillChargeTicks = 0;
     private int skillCooldown = 100; // 開場緩衝，不一進場就放
-    private static final int SKILL_COOLDOWN = 160;
+    private static final int SKILL_COOLDOWN = 80; // 技能頻繁（~4s 一次），壓迫靠技能而非高傷
     private static final int SKILL_TELEGRAPH = 20;  // 前搖 1 秒：站定蓄力 + 漸強預警，給玩家反應/閃避
     private static final double SKILL_RANGE_SQR = 144.0; // 12 格內才發
     private static final double SKILL_MIN_SQR = 4.0;     // 太近不發
@@ -180,7 +180,7 @@ public class PlayerCloneEntity extends Monster {
         return Monster.createMonsterAttributes()
                 .add(Attributes.MAX_HEALTH, MAX_HP)
                 .add(Attributes.MOVEMENT_SPEED, 0.27)
-                .add(Attributes.ATTACK_DAMAGE, 12.0)
+                .add(Attributes.ATTACK_DAMAGE, 8.0)
                 .add(Attributes.ATTACK_KNOCKBACK, 0.5)
                 .add(Attributes.FOLLOW_RANGE, 48.0)
                 .add(Attributes.KNOCKBACK_RESISTANCE, 0.4);
@@ -768,26 +768,30 @@ public class PlayerCloneEntity extends Monster {
         p.hurtMarked = true;
     }
 
-    // 近戰：太遠就追，進入攻擊距離就繞著玩家側移 + 揮擊（邊走邊打，不站定揮擊）
+    // 壓迫式徘徊：追到 2~3 格威脅距離就繞圈、保持距離（不貼臉），主要威脅靠頻繁技能
+    private static final double KEEP_DISTANCE = 2.5;
+
     private void tickMeleeStrafe() {
-        if (graceTicks > 0 || pendingSkill != null) return; // 緩衝期/技能前搖時不近戰
+        if (graceTicks > 0 || pendingSkill != null) return; // 緩衝期/技能前搖時不動
         if (!(getTarget() instanceof LivingEntity tgt) || !tgt.isAlive()) return;
         if (attackCooldown > 0) attackCooldown--;
         getLookControl().setLookAt(tgt, 30f, 30f);
-        double d2 = this.distanceToSqr(tgt);
-        double reach = this.getBbWidth() * 2.0 + tgt.getBbWidth();
-        if (d2 > reach * reach) {
-            this.getNavigation().moveTo(tgt, 1.15); // 太遠：直接追
-            return;
+        double dist = this.distanceTo(tgt);
+        Vec3 toward = horizUnit(tgt.position().subtract(this.position()));
+        Vec3 side = new Vec3(-toward.z, 0, toward.x); // 繞圈方向
+        if (dist > KEEP_DISTANCE + 1.5) {
+            this.getNavigation().moveTo(tgt, 1.15); // 太遠：追近
+        } else {
+            this.getNavigation().stop();
+            Vec3 move = dist < KEEP_DISTANCE - 0.6
+                    ? side.scale(0.6).add(toward.scale(-0.6)) // 太近：邊繞邊退開，不貼臉
+                    : side.scale(0.7);                         // 距離剛好：繞圈徘徊（壓迫）
+            Vec3 want = this.position().add(move);
+            this.getMoveControl().setWantedPosition(want.x, this.getY(), want.z, 1.0);
         }
-        // 進入攻擊距離：繞著玩家側移（strafe）+ 略保持貼近
-        this.getNavigation().stop();
-        Vec3 toT = tgt.position().subtract(this.position());
-        Vec3 side = horizUnit(new Vec3(-toT.z, 0, toT.x)); // 垂直連線 = 繞圈方向
-        Vec3 toward = horizUnit(toT);
-        Vec3 want = this.position().add(side.scale(0.9)).add(toward.scale(0.2));
-        this.getMoveControl().setWantedPosition(want.x, this.getY(), want.z, 1.0);
-        if (attackCooldown <= 0) {
+        // 真的貼到才近戰（低傷，主要威脅是技能）
+        double reach = this.getBbWidth() * 2.0 + tgt.getBbWidth();
+        if (dist <= reach && attackCooldown <= 0) {
             this.swing(InteractionHand.MAIN_HAND);
             this.doHurtTarget(tgt);
             attackCooldown = 16;

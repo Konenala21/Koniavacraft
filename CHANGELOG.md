@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Reworked the clone's pressure to come from behavior instead of raw numbers: it now keeps a 2-3 block threat distance (chases in when far, backs off when too close, no more face-hugging) and circles you, attacks with skills about twice as often (cooldown halved), and its melee damage was lowered. So it feels like a stalking opponent constantly threatening skills, rather than a high-damage stat-stick glued to you.
+- 重做分身的壓迫感,讓它來自行為而非純數值:它現在會保持 2~3 格的威脅距離(太遠追近、太近退開,不再貼臉)並繞著你徘徊,技能頻率約翻倍(冷卻減半),近戰傷害則調低。所以它打起來像一個一直在你身邊伺機放技能的獵人,而不是貼著你猛砍的高傷數值怪。
+
 - Each clone skill now telegraphs during its wind-up: a bright white outline shows the incoming attack (a wall frame in front of you for the ram, a ring at your feet for the lift, a path line for the charge) plus a distinct charge-up sound per skill. Because the Mirror World is grayscale these use shape + brightness instead of color, so you can tell which skill is coming and dodge.
 - 分身的每個招式在前搖時會顯示預兆:亮白輪廓標出即將來的攻擊(墊牆是你面前的牆框、頂飛是你腳下的圈、衝刺是一條路徑線),每招還有不同的蓄力音效。因為鏡中世界是灰階,預兆用形狀 + 亮度而非顏色,所以你能看出要來哪招並閃避。
 
@@ -127,6 +130,9 @@ All notable changes to this project will be documented in this file.
 - 頭盔夜視升級現在開啟時會持續消耗魔力（5 魔力/秒）。魔力耗盡後夜視自動關閉。手動關閉時效果立即移除。關閉升級不再移除藥水提供的夜視效果。
 
 ### Developer Notes / 開發者備註
+
+- Reworked melee into a keep-distance pressure pattern: `tickMeleeStrafe` now holds `KEEP_DISTANCE` (2.5): `moveTo` when farther than +1.5, back off (side + away) when closer than -0.6, otherwise strafe sideways; melee only lands if actually within reach. `SKILL_COOLDOWN` 160 to 80 (skills roughly twice as often) and `ATTACK_DAMAGE` 12 to 8. Pressure now comes from constant skill threat at range, not high-damage face-hugging.
+- 近戰改為保持距離的壓迫模式:`tickMeleeStrafe` 維持 `KEEP_DISTANCE`（2.5）：距離大於 +1.5 時 `moveTo` 追近、小於 -0.6 時（側移 + 後退）退開、其餘繞圈側移；只有真的進到攻擊距離才近戰。`SKILL_COOLDOWN` 160 改 80（技能約翻倍頻率）、`ATTACK_DAMAGE` 12 改 8。壓迫改由「在距離外持續以技能威脅」提供，而非高傷貼臉。
 
 - Skill telegraphs: `PlayerCloneEntity` syncs a `TELEGRAPH_SKILL` int (0/1/2/3) set during wind-up, cleared on fire/target-loss, plus a per-skill wind-up sound (RAM_WALL warden charge / LIFT_UP piston / CHARGE_RAMP ravager roar). New client `CloneTelegraphRenderer` (`RenderLevelStageEvent.AFTER_TRANSLUCENT_BLOCKS`) draws bright-white outlines via `RenderType.lines()` at the target: ram = wall frame, lift = foot ring, charge = boss->player line. Uses shape + brightness (color is killed by the grayscale post shader). Assumes the local player is the target (1v1); multiplayer would draw on self.
 - 招式預兆:`PlayerCloneEntity` 同步 `TELEGRAPH_SKILL` int（0/1/2/3），前搖時設、發動/失去目標時清，並依招式播不同蓄力音（RAM_WALL 監守者蓄力 / LIFT_UP 活塞 / CHARGE_RAMP 劫毀獸吼）。新增 client `CloneTelegraphRenderer`（`RenderLevelStageEvent.AFTER_TRANSLUCENT_BLOCKS`）以 `RenderType.lines()` 在目標位置畫亮白輪廓:墊牆=牆框、頂飛=腳下圈、衝刺=boss→玩家連線。靠形狀+亮度（顏色會被灰階 post shader 吃掉）。假設本機玩家為目標（1對1）；多人會畫在自己身上。
