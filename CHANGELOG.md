@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Each clone skill now telegraphs during its wind-up: a bright white outline shows the incoming attack (a wall frame in front of you for the ram, a ring at your feet for the lift, a path line for the charge) plus a distinct charge-up sound per skill. Because the Mirror World is grayscale these use shape + brightness instead of color, so you can tell which skill is coming and dodge.
+- 分身的每個招式在前搖時會顯示預兆:亮白輪廓標出即將來的攻擊(墊牆是你面前的牆框、頂飛是你腳下的圈、衝刺是一條路徑線),每招還有不同的蓄力音效。因為鏡中世界是灰階,預兆用形狀 + 亮度而非顏色,所以你能看出要來哪招並閃避。
+
 - The clone is no longer absurdly fast: its base move speed is slightly lower and the anti-kite chase boost was cut from +100% to +45%, so it still catches up if you run but no longer instantly glues itself to you.
 - 分身不再快得離譜:基礎移速略降,防風箏追擊加速從 +100% 砍到 +45%,所以你逃跑時它還是追得上,但不會瞬間貼死你。
 
@@ -124,6 +127,9 @@ All notable changes to this project will be documented in this file.
 - 頭盔夜視升級現在開啟時會持續消耗魔力（5 魔力/秒）。魔力耗盡後夜視自動關閉。手動關閉時效果立即移除。關閉升級不再移除藥水提供的夜視效果。
 
 ### Developer Notes / 開發者備註
+
+- Skill telegraphs: `PlayerCloneEntity` syncs a `TELEGRAPH_SKILL` int (0/1/2/3) set during wind-up, cleared on fire/target-loss, plus a per-skill wind-up sound (RAM_WALL warden charge / LIFT_UP piston / CHARGE_RAMP ravager roar). New client `CloneTelegraphRenderer` (`RenderLevelStageEvent.AFTER_TRANSLUCENT_BLOCKS`) draws bright-white outlines via `RenderType.lines()` at the target: ram = wall frame, lift = foot ring, charge = boss->player line. Uses shape + brightness (color is killed by the grayscale post shader). Assumes the local player is the target (1v1); multiplayer would draw on self.
+- 招式預兆:`PlayerCloneEntity` 同步 `TELEGRAPH_SKILL` int（0/1/2/3），前搖時設、發動/失去目標時清，並依招式播不同蓄力音（RAM_WALL 監守者蓄力 / LIFT_UP 活塞 / CHARGE_RAMP 劫毀獸吼）。新增 client `CloneTelegraphRenderer`（`RenderLevelStageEvent.AFTER_TRANSLUCENT_BLOCKS`）以 `RenderType.lines()` 在目標位置畫亮白輪廓:墊牆=牆框、頂飛=腳下圈、衝刺=boss→玩家連線。靠形狀+亮度（顏色會被灰階 post shader 吃掉）。假設本機玩家為目標（1對1）；多人會畫在自己身上。
 
 - Clone `MOVEMENT_SPEED` 0.3 to 0.27 and `ANTI_KITE_SPEED` modifier 1.0 to 0.45 (ADD_MULTIPLIED_TOTAL), so the anti-kite chase no longer doubles speed and pins the player.
 - 分身 `MOVEMENT_SPEED` 0.3 改 0.27、`ANTI_KITE_SPEED` 修飾 1.0 改 0.45（ADD_MULTIPLIED_TOTAL），防風箏追擊不再翻倍貼死玩家。

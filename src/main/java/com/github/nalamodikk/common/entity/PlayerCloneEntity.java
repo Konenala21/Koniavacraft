@@ -149,6 +149,9 @@ public class PlayerCloneEntity extends Monster {
             SynchedEntityData.defineId(PlayerCloneEntity.class, EntityDataSerializers.OPTIONAL_UUID);
     private static final EntityDataAccessor<String> SOURCE_NAME =
             SynchedEntityData.defineId(PlayerCloneEntity.class, EntityDataSerializers.STRING);
+    // 當前前搖中的招式（同步給 client 畫預兆）：0=無, 1=RAM_WALL, 2=LIFT_UP, 3=CHARGE_RAMP
+    private static final EntityDataAccessor<Integer> TELEGRAPH_SKILL =
+            SynchedEntityData.defineId(PlayerCloneEntity.class, EntityDataSerializers.INT);
 
     // 鏡像玩家的整個主背包（快捷欄 0-8 + 背包 9-35），供疊方塊 AI 取用。不掉落、不同步。
     private final NonNullList<ItemStack> clonedInventory = NonNullList.withSize(36, ItemStack.EMPTY);
@@ -166,6 +169,11 @@ public class PlayerCloneEntity extends Monster {
         super.defineSynchedData(builder);
         builder.define(SOURCE_UUID, Optional.empty());
         builder.define(SOURCE_NAME, "");
+        builder.define(TELEGRAPH_SKILL, 0);
+    }
+
+    public int getTelegraphSkill() {
+        return entityData.get(TELEGRAPH_SKILL);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -689,7 +697,11 @@ public class PlayerCloneEntity extends Monster {
     private void tickPillarSkill() {
         if (skillCooldown > 0) skillCooldown--;
         if (!(level() instanceof ServerLevel sl)) return;
-        if (!(getTarget() instanceof Player p) || !p.isAlive()) { pendingSkill = null; return; }
+        if (!(getTarget() instanceof Player p) || !p.isAlive()) {
+            pendingSkill = null;
+            entityData.set(TELEGRAPH_SKILL, 0);
+            return;
+        }
 
         if (pendingSkill != null) {
             // 前置動作：站定蓄力、面向玩家，朝玩家噴漸強預警粒子，給玩家 1 秒反應/閃避
@@ -707,6 +719,7 @@ public class PlayerCloneEntity extends Monster {
             if (--skillChargeTicks <= 0) {
                 executeSkill(sl, pendingSkill, p);
                 pendingSkill = null;
+                entityData.set(TELEGRAPH_SKILL, 0);
                 skillCooldown = SKILL_COOLDOWN;
             }
             return;
@@ -717,7 +730,14 @@ public class PlayerCloneEntity extends Monster {
         if (d2 > SKILL_RANGE_SQR || d2 < SKILL_MIN_SQR) return;
         pendingSkill = PillarSkill.values()[this.random.nextInt(PillarSkill.values().length)];
         skillChargeTicks = SKILL_TELEGRAPH;
-        sl.playSound(null, blockPosition(), SoundEvents.WARDEN_SONIC_CHARGE, SoundSource.HOSTILE, 0.8F, 1.4F);
+        entityData.set(TELEGRAPH_SKILL, pendingSkill.ordinal() + 1); // 同步給 client 畫預兆
+        // 每招不同蓄力音，配合預兆讓玩家辨識
+        net.minecraft.sounds.SoundEvent windup = switch (pendingSkill) {
+            case RAM_WALL -> SoundEvents.WARDEN_SONIC_CHARGE;
+            case LIFT_UP -> SoundEvents.PISTON_EXTEND;
+            case CHARGE_RAMP -> SoundEvents.RAVAGER_ROAR;
+        };
+        sl.playSound(null, blockPosition(), windup, SoundSource.HOSTILE, 1.0F, 1.0F);
     }
 
     private static Vec3 horizUnit(Vec3 v) {
