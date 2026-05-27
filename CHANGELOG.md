@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- The Mirror World clone can now chase you into the air: when you get more than 3 blocks above it, it pillar-jumps up by placing blocks under itself (like a player MLG pillar) to reach your height. It takes no fall damage when coming back down.
+- 鏡中世界分身現在會追進空中:當你高出它 3 格以上時,它會像玩家那樣往腳下墊方塊往上跳,爬到你的高度。落下時不受墜落傷害。
+
 - The Mirror World clone's block skills no longer dig up or cover the arena floor: all three variants now place blocks in the air at body or head height. The clone also moves more smoothly (its anti-kite speed boost no longer flickers on and off around the 10-block mark, which caused a stop-start stutter).
 - 鏡中世界分身的墊方塊技能不再破壞或覆蓋 arena 地板:三種形態現在都改在空中(身體或頭部高度)墊方塊。分身移動也更順(防風箏加速不再在約 10 格距離忽開忽關,先前那會造成一頓一頓的卡頓)。
 
@@ -94,6 +97,9 @@ All notable changes to this project will be documented in this file.
 - 頭盔夜視升級現在開啟時會持續消耗魔力（5 魔力/秒）。魔力耗盡後夜視自動關閉。手動關閉時效果立即移除。關閉升級不再移除藥水提供的夜視效果。
 
 ### Developer Notes / 開發者備註
+
+- Added `tickAirChase`: when the target is 3+ blocks above the grounded clone, it places a block at its feet (`placeChaseBlock`) and jumps (y velocity 0.42), pillar-jumping up to the player. Chase-pillar blocks go into `placedWalls` + `addModifiedBlock` (so anti-pillar won't tear its own column and resetArena clears it) but not into the 1s `skillBlocks` clear. `causeFallDamage` overridden to return false so the clone takes no fall damage from its block mobility.
+- 新增 `tickAirChase`:當目標高出在地面的分身 3 格以上時，分身在腳下放方塊（`placeChaseBlock`）並跳躍（y 速度 0.42），像 pillar jump 往玩家爬。追擊柱方塊進 `placedWalls` + `addModifiedBlock`（anti-pillar 不拆自己的柱、resetArena 會清），但不進 1 秒的 `skillBlocks` 清理。覆寫 `causeFallDamage` 回傳 false，分身墊方塊機動時不受墜落傷害。
 
 - `placeSkillBlock` reverted to a `canBeReplaced` check (air/replaceable only), so skill blocks never overwrite the floor or existing blocks. `LIFT_UP` now stacks blocks above the player's head (`above(2)`) with a strong vertical pop; `CHARGE_RAMP` places its row at the clone's body height (`getY()+1`); `RAM_WALL` already sat at body height. Anti-kite now uses hysteresis (enable >144 d², disable <64 d²) instead of a single threshold, removing the boundary flicker; the unused `ANTI_KITE_DIST_SQR` was removed.
 - `placeSkillBlock` 改回 `canBeReplaced` 檢查（只放空氣/可替換），技能方塊不再覆蓋地板或既有方塊。`LIFT_UP` 改為在玩家頭頂上方（`above(2)`）疊方塊 + 強垂直上拋；`CHARGE_RAMP` 的方塊排改在分身身體高度（`getY()+1`）；`RAM_WALL` 本來就在身體高度。防風箏改用遲滯（>144 d² 開、<64 d² 關）取代單一閾值，消除邊界抖動；移除未使用的 `ANTI_KITE_DIST_SQR`。

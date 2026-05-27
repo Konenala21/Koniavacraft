@@ -583,6 +583,7 @@ public class PlayerCloneEntity extends Monster {
         updatePhase();
         tickAntiPillar(); // 全階段防墊高，開場就不給 cheese
         tickPillarSkill(); // 招牌技能：墊方塊衝撞擊飛（全階段）
+        tickAirChase(); // 玩家飛高時墊方塊往上跳追擊（像玩家 pillar jump）
         tickPendingLaunch(); // RAM_WALL 橫向擊退後的第二段上彈
         tickSkillBlockClear(); // 擊飛後依序打掉技能墊的方塊
         ensureCompanions(); // 確保同源娜拉幻影 + 返回裂縫各恰好一個（重載/死亡重進入後重建、去重）
@@ -719,6 +720,32 @@ public class PlayerCloneEntity extends Monster {
         Vec3 m = p.getDeltaMovement();
         p.setDeltaMovement(m.x, up, m.z);
         p.hurtMarked = true;
+    }
+
+    // 玩家飛高（被擊飛或自行升空）時，分身墊方塊往上跳追擊，像玩家 pillar jump
+    private void tickAirChase() {
+        if (!(level() instanceof ServerLevel sl)) return;
+        if (!(getTarget() instanceof Player p) || !p.isAlive()) return;
+        if (!this.onGround()) return; // 落在地面/方塊上才墊跳
+        int dh = p.blockPosition().getY() - this.blockPosition().getY();
+        if (dh < 3) return; // 玩家沒高出夠多就不空中追
+        placeChaseBlock(sl, this.blockPosition(), takeWallBlock()); // 腳下放方塊
+        this.setDeltaMovement(this.getDeltaMovement().x, 0.42, this.getDeltaMovement().z); // 跳起，落到新方塊上升一格
+        this.hurtMarked = true;
+    }
+
+    // 追擊柱用的方塊：進 placedWalls（anti-pillar 不拆自己）+ 重製清除，但不進 1 秒清理（分身站其上）
+    private void placeChaseBlock(ServerLevel sl, BlockPos p, BlockState block) {
+        if (!sl.getWorldBorder().isWithinBounds(p)) return;
+        if (!sl.getBlockState(p).canBeReplaced()) return;
+        sl.setBlockAndUpdate(p, block);
+        placedWalls.add(p.asLong());
+        VoidMirrorEvents.addModifiedBlock(p.asLong());
+    }
+
+    @Override
+    public boolean causeFallDamage(float distance, float multiplier, DamageSource source) {
+        return false; // 分身會墊方塊上下機動，不受墜落傷害
     }
 
     // 娜拉幻影 + 返回裂縫由活著的 boss 確保同源恰好一個（重建/去重），重載與死亡重進入都不殘留
