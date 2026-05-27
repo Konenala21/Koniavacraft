@@ -418,6 +418,14 @@ public class PlayerCloneEntity extends Monster {
         setInvulnerable(false);
         setPos(introX, introBaseY, introZ);
         if (level() instanceof ServerLevel sl) {
+            // 同源去重保險：清掉任何殘留的同源分身（退出再進入時 chunk 載入時序可能漏網）
+            getSourceUUID().ifPresent(id -> {
+                for (PlayerCloneEntity other : sl.getEntitiesOfClass(PlayerCloneEntity.class,
+                        getBoundingBox().inflate(300),
+                        e -> e != this && e.getSourceUUID().map(id::equals).orElse(false))) {
+                    other.discard();
+                }
+            });
             for (ServerPlayer p : sl.getEntitiesOfClass(ServerPlayer.class, getBoundingBox().inflate(64))) {
                 bossEvent.addPlayer(p);
                 setTarget(p);

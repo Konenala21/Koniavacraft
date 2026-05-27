@@ -15,8 +15,9 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.RelativeMovement;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.border.WorldBorder;
+import net.minecraft.world.phys.AABB;
 
 import java.util.Optional;
 import java.util.Set;
@@ -49,14 +50,46 @@ public final class VoidMirrorTeleport {
         // yaw=0 面向 +Z（boss 登場方向），過場結束交還鏡頭時玩家本來就面對 boss
         player.teleportTo(target, ARENA_X, ARENA_Y, ARENA_Z, Set.of(), 0.0F, 0.0F);
 
+        // 先清掉該玩家殘留的 clone/娜拉/裂縫，確保「退出再進去」是乾淨的全新一場
+        clearExistingFor(target, player.getUUID());
+
         // 娜拉一開始就在場（過場從她的視角開始）
         spawnNaraPhantom(target, player);
-        // 玩家鑽出用的裝飾裂縫（不傳送、會自己消失）
+        // 玩家走出用的裝飾裂縫（不傳送、會自己消失）
         spawnEmergeCrack(target);
+        // arena 中心的返回裂縫，玩家可主動右鍵離開
+        spawnExitCrack(target, player);
         // 播放進場過場
         PacketDistributor.sendToPlayer(player, VoidMirrorIntroPacket.INSTANCE);
-        // boss 立刻以「進場演出」狀態生成（埋地底、無敵、無 AI），過場推進到登場點才鑽出，演出結束才啟動
+        // boss 以「進場演出」狀態生成，演出結束才啟動
         spawnClone(target, player);
+    }
+
+    // 清掉該玩家在鏡中世界殘留的 clone、娜拉幻影與舊裂縫（含上次的出口裂縫）
+    private static void clearExistingFor(ServerLevel level, UUID id) {
+        AABB box = new AABB(BlockPos.ZERO).inflate(300);
+        for (PlayerCloneEntity c : level.getEntitiesOfClass(PlayerCloneEntity.class, box,
+                e -> e.getSourceUUID().map(id::equals).orElse(false))) {
+            c.discard();
+        }
+        for (NaraPhantomEntity n : level.getEntitiesOfClass(NaraPhantomEntity.class, box,
+                e -> e.getSourceUUID().map(id::equals).orElse(false))) {
+            n.discard();
+        }
+        for (Entity e : level.getAllEntities()) {
+            if (e instanceof SpaceCrackEntity crack
+                    && crack.getOwnerUUID().map(id::equals).orElse(false)) {
+                crack.discard();
+            }
+        }
+    }
+
+    private static void spawnExitCrack(ServerLevel level, ServerPlayer player) {
+        SpaceCrackEntity crack = ModEntities.SPACE_CRACK.get().create(level);
+        if (crack == null) return;
+        crack.moveTo(ARENA_X, ARENA_Y, ARENA_Z, 0.0F, 0.0F);
+        crack.setOwnerUUID(player.getUUID());
+        level.addFreshEntity(crack);
     }
 
     private static void spawnEmergeCrack(ServerLevel level) {
@@ -69,11 +102,6 @@ public final class VoidMirrorTeleport {
 
     private static void spawnNaraPhantom(ServerLevel level, ServerPlayer source) {
         UUID sourceId = source.getUUID();
-        boolean alreadyExists = level.getEntities(ModEntities.NARA_PHANTOM.get(),
-                        e -> e.getSourceUUID().map(sourceId::equals).orElse(false))
-                .stream().findAny().isPresent();
-        if (alreadyExists) return;
-
         NaraPhantomEntity nara = ModEntities.NARA_PHANTOM.get().create(level);
         if (nara == null) return;
         // 站在遠處旁觀
@@ -85,12 +113,6 @@ public final class VoidMirrorTeleport {
     }
 
     private static void spawnClone(ServerLevel level, ServerPlayer source) {
-        UUID sourceId = source.getUUID();
-        boolean alreadyExists = level.getEntities(ModEntities.PLAYER_CLONE.get(),
-                        e -> e.getSourceUUID().map(sourceId::equals).orElse(false))
-                .stream().findAny().isPresent();
-        if (alreadyExists) return;
-
         PlayerCloneEntity clone = ModEntities.PLAYER_CLONE.get().create(level);
         if (clone == null) return;
         // 登場點：玩家前方 20 格（對齊過場 D/E 段鏡頭看的位置）

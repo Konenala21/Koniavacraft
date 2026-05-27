@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- You can now leave the Mirror World on your own: a return rift opens at the arena center, right-click it to go back to the overworld. Fixed a bug where the boss vanished if you left the Mirror World and re-entered. The entry camera now moves together with your walk-out instead of staying still.
+- 現在可以自己離開鏡中世界：arena 中心會開一道返回裂縫，右鍵即可回到主世界。修正離開鏡中世界後再進入時 boss 消失的問題。進場鏡頭現在會和你走出來的動作同步運鏡，不再呆在原地。
+
 - The Mirror World clone gained a signature pillar-charge skill with three random variants: it slams blocks toward you and launches you into the air. Crouch the moment it hits to greatly soften the knockback. The entry cinematic is now longer (about 31 seconds) with denser charge-up particles, and you now walk out forward from the rift behind you instead of rising up out of the ground.
 - 鏡中世界的分身獲得招牌的墊方塊衝撞技能，三種形態隨機發動：朝你的方向墊方塊把你擊飛到空中。被擊中的瞬間蹲下可大幅減輕擊退。進場過場加長到約 31 秒、集氣粒子更密，而且你現在是從身後的裂縫往前走出來，不再從地下升起。
 
@@ -67,6 +70,9 @@ All notable changes to this project will be documented in this file.
 - 頭盔夜視升級現在開啟時會持續消耗魔力（5 魔力/秒）。魔力耗盡後夜視自動關閉。手動關閉時效果立即移除。關閉升級不再移除藥水提供的夜視效果。
 
 ### Developer Notes / 開發者備註
+
+- `SpaceCrackEntity.interact` now branches on dimension: in `VOID_MIRROR` it calls `VoidMirrorTeleport.exit()`, elsewhere `enter()`. `enter()` spawns a non-decorative owner-tagged exit crack at the arena center, calls `clearExistingFor` (discards the player's residual clone / Nara / crack via `getEntitiesOfClass` + `getAllEntities`), and then spawns unconditionally. The old `alreadyExists` skip-guards in `spawnClone` / `spawnNaraPhantom` were removed: they were what skipped boss spawn on re-entry when a residual clone lingered. `activateAfterIntro` adds a same-source dedupe pass as a backstop for chunk-load timing. Intro camera `CAM_OFFSETS` A/B changed from a static pose to a dolly-in ({0,4.5,-22} to {0,2.4,-9}) so the opening segment moves together with the player's walk-out window.
+- `SpaceCrackEntity.interact` 改為依維度分支：在 `VOID_MIRROR` 呼叫 `VoidMirrorTeleport.exit()`，否則 `enter()`。`enter()` 會在 arena 中心生成一個非裝飾、帶 owner 的出口裂縫，呼叫 `clearExistingFor`（用 `getEntitiesOfClass` + `getAllEntities` 清掉該玩家殘留的 clone / 娜拉 / 裂縫），然後無條件生成。移除了 `spawnClone` / `spawnNaraPhantom` 舊的 `alreadyExists` 守門：殘留 clone 時它會跳過 boss 生成，正是「再進入 boss 消失」的元兇。`activateAfterIntro` 加同源去重作為 chunk 載入時序的保險。進場鏡頭 `CAM_OFFSETS` A/B 從定點改為推軌（{0,4.5,-22} 到 {0,2.4,-9}），讓開場段與玩家走出窗同步移動。
 
 - `PlayerCloneEntity` gained a `PillarSkill` state machine (`tickPillarSkill`, ~160t cooldown, 12t telegraph): it randomly picks RAM_WALL / LIFT_UP / CHARGE_RAMP, places blocks through the existing `takeWallBlock` / `placedWalls` / `VoidMirrorEvents.addModifiedBlock` path, and launches the player via `knockbackPlayer` (reuses the `setDeltaMovement` + `hurtMarked` pattern from `LeggingsDoubleJumpHandler`; crouch applies a ×0.35 multiplier). Intro timing was rescaled to 620t (~31s): client `VoidMirrorIntroManager.SEG_DURATIONS` {160,90,170,200}, server `INTRO_*` RISE 430/480, FLY 530, REVEAL 570, LEN 620, with denser gather particles. Player emerge changed from vertical `emergeOffset` to horizontal `walkOffset` (PoseStack Z translate from -3.2 to 0) plus a manual `walkAnimation.update` for limb swing; the decorative crack now spawns behind the arena point (`EMERGE_CRACK_BACK`).
 - `PlayerCloneEntity` 新增 `PillarSkill` 狀態機（`tickPillarSkill`，約 160t 冷卻、12t 前搖）：隨機選 RAM_WALL / LIFT_UP / CHARGE_RAMP，透過既有 `takeWallBlock` / `placedWalls` / `VoidMirrorEvents.addModifiedBlock` 放方塊，並以 `knockbackPlayer` 擊飛玩家（複用 `LeggingsDoubleJumpHandler` 的 `setDeltaMovement` + `hurtMarked` 寫法；蹲下套 ×0.35）。進場時序重排為 620t（約 31 秒）：client `VoidMirrorIntroManager.SEG_DURATIONS` {160,90,170,200}，server `INTRO_*` RISE 430/480、FLY 530、REVEAL 570、LEN 620，集氣粒子加密。玩家登場從垂直 `emergeOffset` 改為水平 `walkOffset`（PoseStack Z 位移 -3.2 到 0）加手動 `walkAnimation.update` 驅動四肢擺動；裝飾裂縫改生成在登場點後方（`EMERGE_CRACK_BACK`）。

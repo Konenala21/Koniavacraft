@@ -1,6 +1,7 @@
 package com.github.nalamodikk.common.entity;
 
 import com.github.nalamodikk.common.dimension.VoidMirrorTeleport;
+import com.github.nalamodikk.dimension.ModDimensions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -58,7 +59,11 @@ public class SpaceCrackEntity extends Entity {
     public InteractionResult interact(Player player, InteractionHand hand) {
         if (decorative) return InteractionResult.PASS; // 裝飾裂縫不傳送
         if (!level().isClientSide && player instanceof ServerPlayer sp) {
-            VoidMirrorTeleport.enter(sp);
+            if (level().dimension().equals(ModDimensions.VOID_MIRROR)) {
+                VoidMirrorTeleport.exit(sp); // 鏡中世界內的裂縫 = 出口，傳回主世界返回點
+            } else {
+                VoidMirrorTeleport.enter(sp); // 主世界的裂縫 = 入口
+            }
             return InteractionResult.CONSUME;
         }
         return InteractionResult.sidedSuccess(level().isClientSide);
