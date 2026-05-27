@@ -117,6 +117,9 @@ public class PlayerCloneEntity extends Monster {
     private final List<Long> skillBlocks = new ArrayList<>();
     private int skillClearTimer = -1; // -1 閒置；>0 倒數；0 清理中（每 tick 打一格）
     private static final int SKILL_BLOCK_LIFETIME = 20;
+    // 分段擊飛（RAM_WALL）：先橫向擊退，數 tick 後再往上彈
+    @Nullable private Player pendingLaunchTarget = null;
+    private int pendingLaunchTimer = 0;
 
     // 進場演出（地底鑽出→飛高→浮動集氣→爆炸顯現裝備→降落→啟動），對齊過場時間軸（360t）
     private static final int INTRO_RISE_START = 430;
@@ -434,6 +437,13 @@ public class PlayerCloneEntity extends Monster {
                 bossEvent.addPlayer(p);
                 setTarget(p);
             }
+            // boss 開始進攻才生成返回裂縫（過場中不顯示，避免和走出裂縫重複）
+            SpaceCrackEntity exit = ModEntities.SPACE_CRACK.get().create(sl);
+            if (exit != null) {
+                exit.moveTo(0.5, 64.0, 0.5, 0.0F, 0.0F);
+                getSourceUUID().ifPresent(exit::setOwnerUUID);
+                sl.addFreshEntity(exit);
+            }
         }
         // 繞行砲由 customServerAiStep 的 turretsSpawned 守門生成（涵蓋啟動 + 重載後重生）
     }
@@ -482,6 +492,10 @@ public class PlayerCloneEntity extends Monster {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
+        // 免疫自己浮游砲造成的傷害（含蓄力彈爆炸），避免 boss 自爆
+        if (source.getDirectEntity() instanceof FloatingTurretProjectile proj && proj.getOwner() == this) {
+            return false;
+        }
         boolean result = super.hurt(source, amount);
         if (result && !level().isClientSide
                 && source.getEntity() instanceof Player attacker
@@ -568,6 +582,7 @@ public class PlayerCloneEntity extends Monster {
         updatePhase();
         tickAntiPillar(); // 全階段防墊高，開場就不給 cheese
         tickPillarSkill(); // 招牌技能：墊方塊衝撞擊飛（全階段）
+        tickPendingLaunch(); // RAM_WALL 橫向擊退後的第二段上彈
         tickSkillBlockClear(); // 擊飛後依序打掉技能墊的方塊
         if (phase == Phase.WALLING) {
             tickWallBuilding();
@@ -691,6 +706,19 @@ public class PlayerCloneEntity extends Monster {
         p.hurtMarked = true; // server 同步速度給 client
     }
 
+    // RAM_WALL 的第二段：橫向擊退數 tick 後再往上彈（蹲下緩衝）
+    private void tickPendingLaunch() {
+        if (pendingLaunchTimer <= 0) return;
+        if (--pendingLaunchTimer > 0) return;
+        Player p = pendingLaunchTarget;
+        pendingLaunchTarget = null;
+        if (p == null || !p.isAlive()) return;
+        double up = p.isCrouching() ? 0.25 : 0.75;
+        Vec3 m = p.getDeltaMovement();
+        p.setDeltaMovement(m.x, up, m.z);
+        p.hurtMarked = true;
+    }
+
     private void executeSkill(ServerLevel sl, PillarSkill skill, Player p) {
         clearSkillBlocksNow(sl); // 先收掉上次技能殘留的方塊，避免堆積
         Vec3 away = p.position().subtract(this.position()); // 玩家遠離分身方向
@@ -698,18 +726,18 @@ public class PlayerCloneEntity extends Monster {
         BlockState block = takeWallBlock();
         switch (skill) {
             case RAM_WALL -> {
-                // 在玩家面前橫向墊一道牆（垂直於擊退方向、3 格寬 2 格高），把玩家往後擊退
+                // 從玩家朝分身方向水平排 3 格方塊（側視 P C C C . B），把玩家往反方向擊退
                 Direction toClone = Direction.getNearest(this.getX() - p.getX(), 0, this.getZ() - p.getZ());
-                Direction side = toClone.getClockWise();
-                BlockPos center = p.blockPosition().relative(toClone); // 玩家前方一格（朝分身）
                 int height = 1 + this.random.nextInt(2); // 隨機 1 或 2 格高
-                for (int w = -1; w <= 1; w++) {
-                    BlockPos col = center.relative(side, w);
+                for (int i = 1; i <= 3; i++) {
+                    BlockPos col = p.blockPosition().relative(toClone, i);
                     for (int dy = 0; dy < height; dy++) {
                         placeSkillBlock(sl, col.above(dy), block);
                     }
                 }
-                knockbackPlayer(p, away, 1.4, 0.8);
+                knockbackPlayer(p, away, 1.5, 0.1); // 先橫向擊退
+                pendingLaunchTarget = p;
+                pendingLaunchTimer = 4;             // 4t 後再往上彈
                 sl.playSound(null, p.blockPosition(), SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 0.8F);
             }
             case LIFT_UP -> {
@@ -736,7 +764,7 @@ public class PlayerCloneEntity extends Monster {
 
     private void placeSkillBlock(ServerLevel sl, BlockPos p, BlockState block) {
         if (!sl.getWorldBorder().isWithinBounds(p)) return;
-        if (!sl.getBlockState(p).canBeReplaced()) return;
+        if (sl.getBlockState(p).getDestroySpeed(sl, p) < 0) return; // 只跳過不可破壞方塊，其餘直接覆蓋
         sl.setBlockAndUpdate(p, block);
         long key = p.asLong();
         placedWalls.add(key);

@@ -57,8 +57,7 @@ public final class VoidMirrorTeleport {
         spawnNaraPhantom(target, player);
         // 玩家走出用的裝飾裂縫（不傳送、會自己消失）
         spawnEmergeCrack(target);
-        // arena 中心的返回裂縫，玩家可主動右鍵離開
-        spawnExitCrack(target, player);
+        // 返回裂縫改由 boss 開始進攻時（PlayerCloneEntity.activateAfterIntro）生成，避免過場中與走出裂縫重複
         // 播放進場過場
         PacketDistributor.sendToPlayer(player, VoidMirrorIntroPacket.INSTANCE);
         // boss 以「進場演出」狀態生成，演出結束才啟動
@@ -82,14 +81,6 @@ public final class VoidMirrorTeleport {
                 crack.discard();
             }
         }
-    }
-
-    private static void spawnExitCrack(ServerLevel level, ServerPlayer player) {
-        SpaceCrackEntity crack = ModEntities.SPACE_CRACK.get().create(level);
-        if (crack == null) return;
-        crack.moveTo(ARENA_X, ARENA_Y, ARENA_Z, 0.0F, 0.0F);
-        crack.setOwnerUUID(player.getUUID());
-        level.addFreshEntity(crack);
     }
 
     private static void spawnEmergeCrack(ServerLevel level) {

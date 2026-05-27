@@ -6,8 +6,11 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
-- The clone's pillar-charge skill now has a variant that slams a horizontal wall across your front (3 wide, a random 1 or 2 high) to knock you back, and all three variants' placed blocks are now quickly torn down by the clone in sequence one second after the hit, so they do not litter the arena.
-- 分身的墊方塊衝撞技能新增一種:在你面前橫向墊起一道 3 格寬、隨機 1 或 2 格高的牆把你往後擊退,而且三種技能墊的方塊現在都會在擊中一秒後被分身依序快速打掉,不會殘留在場地上。
+- Fixed: the Mirror World clone could be killed by its own charged-shot explosions; it is now immune to its own turret damage. The arena return rift now appears when the boss starts attacking (after the cinematic) instead of during it, so it no longer shows up twice.
+- 修正:鏡中世界分身會被自己蓄力彈的爆炸炸死,現在免疫自己浮游砲的傷害。arena 返回裂縫改成 boss 開始進攻時(過場結束後)才出現,不再在過場中重複顯示兩個。
+
+- The clone's pillar-charge skill now has a variant that rams a row of 3 blocks out from you toward the clone (a random 1 or 2 high) to knock you back, first sideways then with a short upward pop, and all three variants' placed blocks are now quickly torn down by the clone in sequence one second after the hit, so they do not litter the arena.
+- 分身的墊方塊衝撞技能新增一種:從你朝分身方向墊出一排 3 格長、隨機 1 或 2 格高的方塊把你往反方向擊退(先橫向、再短暫上彈),而且三種技能墊的方塊現在都會在擊中一秒後被分身依序快速打掉,不會殘留在場地上。
 
 - Mirror World entry cinematic polish: the opening camera no longer pulls back as far, Nara now watches from farther away, and her phantom is rendered semi-transparent with a "(Phantom)" name tag so you will not mistake it for the real Nara.
 - 鏡中世界進場過場微調：開場鏡頭不再拉那麼遠，娜拉改在更遠處旁觀，她的幻影現在半透明顯示、名牌標示「（幻影）」，避免被當成娜拉本體。
@@ -80,8 +83,11 @@ All notable changes to this project will be documented in this file.
 
 ### Developer Notes / 開發者備註
 
-- `PlayerCloneEntity` `RAM_WALL` now places a horizontal wall in front of the player, perpendicular to the knockback direction (`Direction.getClockWise`), 3 wide and a random 1-2 high, and knocks the player back; the from-clone-feet ramp version was replaced. All skill blocks are tracked in `skillBlocks`; `executeSkill` sets `skillClearTimer = SKILL_BLOCK_LIFETIME` (20t) and `tickSkillBlockClear` then destroys one block per tick in placement order. `clearSkillBlocksNow` wipes leftovers at the start of the next skill. `placeSkillBlock` records into both `placedWalls` and `skillBlocks`.
-- `PlayerCloneEntity` 的 `RAM_WALL` 改為在玩家前方橫向墊一道牆，垂直於擊退方向（`Direction.getClockWise`），3 格寬、隨機 1~2 格高，並把玩家往後擊退；取代了原本從分身腳邊延伸的斜坡式。所有技能方塊記入 `skillBlocks`；`executeSkill` 設 `skillClearTimer = SKILL_BLOCK_LIFETIME`（20t），`tickSkillBlockClear` 之後每 tick 依放置順序打掉一格。`clearSkillBlocksNow` 在下次技能開始前清掉殘留。`placeSkillBlock` 同時記入 `placedWalls` 與 `skillBlocks`。
+- `PlayerCloneEntity.hurt` now ignores damage whose direct entity is a `FloatingTurretProjectile` it owns (covers charged-shot explosion self-damage). The return-rift `SpaceCrackEntity` is spawned in `activateAfterIntro` (owner = source UUID, arena center) instead of `VoidMirrorTeleport.enter`, so it no longer overlaps the emerge crack during the cinematic; `spawnExitCrack` was removed.
+- `PlayerCloneEntity.hurt` 現在忽略 direct entity 為自己擁有的 `FloatingTurretProjectile` 的傷害（涵蓋蓄力彈爆炸自傷）。返回裂縫 `SpaceCrackEntity` 改在 `activateAfterIntro` 生成（owner = 來源 UUID、arena 中心），不再在 `VoidMirrorTeleport.enter`，避免過場中與走出裂縫重疊；移除了 `spawnExitCrack`。
+
+- `PlayerCloneEntity` `RAM_WALL` now places a row of 3 blocks extending from the player toward the clone (`relative(toClone, 1..3)`, a random 1-2 high) and knocks the player back sideways, then `tickPendingLaunch` adds a short upward pop 4t later (`pendingLaunchTarget`); the from-clone-feet ramp version was replaced. `placeSkillBlock` now only skips unbreakable blocks (was `canBeReplaced`) so the wall reliably appears. All skill blocks are tracked in `skillBlocks`; `executeSkill` sets `skillClearTimer = SKILL_BLOCK_LIFETIME` (20t) and `tickSkillBlockClear` destroys one block per tick in placement order; `clearSkillBlocksNow` wipes leftovers at the start of the next skill.
+- `PlayerCloneEntity` 的 `RAM_WALL` 改為從玩家朝分身方向排 3 格方塊（`relative(toClone, 1..3)`、隨機 1~2 格高）並先把玩家往反方向橫向擊退，`tickPendingLaunch` 之後 4t 再給一段上彈（`pendingLaunchTarget`）；取代了原本從分身腳邊延伸的斜坡式。`placeSkillBlock` 改為只跳過不可破壞方塊（原為 `canBeReplaced`），確保牆一定放得出來。所有技能方塊記入 `skillBlocks`；`executeSkill` 設 `skillClearTimer = SKILL_BLOCK_LIFETIME`（20t），`tickSkillBlockClear` 每 tick 依放置順序打掉一格；`clearSkillBlocksNow` 在下次技能開始前清掉殘留。
 
 - Mirror World intro tweaks: `VoidMirrorIntroManager.CAM_OFFSETS` A/B pulled in (A to {0,3.2,-12}, B to {0,2.4,-7}) so the opening is less distant; `VoidMirrorTeleport.spawnNaraPhantom` moves Nara to `ARENA_Z - 26` and names her via the new `nara.phantom.name` key (zh "娜拉（幻影）" / en "Nara (Phantom)"). `NaraPhantomRenderer` overrides `getRenderType` to `entityTranslucent` and wraps the buffer with an `AlphaConsumer` that multiplies vertex alpha by 0.75 (25% transparent).
 - 鏡中世界進場微調：`VoidMirrorIntroManager.CAM_OFFSETS` A/B 拉近（A 改 {0,3.2,-12}、B 改 {0,2.4,-7}），開場不再那麼遠；`VoidMirrorTeleport.spawnNaraPhantom` 把娜拉移到 `ARENA_Z - 26`，並改用新的 `nara.phantom.name` 鍵命名（中「娜拉（幻影）」/英「Nara (Phantom)」）。`NaraPhantomRenderer` 覆寫 `getRenderType` 為 `entityTranslucent`，並用 `AlphaConsumer` 包裝 buffer 把頂點 alpha 乘 0.75（25% 透明）。
