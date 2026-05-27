@@ -698,11 +698,16 @@ public class PlayerCloneEntity extends Monster {
         BlockState block = takeWallBlock();
         switch (skill) {
             case RAM_WALL -> {
-                // 在玩家面前（朝分身那側）玩家高度起墊 3 格高的牆，撞上玩家擊飛
-                Vec3 toClone = horizUnit(this.position().subtract(p.position()));
-                BlockPos base = BlockPos.containing(p.getX() + toClone.x, p.getBlockY(), p.getZ() + toClone.z);
-                for (int dy = 0; dy < 3; dy++) {
-                    placeSkillBlock(sl, base.above(dy), block);
+                // 在玩家面前橫向墊一道牆（垂直於擊退方向、3 格寬 2 格高），把玩家往後擊退
+                Direction toClone = Direction.getNearest(this.getX() - p.getX(), 0, this.getZ() - p.getZ());
+                Direction side = toClone.getClockWise();
+                BlockPos center = p.blockPosition().relative(toClone); // 玩家前方一格（朝分身）
+                int height = 1 + this.random.nextInt(2); // 隨機 1 或 2 格高
+                for (int w = -1; w <= 1; w++) {
+                    BlockPos col = center.relative(side, w);
+                    for (int dy = 0; dy < height; dy++) {
+                        placeSkillBlock(sl, col.above(dy), block);
+                    }
                 }
                 knockbackPlayer(p, away, 1.4, 0.8);
                 sl.playSound(null, p.blockPosition(), SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 0.8F);
