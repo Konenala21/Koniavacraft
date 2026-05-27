@@ -3,6 +3,7 @@ package com.github.nalamodikk.narasystem.nara.network.client;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.narasystem.nara.hud.NaraDialogueLine;
 import com.github.nalamodikk.narasystem.nara.hud.NaraDialogueManager;
+import com.github.nalamodikk.narasystem.nara.hud.NaraSoundHelper;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
@@ -36,6 +37,7 @@ public record NaraTauntPacket() implements CustomPacketPayload {
             NaraDialogueManager.setPortraitShown();
             NaraDialogueManager.startDialogueImmediate(List.of(
                     NaraDialogueLine.simple(Component.translatable("nara.dialogue.void_mirror.death_taunt"))
+                            .withOnStart(() -> NaraSoundHelper.play("void_mirror", "taunt"))
             ));
         });
     }

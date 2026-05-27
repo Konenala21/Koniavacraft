@@ -1,6 +1,7 @@
 package com.github.nalamodikk.client.cinematic;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.narasystem.nara.hud.NaraSoundHelper;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -116,6 +117,10 @@ public class VoidMirrorIntroManager {
                         mc.player.getZ() + Math.sin(a) * r,
                         0.0, 0.05, 0.0);
             }
+        }
+
+        if (ticks == DIALOGUE_START) {
+            NaraSoundHelper.play("void_mirror", "intro");
         }
 
         ticks++;
