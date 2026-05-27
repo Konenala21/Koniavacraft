@@ -493,6 +493,10 @@ public class FloatingTurretEntity extends PathfinderMob {
     public boolean hurt(DamageSource source, float amount) {
         // 分身砲：玩家可以摧毀它（套用 DEFENSE 減傷）
         if (cloneOwner != null) {
+            // 免疫同源浮游砲的傷害（含蓄力彈爆炸），不被自己或同伴的砲炸死
+            if (source.getDirectEntity() instanceof FloatingTurretProjectile proj && proj.getOwner() == cloneOwner) {
+                return false;
+            }
             if (cloneTurretStack.getItem() instanceof FloatingTurretItem) {
                 amount *= (1f - FloatingTurretItem.getDamageReduction(cloneTurretStack));
             }

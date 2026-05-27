@@ -3,6 +3,7 @@ package com.github.nalamodikk.client.cinematic;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.network.packet.server.VoidMirrorSkipIntroPacket;
 import com.github.nalamodikk.narasystem.nara.hud.NaraSoundHelper;
+import com.github.nalamodikk.register.client.ModKeyMappings;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -104,8 +105,8 @@ public class VoidMirrorIntroManager {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
-        // 跳過鍵（預設 R / 交換副手）：通知 server 結束 boss 進場，並跳到轉黑收尾交還控制
-        if (mc.options.keySwapOffhand.consumeClick()) {
+        // 跳過鍵（模組 NARA_SKIP，預設 R）：通知 server 結束 boss 進場，並跳到轉黑收尾交還控制
+        if (ModKeyMappings.NARA_SKIP.consumeClick()) {
             PacketDistributor.sendToServer(VoidMirrorSkipIntroPacket.INSTANCE);
             if (ticks < FADE_IN_START) ticks = FADE_IN_START;
         }

@@ -825,9 +825,9 @@ public class PlayerCloneEntity extends Monster {
                         placeSkillBlock(sl, col.above(dy), block);
                     }
                 }
-                knockbackPlayer(p, away, 1.5, 0.1); // 先橫向擊退
+                knockbackPlayer(p, away, 2.2, 0.45); // 先往後轟飛（離地，空中保速才飛得遠，不會貼地一格就停）
                 pendingLaunchTarget = p;
-                pendingLaunchTimer = 4;             // 4t 後再往上彈
+                pendingLaunchTimer = 4;              // 4t 後再往上頂高
                 sl.playSound(null, p.blockPosition(), SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 0.8F);
             }
             case LIFT_UP -> {

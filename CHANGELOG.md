@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Fixes: the cinematic skip now uses the mod's R keybind (it was wired to the wrong vanilla key before); the wall-ram knockback now launches you back through the air instead of stopping after one block; and the clone's floating turrets no longer blow each other or themselves up with their charged-shot explosions.
+- 修正:過場跳過改用模組的 R 鍵(之前綁錯成原版鍵);墊牆擊退現在會把你往後轟飛(離地飛遠),不再貼地一格就停;分身的浮游砲也不再被自己或同伴的蓄力彈爆炸炸掉。
+
 - After the intro cinematic the clone now stands still for 2 seconds before attacking, instead of immediately ambushing you the moment it finishes. You can also press the skip key (default R) during the cinematic to fade to black and hand control back right away.
 - 進場過場結束後,分身會先站定 2 秒才開始攻擊,不再一播完就偷襲你。過場中也可以按跳過鍵(預設 R)直接轉黑、立刻把控制交還給你。
 
@@ -103,6 +106,9 @@ All notable changes to this project will be documented in this file.
 - 頭盔夜視升級現在開啟時會持續消耗魔力（5 魔力/秒）。魔力耗盡後夜視自動關閉。手動關閉時效果立即移除。關閉升級不再移除藥水提供的夜視效果。
 
 ### Developer Notes / 開發者備註
+
+- `VoidMirrorIntroManager` skip now uses `ModKeyMappings.NARA_SKIP` (R) instead of `keySwapOffhand` (vanilla F). `RAM_WALL` knockback raised to 2.2 horizontal / 0.45 vertical so the player leaves the ground and keeps speed (was 1.5 / 0.1, which stopped after one block). `FloatingTurretEntity.hurt` clone branch now ignores damage whose `getDirectEntity()` is a `FloatingTurretProjectile` owned by the same `cloneOwner`, so clone turrets aren't destroyed by their own/sibling charged-shot explosions.
+- `VoidMirrorIntroManager` 跳過改用 `ModKeyMappings.NARA_SKIP`（R）取代 `keySwapOffhand`（原版 F）。`RAM_WALL` 擊退提高為水平 2.2 / 垂直 0.45，玩家會離地且保速（原為 1.5 / 0.1，貼地一格就停）。`FloatingTurretEntity.hurt` 的 clone 分支忽略 `getDirectEntity()` 為同一 `cloneOwner` 所屬 `FloatingTurretProjectile` 的傷害，分身砲不再被自己或同伴的蓄力彈爆炸摧毀。
 
 - `activateAfterIntro` sets `graceTicks = 40` and no longer sets a target; `customServerAiStep` returns early (clearing the target) while `graceTicks > 0`, so the clone stands still for 2s after the cinematic. New C2S `VoidMirrorSkipIntroPacket`: pressing `keySwapOffhand` (R) during the cinematic sends it; the server finds the player's clone and calls `skipIntro` (sets `introTicks = INTRO_LEN` so it activates next tick), and the client jumps `ticks` to `FADE_IN_START` to fade out and release control.
 - `activateAfterIntro` 設 `graceTicks = 40` 且不再設定目標；`customServerAiStep` 在 `graceTicks > 0` 時提前 return(清除目標),因此分身在過場後站定 2 秒。新增 C2S `VoidMirrorSkipIntroPacket`:過場中按 `keySwapOffhand`(R)送出,server 找到該玩家的分身並呼叫 `skipIntro`(設 `introTicks = INTRO_LEN`,下 tick 啟動),client 則把 `ticks` 跳到 `FADE_IN_START` 轉黑並交還控制。
