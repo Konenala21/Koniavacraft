@@ -110,7 +110,7 @@ public class PlayerCloneEntity extends Monster {
     private int skillChargeTicks = 0;
     private int skillCooldown = 100; // 開場緩衝，不一進場就放
     private static final int SKILL_COOLDOWN = 160;
-    private static final int SKILL_TELEGRAPH = 12;  // 前搖：給玩家時間蹲下緩衝
+    private static final int SKILL_TELEGRAPH = 20;  // 前搖 1 秒：站定蓄力 + 漸強預警，給玩家反應/閃避
     private static final double SKILL_RANGE_SQR = 144.0; // 12 格內才發
     private static final double SKILL_MIN_SQR = 4.0;     // 太近不發
     // 技能墊的方塊：擊飛後 1 秒（20t）開始依序快速打掉，分身收拾自己墊的方塊
@@ -690,11 +690,18 @@ public class PlayerCloneEntity extends Monster {
         if (!(getTarget() instanceof Player p) || !p.isAlive()) { pendingSkill = null; return; }
 
         if (pendingSkill != null) {
-            // 前搖：朝玩家方向噴預警粒子，給玩家時間蹲下
+            // 前置動作：站定蓄力、面向玩家，朝玩家噴漸強預警粒子，給玩家 1 秒反應/閃避
+            this.setDeltaMovement(0.0, this.getDeltaMovement().y, 0.0);
+            this.getNavigation().stop();
+            this.getLookControl().setLookAt(p);
             Vec3 d = horizUnit(p.position().subtract(this.position()));
+            float prog = 1.0f - skillChargeTicks / (float) SKILL_TELEGRAPH;
+            int count = 4 + (int) (prog * 10); // 越接近發動越密
             sl.sendParticles(ParticleTypes.CRIT,
                     getX() + d.x * 0.6, getY() + 1.0, getZ() + d.z * 0.6,
-                    6, 0.3, 0.3, 0.3, 0.12);
+                    count, 0.3, 0.3, 0.3, 0.12 + prog * 0.1);
+            sl.sendParticles(ParticleTypes.ENCHANTED_HIT,
+                    getX(), getY() + 1.2, getZ(), 2, 0.4, 0.4, 0.4, 0.0);
             if (--skillChargeTicks <= 0) {
                 executeSkill(sl, pendingSkill, p);
                 pendingSkill = null;
