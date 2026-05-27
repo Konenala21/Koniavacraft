@@ -1043,8 +1043,9 @@
   "nara.hud.name": "娜拉",
   "nara.phantom.name": "娜拉（幻影）",
   "nara.hud.name.unknown": "???",
-  "message.koniava.void_mirror.ability_disabled": "鏡中世界禁止使用移動技能",
-  "message.koniava.void_mirror.container_disabled": "鏡中世界禁止放置或開啟容器",
+  "message.koniava.void_mirror.ability_disabled": "鏡面空間扭曲了你的裝備推進模組,無法啟動",
+  "message.koniava.void_mirror.container_disabled": "鏡面空間排斥外來的儲存容器",
+  "message.koniava.void_mirror.skip_hint": "按 R 跳過",
 
   "item.koniava.dev_render_test_1": "創造開發渲染物品1",
   "item.koniava.dev_render_test.tooltip.1": "右鍵: ManaStrike 特效，Shift 右鍵: Orbital 特效",

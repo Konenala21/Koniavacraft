@@ -32,7 +32,7 @@ public class CloneTelegraphRenderer {
                 mc.player.getBoundingBox().inflate(48));
         boolean any = false;
         for (PlayerCloneEntity b : bosses) {
-            if (b.getTelegraphSkill() != 0) { any = true; break; }
+            if (b.getTelegraphSkill() != 0 || b.isReflecting()) { any = true; break; }
         }
         if (!any) return;
 
@@ -47,6 +47,7 @@ public class CloneTelegraphRenderer {
 
         Player target = mc.player; // 1 對 1 假設：預兆畫在本機玩家（招式目標）
         for (PlayerCloneEntity boss : bosses) {
+            if (boss.isReflecting()) drawReflectBox(vc, m, boss); // 鏡反：boss 身上鏡面框（此時打它會反傷）
             switch (boss.getTelegraphSkill()) {
                 case 1 -> drawRamWall(vc, m, boss, target);   // 面前一道牆輪廓
                 case 2 -> drawLiftCircle(vc, m, target);      // 腳下一個圈
@@ -93,6 +94,18 @@ public class CloneTelegraphRenderer {
     private static void drawChargeLine(VertexConsumer vc, Matrix4f m, PlayerCloneEntity boss, Player target) {
         Vec3 b = boss.position(), t = target.position();
         line(vc, m, b.x, b.y + 0.15, b.z, t.x, t.y + 0.15, t.z);
+    }
+
+    // 鏡反狀態：在 boss 身上畫一個鏡面方框（提示此時打它會反傷）
+    private static void drawReflectBox(VertexConsumer vc, Matrix4f m, PlayerCloneEntity boss) {
+        net.minecraft.world.phys.AABB box = boss.getBoundingBox().inflate(0.15);
+        double x0 = box.minX, y0 = box.minY, z0 = box.minZ, x1 = box.maxX, y1 = box.maxY, z1 = box.maxZ;
+        line(vc, m, x0, y0, z0, x1, y0, z0); line(vc, m, x1, y0, z0, x1, y0, z1);
+        line(vc, m, x1, y0, z1, x0, y0, z1); line(vc, m, x0, y0, z1, x0, y0, z0); // 底
+        line(vc, m, x0, y1, z0, x1, y1, z0); line(vc, m, x1, y1, z0, x1, y1, z1);
+        line(vc, m, x1, y1, z1, x0, y1, z1); line(vc, m, x0, y1, z1, x0, y1, z0); // 頂
+        line(vc, m, x0, y0, z0, x0, y1, z0); line(vc, m, x1, y0, z0, x1, y1, z0);
+        line(vc, m, x1, y0, z1, x1, y1, z1); line(vc, m, x0, y0, z1, x0, y1, z1); // 豎
     }
 
     private static Vec3 horiz(Vec3 v) {

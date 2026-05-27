@@ -6,6 +6,11 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- The clone's damage reflect is no longer a random 25% chance: it now periodically enters a "mirror reflect" state (a bright mirror frame appears around it for ~1.5s) and only reflects your damage during that window, so you can learn to read it and stop hitting, instead of randomly getting punished.
+- 分身的傷害反彈不再是隨機 25%:它現在會週期性進入「鏡反」狀態(身上出現亮白鏡框約 1.5 秒),只有在這段時間打它才會反傷,所以你可以看著它學會停手,而不是被隨機懲罰。
+- The cinematic now shows a "Press R to skip" hint at the bottom the whole time, and the in-world restriction messages were reworded to sound like the dimension warping your gear rather than an admin notice.
+- 進場過場現在全程在底部顯示「按 R 跳過」提示;鏡中世界的限制提示也改寫成「鏡面空間扭曲你的裝備」這種世界觀語氣,而不是像管理員公告。
+
 - Reworked the clone's pressure to come from behavior instead of raw numbers: it now keeps a 2-3 block threat distance (chases in when far, backs off when too close, no more face-hugging) and circles you, attacks with skills about twice as often (cooldown halved), and its melee damage was lowered. So it feels like a stalking opponent constantly threatening skills, rather than a high-damage stat-stick glued to you.
 - 重做分身的壓迫感,讓它來自行為而非純數值:它現在會保持 2~3 格的威脅距離(太遠追近、太近退開,不再貼臉)並繞著你徘徊,技能頻率約翻倍(冷卻減半),近戰傷害則調低。所以它打起來像一個一直在你身邊伺機放技能的獵人,而不是貼著你猛砍的高傷數值怪。
 
@@ -130,6 +135,9 @@ All notable changes to this project will be documented in this file.
 - 頭盔夜視升級現在開啟時會持續消耗魔力（5 魔力/秒）。魔力耗盡後夜視自動關閉。手動關閉時效果立即移除。關閉升級不再移除藥水提供的夜視效果。
 
 ### Developer Notes / 開發者備註
+
+- Mirror-reflect state replaces the random reflect: synced `REFLECTING` bool, `tickReflect` cycles it (200t initial, then `REFLECT_DURATION` 30t on / `REFLECT_INTERVAL` 160t off) with a glass sound on enter; `hurt` only reflects to a player attacker while `isReflecting()` (removed `REFLECT_CHANCE`). `CloneTelegraphRenderer.drawReflectBox` outlines the boss AABB in bright white during the window. Added skip-hint string drawn bottom-center for the whole cinematic in `onRenderGui`; reworded the ability/container disabled messages to in-world flavor.
+- 鏡反狀態取代隨機反傷:同步 `REFLECTING` bool，`tickReflect` 週期切換（初始 200t，之後開 `REFLECT_DURATION` 30t / 關 `REFLECT_INTERVAL` 160t），進入時播玻璃音；`hurt` 只在 `isReflecting()` 時對玩家攻擊者反傷（移除 `REFLECT_CHANCE`）。`CloneTelegraphRenderer.drawReflectBox` 在該窗口以亮白描出 boss AABB。`onRenderGui` 全程在底部置中畫跳過提示字串；改寫 ability/container 禁用訊息為世界觀語氣。
 
 - Reworked melee into a keep-distance pressure pattern: `tickMeleeStrafe` now holds `KEEP_DISTANCE` (2.5): `moveTo` when farther than +1.5, back off (side + away) when closer than -0.6, otherwise strafe sideways; melee only lands if actually within reach. `SKILL_COOLDOWN` 160 to 80 (skills roughly twice as often) and `ATTACK_DAMAGE` 12 to 8. Pressure now comes from constant skill threat at range, not high-damage face-hugging.
 - 近戰改為保持距離的壓迫模式:`tickMeleeStrafe` 維持 `KEEP_DISTANCE`（2.5）：距離大於 +1.5 時 `moveTo` 追近、小於 -0.6 時（側移 + 後退）退開、其餘繞圈側移；只有真的進到攻擊距離才近戰。`SKILL_COOLDOWN` 160 改 80（技能約翻倍頻率）、`ATTACK_DAMAGE` 12 改 8。壓迫改由「在距離外持續以技能威脅」提供，而非高傷貼臉。

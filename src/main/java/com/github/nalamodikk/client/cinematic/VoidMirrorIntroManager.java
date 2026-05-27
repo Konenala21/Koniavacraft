@@ -180,17 +180,23 @@ public class VoidMirrorIntroManager {
         return fadeOutTicks > 0 ? fadeOutTicks / (float) FADE_OUT_LEN : 0f;
     }
 
-    // 收尾黑幕 + 娜拉台詞字幕框（無立繪，底部）
+    // 收尾黑幕 + 娜拉台詞字幕框（無立繪，底部）+ 全程「按 R 跳過」提示
     @SubscribeEvent
     public static void onRenderGui(RenderGuiEvent.Post event) {
-        float fade = currentFadeAlpha();
-        boolean showDialogue = active && ticks >= DIALOGUE_START && ticks < FADE_IN_START;
-        if (fade <= 0f && !showDialogue) return;
-
         Minecraft mc = Minecraft.getInstance();
         GuiGraphics g = event.getGuiGraphics();
         int sw = mc.getWindow().getGuiScaledWidth();
         int sh = mc.getWindow().getGuiScaledHeight();
+
+        // 過場全程在底部置中顯示跳過提示
+        if (active) {
+            Component hint = Component.translatable("message.koniava.void_mirror.skip_hint");
+            g.drawString(mc.font, hint, (sw - mc.font.width(hint)) / 2, sh - 12, 0xFFCCCCCC, true);
+        }
+
+        float fade = currentFadeAlpha();
+        boolean showDialogue = active && ticks >= DIALOGUE_START && ticks < FADE_IN_START;
+        if (fade <= 0f && !showDialogue) return;
 
         if (fade > 0f) {
             int alpha = (int) (Mth.clamp(fade, 0f, 1f) * 255f) << 24;

@@ -72,7 +72,6 @@ import java.util.UUID;
 public class PlayerCloneEntity extends Monster {
 
     public static final float MAX_HP = 300.0F;
-    private static final float REFLECT_CHANCE = 0.25F;
 
     public enum Phase { NORMAL, WALLING, BERSERK }
 
@@ -128,6 +127,11 @@ public class PlayerCloneEntity extends Monster {
     private int graceTicks = 0;
     // 近戰攻擊冷卻（邊繞圈邊攻擊，取代 MeleeAttackGoal 的站定揮擊）
     private int attackCooldown = 0;
+    // 鏡反狀態：週期進入，期間打 boss 才反傷（取代純機率反傷，玩家可學會停手）
+    private int reflectCooldown = 200;
+    private int reflectTicks = 0;
+    private static final int REFLECT_INTERVAL = 160; // 每 ~8 秒一次
+    private static final int REFLECT_DURATION = 30;  // 持續 1.5 秒
 
     // 進場演出（地底鑽出→飛高→浮動集氣→爆炸顯現裝備→降落→啟動），對齊過場時間軸（360t）
     private static final int INTRO_RISE_START = 430;
@@ -152,6 +156,9 @@ public class PlayerCloneEntity extends Monster {
     // 當前前搖中的招式（同步給 client 畫預兆）：0=無, 1=RAM_WALL, 2=LIFT_UP, 3=CHARGE_RAMP
     private static final EntityDataAccessor<Integer> TELEGRAPH_SKILL =
             SynchedEntityData.defineId(PlayerCloneEntity.class, EntityDataSerializers.INT);
+    // 鏡反狀態（同步給 client 畫鏡面輪廓）：此狀態期間打 boss 會被反傷，給玩家學會停手
+    private static final EntityDataAccessor<Boolean> REFLECTING =
+            SynchedEntityData.defineId(PlayerCloneEntity.class, EntityDataSerializers.BOOLEAN);
 
     // 鏡像玩家的整個主背包（快捷欄 0-8 + 背包 9-35），供疊方塊 AI 取用。不掉落、不同步。
     private final NonNullList<ItemStack> clonedInventory = NonNullList.withSize(36, ItemStack.EMPTY);
@@ -170,10 +177,15 @@ public class PlayerCloneEntity extends Monster {
         builder.define(SOURCE_UUID, Optional.empty());
         builder.define(SOURCE_NAME, "");
         builder.define(TELEGRAPH_SKILL, 0);
+        builder.define(REFLECTING, false);
     }
 
     public int getTelegraphSkill() {
         return entityData.get(TELEGRAPH_SKILL);
+    }
+
+    public boolean isReflecting() {
+        return entityData.get(REFLECTING);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -512,10 +524,11 @@ public class PlayerCloneEntity extends Monster {
             return false;
         }
         boolean result = super.hurt(source, amount);
+        // 只在鏡反狀態反傷（玩家看到鏡面輪廓就該停手），不再是純機率
         if (result && !level().isClientSide
+                && isReflecting()
                 && source.getEntity() instanceof Player attacker
-                && attacker.isAlive()
-                && this.random.nextFloat() < REFLECT_CHANCE) {
+                && attacker.isAlive()) {
             attacker.hurt(level().damageSources().magic(), amount);
         }
         return result;
@@ -609,6 +622,7 @@ public class PlayerCloneEntity extends Monster {
         tickAntiPillar(); // 全階段防墊高，開場就不給 cheese
         tickPillarSkill(); // 招牌技能：墊方塊衝撞擊飛（全階段）
         tickMeleeStrafe(); // 近戰：邊繞圈邊攻擊（取代 MeleeAttackGoal 的站定揮擊）
+        tickReflect(); // 週期性鏡反狀態（取代純機率反傷）
         tickAirChase(); // 玩家飛高時墊方塊往上跳追擊（像玩家 pillar jump）
         tickPendingLaunch(); // RAM_WALL 橫向擊退後的第二段上彈
         tickSkillBlockClear(); // 擊飛後依序打掉技能墊的方塊
@@ -795,6 +809,21 @@ public class PlayerCloneEntity extends Monster {
             this.swing(InteractionHand.MAIN_HAND);
             this.doHurtTarget(tgt);
             attackCooldown = 16;
+        }
+    }
+
+    // 鏡反狀態：每隔一段時間進入 1.5 秒，期間打 boss 才反傷（client 會畫鏡面輪廓提示）
+    private void tickReflect() {
+        if (reflectTicks > 0) {
+            if (--reflectTicks == 0) entityData.set(REFLECTING, false);
+            return;
+        }
+        if (reflectCooldown > 0) { reflectCooldown--; return; }
+        reflectTicks = REFLECT_DURATION;
+        reflectCooldown = REFLECT_INTERVAL;
+        entityData.set(REFLECTING, true);
+        if (level() instanceof ServerLevel sl) {
+            sl.playSound(null, blockPosition(), SoundEvents.GLASS_PLACE, SoundSource.HOSTILE, 0.9F, 1.6F);
         }
     }
 

@@ -1016,8 +1016,9 @@
   "nara.hud.name": "Nara",
   "nara.phantom.name": "Nara (Phantom)",
   "nara.hud.name.unknown": "???",
-  "message.koniava.void_mirror.ability_disabled": "Movement abilities are disabled in the Mirror World",
-  "message.koniava.void_mirror.container_disabled": "Containers cannot be placed or opened in the Mirror World",
+  "message.koniava.void_mirror.ability_disabled": "The mirror space warps your gear's propulsion module; it won't engage",
+  "message.koniava.void_mirror.container_disabled": "The mirror space rejects foreign storage containers",
+  "message.koniava.void_mirror.skip_hint": "Press R to skip",
 
   "item.koniava.dev_render_test_1": "Dev Render Test Item 1",
   "item.koniava.dev_render_test.tooltip.1": "Right-click: ManaStrike effect. Shift+Right-click: Orbital effect.",
