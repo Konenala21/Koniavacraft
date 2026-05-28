@@ -224,6 +224,18 @@ public class PlayerCloneEntity extends Monster {
     // 技能鎖定的地點（同步給 client 畫固定預兆；玩家在前搖內跑出此點即可閃避）
     private static final EntityDataAccessor<BlockPos> SKILL_TARGET =
             SynchedEntityData.defineId(PlayerCloneEntity.class, EntityDataSerializers.BLOCK_POS);
+    // 死亡演出階段（0=未死亡, 1=stagger, 2=glow_up, 3=crack, 4=shatter, 5=final_flash）
+    // 自製 120-tick 死亡動畫，覆寫 vanilla tickDeath。Renderer 讀此狀態切換視覺。
+    private static final EntityDataAccessor<Integer> DEATH_PHASE =
+            SynchedEntityData.defineId(PlayerCloneEntity.class, EntityDataSerializers.INT);
+
+    // 死亡演出時序常量（tick 為單位），總共 400t = 20 秒
+    public static final int DEATH_TOTAL_TICKS = 400;
+    public static final int DEATH_PHASE_STAGGER_END = 65;    // 65t  搖晃 (3.25s)
+    public static final int DEATH_PHASE_GLOW_END    = 165;   // 100t 白熱化 (5s)
+    public static final int DEATH_PHASE_CRACK_END   = 275;   // 110t 裂痕 (5.5s)
+    public static final int DEATH_PHASE_SHATTER_END = 365;   // 90t  碎裂 (4.5s)
+    // 365-400 = 35t final flash (1.75s)
 
     // 鏡像玩家的整個主背包（快捷欄 0-8 + 背包 9-35），供疊方塊 AI 取用。不掉落、不同步。
     private final NonNullList<ItemStack> clonedInventory = NonNullList.withSize(36, ItemStack.EMPTY);
@@ -256,6 +268,11 @@ public class PlayerCloneEntity extends Monster {
         builder.define(REFLECTING, false);
         builder.define(ARMORED, false);
         builder.define(SKILL_TARGET, BlockPos.ZERO);
+        builder.define(DEATH_PHASE, 0);
+    }
+
+    public int getDeathPhase() {
+        return entityData.get(DEATH_PHASE);
     }
 
     public int getTelegraphSkill() {
@@ -844,11 +861,14 @@ public class PlayerCloneEntity extends Monster {
 
     @Override
     public void die(DamageSource cause) {
+        // 偵測指令殺死 / out_of_world：跳過 20s 演出直接 remove（管理員/開發 debug 方便）
+        boolean isCommandKill = cause.is(net.minecraft.world.damagesource.DamageTypes.GENERIC_KILL)
+                || cause.is(net.minecraft.world.damagesource.DamageTypes.OUT_OF_WORLD)
+                || cause.is(net.minecraft.world.damagesource.DamageTypes.FELL_OUT_OF_WORLD);
         super.die(cause);
         if (level().isClientSide || !(level() instanceof ServerLevel sl)) return;
-        // 死亡視覺/聽覺回饋（boss bar 不立刻撤掉，留給 deathTime 動畫期間漸層淡出）
-        playDeathFeedback(sl);
-        // 停止戰鬥 BGM
+        // 死亡演出：120-tick 五階段動畫由 tickDeath() 接手，這裡只負責停 BGM 與清理任務
+        // 停止戰鬥 BGM（讓死亡演出有自己的音效時序，不被 BGM 蓋掉）
         stopBgmForAll(sl);
         clearArmorParts(); // 死亡清掉殘留外殼方塊
         discardOwnedArmorDisplays(sl); // fallback：reload 後 pendingArmorRebuild 未消費就死的情況下，存盤孤兒仍會清掉
@@ -859,22 +879,207 @@ public class PlayerCloneEntity extends Monster {
             VoidMirrorSavedData saved = VoidMirrorSavedData.get(server);
             firstClear = !saved.isCleared(srcId); // 必須在 markCleared 前判斷
             saved.markCleared(srcId);
-            // 同步立刻嘗試刪本維度（mirror）內的裂縫；overworld 入口裂縫 chunk 通常已卸載，
-            // 改用 pendingCrackRemoval 旗標，讓裂縫自己 tick 時 self-discard
-            SpaceCrackEntity.removeForOwner(sl, srcId);
+            // 只清 overworld 入口裂縫（boss 已過）；mirror dim 的返回裂縫保留給玩家當出口
+            // pendingCrackRemoval 旗標也只影響非 mirror 維度（見 SpaceCrackEntity.tick）
             SpaceCrackEntity.removeForOwner(server.overworld(), srcId);
             saved.markCrackRemovalPending(srcId);
-            // 勝利後娜拉消失
+            // 勝利後娜拉延後消失：boss 死亡演出 20s + Nara 結語 outro ~10s + 緩衝
+            // outro 期間 client camera 會切到 Nara 視角播放台詞
             for (NaraPhantomEntity nara : sl.getEntitiesOfClass(NaraPhantomEntity.class,
                     new AABB(BlockPos.ZERO).inflate(260),
                     n -> n.getSourceUUID().map(srcId::equals).orElse(false))) {
-                nara.discard();
+                nara.startVictoryFarewell(DEATH_TOTAL_TICKS + 300); // 20s 死亡 + 15s outro/fade 緩衝
             }
         }
-        // 維度內已無其他存活分身 → 開獎勵寶箱（鏡核碎片只首次擊敗才放，材料每次都有）
-        boolean anyCloneLeft = !sl.getEntitiesOfClass(PlayerCloneEntity.class,
-                new AABB(BlockPos.ZERO).inflate(260), e -> e != this && e.isAlive()).isEmpty();
-        if (!anyCloneLeft) spawnRewardChest(sl, firstClear);
+        // 寶箱生成延到 Phase 5（演出尾聲）才開，跟視覺節奏對齊（玩家看完爆破才看到獎勵）
+        pendingRewardFirstClear = firstClear;
+
+        // 指令殺死：跳過動畫，立刻生成寶箱 + 撤回 Nara + 立即 remove，相機/輸入不會被鎖
+        if (isCommandKill) {
+            boolean anyCloneLeft = !sl.getEntitiesOfClass(PlayerCloneEntity.class,
+                    new AABB(BlockPos.ZERO).inflate(260), e -> e != this && e.isAlive()).isEmpty();
+            if (!anyCloneLeft) spawnRewardChest(sl, firstClear);
+            // 立刻撤掉 Nara（沒人要看 outro）
+            for (NaraPhantomEntity nara : sl.getEntitiesOfClass(NaraPhantomEntity.class,
+                    new AABB(BlockPos.ZERO).inflate(260),
+                    n -> getSourceUUID().map(srcId -> n.getSourceUUID().map(srcId::equals).orElse(false)).orElse(true))) {
+                nara.discard();
+            }
+            this.remove(RemovalReason.KILLED);
+        }
+    }
+
+    private boolean pendingRewardFirstClear = false;
+
+    // 覆寫 vanilla 20-tick 死亡 → 自製 120-tick 五階段演出
+    // Phase 1 (0-20):    Stagger      — 搖晃低頭、低吼，少量裂紋音
+    // Phase 2 (20-50):   Glow Up      — 全身白熱化、緩慢旋轉、能量充能音
+    // Phase 3 (50-80):   Crack        — 胸口裂痕擴張、紫光外洩、玻璃碎裂連音
+    // Phase 4 (80-110):  Shatter      — 碎片噴飛 + 大爆破 + slow-mo
+    // Phase 5 (110-120): Final Flash  — 全屏閃光、boss 消失、靈魂上飄
+    @Override
+    protected void tickDeath() {
+        this.deathTime++;
+        if (level().isClientSide) return;
+        if (!(level() instanceof ServerLevel sl)) return;
+
+        int phase = computeDeathPhase(this.deathTime);
+        int currentPhase = entityData.get(DEATH_PHASE);
+        if (phase != currentPhase) {
+            entityData.set(DEATH_PHASE, phase);
+            onDeathPhaseEnter(sl, phase);
+        }
+        tickDeathPhase(sl, this.deathTime, phase);
+
+        if (this.deathTime >= DEATH_TOTAL_TICKS) {
+            this.level().broadcastEntityEvent(this, (byte) 60);
+            this.remove(RemovalReason.KILLED);
+        }
+    }
+
+    private static int computeDeathPhase(int t) {
+        if (t <= DEATH_PHASE_STAGGER_END) return 1;
+        if (t <= DEATH_PHASE_GLOW_END)    return 2;
+        if (t <= DEATH_PHASE_CRACK_END)   return 3;
+        if (t <= DEATH_PHASE_SHATTER_END) return 4;
+        return 5;
+    }
+
+    // 階段切換瞬間觸發 — 一次性大動作（音效、爆破粒子、slow-mo 開始等）
+    private void onDeathPhaseEnter(ServerLevel sl, int phase) {
+        double x = getX(), y = getY() + 1.0, z = getZ();
+        switch (phase) {
+            case 1 -> {
+                // Stagger 開始：低音玻璃龜裂預兆
+                sl.playSound(null, blockPosition(), SoundEvents.GLASS_BREAK,
+                        SoundSource.HOSTILE, 1.2F, 0.4F);
+                sl.playSound(null, blockPosition(), SoundEvents.WARDEN_HEARTBEAT,
+                        SoundSource.HOSTILE, 2.0F, 0.5F);
+            }
+            case 2 -> {
+                // Glow Up：紫色能量湧出，全身發光開始
+                sl.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,
+                        x, y, z, 60, 0.8, 1.2, 0.8, 0.05);
+                sl.sendParticles(net.minecraft.core.particles.ParticleTypes.PORTAL,
+                        x, y, z, 120, 1.0, 1.5, 1.0, 0.4);
+                sl.playSound(null, blockPosition(), SoundEvents.BEACON_ACTIVATE,
+                        SoundSource.HOSTILE, 1.5F, 1.4F);
+                sl.playSound(null, blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME,
+                        SoundSource.HOSTILE, 2.0F, 0.6F);
+            }
+            case 3 -> {
+                // Crack：玻璃連續碎裂 + 在 boss 中心生成裂縫實體（重用既有 SpaceCrack shader）
+                sl.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL_FIRE_FLAME,
+                        x, y, z, 50, 0.6, 0.8, 0.6, 0.10);
+                sl.playSound(null, blockPosition(), SoundEvents.GLASS_BREAK,
+                        SoundSource.HOSTILE, 2.0F, 0.7F);
+                sl.playSound(null, blockPosition(), SoundEvents.AMETHYST_CLUSTER_BREAK,
+                        SoundSource.HOSTILE, 2.0F, 0.5F);
+                // 生成裝飾用裂縫（lifespan 約 60 tick，演出結束自動消失）
+                com.github.nalamodikk.common.entity.SpaceCrackEntity rift =
+                        com.github.nalamodikk.register.ModEntities.SPACE_CRACK.get().create(sl);
+                if (rift != null) {
+                    rift.moveTo(x, y - 0.3, z, this.getYRot(), 0F);
+                    rift.setDecorative(60);
+                    sl.addFreshEntity(rift);
+                }
+            }
+            case 4 -> {
+                // Shatter：大爆破 + slow-mo 啟動 + 碎片噴飛
+                sl.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER,
+                        x, y, z, 2, 0.5, 0.5, 0.5, 0.0);
+                sl.sendParticles(net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE,
+                        x, y, z, 80, 1.5, 1.8, 1.5, 0.15);
+                sl.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH,
+                        x, y, z, 2, 0.3, 0.3, 0.3, 0.0);
+                sl.playSound(null, blockPosition(), SoundEvents.ENDER_DRAGON_DEATH,
+                        SoundSource.HOSTILE, 2.0F, 0.7F);
+                sl.playSound(null, blockPosition(), SoundEvents.GENERIC_EXPLODE.value(),
+                        SoundSource.HOSTILE, 2.0F, 0.5F);
+                spawnDeathShards(sl);
+            }
+            case 5 -> {
+                // Final Flash：全屏白光 + 靈魂上飄 + 寶箱生成（演出尾聲才出）
+                sl.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH,
+                        x, y, z, 4, 0.5, 0.5, 0.5, 0.0);
+                sl.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL,
+                        x, y, z, 60, 1.2, 1.5, 1.2, 0.15);
+                sl.playSound(null, blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME,
+                        SoundSource.HOSTILE, 2.0F, 1.8F);
+                boolean anyCloneLeft = !sl.getEntitiesOfClass(PlayerCloneEntity.class,
+                        new AABB(BlockPos.ZERO).inflate(260), e -> e != this && e.isAlive()).isEmpty();
+                if (!anyCloneLeft) spawnRewardChest(sl, pendingRewardFirstClear);
+            }
+        }
+    }
+
+    // 階段內每 tick 持續觸發 — 連續粒子流、發光殘留等
+    private void tickDeathPhase(ServerLevel sl, int t, int phase) {
+        double x = getX(), y = getY() + 1.0, z = getZ();
+        switch (phase) {
+            case 1 -> {
+                // Stagger：少量灰煙從身上飄出
+                if (t % 3 == 0) {
+                    sl.sendParticles(net.minecraft.core.particles.ParticleTypes.SMOKE,
+                            x, y, z, 2, 0.3, 0.5, 0.3, 0.02);
+                }
+            }
+            case 2 -> {
+                // Glow Up：持續從中心向外噴 end rod 光點
+                if (t % 2 == 0) {
+                    sl.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,
+                            x, y, z, 3, 0.3, 0.5, 0.3, 0.06);
+                }
+            }
+            case 3 -> {
+                // Crack：靈魂火與玻璃碎片連續噴
+                if (t % 2 == 0) {
+                    sl.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL_FIRE_FLAME,
+                            x, y, z, 4, 0.5, 0.7, 0.5, 0.08);
+                }
+                if (t % 5 == 0) {
+                    sl.playSound(null, blockPosition(), SoundEvents.GLASS_BREAK,
+                            SoundSource.HOSTILE, 0.8F, 1.2F + this.random.nextFloat() * 0.6F);
+                }
+            }
+            case 4 -> {
+                // Shatter：碎片散開 + 雲煙繚繞
+                if (t % 3 == 0) {
+                    sl.sendParticles(net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE,
+                            x, y, z, 4, 1.0, 1.2, 1.0, 0.05);
+                    sl.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL,
+                            x, y, z, 3, 0.8, 1.0, 0.8, 0.08);
+                }
+            }
+            case 5 -> {
+                // Final Flash：靈魂緩緩上飄
+                if (t % 2 == 0) {
+                    sl.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL,
+                            x, y + 1.5, z, 2, 0.6, 0.5, 0.6, 0.05);
+                }
+            }
+        }
+    }
+
+    // 碎片噴飛（Phase 4）— 16 個方向的 ITEM_SNOWBALL 用 motion 噴出（vanilla 粒子可帶速度）
+    // 不另外做實體，因為 vanilla 粒子已能達到「碎屑往外飛 + 重力下墜」的視覺效果
+    private void spawnDeathShards(ServerLevel sl) {
+        double x = getX(), y = getY() + 1.0, z = getZ();
+        for (int i = 0; i < 16; i++) {
+            double ang = i * (Math.PI * 2 / 16);
+            double vx = Math.cos(ang) * 0.6;
+            double vz = Math.sin(ang) * 0.6;
+            double vy = 0.3 + random.nextDouble() * 0.3;
+            // sendParticles 的 xSpeed/ySpeed/zSpeed 在 count > 1 時是 random 散度，count = 0 時直接當速度
+            // 這裡用 count=0 + ySpeed 當「初速」讓每個粒子都有方向性 ballistic
+            sl.sendParticles(net.minecraft.core.particles.ParticleTypes.WHITE_ASH,
+                    x, y, z, 0, vx, vy, vz, 1.0);
+            sl.sendParticles(net.minecraft.core.particles.ParticleTypes.POOF,
+                    x, y, z, 0, vx * 0.8, vy * 0.8, vz * 0.8, 0.8);
+        }
+        // 中心一個大爆破閃光粒子
+        sl.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH,
+                x, y, z, 1, 0, 0, 0, 0);
     }
 
     // 停掉所有收到 BGM 的玩家的戰鬥音樂
@@ -889,24 +1094,6 @@ public class PlayerCloneEntity extends Monster {
         bgmSentTo.clear();
     }
 
-    // 死亡動畫回饋：爆破粒子環、震動音效、紫色靈魂消散
-    private void playDeathFeedback(ServerLevel sl) {
-        double x = getX(), y = getY() + 1.0, z = getZ();
-        // 爆破粒子環（紫紅色魔力消散感）
-        sl.sendParticles(net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE,
-                x, y, z, 40, 0.6, 1.0, 0.6, 0.05);
-        sl.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL_FIRE_FLAME,
-                x, y, z, 30, 0.8, 1.2, 0.8, 0.10);
-        sl.sendParticles(net.minecraft.core.particles.ParticleTypes.PORTAL,
-                x, y, z, 80, 1.2, 1.5, 1.2, 0.3);
-        sl.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL,
-                x, y, z, 20, 0.5, 0.8, 0.5, 0.05);
-        // 死亡音效（雙重音：vanilla ender_dragon_death 低頻 + wither_death 高頻 + 玻璃碎裂感）
-        sl.playSound(null, blockPosition(), SoundEvents.ENDER_DRAGON_DEATH,
-                SoundSource.HOSTILE, 1.4F, 1.2F);
-        sl.playSound(null, blockPosition(), SoundEvents.GLASS_BREAK,
-                SoundSource.HOSTILE, 1.8F, 0.55F);
-    }
 
     private void spawnRewardChest(ServerLevel sl, boolean includeShard) {
         BlockPos chestPos = new BlockPos(0, 64, -3);

@@ -1,5 +1,6 @@
 package com.github.nalamodikk.mixin.client;
 
+import com.github.nalamodikk.client.cinematic.BossDeathCameraManager;
 import com.github.nalamodikk.client.cinematic.Phase2TransitionManager;
 import com.github.nalamodikk.client.cinematic.VoidMirrorIntroManager;
 import net.minecraft.client.Camera;
@@ -33,6 +34,14 @@ public abstract class CameraMixin {
         }
         if (Phase2TransitionManager.isActive()) {
             Phase2TransitionManager.CameraPose pose = Phase2TransitionManager.getCameraPose(partialTick);
+            if (pose != null) {
+                this.setRotation(pose.yaw(), pose.pitch());
+                this.setPosition(pose.x(), pose.y(), pose.z());
+            }
+            return;
+        }
+        if (BossDeathCameraManager.isActive()) {
+            BossDeathCameraManager.CameraPose pose = BossDeathCameraManager.getCameraPose(partialTick);
             if (pose != null) {
                 this.setRotation(pose.yaw(), pose.pitch());
                 this.setPosition(pose.x(), pose.y(), pose.z());

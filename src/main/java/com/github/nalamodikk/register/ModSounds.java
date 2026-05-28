@@ -42,7 +42,7 @@ public class ModSounds {
             {"mana_deployer", "line1"}, {"mana_deployer", "line2"},
             {"mana_charger", "line1"},  {"mana_charger", "line2"},
             {"solar_collector", "line1"}, {"solar_collector", "line2"},
-            {"void_mirror", "intro"}, {"void_mirror", "taunt"},
+            {"void_mirror", "intro"}, {"void_mirror", "taunt"}, {"void_mirror", "victory"},
     };
 
     // ── 音樂唱片音效 ──────────────────────────────────────────────────────────

@@ -58,7 +58,9 @@ public class SpaceCrackEntity extends Entity {
             // boss 死亡後 die() 標記 pendingCrackRemoval，這裡每 20 tick 檢查並自我 discard
             // 之所以用 tick-based 而不是 die() 直接刪除：玩家在 mirror dim 打 boss 時 overworld
             // 的入口裂縫所在 chunk 通常已卸載，從 die() 那邊 getEntities 找不到。讓裂縫自己 tick 解決
-            if (!decorative && this.tickCount % 20 == 0 && level() instanceof ServerLevel sl) {
+            // 例外：mirror dim 內的返回裂縫不會被旗標影響（玩家還要靠它離開）
+            if (!decorative && this.tickCount % 20 == 0 && level() instanceof ServerLevel sl
+                    && !sl.dimension().equals(com.github.nalamodikk.dimension.ModDimensions.VOID_MIRROR)) {
                 UUID owner = getOwnerUUID().orElse(null);
                 if (owner != null && com.github.nalamodikk.common.dimension.VoidMirrorSavedData
                         .get(sl.getServer()).hasPendingCrackRemoval(owner)) {

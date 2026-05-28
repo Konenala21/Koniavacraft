@@ -83,6 +83,24 @@ public class NaraPhantomEntity extends PathfinderMob {
         return entityData.get(SOURCE_UUID);
     }
 
+    // Boss 死亡時設定一個倒數 tick，倒數到 0 自我 discard（讓死亡演出有時間用她當對白主角）
+    private int victoryFarewellTicks = -1;
+
+    public void startVictoryFarewell(int ticks) {
+        this.victoryFarewellTicks = ticks;
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (!level().isClientSide && victoryFarewellTicks > 0) {
+            victoryFarewellTicks--;
+            if (victoryFarewellTicks == 0) {
+                this.discard();
+            }
+        }
+    }
+
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);

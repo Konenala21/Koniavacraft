@@ -526,6 +526,12 @@
   "nara.en.void_mirror.taunt": {
     "sounds": [{"name": "koniava:nara/en/void_mirror_taunt", "stream": false}]
   },
+  "nara.zh_tw.void_mirror.victory": {
+    "sounds": [{"name": "koniava:nara/zh_tw/void_mirror_victory", "stream": false}]
+  },
+  "nara.en.void_mirror.victory": {
+    "sounds": [{"name": "koniava:nara/en/void_mirror_victory", "stream": false}]
+  },
   "nara.zh_tw.boots_equip.line1": {
     "sounds": [{"name": "koniava:nara/zh_tw/boots_equip_line1", "stream": false}]
   },

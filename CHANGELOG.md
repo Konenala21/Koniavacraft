@@ -6,6 +6,18 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Mirror Boss death is now a full 20-second cinematic with a dedicated camera and a Nara phantom epilogue. The camera orbits the boss (slow drift during stagger/glow, faster + handheld shake during shatter), then transitions through a brief black fade to the Nara phantom, who delivers a victory line ("Hmph? Not bad. Looks like the show's over, so I'd better get going.") with voice + dialogue subtitle, before another black fade hands control back to the player. Mouse turning is fully suppressed during the sequence via the same mixin pathway as the entry cutscene, so the camera no longer fights player input.
+- 鏡像 Boss 死亡演出現在是完整 20 秒鏡頭 + Nara 結語：相機環繞 boss（搖晃/白熱化期間緩慢漂移，碎裂期間加速 + 手持震動），結束後過短暫黑幕切到 Nara 幻影視角，她說一句勝利台詞（「唉呦? 實力不錯欸? 看起來應該是看完了，那我該走了。」帶配音 + 對白字幕），再一段黑幕淡出歸還控制權。期間滑鼠視角輸入用跟入場過場相同的 mixin 路徑徹底鎖住，不會再跟相機打架。
+
+- The return rift inside the Mirror dimension no longer disappears when the boss dies. Previously the boss death cleanup ran `removeForOwner` on both the overworld AND the mirror dimension, accidentally erasing the player's only way out. Now only overworld entry rifts are cleared, and the pending-removal flag is dimension-aware (mirror dim rifts ignore it).
+- 鏡中世界的返回裂縫在 boss 死亡時不再被誤刪了。之前 boss 死亡清理同時跑了 overworld 跟 mirror dim 的 `removeForOwner`，把玩家唯一的出口也一起清掉。現在只清 overworld 入口裂縫，pending 旗標也改成只影響非 mirror 維度。
+
+- Mirror Boss death sequence extended to 20 seconds (65/100/110/90/35 tick phases) to give each phase room to breathe.
+- 鏡像 Boss 死亡演出延長到 20 秒（65/100/110/90/35 tick 階段），每階段都有時間鋪陳。
+
+- Mirror Boss death is now a full cinematic sequence instead of vanilla's 20-tick collapse. 5 phases over 6 seconds: (1) Stagger: 20t of jitter + warden heartbeat ramp, (2) Glow Up: 30t of slow rotation, end-rod particle stream, beacon-activate chime, (3) Crack: 30t with a decorative space rift opening at the chest, glass break stutter, soul fire flames, (4) Shatter: 30t of fast spin + scale shrinking + 16-direction ballistic ash burst + ender dragon roar + flash, (5) Final Flash: 10t white flash + rising souls + reward chest spawn. Boss bar persists through the whole sequence; reward chest now spawns at the climax (phase 5), not the instant the boss hits 0 HP, so the pacing actually feels earned.
+- 鏡像 Boss 死亡現在是完整 6 秒 5 階段演出，取代 vanilla 20-tick 倒下：(1) Stagger 20t：抖動 + warden 心跳低音逼近，(2) Glow Up 30t：緩慢旋轉、end_rod 光點外噴、信標啟動鐘音，(3) Crack 30t：胸口裝飾性裂縫（重用 SpaceCrack shader）+ 玻璃碎裂連音 + 靈魂火，(4) Shatter 30t：高速旋轉 + scale 收縮 + 16 方向 ballistic 白灰粒子噴射 + 末影龍咆哮 + 閃光，(5) Final Flash 10t：白光 + 靈魂上飄 + 寶箱生成。Boss 血條全程保留；寶箱也改成在 phase 5（演出尾聲）才生成，不是 boss 一掉 HP 就秒出，節奏感對齊視覺。
+
 - Mirror Boss death now has proper feedback: a burst of soul fire + portal + smoke particles, an Ender Dragon death roar layered with a sharp glass-break crack, and the boss bar stays visible during the vanilla 20-tick death animation instead of vanishing the instant the boss hits 0 HP.
 - 鏡像 Boss 死亡現在有完整視聽回饋：靈魂火 + 傳送門 + 大煙霧粒子爆環、末影龍死亡咆哮疊玻璃碎裂高頻音，boss 血條也會在 20-tick 死亡動畫期間保留（之前一掉血歸零就秒沒）。
 
