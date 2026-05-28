@@ -1,5 +1,7 @@
 {
   "//1": "=== ITEMS ===",
+  "message.koniava.title_toggle.custom": "Modded Title",
+  "message.koniava.title_toggle.vanilla": "Vanilla Title",
   "effect.koniava.combat_state": "Combat State",
   "item.koniava.floating_turret": "Nara Star Ring Turret",
   "item.koniava.disc_quantified_mana_a": "Music Disc: Quantified Realm - Nara",

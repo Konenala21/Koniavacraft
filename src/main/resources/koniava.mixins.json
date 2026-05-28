@@ -17,7 +17,8 @@
     "client.OptionsSubScreenAccessor",
     "client.SoundOptionsScreenMixin",
     "client.ParticleEngineAddonMixin",
-    "client.CameraMixin"
+    "client.CameraMixin",
+    "client.TitleScreenMixin"
   ],
   "server": [],
   "injectors": {

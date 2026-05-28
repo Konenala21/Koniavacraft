@@ -23,6 +23,8 @@ public class ModClientConfig {
     public final ModConfigSpec.DoubleValue reducedAnimationScale;
     public final ModConfigSpec.DoubleValue naraVoiceVolume;
     public final ModConfigSpec.BooleanValue sortButtonEnabled;
+    public final ModConfigSpec.BooleanValue customTitleScreenEnabled;
+    public final ModConfigSpec.ConfigValue<String> customTitleText;
 
     private ModClientConfig(ModConfigSpec.Builder builder) {
         builder.push("inventory");
@@ -31,6 +33,19 @@ public class ModClientConfig {
                 .comment("Show sort buttons in container GUIs (left-click sorts, right-click cycles mode)")
                 .translation("koniava.config.inventory.sortButtonEnabled")
                 .define("sortButtonEnabled", true);
+
+        builder.pop();
+        builder.push("titleScreen");
+
+        customTitleScreenEnabled = builder
+                .comment("Replace vanilla Minecraft logo on title screen with the mod's floating title")
+                .translation("koniava.config.titleScreen.customTitleScreenEnabled")
+                .define("customTitleScreenEnabled", true);
+
+        customTitleText = builder
+                .comment("Text shown as the floating title (replaces the vanilla Minecraft logo)")
+                .translation("koniava.config.titleScreen.customTitleText")
+                .define("customTitleText", "Koniavacraft");
 
         builder.pop();
         builder.push("nara");

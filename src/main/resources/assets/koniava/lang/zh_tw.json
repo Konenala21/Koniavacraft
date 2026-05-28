@@ -1,5 +1,7 @@
 {
   "//1": "=== 物品 ===",
+  "message.koniava.title_toggle.custom": "模組主選單",
+  "message.koniava.title_toggle.vanilla": "原版主選單",
   "effect.koniava.combat_state": "戰鬥狀態",
   "item.koniava.floating_turret": "娜拉・星環浮游砲",
   "item.koniava.disc_quantified_mana_a": "音樂唱片：量化之境-娜拉A",
