@@ -57,6 +57,9 @@ public class ModItems {
     public static final DeferredItem<Item>  MANA_DUST = ITEMS.register("mana_dust",() ->  new Item(new Item.Properties()));
     public static final DeferredItem<Item>  CORRUPTED_MANA_DUST = ITEMS.register("corrupted_mana_dust",() ->  new Item(new Item.Properties()));
     public static final DeferredItem<Item>  MANA_INGOT = ITEMS.register("mana_ingot",() ->  new Item(new Item.Properties()));
+    // 鏡中世界 boss 擊敗紀念物（混入獎勵寶箱，純收藏 + 未來內容預留鑰匙）
+    public static final DeferredItem<Item>  MIRROR_CORE_SHARD = ITEMS.register("mirror_core_shard",
+            () -> new Item(new Item.Properties().rarity(Rarity.RARE)));
     public static final DeferredItem<Item> RAW_MANA_DUST = ITEMS.register("raw_mana_dust", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> CONDENSED_MANA_DUST = ITEMS.register("condensed_mana_dust", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> MANA_CRYSTAL_FRAGMENT = ITEMS.register("mana_crystal_fragment", () -> new Item(new Item.Properties()));

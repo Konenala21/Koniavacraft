@@ -66,6 +66,8 @@
   "tooltip.koniava.equipment.slot_install_hint": "可安裝對應類型的裝備",
   "item.koniava.mana_dust": "魔力粉",
   "item.koniava.mana_ingot": "魔力錠",
+  "item.koniava.mirror_core_shard": "鏡核碎片",
+  "item.koniava.mirror_core_shard.tooltip": "從擊敗自己的分身身上取下的核心碎片。面對自己的證明。",
   "item.koniava.mana_debug_tool": "魔力除錯工具",
   "item.koniava.corrupted_mana_dust": "汙穢的魔力粉",
   "item.koniava.basic_tech_wand": "基礎科技魔杖",

@@ -47,7 +47,7 @@ public class PlayerCloneRenderer extends HumanoidMobRenderer<PlayerCloneEntity, 
         if (entity.isArmored()) {
             // 變身期間本體保持正常大小，移到機甲頭部位置渲染（像駕駛艙裡的本體）
             poseStack.pushPose();
-            poseStack.translate(0.0, 13.0, 0.0);
+            poseStack.translate(0.0, PlayerCloneEntity.ARMORED_BODY_OFFSET_Y, 0.0);
             super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
             poseStack.popPose();
         } else {

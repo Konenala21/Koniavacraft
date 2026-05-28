@@ -57,6 +57,7 @@ public class ClientTickHandler {
     private static int airTicks = 0;
     private static boolean greyEffectApplied = false;
     private static float greySaturation = 0.12f; // 鏡中世界動態飽和度（平時低、boss 危險時回色），平滑趨近目標
+    private static float greyRedTint = 0.0f;      // 危險時的偏紅警示強度，平滑趨近目標
 
     @SubscribeEvent
     public static void onClientTickPost(ClientTickEvent.Post event) {
@@ -159,28 +160,33 @@ public class ClientTickHandler {
                 mc.gameRenderer.loadEffect(KoniavacraftMod.rl("shaders/post/grey.json"));
                 greyEffectApplied = true;
             }
-            // 動態回色：平時低飽和，boss 預兆/鏡反/變身時畫面回色當警示（平滑過渡）
-            float target = computeVoidMirrorSaturation(mc);
-            greySaturation += (target - greySaturation) * 0.08F;
+            // 動態回色 + 偏紅警示：平時低飽和無紅，boss 危險時回色並泛紅（平滑過渡）
+            float danger = computeVoidMirrorDanger(mc);
+            greySaturation += ((0.12F + danger * 0.63F) - greySaturation) * 0.08F; // 0.12 → 0.75
+            greyRedTint += (danger * 0.45F - greyRedTint) * 0.08F;
             PostChain chain = mc.gameRenderer.currentEffect();
-            if (chain != null) chain.setUniform("Saturation", greySaturation);
+            if (chain != null) {
+                chain.setUniform("Saturation", greySaturation);
+                chain.setUniform("RedTint", greyRedTint);
+            }
         } else if (greyEffectApplied) {
             mc.gameRenderer.shutdownEffect();
             greyEffectApplied = false;
             greySaturation = 0.12F;
+            greyRedTint = 0.0F;
         }
     }
 
-    // 依附近 boss 狀態決定畫面目標飽和度：危險時刻回色當警示
-    private static float computeVoidMirrorSaturation(Minecraft mc) {
-        float base = 0.12F;
-        if (mc.player == null || mc.level == null) return base;
+    // 依附近 boss 狀態回傳危險度（0=平時, 0.5=變身中, 1=預兆/鏡反），driving 回色與偏紅
+    private static float computeVoidMirrorDanger(Minecraft mc) {
+        if (mc.player == null || mc.level == null) return 0F;
+        float danger = 0F;
         for (PlayerCloneEntity boss : mc.level.getEntitiesOfClass(PlayerCloneEntity.class,
                 mc.player.getBoundingBox().inflate(48.0))) {
-            if (boss.getTelegraphSkill() != 0 || boss.isReflecting()) return 0.75F; // 預兆/鏡反：強回色警示
-            if (boss.isArmored()) return 0.40F;                                      // 變身期間：中等回色
+            if (boss.getTelegraphSkill() != 0 || boss.isReflecting()) return 1F; // 預兆/鏡反：最強警示
+            if (boss.isArmored()) danger = Math.max(danger, 0.5F);               // 變身期間：中等
         }
-        return base;
+        return danger;
     }
 
     @SubscribeEvent

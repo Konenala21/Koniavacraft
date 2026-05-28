@@ -1,6 +1,7 @@
 package com.github.nalamodikk.common.entity;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.register.ModItems;
 import com.github.nalamodikk.common.dimension.VoidMirrorSavedData;
 import com.github.nalamodikk.common.dimension.VoidMirrorTeleport;
 import com.github.nalamodikk.common.event.VoidMirrorEvents;
@@ -51,7 +52,7 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Equipable;
-import net.minecraft.world.item.PickaxeItem;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.BundleContents;
 import net.minecraft.world.item.component.ItemContainerContents;
@@ -165,10 +166,16 @@ public class PlayerCloneEntity extends Monster {
     private static final net.minecraft.world.entity.EntityDimensions ARMOR_DIMENSIONS =
             net.minecraft.world.entity.EntityDimensions.scalable(5.0F, 16.0F); // 涵蓋機甲外殼的碰撞箱
     private final ArrayList<Integer> armorLegSide = new ArrayList<>(); // 與 armorParts 平行：0=非腿 1=左腿 2=右腿
-    private static final String ARMOR_TAG = "koniava_mecha_armor"; // 標記外殼 display，重載後清孤兒用
+    private static final String ARMOR_TAG_PREFIX = "koniava_mecha_armor_"; // 後接 boss UUID，避免多 boss 場景下 cleanup 清掉別的 boss 的活 display
+
+    private String armorTag() {
+        return ARMOR_TAG_PREFIX + this.getStringUUID();
+    }
     private double walkPhase = 0;                 // 走路動畫相位（移動時推進，讓雙腿前後擺動）
     private static final int LEG_TOP_ROW = 11;    // 剪影此列(含)以下視為腿
     private static final double LEG_HIP_Y = 4.0;  // 腿頂(髖)高度 = (rows-1) - LEG_TOP_ROW，繞此擺動
+    // 機甲頭部 b 的 oy = (rows-1) - bRow(2) = 13；renderer 把本體 translate 到這裡（讓本體露在頭部）
+    public static final double ARMORED_BODY_OFFSET_Y = 13.0;
     // 機甲剪影：b=本體核心、c=外殼方塊、'.'=空；row0 最上、腳在最後一列、b 在 row2/col2
     private static final String[] MECH_SHAPE = {
             "ccccc",
@@ -263,6 +270,16 @@ public class PlayerCloneEntity extends Monster {
     public AABB getBoundingBoxForCulling() {
         // 變身期間本體被 renderer 移到頭部、外殼又大，放寬剔除框避免某些視角整隻被 frustum culling 隱藏
         return armoredDimensions ? this.getBoundingBox().inflate(6.0) : super.getBoundingBoxForCulling();
+    }
+
+    @Override
+    public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
+        super.onSyncedDataUpdated(key);
+        // ARMORED 同步到 client 時也鏡像給 armoredDimensions，否則 client 的 getDefaultDimensions/getBoundingBoxForCulling 永遠用小框
+        if (ARMORED.equals(key)) {
+            armoredDimensions = entityData.get(ARMORED);
+            refreshDimensions();
+        }
     }
 
     @Override
@@ -590,16 +607,15 @@ public class PlayerCloneEntity extends Monster {
         if (source.getDirectEntity() instanceof FloatingTurretProjectile proj && proj.getOwner() == this) {
             return false;
         }
-        // 變身期間：傷害打在方塊外殼上（與本體血量分離），稿子高效、其他工具幾乎無效
-        if (isArmored() && level() instanceof ServerLevel armorLevel) {
-            if (source.getEntity() instanceof Player attacker && attacker.isAlive()) {
-                float dealt = attacker.getMainHandItem().getItem() instanceof PickaxeItem ? amount : amount * 0.2F;
-                armorHp -= dealt;
-                armorLevel.playSound(null, blockPosition(), SoundEvents.DEEPSLATE_BREAK, SoundSource.HOSTILE, 0.9F, 0.8F);
-                armorLevel.sendParticles(ParticleTypes.CRIT, getX(), getY() + 1.0, getZ(), 6, 0.6, 1.0, 0.6, 0.1);
-                if (armorHp <= 0F) breakArmor(armorLevel);
-            }
-            return false; // 本體血量受外殼保護
+        // 變身期間：玩家攻擊打在方塊外殼上（與本體血量分離），其他傷害（環境/生物/自爆）走正常流程不被吞
+        if (isArmored() && level() instanceof ServerLevel armorLevel
+                && source.getEntity() instanceof Player attacker && attacker.isAlive()) {
+            float dealt = attacker.getMainHandItem().is(ItemTags.PICKAXES) ? amount : amount * 0.2F; // tag 涵蓋 modded 鎬
+            armorHp -= dealt;
+            armorLevel.playSound(null, blockPosition(), SoundEvents.DEEPSLATE_BREAK, SoundSource.HOSTILE, 0.9F, 0.8F);
+            armorLevel.sendParticles(ParticleTypes.CRIT, getX(), getY() + 1.0, getZ(), 6, 0.6, 1.0, 0.6, 0.1);
+            if (armorHp <= 0F) breakArmor(armorLevel);
+            return false; // 玩家攻擊：本體血量受外殼保護
         }
         boolean result = super.hurt(source, amount);
         // 只在鏡反狀態反傷（玩家看到鏡面輪廓就該停手），不再是純機率
@@ -618,9 +634,14 @@ public class PlayerCloneEntity extends Monster {
         if (level().isClientSide || !(level() instanceof ServerLevel sl)) return;
         this.bossEvent.removeAllPlayers();
         clearArmorParts(); // 死亡清掉殘留外殼方塊
+        discardOwnedArmorDisplays(sl); // fallback：reload 後 pendingArmorRebuild 未消費就死的情況下，存盤孤兒仍會清掉
         MinecraftServer server = sl.getServer();
-        getSourceUUID().ifPresent(srcId -> {
-            VoidMirrorSavedData.get(server).markCleared(srcId);
+        boolean firstClear = true; // 無 source 的 boss（/summon 邊角）視為首次
+        if (getSourceUUID().isPresent()) {
+            UUID srcId = getSourceUUID().get();
+            VoidMirrorSavedData saved = VoidMirrorSavedData.get(server);
+            firstClear = !saved.isCleared(srcId); // 必須在 markCleared 前判斷
+            saved.markCleared(srcId);
             SpaceCrackEntity.removeForOwner(server.overworld(), srcId);
             // 勝利後娜拉消失
             for (NaraPhantomEntity nara : sl.getEntitiesOfClass(NaraPhantomEntity.class,
@@ -628,21 +649,28 @@ public class PlayerCloneEntity extends Monster {
                     n -> n.getSourceUUID().map(srcId::equals).orElse(false))) {
                 nara.discard();
             }
-        });
-        // 維度內已無其他存活分身 → 開出獎勵寶箱（內容待定）
+        }
+        // 維度內已無其他存活分身 → 開獎勵寶箱（鏡核碎片只首次擊敗才放，材料每次都有）
         boolean anyCloneLeft = !sl.getEntitiesOfClass(PlayerCloneEntity.class,
                 new AABB(BlockPos.ZERO).inflate(260), e -> e != this && e.isAlive()).isEmpty();
-        if (!anyCloneLeft) {
-            spawnRewardChest(sl);
-        }
+        if (!anyCloneLeft) spawnRewardChest(sl, firstClear);
     }
 
-    private void spawnRewardChest(ServerLevel sl) {
+    private void spawnRewardChest(ServerLevel sl, boolean includeShard) {
         BlockPos chestPos = new BlockPos(0, 64, -3);
-        if (sl.getBlockState(chestPos).is(Blocks.CHEST)) return;
+        // 強制覆蓋（即便玩家放東西在此），確保獎勵一定生成；若原本就是 chest 也清空再填，避免疊加殘留
         sl.setBlockAndUpdate(chestPos, Blocks.CHEST.defaultBlockState());
         VoidMirrorEvents.addModifiedBlock(chestPos.asLong());
-        // TODO: 寶箱內容待決定
+        if (sl.getBlockEntity(chestPos) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity chest) {
+            chest.clearContent();
+            if (includeShard) {
+                chest.setItem(13, new ItemStack(ModItems.MIRROR_CORE_SHARD.get())); // 中央：紀念物（限首次）
+            }
+            chest.setItem(10, new ItemStack(ModItems.MANA_INGOT.get(), 4));
+            chest.setItem(11, new ItemStack(ModItems.MANA_DUST.get(), 8));
+            chest.setItem(15, new ItemStack(ModItems.CORRUPTED_MANA_DUST.get(), 4));
+            chest.setItem(16, new ItemStack(ModItems.MANA_INGOT.get(), 2));
+        }
     }
 
     @Override
@@ -650,6 +678,7 @@ public class PlayerCloneEntity extends Monster {
         if (!level().isClientSide) {
             this.bossEvent.removeAllPlayers();
             clearArmorParts();
+            if (level() instanceof ServerLevel sl) discardOwnedArmorDisplays(sl); // fallback 同 die()
         }
         super.remove(reason);
     }
@@ -736,6 +765,7 @@ public class PlayerCloneEntity extends Monster {
                 setDeltaMovement(0, getDeltaMovement().y, 0);
             }
             tickArmorFollow(); // 設好朝向後再跟隨
+            ensureCompanions(); // armored 期間也維護同源娜拉/返回裂縫（外殼期可能拉長，避免它們在這段消失）
             return;
         }
 
@@ -882,6 +912,24 @@ public class PlayerCloneEntity extends Monster {
         return new Vec3(v.x / len, 0, v.z / len);
     }
 
+    // 水平面點(px,pz) 到線段 (ax,az)→(bx,bz) 的最短距離平方（CHARGE_RAMP 閃避用）
+    private static double pointToSegmentDistSqrXZ(double px, double pz,
+                                                  double ax, double az,
+                                                  double bx, double bz) {
+        double dx = bx - ax, dz = bz - az;
+        double lenSq = dx * dx + dz * dz;
+        if (lenSq < 1.0e-6) {
+            double rx = px - ax, rz = pz - az;
+            return rx * rx + rz * rz;
+        }
+        double t = ((px - ax) * dx + (pz - az) * dz) / lenSq;
+        if (t < 0) t = 0;
+        else if (t > 1) t = 1;
+        double projX = ax + dx * t, projZ = az + dz * t;
+        double rx = px - projX, rz = pz - projZ;
+        return rx * rx + rz * rz;
+    }
+
     // 對玩家施加擊退（起飛弧線）。蹲下大幅緩衝。複用 LeggingsDoubleJumpHandler 的速度同步寫法。
     private void knockbackPlayer(Player p, Vec3 awayDir, double horizPower, double vertPower) {
         double mult = p.isCrouching() ? 0.35 : 1.0;
@@ -972,10 +1020,7 @@ public class PlayerCloneEntity extends Monster {
 
     // 重載後仍在外殼狀態：清掉存盤殘留的孤兒外殼並重建，接續二階段（不重播變身演出，armorHp 維持讀回值）
     private void rebuildArmor(ServerLevel sl) {
-        for (Display.BlockDisplay d : sl.getEntitiesOfClass(Display.BlockDisplay.class,
-                this.getBoundingBox().inflate(24.0), e -> e.getTags().contains(ARMOR_TAG))) {
-            d.discard();
-        }
+        discardOwnedArmorDisplays(sl);
         entityData.set(ARMORED, true);
         armoredDimensions = true;
         refreshDimensions();
@@ -1005,7 +1050,7 @@ public class PlayerCloneEntity extends Monster {
         Display.BlockDisplay d = EntityType.BLOCK_DISPLAY.create(sl);
         if (d == null) return;
         d.load(stateTag.copy());
-        d.addTag(ARMOR_TAG);
+        d.addTag(armorTag());
         d.setPos(getX() + ox - 0.5, getY() + oy, getZ() + oz - 0.5); // 初始位置，tickArmorFollow 會依朝向修正
         sl.addFreshEntity(d);
         armorParts.add(d);
@@ -1064,6 +1109,15 @@ public class PlayerCloneEntity extends Monster {
         armorLegSide.clear();
     }
 
+    // 額外掃描場地，清掉「自己」tag 的孤兒 display（fallback：pendingArmorRebuild 未消費就 die、或存盤殘留）
+    private void discardOwnedArmorDisplays(ServerLevel sl) {
+        String myTag = armorTag();
+        for (Display.BlockDisplay d : sl.getEntitiesOfClass(Display.BlockDisplay.class,
+                this.getBoundingBox().inflate(24.0), e -> e.getTags().contains(myTag))) {
+            d.discard();
+        }
+    }
+
     // 玩家飛高（被擊飛或自行升空）時，分身墊方塊往上跳追擊，像玩家 pillar jump
     private void tickAirChase() {
         if (!(level() instanceof ServerLevel sl)) return;
@@ -1109,13 +1163,8 @@ public class PlayerCloneEntity extends Monster {
         if (naraCheckCooldown > 0) { naraCheckCooldown--; return; }
         if (!(level() instanceof ServerLevel sl)) return;
         naraCheckCooldown = 40;
-        // 非變身狀態下清掉殘留的孤兒外殼方塊（重載後 armorParts 會清空，但 BlockDisplay 本身會存盤）
-        if (!isArmored()) {
-            for (Display.BlockDisplay d : sl.getEntitiesOfClass(Display.BlockDisplay.class,
-                    this.getBoundingBox().inflate(24.0), e -> e.getTags().contains(ARMOR_TAG))) {
-                d.discard();
-            }
-        }
+        // 非變身狀態下清掉「自己」殘留的孤兒外殼方塊（重載後 armorParts 會清空但 BlockDisplay 存盤；owner-specific tag 避免清到別的 boss 的活外殼）
+        if (!isArmored()) discardOwnedArmorDisplays(sl);
         UUID id = getSourceUUID().orElse(null);
         if (id == null) return;
         // 娜拉幻影（不存盤）
@@ -1147,9 +1196,13 @@ public class PlayerCloneEntity extends Monster {
         clearSkillBlocksNow(sl); // 先收掉上次技能殘留的方塊，避免堆積
         BlockPos target = skillTargetPos;                     // 前搖鎖定的地點（非玩家當下位置）
         Vec3 targetCenter = Vec3.atCenterOf(target);
-        // 玩家在前搖內跑出鎖定點即閃過：方塊照放（撲空），但不擊飛（只看水平距離）
-        boolean dodged = p.position().distanceToSqr(targetCenter.x, p.getY(), targetCenter.z)
-                > SKILL_DODGE_RADIUS * SKILL_DODGE_RADIUS;
+        double dodgeRSq = SKILL_DODGE_RADIUS * SKILL_DODGE_RADIUS;
+        // CHARGE_RAMP 是線狀攻擊（boss→鎖定點），用點到線段距離；其他用以鎖定點為中心的球體距離
+        boolean dodged = skill == PillarSkill.CHARGE_RAMP
+                ? pointToSegmentDistSqrXZ(p.getX(), p.getZ(),
+                        this.getX(), this.getZ(), targetCenter.x, targetCenter.z) > dodgeRSq
+                : (p.getX() - targetCenter.x) * (p.getX() - targetCenter.x)
+                        + (p.getZ() - targetCenter.z) * (p.getZ() - targetCenter.z) > dodgeRSq;
         Vec3 awayFromClone = p.position().subtract(this.position()); // 命中時的擊退方向（玩家當下位置）
         Vec3 d = horizUnit(targetCenter.subtract(this.position()));
         BlockState block = takeWallBlock();
@@ -1410,7 +1463,10 @@ public class PlayerCloneEntity extends Monster {
         armorTriggered = tag.getBoolean("ArmorTriggered");
         if (tag.getBoolean("Armored")) {
             armorHp = tag.getFloat("ArmorHp");
-            pendingArmorRebuild = true; // 首次 tick 重建外殼（此時 level 可能尚未 ready）
+            pendingArmorRebuild = true;        // 首次 tick 重建外殼（此時 level 可能尚未 ready）
+            entityData.set(ARMORED, true);     // 立刻設同步狀態：防 autosave 寫 Armored=false、防 reload 首 tick 攻擊繞過外殼直接扣本體血
+            armoredDimensions = true;           // 立即套用大碰撞箱（onSyncedDataUpdated 也會設，這裡明示）
+            refreshDimensions();
         }
         placedWalls.clear();
         for (long l : tag.getLongArray("PlacedWalls")) placedWalls.add(l);

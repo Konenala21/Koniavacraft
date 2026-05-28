@@ -11,6 +11,10 @@
                 {
                     "name": "Saturation",
                     "values": [ 0.0 ]
+                },
+                {
+                    "name": "RedTint",
+                    "values": [ 0.0 ]
                 }
             ]
         },

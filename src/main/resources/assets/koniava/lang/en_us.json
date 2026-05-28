@@ -66,6 +66,8 @@
   "tooltip.koniava.equipment.slot_install_hint": "Install the corresponding equipment type here",
   "item.koniava.mana_dust": "Mana Dust",
   "item.koniava.mana_ingot": "Mana Ingot",
+  "item.koniava.mirror_core_shard": "Mirror Core Shard",
+  "item.koniava.mirror_core_shard.tooltip": "A core fragment taken from your defeated mirror clone. Proof of facing yourself.",
   "item.koniava.mana_debug_tool": "Mana Debug Tool",
   "item.koniava.corrupted_mana_dust": "Corrupted Mana Dust",
   "item.koniava.basic_tech_wand": "Basic Tech Wand",
