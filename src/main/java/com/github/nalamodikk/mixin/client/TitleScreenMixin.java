@@ -34,9 +34,10 @@ public abstract class TitleScreenMixin {
 
     @Unique private static final ResourceLocation KONIAVA$TITLE_TEX =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/title.png");
-    // 保 512x341 比例縮小到 vanilla logo 大小級別（vanilla 274x44，我們略大）
-    @Unique private static final int KONIAVA$TITLE_W = 200;
-    @Unique private static final int KONIAVA$TITLE_H = 133;
+    // 寬度匹配 vanilla logo (274)，高度按 PNG 比例 512:341 → 183
+    // 自適應縮放會在小視窗時自動縮小，這裡只設「最大尺寸」
+    @Unique private static final int KONIAVA$TITLE_W = 274;
+    @Unique private static final int KONIAVA$TITLE_H = 183;
     // 標題相對螢幕頂端的 y 位置（仿 vanilla logo 的 y=30）
     @Unique private static final int KONIAVA$TITLE_Y_BASE = 15;
 

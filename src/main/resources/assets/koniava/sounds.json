@@ -1,4 +1,8 @@
 {
+  "music.boss.mirror_image": {
+    "category": "music",
+    "sounds": [{"name": "koniava:music/boss/mirror_image", "stream": true}]
+  },
   "nara.zh_tw.first_login.line1": {
     "sounds": [
       {

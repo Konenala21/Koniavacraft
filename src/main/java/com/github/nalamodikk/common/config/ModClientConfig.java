@@ -22,6 +22,7 @@ public class ModClientConfig {
     public final ModConfigSpec.IntValue reducedAnimationDistance;
     public final ModConfigSpec.DoubleValue reducedAnimationScale;
     public final ModConfigSpec.DoubleValue naraVoiceVolume;
+    public final ModConfigSpec.DoubleValue bossMusicVolume;
     public final ModConfigSpec.BooleanValue sortButtonEnabled;
     public final ModConfigSpec.BooleanValue customTitleScreenEnabled;
     public final ModConfigSpec.ConfigValue<String> customTitleText;
@@ -68,6 +69,14 @@ public class ModClientConfig {
                 .comment("Volume for Nara's voice dialogue (0.0 = mute, 1.0 = 100%)")
                 .translation("koniava.config.nara.voiceVolume")
                 .defineInRange("naraVoiceVolume", 1.0D, 0.0D, 1.0D);
+
+        builder.pop();
+        builder.push("bossMusic");
+
+        bossMusicVolume = builder
+                .comment("Volume for boss battle BGM (Mirror Image and future boss music) (0.0 = mute, 1.0 = 100%)")
+                .translation("koniava.config.boss.musicVolume")
+                .defineInRange("bossMusicVolume", 1.0D, 0.0D, 1.0D);
 
         builder.pop();
         builder.push("render");

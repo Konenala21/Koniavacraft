@@ -6,6 +6,21 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Mirror Boss now has its own battle BGM ("Mirror Image") that plays when the fight starts and after save/reload while the boss is still alive. The BGM volume has a dedicated slider added to the vanilla sound settings (Esc -> Options -> Sound), placed inline with the standard volume sliders (Master / Music / Records / ... / Boss Battle BGM / Nara Voice / Sound Device / ...), matching vanilla layout so it feels native. Nara's two boss-fight voice lines (intro taunt + death taunt) were also regenerated with cleaner text so the TTS no longer sounds strained when she hits the exclamation-heavy lines.
+- 鏡像 Boss 現在有專屬戰鬥 BGM「Mirror Image」，戰鬥開始時播放、存檔重進若 boss 還活著也會繼續播。BGM 音量有專屬滑桿放在 vanilla 聲音設定（Esc → 選項 → 聲音），跟原版音量滑桿並排（主音量 / 音樂 / 唱片 / ... / Boss 戰鬥 BGM / 娜拉配音 / 聲音裝置 / ...），融入原版排版。娜拉的兩條 boss 戰台詞（開場嘲諷 + 死亡嘲諷）也用更柔和的文字重生過，原版 TTS 不再被高密度驚嘆號擠到「夾音」。
+
+- Space Crack (return rift in Mirror World) got a full visual overhaul using a custom GLSL shader pipeline: smooth dark elliptical core via a fragment-shader-computed radial alpha (no banding, no pie-slice seams), three-layer additive purple glow rift with lens shape + zigzag center line, and white-purple lightning bolts radiating outward. The whole thing renders through walls and block entities (chests / altars next to the rift don't occlude it) via a custom RenderLevelStageEvent pass after particles, so the rift behaves like a true tear in space. Billboard yaw snaps to integer degrees to eliminate sub-pixel jitter from camera micro-movements. Lightning bolts also penetrate blocks via a custom NO_DEPTH_TEST render type.
+- 空間裂縫（鏡中世界的返回裂縫）視覺全面升級，用自訂 GLSL shader：黑色橢圓核心由 fragment shader 算徑向 alpha（無 banding、無 pie-slice 接縫），紫色撕裂縫光暈用 3 層 additive shader 帶 lens 形狀 + 中央 zigzag，外圍放射白紫雙色閃電。整體透過 RenderLevelStageEvent 在粒子之後渲染，會穿透方塊跟 block entity（裂縫旁邊放箱子或祭壇都不會遮住），表現得像「真正的空間破口」。Billboard yaw 鎖整數度，消除玩家微動導致的 sub-pixel 抖動閃爍。閃電也用自訂 NO_DEPTH_TEST RT 穿透方塊。
+
+- Floating Turret upgrade screen now clips the rotating 3D preview to the center panel (with 6px margin inside the panel border) so the model can't visually overflow into the side panels at high zoom.
+- 浮游砲升級畫面的 3D 預覽現在會被裁切在中央面板內（面板邊框內縮 6px），所以高倍率縮放下模型不會溢出到左右兩側。
+
+- Inventory sort buttons moved up 8px so they sit cleanly above the slot grid instead of overlapping the top row.
+- 物品欄整理按鈕往上移 8px，現在貼在格子上方而不是壓到第一排。
+
+- Performance: the Space Crack renderer no longer scans a 64-block AABB every frame for crack entities even when there are none. Cracks now self-register on add/remove and the renderer iterates a tracked set, skipping the entire stage when empty.
+- 性能：空間裂縫渲染器不再每幀掃 64 格 AABB 找實體（即使場上沒裂縫也照掃）。裂縫實體現在自己 register/unregister，渲染器跑追蹤的 set，沒裂縫時整個 stage 直接跳過。
+
 - Space Crack visual rewrite. The return rift in the Mirror World no longer has a flat white center: it's now a smooth dark elliptical "tear into void" rendered via 36 pie-slice wedges (GPU interpolation, no visible banding), surrounded by purple glow layers and white-purple lightning bolts. Each lightning bolt is drawn as 3 stacked additive strokes (wide dim violet halo + mid bright purple + thin white core) so the bolts have a proper electric-glow look instead of hard quad edges. Render order was fixed so the dark center no longer punches through the surrounding glow.
 - 空間裂縫視覺重寫。鏡中世界的返回裂縫不再是中間白色亮片：現在是用 36 片 pie-slice 楔形拼出的平滑黑色橢圓「破口」（GPU 線性插值，無環邊接縫），外面包紫色光暈跟白紫雙色閃電。每支閃電用 3 層 additive 疊加（寬+暗紫光暈/中+亮紫/細+白核），看起來像真正的電弧發光，不再是硬邊 quad。順便修了渲染順序問題（之前黑色核會穿透光暈）。
 

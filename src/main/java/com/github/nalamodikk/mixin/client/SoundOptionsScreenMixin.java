@@ -10,21 +10,53 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+/**
+ * 在 vanilla 音效設定畫面追加 Koniavacraft 自家的音量條：
+ *   - Boss 戰鬥 BGM
+ *   - 娜拉配音
+ *
+ * 注入點選在 vanilla `soundDevice()` 呼叫之前 → 我們的滑桿緊跟在原版 source volume 後、SoundDevice 之前
+ * 用 addSmall（兩兩配對一列）→ 跟 vanilla source volumes 同款排版
+ * Label key 用 options.koniava.* 對齊 vanilla options.* 命名
+ */
 @Mixin(SoundOptionsScreen.class)
 public class SoundOptionsScreenMixin {
 
-    @Inject(method = "addOptions", at = @At("TAIL"))
-    private void koniava_addNaraVolumeSlider(CallbackInfo ci) {
-        OptionInstance<Double> naraVolume = new OptionInstance<>(
-                "koniava.config.nara.voiceVolume",
+    @Inject(
+            method = "addOptions",
+            at = @At(value = "INVOKE",
+                    target = "Lnet/minecraft/client/Options;soundDevice()Lnet/minecraft/client/OptionInstance;",
+                    shift = At.Shift.BEFORE)
+    )
+    private void koniava$addKoniavaSoundSliders(CallbackInfo ci) {
+        var list = ((OptionsSubScreenAccessor) (Object) this).koniava_getOptionsList();
+
+        OptionInstance<Double> bossMusic = makeVolumeSlider(
+                "options.koniava.boss_music",
+                ModClientConfig.INSTANCE.bossMusicVolume.get(),
+                value -> ModClientConfig.INSTANCE.bossMusicVolume.set(value));
+
+        OptionInstance<Double> naraVoice = makeVolumeSlider(
+                "options.koniava.nara_voice",
+                ModClientConfig.INSTANCE.naraVoiceVolume.get(),
+                value -> ModClientConfig.INSTANCE.naraVoiceVolume.set(value));
+
+        // 兩兩配對 → 跟 vanilla source volumes 同樣的 addSmall 排版
+        list.addSmall(new OptionInstance[]{ bossMusic, naraVoice });
+    }
+
+    @org.spongepowered.asm.mixin.Unique
+    private static OptionInstance<Double> makeVolumeSlider(String labelKey, double initial,
+                                                            java.util.function.Consumer<Double> setter) {
+        return new OptionInstance<>(
+                labelKey,
                 OptionInstance.noTooltip(),
                 (caption, value) -> Options.genericValueLabel(
                         caption,
                         Component.literal((int)(value * 100) + "%")),
                 OptionInstance.UnitDouble.INSTANCE,
-                ModClientConfig.INSTANCE.naraVoiceVolume.get(),
-                value -> ModClientConfig.INSTANCE.naraVoiceVolume.set(value)
+                initial,
+                value -> setter.accept(value)
         );
-        ((OptionsSubScreenAccessor)(Object)this).koniava_getOptionsList().addBig(naraVolume);
     }
 }

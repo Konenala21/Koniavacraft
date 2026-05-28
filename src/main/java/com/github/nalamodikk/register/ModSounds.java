@@ -71,6 +71,11 @@ public class ModSounds {
             SOUND_EVENTS.register("music.disc.u_key_core_b",
                     () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "music.disc.u_key_core_b")));
 
+    public static final DeferredHolder<SoundEvent, SoundEvent> BOSS_BGM_MIRROR_IMAGE =
+            SOUND_EVENTS.register("music.boss.mirror_image",
+                    () -> SoundEvent.createVariableRangeEvent(
+                            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "music.boss.mirror_image")));
+
     public static final DeferredHolder<SoundEvent, SoundEvent> TURRET_SHOOT =
             SOUND_EVENTS.register("weapon.turret.shoot",
                     () -> SoundEvent.createVariableRangeEvent(

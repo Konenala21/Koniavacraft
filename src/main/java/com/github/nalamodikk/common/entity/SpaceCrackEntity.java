@@ -106,6 +106,24 @@ public class SpaceCrackEntity extends Entity {
         return false;
     }
 
+    // Client 端追蹤：加入 / 移除世界時通知 SpaceCrackStageRenderer.ACTIVE set
+    // 避免每幀掃 64 格 spatial 查找（perf 修正）
+    @Override
+    public void onAddedToLevel() {
+        super.onAddedToLevel();
+        if (this.level().isClientSide) {
+            com.github.nalamodikk.client.renderer.entity.SpaceCrackStageRenderer.register(this);
+        }
+    }
+
+    @Override
+    public void onRemovedFromLevel() {
+        super.onRemovedFromLevel();
+        if (this.level().isClientSide) {
+            com.github.nalamodikk.client.renderer.entity.SpaceCrackStageRenderer.unregister(this);
+        }
+    }
+
     public static boolean existsNear(ServerLevel level, BlockPos pos) {
         AABB box = new AABB(pos).inflate(2.0);
         return !level.getEntitiesOfClass(SpaceCrackEntity.class, box).isEmpty();

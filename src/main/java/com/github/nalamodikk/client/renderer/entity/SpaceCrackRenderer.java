@@ -21,17 +21,7 @@ public class SpaceCrackRenderer extends EntityRenderer<SpaceCrackEntity> {
     private static final int LIGHTNING_BOLTS = 8;
     private static final int LIGHTNING_SEGMENTS = 8;
 
-    // 黑洞核心預算 cos/sin（pie-slice 用，N 楔形片從中心向外，alpha 線性插值，零銜接縫）
-    private static final int VOID_SEGS = 36;
-    private static final float[] VOID_COS = new float[VOID_SEGS];
-    private static final float[] VOID_SIN = new float[VOID_SEGS];
-    static {
-        for (int i = 0; i < VOID_SEGS; i++) {
-            double a = i * 2 * Math.PI / VOID_SEGS;
-            VOID_COS[i] = (float) Math.cos(a);
-            VOID_SIN[i] = (float) Math.sin(a);
-        }
-    }
+    // 黑洞核心 — 用 GLSL shader 處理徑向漸層 + dithering，純單一 quad（4 頂點）
 
     public SpaceCrackRenderer(EntityRendererProvider.Context ctx) {
         super(ctx);
@@ -40,79 +30,87 @@ public class SpaceCrackRenderer extends EntityRenderer<SpaceCrackEntity> {
     @Override
     public void render(SpaceCrackEntity entity, float entityYaw, float partialTick,
                        PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
+        // 實際渲染由 SpaceCrackStageRenderer 在 AFTER_PARTICLES 階段做（穿透所有 3D 物件包含 BE）
+        // 這裡只負責 super.render（hitbox 等 vanilla 行為）
+        super.render(entity, entityYaw, partialTick, poseStack, buffer, packedLight);
+    }
+
+    /** 給 stage renderer 呼叫的真正渲染邏輯（脫離 entity render dispatcher）。 */
+    public static void renderCrack(SpaceCrackEntity entity, PoseStack poseStack,
+                                   MultiBufferSource buffer, float partialTick) {
         poseStack.pushPose();
         poseStack.translate(0.0, 1.1, 0.0);
         // 只繞 Y 軸正對相機（直立的撕裂，不再貼著視角俯仰/打滾）
+        // Snap 到整數度避免 sub-pixel 抖動造成 strip 邊緣 aliasing 閃爍
         var cam = Minecraft.getInstance().gameRenderer.getMainCamera();
         double dxCam = cam.getPosition().x - entity.getX();
         double dzCam = cam.getPosition().z - entity.getZ();
         float yawToCam = (float) (Math.atan2(dxCam, dzCam) * (180.0 / Math.PI));
+        yawToCam = Math.round(yawToCam); // 1° snap 防 sub-pixel 抖動
         poseStack.mulPose(Axis.YP.rotationDegrees(yawToCam));
 
         float t = entity.tickCount + partialTick;
         Matrix4f pose = poseStack.last().pose();
 
-        // 1. 黑洞核心先畫（alpha blend，蓋住背景）
-        // 順序要早於 glow，否則 alpha blend 會把後畫的 additive 光暈中央吃掉
-        VertexConsumer dark = buffer.getBuffer(MIRenderTypes.voidCore());
-        float pulse = 1.0f + (float) Math.sin(t * 0.08) * 0.05f;
-        drawVoidPie(dark, pose, 0.85f * pulse, 1.40f * pulse, 60, 30, 90, 130);   // 最外暈：暗紫
-        drawVoidPie(dark, pose, 0.65f * pulse, 1.20f * pulse, 30, 10, 50, 180);   // 中外：深紫
-        drawVoidPie(dark, pose, 0.45f * pulse, 1.05f * pulse,  8,  0, 20, 220);   // 中內：近黑帶冷紫
-        drawVoidPie(dark, pose, 0.25f * pulse, 0.85f * pulse,  0,  0,  6, 250);   // 核心：純黑
+        // 1. 黑洞核心（shader 平滑徑向漸層）
+        VertexConsumer dark = buffer.getBuffer(MIRenderTypes.voidCoreShader());
+        drawVoidShaderQuad(dark, pose, 0.55f, 1.20f, 0, 0, 8, 230);
 
-        // 2. 紫色光暈外圈（additive 加色在黑色上 → 變光暈色，在天空上 → 也是光暈色，邊緣兩側都亮）
-        VertexConsumer glow = buffer.getBuffer(RenderType.lightning());
-        drawRift(glow, pose, 0.55f, 0.0f, t, 90, 50, 160, 50);
-        drawRift(glow, pose, 0.32f, 0.04f, t, 150, 100, 230, 110);
-        drawRift(glow, pose, 0.20f, 0.06f, t, 200, 150, 255, 180);
+        // 2. 紫色撕裂縫 — alpha 降低避免 3 層 additive 疊起來像閃光彈
+        VertexConsumer rift = buffer.getBuffer(MIRenderTypes.voidRiftShader());
+        drawVoidShaderQuad(rift, pose, 1.20f, 2.50f, 90, 50, 160, 50);    // 外暈：80→50
+        drawVoidShaderQuad(rift, pose, 0.95f, 2.30f, 130, 90, 200, 70);   // 中層：140→70
+        drawVoidShaderQuad(rift, pose, 0.70f, 2.10f, 180, 130, 230, 90);  // 內亮：220→90，色彩也降一點
 
-        // 3. 邊緣放射閃電弧（additive 三層輝光）
+        // 3. 邊緣放射閃電弧 — 用穿透方塊版本
+        VertexConsumer bolts = buffer.getBuffer(MIRenderTypes.lightningNoDepth());
         for (int i = 0; i < LIGHTNING_BOLTS; i++) {
-            drawLightningBolt(glow, pose, t, i);
+            drawLightningBolt(bolts, pose, t, i);
         }
 
         poseStack.popPose();
-        super.render(entity, entityYaw, partialTick, poseStack, buffer, packedLight);
     }
 
-    // 透鏡狀（中間寬、上下尖）+ 中央鋸齒位移，畫成一道撕裂縫
+    // 透鏡狀（中間寬、上下尖）+ 中央鋸齒位移 = 紫色撕裂縫的視覺識別
+    // additive lightning RT，多層疊出輝光
+    // 時間動畫慢到幾乎察覺不到（避免每幀邊緣移動造成「閃動黑點」）
     private static void drawRift(VertexConsumer vc, Matrix4f pose, float maxHalfWidth, float zigAmp,
                                   float t, int r, int g, int b, int a) {
+        float slowT = t * 0.02f;
+        // 微小垂直重疊填補 strip seam（GL rasterization rule 會讓共用邊像素被漏渲染 → 黑點）
+        float overlap = 0.004f;
         for (int i = 0; i < STRIPS; i++) {
             float v0 = -HALF_HEIGHT + 2f * HALF_HEIGHT * i / STRIPS;
             float v1 = -HALF_HEIGHT + 2f * HALF_HEIGHT * (i + 1) / STRIPS;
-            float hw0 = halfWidth(v0, maxHalfWidth, t);
-            float hw1 = halfWidth(v1, maxHalfWidth, t);
-            float c0 = zigAmp * (float) Math.sin(v0 * 7.0 + t * 0.12);
-            float c1 = zigAmp * (float) Math.sin(v1 * 7.0 + t * 0.12);
-            vc.addVertex(pose, c0 - hw0, v0, 0).setColor(r, g, b, a);
-            vc.addVertex(pose, c0 + hw0, v0, 0).setColor(r, g, b, a);
-            vc.addVertex(pose, c1 + hw1, v1, 0).setColor(r, g, b, a);
-            vc.addVertex(pose, c1 - hw1, v1, 0).setColor(r, g, b, a);
+            // 寬度仍用原 v 算（保持 lens 形狀），但 render 時垂直略擴一點
+            float hw0 = halfWidth(v0, maxHalfWidth, slowT);
+            float hw1 = halfWidth(v1, maxHalfWidth, slowT);
+            float c0 = zigAmp * (float) Math.sin(v0 * 7.0 + slowT);
+            float c1 = zigAmp * (float) Math.sin(v1 * 7.0 + slowT);
+            float v0r = v0 - overlap; // 上邊往上擴
+            float v1r = v1 + overlap; // 下邊往下擴
+            vc.addVertex(pose, c0 - hw0, v0r, 0).setColor(r, g, b, a);
+            vc.addVertex(pose, c0 + hw0, v0r, 0).setColor(r, g, b, a);
+            vc.addVertex(pose, c1 + hw1, v1r, 0).setColor(r, g, b, a);
+            vc.addVertex(pose, c1 - hw1, v1r, 0).setColor(r, g, b, a);
         }
     }
 
-    // Pie-slice 黑洞片：N 楔形從中心輻射，每片用一個 quad（中心點重複當第 4 頂點）
-    // 中心 alpha=a，外緣 alpha=0 → GPU 線性插值整片 = 完全平滑徑向漸層
-    private static void drawVoidPie(VertexConsumer vc, Matrix4f pose, float halfW, float halfH,
-                                    int r, int g, int b, int a) {
-        for (int i = 0; i < VOID_SEGS; i++) {
-            int j = (i + 1) % VOID_SEGS;
-            float x1 = halfW * VOID_COS[i], y1 = halfH * VOID_SIN[i];
-            float x2 = halfW * VOID_COS[j], y2 = halfH * VOID_SIN[j];
-            vc.addVertex(pose, 0, 0, 0).setColor(r, g, b, a);   // 中心（滿 alpha）
-            vc.addVertex(pose, x1, y1, 0).setColor(r, g, b, 0); // 外緣 i（透明）
-            vc.addVertex(pose, x2, y2, 0).setColor(r, g, b, 0); // 外緣 j（透明）
-            vc.addVertex(pose, 0, 0, 0).setColor(r, g, b, a);   // 中心（QUADS 第 4 頂點）
-        }
+    // 黑洞核心 quad：傳 (0,0)~(1,1) UV 給 shader，fragment 自己算徑向 alpha + dithering
+    // POSITION_TEX_COLOR 格式：頂點要有 UV，setColor 的 alpha 是 shader 的 vertexColor.a 倍數
+    private static void drawVoidShaderQuad(VertexConsumer vc, Matrix4f pose, float halfW, float halfH,
+                                           int r, int g, int b, int a) {
+        vc.addVertex(pose, -halfW, -halfH, 0).setUv(0, 0).setColor(r, g, b, a);
+        vc.addVertex(pose,  halfW, -halfH, 0).setUv(1, 0).setColor(r, g, b, a);
+        vc.addVertex(pose,  halfW,  halfH, 0).setUv(1, 1).setColor(r, g, b, a);
+        vc.addVertex(pose, -halfW,  halfH, 0).setUv(0, 1).setColor(r, g, b, a);
     }
 
     // 閃電：採用「太陽輝光」的多層 additive 加色技巧
     // 每支閃電畫 3 道相同路徑：外暈（寬+暗紫）+ 中層（中+亮紫）+ 內核（細+純白）
     // additive 疊起來邊緣會自然發光暈，邊界不再硬切 → 無顆粒感
     private static void drawLightningBolt(VertexConsumer vc, Matrix4f pose, float t, int boltIdx) {
-        int phaseTick = (int) (t / 4);
+        int phaseTick = (int) (t / 10); // 10 tick 換一輪（之前 4 太快會閃爍）
         int seed = boltIdx * 73 + phaseTick * 191;
         float yOnEdge = (pseudoRand(seed + 1) - 0.5f) * 1.8f;
         float edgeHW = halfWidth(yOnEdge, 0.32f, t);
@@ -134,19 +132,16 @@ public class SpaceCrackRenderer extends EntityRenderer<SpaceCrackEntity> {
             runningJY += (pseudoRand(seed + 30 + s) - 0.5f) * 0.08f;
         }
         float nx = -dirY, ny = dirX;
-        // 3 層 additive 疊起來：仿 renderSolarCore 的多層輝光手法
-        // 外暈：寬 0.12、暗紫、低 alpha → 模糊邊緣
-        drawBoltStroke(vc, pose, xs, ys, nx, ny, 0.12f,  80,  40, 160, 70);
-        // 中層：中等寬、亮紫
-        drawBoltStroke(vc, pose, xs, ys, nx, ny, 0.06f, 180, 130, 255, 140);
-        // 內核：細白色高亮
-        drawBoltStroke(vc, pose, xs, ys, nx, ny, 0.025f, 245, 240, 255, 230);
+        // 3 層 additive：溫和 alpha 避免在黑色背景上「閃爍黑點」對比過強
+        drawBoltStroke(vc, pose, xs, ys, nx, ny, 0.12f,  80,  40, 160,  60);  // 外暈：寬+暗紫
+        drawBoltStroke(vc, pose, xs, ys, nx, ny, 0.06f, 180, 130, 255, 120);  // 中層：紫
+        drawBoltStroke(vc, pose, xs, ys, nx, ny, 0.025f, 230, 220, 255, 200); // 內核：白紫
     }
 
     // 沿預算好的路徑畫一道閃電筆觸（寬度與顏色由參數決定）
     private static void drawBoltStroke(VertexConsumer vc, Matrix4f pose, float[] xs, float[] ys,
                                        float nx, float ny, float thickness, int r, int g, int b, int peakAlpha) {
-        float zFront = 0.02f;
+        float zFront = 0.05f; // 推到 dark + glow 前方
         for (int s = 0; s < LIGHTNING_SEGMENTS; s++) {
             float u0 = s / (float) LIGHTNING_SEGMENTS;
             float u1 = (s + 1) / (float) LIGHTNING_SEGMENTS;
@@ -174,7 +169,8 @@ public class SpaceCrackRenderer extends EntityRenderer<SpaceCrackEntity> {
     private static float halfWidth(float v, float maxHalfWidth, float t) {
         float n = v / HALF_HEIGHT;                       // -1..1
         float lens = (float) Math.pow(Math.max(0.0, 1.0 - n * n), 0.7); // 上下尖、中間寬
-        float jag = 0.7f + 0.3f * (float) Math.sin(v * 15.0 + t * 0.18); // 邊緣鋸齒抖動
+        // 鋸齒幅度減小（0.3→0.15）+ 時間動畫由 caller 控制慢速 → 避免邊緣每幀跳動產生閃動
+        float jag = 0.85f + 0.15f * (float) Math.sin(v * 15.0 + t);
         return maxHalfWidth * lens * jag;
     }
 

@@ -108,6 +108,12 @@ public class TurretUpgradeScreen extends Screen {
     private void render3DTurret(GuiGraphics g) {
         int cx = ctrX() + CTR_W / 2;
         int cy = startY() + BG_H / 2;
+        // 用 scissor 裁切到中央面板區內側（四邊各留 6px 不貼到面板邊框）
+        int scissorX1 = ctrX() + 6;
+        int scissorY1 = startY() + 6;
+        int scissorX2 = ctrX() + CTR_W - 6;
+        int scissorY2 = startY() + BG_H - 6;
+        g.enableScissor(scissorX1, scissorY1, scissorX2, scissorY2);
         PoseStack pose = g.pose();
         pose.pushPose();
         pose.translate(cx, cy, 200);
@@ -120,6 +126,7 @@ public class TurretUpgradeScreen extends Screen {
                 pose, mc.renderBuffers().bufferSource(), mc.level, 0);
         mc.renderBuffers().bufferSource().endBatch();
         pose.popPose();
+        g.disableScissor();
     }
 
     private void renderLeftPanel(GuiGraphics g, int x, int y, int mx, int my) {

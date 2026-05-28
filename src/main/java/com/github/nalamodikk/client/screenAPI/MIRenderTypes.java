@@ -25,7 +25,11 @@ package com.github.nalamodikk.client.screenAPI;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.ShaderInstance;
+
+import java.util.function.Supplier;
 
 public class MIRenderTypes {
     private static RenderType MACHINE_WRENCH_OVERLAY;
@@ -62,6 +66,65 @@ public class MIRenderTypes {
             VOID_CORE = Factory.makeVoidCore();
         }
         return VOID_CORE;
+    }
+
+    // 自訂 shader 提供徑向漸層 + dithering（在 fragment shader 處理 banding）
+    // 由 ShaderRegistration 客戶端事件 setter 注入
+    private static Supplier<ShaderInstance> VOID_CORE_SHADER_SUPPLIER = () -> null;
+
+    public static void setVoidCoreShader(Supplier<ShaderInstance> supplier) {
+        VOID_CORE_SHADER_SUPPLIER = supplier;
+    }
+
+    private static RenderType VOID_CORE_SHADER;
+
+    public static RenderType voidCoreShader() {
+        if (VOID_CORE_SHADER == null) {
+            VOID_CORE_SHADER = Factory.makeVoidCoreShader();
+        }
+        return VOID_CORE_SHADER;
+    }
+
+    // 紫色光暈版本：同一個 shader 但用 additive blending，給 SpaceCrack 外圈用
+    private static RenderType VOID_GLOW_SHADER;
+
+    public static RenderType voidGlowShader() {
+        if (VOID_GLOW_SHADER == null) {
+            VOID_GLOW_SHADER = Factory.makeVoidGlowShader();
+        }
+        return VOID_GLOW_SHADER;
+    }
+
+    private static final RenderStateShard.ShaderStateShard VOID_CORE_SHADER_STATE =
+            new RenderStateShard.ShaderStateShard(() -> VOID_CORE_SHADER_SUPPLIER.get());
+
+    // 紫色撕裂縫 shader（lens + zigzag + 鋸齒邊緣，無 strip seam）
+    private static Supplier<ShaderInstance> VOID_RIFT_SHADER_SUPPLIER = () -> null;
+
+    public static void setVoidRiftShader(Supplier<ShaderInstance> supplier) {
+        VOID_RIFT_SHADER_SUPPLIER = supplier;
+    }
+
+    private static final RenderStateShard.ShaderStateShard VOID_RIFT_SHADER_STATE =
+            new RenderStateShard.ShaderStateShard(() -> VOID_RIFT_SHADER_SUPPLIER.get());
+
+    private static RenderType VOID_RIFT;
+
+    public static RenderType voidRiftShader() {
+        if (VOID_RIFT == null) {
+            VOID_RIFT = Factory.makeVoidRiftShader();
+        }
+        return VOID_RIFT;
+    }
+
+    // Lightning RT 變體：穿透方塊用（POSITION_COLOR + LIGHTNING_TRANSPARENCY + NO_DEPTH_TEST）
+    private static RenderType LIGHTNING_NO_DEPTH;
+
+    public static RenderType lightningNoDepth() {
+        if (LIGHTNING_NO_DEPTH == null) {
+            LIGHTNING_NO_DEPTH = Factory.makeLightningNoDepth();
+        }
+        return LIGHTNING_NO_DEPTH;
     }
 
     private static RenderType SEAL_CHAIN;
@@ -102,6 +165,47 @@ public class MIRenderTypes {
                             .createCompositeState(false));
         }
 
+        // Lightning RT 穿透方塊變體
+        private static RenderType makeLightningNoDepth() {
+            return create("koniava_lightning_no_depth",
+                    DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 2048, false, false,
+                    CompositeState.builder()
+                            .setShaderState(POSITION_COLOR_SHADER)
+                            .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                            .setWriteMaskState(COLOR_WRITE)
+                            .setTextureState(NO_TEXTURE)
+                            .setDepthTestState(NO_DEPTH_TEST)
+                            .setCullState(NO_CULL)
+                            .createCompositeState(false));
+        }
+
+        // 紫色撕裂縫 shader（lens + zigzag + 鋸齒邊緣，additive 加色發光，無 strip seam）
+        // NO_DEPTH_TEST + NO_CULL → 雙重保險穿透方塊不被剔除
+        private static RenderType makeVoidRiftShader() {
+            return create("koniava_void_rift_shader",
+                    DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 2048, false, false,
+                    CompositeState.builder()
+                            .setShaderState(VOID_RIFT_SHADER_STATE)
+                            .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                            .setWriteMaskState(COLOR_WRITE)
+                            .setTextureState(NO_TEXTURE)
+                            .setDepthTestState(NO_DEPTH_TEST)
+                            .setCullState(NO_CULL)
+                            .createCompositeState(false));
+        }
+
+        // 紫色光暈：同一個 shader（voidCore），但用 LIGHTNING_TRANSPARENCY（additive）→ 加色發光
+        private static RenderType makeVoidGlowShader() {
+            return create("koniava_void_glow_shader",
+                    DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 2048, false, false,
+                    CompositeState.builder()
+                            .setShaderState(VOID_CORE_SHADER_STATE)
+                            .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                            .setWriteMaskState(COLOR_WRITE)
+                            .setTextureState(NO_TEXTURE)
+                            .createCompositeState(false));
+        }
+
         // 封印鍊子：與 solarGlow 相同設定（LIGHTNING + COLOR_WRITE），保證 BER context 可用
         private static RenderType makeSealChain() {
             return create("koniava_seal_chain", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 4096, false, false,
@@ -110,6 +214,22 @@ public class MIRenderTypes {
                             .setTransparencyState(LIGHTNING_TRANSPARENCY)
                             .setWriteMaskState(COLOR_WRITE)
                             .setTextureState(NO_TEXTURE)
+                            .createCompositeState(false));
+        }
+
+        // 黑洞核心 + 自訂 GLSL shader（內含 dithering 解 banding）
+        // POSITION_TEX_COLOR：頂點需有 UV 座標 (0,0)~(1,1)，fragment 由 UV 算徑向距離
+        // NO_DEPTH_TEST + NO_CULL → 穿透方塊
+        private static RenderType makeVoidCoreShader() {
+            return create("koniava_void_core_shader",
+                    DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 2048, false, false,
+                    CompositeState.builder()
+                            .setShaderState(VOID_CORE_SHADER_STATE)
+                            .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                            .setWriteMaskState(COLOR_WRITE)
+                            .setTextureState(NO_TEXTURE)
+                            .setDepthTestState(NO_DEPTH_TEST)
+                            .setCullState(NO_CULL)
                             .createCompositeState(false));
         }
 

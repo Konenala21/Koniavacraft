@@ -157,6 +157,8 @@ public class PlayerCloneEntity extends Monster {
     private boolean turretsSpawned = false; // 不存盤：重載後為 false → 重新生成砲
 
     // ── 二階段方塊機甲（半血變身：以 BlockDisplay 偽裝方塊組成大型人形包住本體）──
+    // 已送出 BGM 觸發 packet 的玩家 UUID（避免重複送）。Transient，重載 / 重啟自動重置 → 玩家重進時 BGM 會再觸發
+    private final java.util.Set<UUID> bgmSentTo = new HashSet<>();
     private final java.util.List<Display.BlockDisplay> armorParts = new ArrayList<>();
     private final java.util.List<Vec3> armorSpawnOffsets = new ArrayList<>(); // 變身時方塊的初始飛來位置（local offset）
     private final java.util.List<Integer> armorAssembleDelay = new ArrayList<>(); // 每塊方塊飛入的起飛延遲 tick（順序漸快）
@@ -732,6 +734,7 @@ public class PlayerCloneEntity extends Monster {
             for (ServerPlayer p : sl.getEntitiesOfClass(ServerPlayer.class, getBoundingBox().inflate(64))) {
                 bossEvent.addPlayer(p);
             }
+            // BGM 觸發改到 customServerAiStep 統一處理（per-player 一次性追蹤），這裡不直接送 packet
             graceTicks = 40; // 站定 2 秒給玩家準備，不立刻偷襲
             // 返回裂縫與娜拉幻影由 ensureCompanions（active tick）確保恰好一個
         }
@@ -890,6 +893,18 @@ public class PlayerCloneEntity extends Monster {
                 ? Math.max(0F, armorHp / ARMOR_MAX_HP)
                 : this.getHealth() / this.getMaxHealth());
 
+        // BGM 觸發放在 graceTicks 早返之前，避免 2 秒延遲（玩家進範圍就播）
+        if (level() instanceof ServerLevel bgmLevel) {
+            com.github.nalamodikk.common.network.packet.client.BossBgmPacket bgm =
+                    com.github.nalamodikk.common.network.packet.client.BossBgmPacket.INSTANCE;
+            for (ServerPlayer p : bgmLevel.players()) {
+                if (this.distanceToSqr(p) > 200.0 * 200.0) continue;
+                if (bgmSentTo.add(p.getUUID())) {
+                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p, bgm);
+                }
+            }
+        }
+
         if (graceTicks > 0) {
             graceTicks--;
             setTarget(null); // 進場緩衝：站定不鎖定、不攻擊
@@ -936,6 +951,8 @@ public class PlayerCloneEntity extends Monster {
             spawnMirroredTurrets();
             turretsSpawned = true;
         }
+
+        // BGM 觸發已移到上方 graceTicks 之前（避免 2 秒延遲），這裡留空
 
         updatePhase();
 
