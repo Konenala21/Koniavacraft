@@ -2,6 +2,7 @@ package com.github.nalamodikk.mixin.client;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.config.ModClientConfig;
+import net.neoforged.fml.ModList;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -82,17 +83,37 @@ public abstract class TitleScreenMixin {
     );
 
     @Unique private static String koniava$currentSplash;
+    // 偵測快取：避免每幀掃 ModList
+    @Unique private static Boolean koniava$conflictingMenuModCached;
+
+    @Unique
+    private static boolean koniava$hasConflictingMenuMod() {
+        if (koniava$conflictingMenuModCached == null) {
+            ModList ml = ModList.get();
+            koniava$conflictingMenuModCached =
+                    ml.isLoaded("fancymenu") || ml.isLoaded("custommainmenu")
+                            || ml.isLoaded("titletweaks") || ml.isLoaded("bettertitlescreen");
+        }
+        return koniava$conflictingMenuModCached;
+    }
+
+    @Unique
+    private static boolean koniava$shouldRenderModdedTitle() {
+        if (!ModClientConfig.INSTANCE.customTitleScreenEnabled.get()) return false;
+        if (ModClientConfig.INSTANCE.deferToOtherMenuMods.get() && koniava$hasConflictingMenuMod()) return false;
+        return true;
+    }
 
     @Inject(method = "init", at = @At("RETURN"))
     private void koniava$pickSplash(CallbackInfo ci) {
-        if (!ModClientConfig.INSTANCE.customTitleScreenEnabled.get()) return;
+        if (!koniava$shouldRenderModdedTitle()) return;
         koniava$currentSplash = KONIAVA$SPLASHES.get(RandomSource.create().nextInt(KONIAVA$SPLASHES.size()));
     }
 
     @Redirect(method = "render", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/client/gui/components/LogoRenderer;renderLogo(Lnet/minecraft/client/gui/GuiGraphics;IF)V"))
     private void koniava$skipVanillaLogo(LogoRenderer instance, GuiGraphics graphics, int width, float alpha) {
-        if (!ModClientConfig.INSTANCE.customTitleScreenEnabled.get()) {
+        if (!koniava$shouldRenderModdedTitle()) {
             instance.renderLogo(graphics, width, alpha);
         }
         // config 開啟 → 跳過 vanilla logo，交給 koniava$drawCustomTitle
@@ -101,7 +122,7 @@ public abstract class TitleScreenMixin {
     @Redirect(method = "render", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/client/gui/components/SplashRenderer;render(Lnet/minecraft/client/gui/GuiGraphics;ILnet/minecraft/client/gui/Font;I)V"))
     private void koniava$skipVanillaSplash(SplashRenderer instance, GuiGraphics graphics, int width, Font font, int alpha) {
-        if (!ModClientConfig.INSTANCE.customTitleScreenEnabled.get()) {
+        if (!koniava$shouldRenderModdedTitle()) {
             instance.render(graphics, width, font, alpha);
         }
         // 跳過 vanilla splash → koniava$drawCustomSplash 接手
@@ -109,21 +130,29 @@ public abstract class TitleScreenMixin {
 
     @Inject(method = "render", at = @At("TAIL"))
     private void koniava$drawCustomTitle(GuiGraphics graphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
-        if (!ModClientConfig.INSTANCE.customTitleScreenEnabled.get()) return;
+        if (!koniava$shouldRenderModdedTitle()) return;
         TitleScreen self = (TitleScreen) (Object) this;
 
-        // 標題圖片：水平置中 + 垂直固定，加上輕微縮放（±3% 微脈動）取代上下浮動
+        // 標題圖片：水平置中 + 自適應縮放（視窗太矮時自動縮小，避免擠到按鈕）+ 輕微縮放脈動
+        // 單人遊戲按鈕的 y 約在 height/4 + 48，留 15px margin
+        // 沒下限 → 視窗超矮時圖也會跟著超小，不會壓到按鈕（不像之前 max 40 floor 卡住）
+        int buttonY = self.height / 4 + 48;
+        float maxH = Math.max(10, buttonY - KONIAVA$TITLE_Y_BASE - 15);
+        float maxW = Math.max(40, self.width - 40);
+        float fitScale = Math.min(1.0f, Math.min(maxH / KONIAVA$TITLE_H, maxW / KONIAVA$TITLE_W));
+        float scaleT = Util.getMillis() / 600.0f;
+        float pulseScale = 1.0f + Mth.sin(scaleT) * 0.03f;
+        float titleScale = fitScale * pulseScale;
         int titleX = (self.width - KONIAVA$TITLE_W) / 2;
         int titleY = KONIAVA$TITLE_Y_BASE;
-        float scaleT = Util.getMillis() / 600.0f;
-        float titleScale = 1.0f + Mth.sin(scaleT) * 0.03f;
-        float titleCenterX = self.width / 2.0f;
-        float titleCenterY = titleY + KONIAVA$TITLE_H / 2.0f;
+        // 錨點在「圖片頂部中央」：縮小時只從底部往上收，永遠不會壓到按鈕
+        float anchorX = self.width / 2.0f;
+        float anchorY = titleY;
         PoseStack tilePose = graphics.pose();
         tilePose.pushPose();
-        tilePose.translate(titleCenterX, titleCenterY, 0);
+        tilePose.translate(anchorX, anchorY, 0);
         tilePose.scale(titleScale, titleScale, 1.0f);
-        tilePose.translate(-titleCenterX, -titleCenterY, 0);
+        tilePose.translate(-anchorX, -anchorY, 0);
         graphics.blit(KONIAVA$TITLE_TEX, titleX, titleY, 0, 0, KONIAVA$TITLE_W, KONIAVA$TITLE_H,
                 KONIAVA$TITLE_W, KONIAVA$TITLE_H);
         tilePose.popPose();
@@ -135,7 +164,7 @@ public abstract class TitleScreenMixin {
         PoseStack pose = graphics.pose();
         pose.pushPose();
         pose.translate(self.width / 2.0f + 88.0f, 70.0f, 0);
-        pose.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(-20.0f));
+        pose.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(20.0f));
         // 字體浮動縮放
         float scale = 1.8f - Math.abs(Mth.sin(Util.getMillis() / 1000.0f * (float) Math.PI * 2.0f) * 0.1f);
         float widthScale = scale * 100.0f / (mc.font.width(splash) + 32.0f);

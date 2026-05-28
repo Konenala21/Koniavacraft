@@ -20,6 +20,7 @@ public class TitleScreenToggleButton {
     @SubscribeEvent
     public static void onTitleScreenInit(ScreenEvent.Init.Post event) {
         if (!(event.getScreen() instanceof TitleScreen screen)) return;
+        if (!ModClientConfig.INSTANCE.showTitleToggleButton.get()) return; // 模組包想隱藏按鈕可關
         boolean enabled = ModClientConfig.INSTANCE.customTitleScreenEnabled.get();
         Component label = enabled
                 ? Component.translatable("message.koniava.title_toggle.custom") // 「★ 模組主選單」

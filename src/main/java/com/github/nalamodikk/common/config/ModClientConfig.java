@@ -25,6 +25,8 @@ public class ModClientConfig {
     public final ModConfigSpec.BooleanValue sortButtonEnabled;
     public final ModConfigSpec.BooleanValue customTitleScreenEnabled;
     public final ModConfigSpec.ConfigValue<String> customTitleText;
+    public final ModConfigSpec.BooleanValue showTitleToggleButton;
+    public final ModConfigSpec.BooleanValue deferToOtherMenuMods;
 
     private ModClientConfig(ModConfigSpec.Builder builder) {
         builder.push("inventory");
@@ -46,6 +48,18 @@ public class ModClientConfig {
                 .comment("Text shown as the floating title (replaces the vanilla Minecraft logo)")
                 .translation("koniava.config.titleScreen.customTitleText")
                 .define("customTitleText", "Koniavacraft");
+
+        showTitleToggleButton = builder
+                .comment("Show the modded/vanilla title toggle button in the title screen's top-right corner")
+                .comment("Modpack authors who want a totally clean vanilla title can set this to false")
+                .translation("koniava.config.titleScreen.showTitleToggleButton")
+                .define("showTitleToggleButton", true);
+
+        deferToOtherMenuMods = builder
+                .comment("If another title-screen-customizing mod is present (FancyMenu, CustomMainMenu, BetterTitleScreen, TitleTweaks)")
+                .comment("automatically defer to them and skip our custom title. Set to false to force ours.")
+                .translation("koniava.config.titleScreen.deferToOtherMenuMods")
+                .define("deferToOtherMenuMods", true);
 
         builder.pop();
         builder.push("nara");
