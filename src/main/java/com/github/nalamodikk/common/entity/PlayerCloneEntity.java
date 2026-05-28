@@ -9,6 +9,7 @@ import com.github.nalamodikk.common.item.upgrade.EquipmentUpgradeData;
 import com.github.nalamodikk.common.item.weapon.FloatingTurretItem;
 import com.github.nalamodikk.common.item.weapon.turret.TurretUpgradeBehavior;
 import com.github.nalamodikk.common.item.weapon.turret.TurretUpgradeItem;
+import com.github.nalamodikk.common.network.packet.client.Phase2TransitionPacket;
 import com.github.nalamodikk.register.ModDataAttachments;
 import com.github.nalamodikk.register.ModDataComponents;
 import com.github.nalamodikk.register.ModEntities;
@@ -157,12 +158,19 @@ public class PlayerCloneEntity extends Monster {
 
     // ── 二階段方塊機甲（半血變身：以 BlockDisplay 偽裝方塊組成大型人形包住本體）──
     private final java.util.List<Display.BlockDisplay> armorParts = new ArrayList<>();
+    private final java.util.List<Vec3> armorSpawnOffsets = new ArrayList<>(); // 變身時方塊的初始飛來位置（local offset）
+    private final java.util.List<Integer> armorAssembleDelay = new ArrayList<>(); // 每塊方塊飛入的起飛延遲 tick（順序漸快）
+    private final java.util.List<Vec3> turretMountOffsets = new ArrayList<>(); // 結構模板的 LIME_WOOL 砲位（local offset，由左到右排序對應 slot index）
+    private static final int ARMOR_TRAVEL_TICKS = 50; // 每塊方塊飛入移動時間（過場拉長後也跟著拉長，讓飛入動作更從容）
     private final java.util.List<Vec3> armorOffsets = new ArrayList<>();
     private boolean armorTriggered = false;   // 半血只觸發一次
     private boolean armoredDimensions = false; // 鏡像 ARMORED 給 getDimensions 用（避免在 entityData 尚未 define 時讀取）
     private boolean pendingArmorRebuild = false; // 重載時若仍在外殼狀態，首次 tick 重建外殼（接續二階段）
     private float armorHp = 0f;               // 外殼血量，與本體血量分離
     private static final float ARMOR_MAX_HP = 120f;
+    // 二階段變身過場（server tick 倒數）：期間 boss 凍結 AI + 無敵，client 端鎖相機環繞
+    private static final int PHASE2_TRANSITION_LEN = 220;
+    private int phase2TransitionTicks = 0;
     private static final net.minecraft.world.entity.EntityDimensions ARMOR_DIMENSIONS =
             net.minecraft.world.entity.EntityDimensions.scalable(5.0F, 16.0F); // 涵蓋機甲外殼的碰撞箱
     private final ArrayList<Integer> armorLegSide = new ArrayList<>(); // 與 armorParts 平行：0=非腿 1=左腿 2=右腿
@@ -173,27 +181,29 @@ public class PlayerCloneEntity extends Monster {
     }
     private double walkPhase = 0;                 // 走路動畫相位（移動時推進，讓雙腿前後擺動）
     private static final int LEG_TOP_ROW = 11;    // 剪影此列(含)以下視為腿
-    private static final double LEG_HIP_Y = 4.0;  // 腿頂(髖)高度 = (rows-1) - LEG_TOP_ROW，繞此擺動
-    // 機甲頭部 b 的 oy = (rows-1) - bRow(2) = 13；renderer 把本體 translate 到這裡（讓本體露在頭部）
-    public static final double ARMORED_BODY_OFFSET_Y = 13.0;
-    // 機甲剪影：b=本體核心、c=外殼方塊、'.'=空；row0 最上、腳在最後一列、b 在 row2/col2
+    private static final double LEG_HIP_Y = 3.0;  // 腿頂(髖)高度 = (rows-1) - LEG_TOP_ROW，繞此擺動
+    // 本體鑲嵌深度：玩家模型整個藏進機甲，腳被胸甲擋住，只有頭剛好對齊 row 2 的眼縫從中露出
+    // 玩家身高 ~1.8 → feet=11 head_center≈12.5 ≈ row 2 (oy 12-13) 中央
+    public static final double ARMORED_BODY_OFFSET_Y = 11.0;
+    // 機甲頭頂的世界座標 oy（rows-1 - row 0 = 14），浮游砲坐落在頭頂上方使用
+    public static final double ARMORED_HEAD_TOP_Y = 14.0;
+    // 機甲剪影（7 寬人形 + 寬肩窄腰）：o=外殼方塊（材質從 clonedInventory→環境取得）、b=本體核心(不放方塊)、'.'=空
     private static final String[] MECH_SHAPE = {
-            "ccccc",
-            "c...c",
-            "c.b.c",
-            "ccccc",
-            "..c..",
-            "ccccc",
-            "c.c.c",
-            "c.c.c",
-            "..c..",
-            "..c..",
-            "..c..",
-            ".c.c.",
-            ".c.c.",
-            "c...c",
-            "c...c",
-            "c...c",
+            "...o...",   // 0 頭頂天線
+            "..ooo..",   // 1 頭頂
+            ".o.b.o.",   // 2 眼+核心
+            "..ooo..",   // 3 下顎
+            ".ooooo.",   // 4 頸
+            "ooooooo",   // 5 肩線 7 格
+            "ooooooo",   // 6 肩甲
+            ".ooooo.",   // 7 胸
+            ".ooooo.",   // 8 腹
+            "..ooo..",   // 9 腰收窄
+            ".ooooo.",   // 10 髖
+            ".oo.oo.",   // 11 大腿頂 (LEG_TOP_ROW)
+            ".oo.oo.",   // 12 大腿
+            ".oo.oo.",   // 13 小腿
+            ".oo.oo.",   // 14 小腿（無腳板）
     };
 
     private static final EntityDataAccessor<Optional<UUID>> SOURCE_UUID =
@@ -215,6 +225,11 @@ public class PlayerCloneEntity extends Monster {
 
     // 鏡像玩家的整個主背包（快捷欄 0-8 + 背包 9-35），供疊方塊 AI 取用。不掉落、不同步。
     private final NonNullList<ItemStack> clonedInventory = NonNullList.withSize(36, ItemStack.EMPTY);
+    // 鏡像玩家快捷欄（slot 0~8），戰鬥中定時切換主手；空槽跳過
+    private final NonNullList<ItemStack> bossHotbar = NonNullList.withSize(9, ItemStack.EMPTY);
+    private int hotbarIdx = 0;
+    private int hotbarSwitchCooldown = 0;
+    private static final int HOTBAR_SWITCH_INTERVAL = 80; // 4 秒切一次
 
     private final ServerBossEvent bossEvent = new ServerBossEvent(
             this.getDisplayName(), BossEvent.BossBarColor.WHITE, BossEvent.BossBarOverlay.PROGRESS);
@@ -333,20 +348,64 @@ public class PlayerCloneEntity extends Monster {
         }
         while (idx < clonedInventory.size()) clonedInventory.set(idx++, ItemStack.EMPTY);
 
-        // 鏡像浮游砲：手持(主副手) + 自走(其餘來源，含盒子內)
+        // 鏡像浮游砲：mirroredHandTurrets[main, off]，mirroredTurrets 對應 player 的兩個 EXTRA_EQUIPMENT 槽
         mirroredTurrets.clear();
         mirroredHandTurrets.clear();
         ItemStack mainHand = player.getMainHandItem();
         ItemStack offHand = player.getOffhandItem();
-        if (mainHand.getItem() instanceof FloatingTurretItem) mirroredHandTurrets.add(filterMirroredTurret(mainHand));
-        if (offHand.getItem() instanceof FloatingTurretItem) mirroredHandTurrets.add(filterMirroredTurret(offHand));
+        mirroredHandTurrets.add(mainHand.getItem() instanceof FloatingTurretItem ? filterMirroredTurret(mainHand) : ItemStack.EMPTY);
+        mirroredHandTurrets.add(offHand.getItem() instanceof FloatingTurretItem ? filterMirroredTurret(offHand) : ItemStack.EMPTY);
+        // 繞行砲：優先從 EXTRA_EQUIPMENT 的 2 個槽鏡像
+        for (int i = 0; i < extra.size() && mirroredTurrets.size() < 2; i++) {
+            ItemStack s = extra.get(i);
+            if (s.isEmpty()) continue;
+            if (s.getItem() instanceof FloatingTurretItem) {
+                mirroredTurrets.add(filterMirroredTurret(s));
+            }
+        }
+        // 補位：玩家把浮游砲藏在背包/盒子也要鏡像（避免「不裝就規避」），從 pool 補到 2 個
+        // 跳過已經安排在主/副手/extra 那些浮游砲，避免重複鏡像
+        java.util.Set<ItemStack> alreadyMirrored = new java.util.HashSet<>();
+        if (mainHand.getItem() instanceof FloatingTurretItem) alreadyMirrored.add(mainHand);
+        if (offHand.getItem() instanceof FloatingTurretItem) alreadyMirrored.add(offHand);
+        for (ItemStack s : extra) if (s.getItem() instanceof FloatingTurretItem) alreadyMirrored.add(s);
         for (ItemStack s : pool) {
-            if (s == mainHand || s == offHand) continue; // 主副手已算手持
-            addMirroredTurret(s);
+            if (mirroredTurrets.size() >= 2) break;
+            if (s.isEmpty() || alreadyMirrored.contains(s)) continue;
+            if (s.getItem() instanceof FloatingTurretItem) {
+                mirroredTurrets.add(filterMirroredTurret(s));
+            }
+        }
+
+        // 鏡像玩家快捷欄（前 9 格）供戰鬥中切換
+        for (int i = 0; i < 9; i++) {
+            ItemStack hot = i < player.getInventory().items.size() ? player.getInventory().items.get(i) : ItemStack.EMPTY;
+            bossHotbar.set(i, hot.copy());
         }
 
         this.setHealth(this.getMaxHealth());
         this.bossEvent.setName(player.getDisplayName());
+    }
+
+    // 戰鬥中切換主手：每 HOTBAR_SWITCH_INTERVAL tick 切到下一個有東西的快捷欄槽
+    // 浮游砲跳過（已經是手持砲實體在打了），改換其他武器讓戰鬥節奏有變化
+    private void tickHotbarSwitch() {
+        if (hotbarSwitchCooldown > 0) { hotbarSwitchCooldown--; return; }
+        hotbarSwitchCooldown = HOTBAR_SWITCH_INTERVAL;
+        if (getTarget() == null || !getTarget().isAlive()) return;
+        for (int i = 1; i <= 9; i++) {
+            int next = (hotbarIdx + i) % 9;
+            ItemStack candidate = bossHotbar.get(next);
+            if (candidate.isEmpty()) continue;
+            // 跳過浮游砲（已經是手持砲在打）；其他物品都可上手換打
+            if (candidate.getItem() instanceof FloatingTurretItem) continue;
+            // 跳過跟當下主手完全一樣的（無意義切換）
+            if (ItemStack.isSameItemSameComponents(candidate, this.getMainHandItem())) continue;
+            this.setItemSlot(EquipmentSlot.MAINHAND, candidate.copy());
+            this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+            hotbarIdx = next;
+            return;
+        }
     }
 
     private static final int CONTAINER_DEPTH_CAP = 4;
@@ -505,21 +564,86 @@ public class PlayerCloneEntity extends Monster {
             this.setItemSlot(e.getKey(), e.getValue());
         }
         equipBestWeapon();
+        equipBestOffhand();
+        rebuildHandTurretsFromEquipped(); // 同步手持浮游砲列表（含 equipBestOffhand 從背包挑出的）
     }
 
-    // 拿背包裡攻擊力最高的武器到主手（避免好武器在快捷欄沒拿在手上時 boss 空手）
-    private void equipBestWeapon() {
-        ItemStack best = this.getMainHandItem();
-        double bestAtk = weaponAttack(best);
+    // 副手有盾且攻擊來自前方 (dot > 0.5) 就擋下：盾消耗耐久 + 播音效，不阻擋穿盾類型傷害
+    private boolean tryShieldBlock(DamageSource source) {
+        if (!(this.getOffhandItem().getItem() instanceof net.minecraft.world.item.ShieldItem)) return false;
+        if (source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_SHIELD)) return false;
+        net.minecraft.world.entity.Entity src = source.getDirectEntity();
+        if (src == null) return false;
+        Vec3 toSrc = src.position().subtract(this.position());
+        if (toSrc.lengthSqr() < 1e-4) return false;
+        toSrc = toSrc.normalize();
+        Vec3 facing = Vec3.directionFromRotation(0, this.getYRot());
+        if (facing.dot(toSrc) < 0.5) return false; // 不在前方 ~60° 錐形範圍 → 擋不到
+        ItemStack shield = this.getOffhandItem();
+        shield.hurtAndBreak(2, this, EquipmentSlot.OFFHAND);
+        this.setItemSlot(EquipmentSlot.OFFHAND, shield);
+        this.level().playSound(null, this.blockPosition(), SoundEvents.SHIELD_BLOCK, SoundSource.HOSTILE,
+                0.9F, 0.8F + this.random.nextFloat() * 0.4F);
+        return true;
+    }
+
+    // 副手優先：浮游砲 → 盾牌；都找不到就保留 player 原本副手（不做去重，玩家手上有一堆一樣的物品很正常）
+    private void equipBestOffhand() {
+        ItemStack turret = ItemStack.EMPTY;
+        ItemStack shield = ItemStack.EMPTY;
         for (ItemStack st : clonedInventory) {
             if (st.isEmpty()) continue;
+            if (turret.isEmpty() && st.getItem() instanceof FloatingTurretItem) turret = st;
+            else if (shield.isEmpty() && st.getItem() instanceof net.minecraft.world.item.ShieldItem) shield = st;
+            if (!turret.isEmpty()) break;
+        }
+        ItemStack pick = !turret.isEmpty() ? turret : shield;
+        if (!pick.isEmpty()) {
+            this.setItemSlot(EquipmentSlot.OFFHAND, pick.copy());
+            this.setDropChance(EquipmentSlot.OFFHAND, 0.0F);
+        }
+    }
+
+    // 拿背包裡最強武器到主手，三層優先級：
+    //   tier 0: 浮游砲（本模組招牌武器）
+    //   tier 1: vanilla 真武器（劍/斧/三叉戟）
+    //   tier 2: vanilla 工具（鎬/鏟/任何有 ATTACK_DAMAGE）
+    // 前一 tier 有東西就直接用，後 tier 高傷不會搶走
+    private void equipBestWeapon() {
+        ItemStack[] bestPerTier = { ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY };
+        double[] bestAtkPerTier = { -1, -1, -1 };
+        java.util.List<ItemStack> candidates = new ArrayList<>(clonedInventory.size() + 1);
+        candidates.add(this.getMainHandItem());
+        candidates.addAll(clonedInventory);
+        for (ItemStack st : candidates) {
+            if (st.isEmpty()) continue;
+            int tier;
+            if (st.getItem() instanceof FloatingTurretItem) tier = 0;
+            else if (isProperWeapon(st)) tier = 1;
+            else tier = 2;
             double a = weaponAttack(st);
-            if (a > bestAtk) { bestAtk = a; best = st; }
+            if (tier == 2 && a <= 0) continue; // 工具沒攻擊加成不考慮
+            if (a > bestAtkPerTier[tier]) {
+                bestAtkPerTier[tier] = a;
+                bestPerTier[tier] = st;
+            }
+        }
+        ItemStack best = ItemStack.EMPTY;
+        for (int i = 0; i < bestPerTier.length; i++) {
+            if (!bestPerTier[i].isEmpty()) { best = bestPerTier[i]; break; }
         }
         if (!best.isEmpty() && !ItemStack.isSameItemSameComponents(best, this.getMainHandItem())) {
             this.setItemSlot(EquipmentSlot.MAINHAND, best.copy());
             this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
         }
+    }
+
+    // 真武器：劍 / 斧 / 三叉戟（不含鎬鋤鏟那種純工具）
+    private static boolean isProperWeapon(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        return stack.getItem() instanceof net.minecraft.world.item.SwordItem
+                || stack.getItem() instanceof net.minecraft.world.item.AxeItem
+                || stack.getItem() instanceof net.minecraft.world.item.TridentItem;
     }
 
     private static double weaponAttack(ItemStack stack) {
@@ -565,10 +689,22 @@ public class PlayerCloneEntity extends Monster {
         for (int i = 0; i < mirroredTurrets.size(); i++) {
             spawnCloneTurret(sl, mirroredTurrets.get(i), i);
         }
-        // 手持砲：slotIndex 2/3（站手邊、蓄力）
+        // 手持砲：mirroredHandTurrets 永遠 [main, off]（可為 EMPTY），slotIndex 2=主手、3=副手
         for (int i = 0; i < mirroredHandTurrets.size(); i++) {
-            spawnCloneTurret(sl, mirroredHandTurrets.get(i), i + 2);
+            ItemStack hs = mirroredHandTurrets.get(i);
+            if (hs.isEmpty()) continue;
+            spawnCloneTurret(sl, hs, i + 2);
         }
+    }
+
+    // 依目前裝備的主/副手浮游砲重建 mirroredHandTurrets（永遠 2 槽 [main, off]，可 EMPTY）
+    // revealEquipment 後呼叫，讓 equipBestOffhand 從背包挑的浮游砲也能變成實體會射擊
+    private void rebuildHandTurretsFromEquipped() {
+        mirroredHandTurrets.clear();
+        ItemStack main = this.getMainHandItem();
+        ItemStack off = this.getOffhandItem();
+        mirroredHandTurrets.add(main.getItem() instanceof FloatingTurretItem ? filterMirroredTurret(main) : ItemStack.EMPTY);
+        mirroredHandTurrets.add(off.getItem() instanceof FloatingTurretItem ? filterMirroredTurret(off) : ItemStack.EMPTY);
     }
 
     private void spawnCloneTurret(ServerLevel sl, ItemStack stack, int slotIndex) {
@@ -603,10 +739,14 @@ public class PlayerCloneEntity extends Monster {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
+        // 二階段變身過場期間完全無敵（玩家相機鎖住，沒理由還能繼續打）
+        if (phase2TransitionTicks > 0) return false;
         // 免疫自己浮游砲造成的傷害（含蓄力彈爆炸），避免 boss 自爆
         if (source.getDirectEntity() instanceof FloatingTurretProjectile proj && proj.getOwner() == this) {
             return false;
         }
+        // 副手有盾且攻擊來自前方 → 擋掉這次傷害，盾消耗耐久（玩家要學會繞背攻）
+        if (!isArmored() && tryShieldBlock(source)) return false;
         // 變身期間：玩家攻擊打在方塊外殼上（與本體血量分離），其他傷害（環境/生物/自爆）走正常流程不被吞
         if (isArmored() && level() instanceof ServerLevel armorLevel
                 && source.getEntity() instanceof Player attacker && attacker.isAlive()) {
@@ -700,6 +840,14 @@ public class PlayerCloneEntity extends Monster {
             setTarget(null); // 進場緩衝：站定不鎖定、不攻擊
             return;
         }
+        // 二階段變身過場：boss 凍結（不追、不選技、不放招），方塊從遠處飛來組裝，讓 client 演出環繞鏡頭
+        if (phase2TransitionTicks > 0) {
+            phase2TransitionTicks--;
+            setTarget(null);
+            this.setDeltaMovement(Vec3.ZERO);
+            tickArmorAssemble();
+            return;
+        }
 
         // 永遠鎖定附近玩家（含創造模式，只排除旁觀），確保 boss 會主動追打
         if (getTarget() == null || !getTarget().isAlive()) {
@@ -770,6 +918,7 @@ public class PlayerCloneEntity extends Monster {
         }
 
         tickAntiPillar(); // 全階段防墊高，開場就不給 cheese
+        tickHotbarSwitch(); // 模擬玩家：戰鬥中定時切換主手快捷欄武器，讓 boss 戰鬥節奏有變化
         tickPillarSkill(); // 招牌技能：墊方塊衝撞擊飛（全階段）
         tickMeleeStrafe(); // 近戰：邊繞圈邊攻擊（取代 MeleeAttackGoal 的站定揮擊）
         tickReflect(); // 週期性鏡反狀態（取代純機率反傷）
@@ -1013,9 +1162,27 @@ public class PlayerCloneEntity extends Monster {
         pendingLaunchTimer = 0;
         armoredDimensions = true; // 放大碰撞箱（getDimensions），讓玩家打得到外殼
         refreshDimensions();
+        // 啟動變身過場（先設 ticks 再 buildArmorShell，讓 spawnArmorPart 偵測到過場進行中、把方塊放在遠處等待飛入）
+        phase2TransitionTicks = PHASE2_TRANSITION_LEN;
         buildArmorShell(sl);
+        assignAssembleDelays(sl); // 每塊方塊隨機洗牌 + 後期更密的延遲（觀感從慢到快）
         sl.playSound(null, blockPosition(), SoundEvents.IRON_GOLEM_REPAIR, SoundSource.HOSTILE, 1.2F, 0.7F);
         sl.sendParticles(ParticleTypes.LARGE_SMOKE, getX(), getY() + 1.0, getZ(), 60, 1.5, 2.0, 1.5, 0.02);
+        // 廣播 client 端鎖相機環繞演出
+        Phase2TransitionPacket payload = new Phase2TransitionPacket(this.getId());
+        for (ServerPlayer p : sl.players()) {
+            if (this.distanceToSqr(p) <= 300.0 * 300.0) {
+                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p, payload);
+            }
+        }
+    }
+
+    public void skipPhase2Transition() {
+        phase2TransitionTicks = 0;
+    }
+
+    public boolean isPhase2Transitioning() {
+        return phase2TransitionTicks > 0;
     }
 
     // 重載後仍在外殼狀態：清掉存盤殘留的孤兒外殼並重建，接續二階段（不重播變身演出，armorHp 維持讀回值）
@@ -1028,21 +1195,143 @@ public class PlayerCloneEntity extends Monster {
         buildArmorShell(sl);
     }
 
+    // 嘗試從結構模板（data/koniava/structure/mecha_shell.nbt）載入機甲形狀；若找不到回 false fallback 到 hardcoded MECH_SHAPE
+    private static final ResourceLocation MECH_TEMPLATE_ID =
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "mecha_shell");
+    // 模板標記方塊：玩家蓋圖時用這些方塊定位
+    // AMETHYST_BLOCK = 本體錨點（剛好對齊 boss 頭探出眼縫的位置），WHITE_WOOL = 一般外殼，RED_WOOL = 左腿（會擺動），BLUE_WOOL = 右腿（會擺動）
+    private static final double ARMORED_ANCHOR_Y = 12.0; // 錨點對應的 world oy（boss 頭部會出現處）
+
+    private boolean tryBuildArmorFromTemplate(ServerLevel sl) {
+        var templateOpt = sl.getStructureManager().get(MECH_TEMPLATE_ID);
+        if (templateOpt.isEmpty()) return false;
+        net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate template = templateOpt.get();
+        net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings settings =
+                new net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings();
+        var anchors = template.filterBlocks(BlockPos.ZERO, settings, Blocks.AMETHYST_BLOCK);
+        if (anchors.isEmpty()) return false; // 必須有錨點才能用
+        BlockPos anchorPos = anchors.get(0).pos();
+        placeArmorMarker(sl, template, settings, anchorPos, Blocks.WHITE_WOOL, 0);
+        placeArmorMarker(sl, template, settings, anchorPos, Blocks.RED_WOOL, 1);
+        placeArmorMarker(sl, template, settings, anchorPos, Blocks.BLUE_WOOL, 2);
+        placeFixedArmorMarker(sl, template, settings, anchorPos, Blocks.YELLOW_WOOL,
+                Blocks.SEA_LANTERN.defaultBlockState(), 0); // 機甲眼：固定 SEA_LANTERN 不被 inventory 替換
+        collectTurretMounts(template, settings, anchorPos);
+        return true;
+    }
+
+    private void collectTurretMounts(net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate template,
+                                     net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings settings,
+                                     BlockPos anchorPos) {
+        turretMountOffsets.clear();
+        var blocks = template.filterBlocks(BlockPos.ZERO, settings, Blocks.LIME_WOOL);
+        // 由 X 升序排（左到右），對應到 turret slotIdx 0..N
+        blocks.sort(java.util.Comparator.comparingInt(info -> info.pos().getX()));
+        for (var info : blocks) {
+            BlockPos p = info.pos();
+            double ox = p.getX() - anchorPos.getX();
+            double oy = (p.getY() - anchorPos.getY()) + ARMORED_ANCHOR_Y;
+            double oz = p.getZ() - anchorPos.getZ();
+            turretMountOffsets.add(new Vec3(ox, oy, oz));
+        }
+    }
+
+    /** 提供給 FloatingTurretEntity：取得 slotIdx 對應的砲位 local offset（模板定義）。null = 沒有對應砲位，砲走 fallback 軌道。 */
+    @Nullable
+    public Vec3 getTurretMountOffset(int slotIdx) {
+        if (slotIdx < 0 || slotIdx >= turretMountOffsets.size()) return null;
+        return turretMountOffsets.get(slotIdx);
+    }
+
+    private void placeArmorMarker(ServerLevel sl,
+                                  net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate template,
+                                  net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings settings,
+                                  BlockPos anchorPos, net.minecraft.world.level.block.Block marker, int legSide) {
+        var blocks = template.filterBlocks(BlockPos.ZERO, settings, marker);
+        for (var info : blocks) {
+            BlockPos p = info.pos();
+            double ox = p.getX() - anchorPos.getX();
+            double oy = (p.getY() - anchorPos.getY()) + ARMORED_ANCHOR_Y;
+            double oz = p.getZ() - anchorPos.getZ();
+            BlockState state = pickShellBlockState(sl);
+            CompoundTag stateTag = new CompoundTag();
+            stateTag.put("block_state", NbtUtils.writeBlockState(state));
+            spawnArmorPart(sl, ox, oy, oz, stateTag, legSide);
+        }
+    }
+
+    // 固定材質標記：marker 位置 → 永遠生成 fixedState（不從 inventory/env 取代），用於「機甲眼」這類發光點綴
+    private void placeFixedArmorMarker(ServerLevel sl,
+                                       net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate template,
+                                       net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings settings,
+                                       BlockPos anchorPos, net.minecraft.world.level.block.Block marker,
+                                       BlockState fixedState, int legSide) {
+        var blocks = template.filterBlocks(BlockPos.ZERO, settings, marker);
+        for (var info : blocks) {
+            BlockPos p = info.pos();
+            double ox = p.getX() - anchorPos.getX();
+            double oy = (p.getY() - anchorPos.getY()) + ARMORED_ANCHOR_Y;
+            double oz = p.getZ() - anchorPos.getZ();
+            CompoundTag stateTag = new CompoundTag();
+            stateTag.put("block_state", NbtUtils.writeBlockState(fixedState));
+            spawnArmorPart(sl, ox, oy, oz, stateTag, legSide);
+        }
+    }
+
     private void buildArmorShell(ServerLevel sl) {
-        CompoundTag stateTag = new CompoundTag();
-        stateTag.put("block_state", NbtUtils.writeBlockState(Blocks.POLISHED_DEEPSLATE.defaultBlockState()));
-        // 依剪影組人形外殼（空心：只放前後兩層），下半部標記左/右腿供走路動畫擺動
+        if (tryBuildArmorFromTemplate(sl)) return; // 找得到模板就用，找不到 fallback 下面的 hardcoded 剪影
         int rows = MECH_SHAPE.length;
         for (int row = 0; row < rows; row++) {
             String line = MECH_SHAPE[row];
+            int center = line.length() / 2; // 奇數寬度的中央 col (7→3, 5→2)
             for (int col = 0; col < line.length(); col++) {
-                if (line.charAt(col) != 'c') continue;  // b/'.' 不放方塊（b=本體核心）
-                double ox = col - 2;                     // col2 對齊本體（水平置中）
+                char ch = line.charAt(col);
+                if (ch != 'o') continue; // 只有 'o' 是外殼，b/'.' 跳過
+                BlockState state = pickShellBlockState(sl);
+                CompoundTag stateTag = new CompoundTag();
+                stateTag.put("block_state", NbtUtils.writeBlockState(state));
+                double ox = col - center;                // 中央對齊本體
                 double oy = (rows - 1 - row);            // 最後一列=腳=本體腳高
-                int leg = (row >= LEG_TOP_ROW) ? (col < 2 ? 1 : (col > 2 ? 2 : 0)) : 0;
-                spawnArmorPart(sl, ox, oy, 0, stateTag, leg); // 單層（一格厚）
+                int leg = (row >= LEG_TOP_ROW) ? (col < center ? 1 : (col > center ? 2 : 0)) : 0;
+                spawnArmorPart(sl, ox, oy, 0, stateTag, leg);
             }
         }
+    }
+
+    // 機甲外殼方塊來源：優先從 clonedInventory（複製自玩家背包）扣除一個 BlockItem，否則從 boss 周圍環境取一格方塊（記入 modifiedBlocks 供離開時還原），最後 fallback 黑曜石
+    private BlockState pickShellBlockState(ServerLevel sl) {
+        for (ItemStack stack : clonedInventory) {
+            if (stack.isEmpty()) continue;
+            if (stack.getItem() instanceof BlockItem bi) {
+                stack.shrink(1);
+                return bi.getBlock().defaultBlockState();
+            }
+        }
+        BlockState env = takeNearbyTerrainBlock(sl);
+        if (env != null) return env;
+        return Blocks.OBSIDIAN.defaultBlockState();
+    }
+
+    // 從 boss 周圍掃描可用方塊（非空氣、非流體、非基岩、非已被本機改過），挖空並回傳狀態
+    private BlockState takeNearbyTerrainBlock(ServerLevel sl) {
+        BlockPos bp = blockPosition();
+        int r = 10;
+        for (int attempts = 0; attempts < 48; attempts++) {
+            int dx = sl.random.nextInt(2 * r + 1) - r;
+            int dy = sl.random.nextInt(r + 1) - (r / 2); // 偏向腰部高度
+            int dz = sl.random.nextInt(2 * r + 1) - r;
+            BlockPos p = bp.offset(dx, dy, dz);
+            BlockState state = sl.getBlockState(p);
+            if (state.isAir()) continue;
+            if (!state.getFluidState().isEmpty()) continue;
+            if (state.getDestroySpeed(sl, p) < 0) continue; // 不可破壞（基岩等）
+            // 避開被自己已經放過或挖過的紀錄方塊（VoidMirrorEvents.addModifiedBlock 用同樣 long key）
+            // 註：放/挖都會被加進來，所以這個 check 兼任避開自己組的外殼源頭
+            VoidMirrorEvents.addMinedTerrain(p.asLong(), state); // 記錄原始狀態，離開維度時還原
+            sl.setBlockAndUpdate(p, Blocks.AIR.defaultBlockState());
+            return state;
+        }
+        return null;
     }
 
     // Display.BlockDisplay.setBlockState 是 private，只能透過 NBT（block_state）設定外觀
@@ -1051,11 +1340,58 @@ public class PlayerCloneEntity extends Monster {
         if (d == null) return;
         d.load(stateTag.copy());
         d.addTag(armorTag());
-        d.setPos(getX() + ox - 0.5, getY() + oy, getZ() + oz - 0.5); // 初始位置，tickArmorFollow 會依朝向修正
+        // 變身過場進行中：方塊先放在隨機遠處（上空 + 散布），tickArmorAssemble 插值飛到正位
+        Vec3 spawnOff = phase2TransitionTicks > 0
+                ? new Vec3(ox + (sl.random.nextDouble() - 0.5) * 14.0,
+                           oy + 10.0 + sl.random.nextDouble() * 6.0,
+                           oz + (sl.random.nextDouble() - 0.5) * 14.0)
+                : new Vec3(ox, oy, oz);
+        d.setPos(getX() + spawnOff.x - 0.5, getY() + spawnOff.y, getZ() + spawnOff.z - 0.5);
         sl.addFreshEntity(d);
         armorParts.add(d);
         armorOffsets.add(new Vec3(ox, oy, oz)); // local 偏移（右 x、上 y、前 z），跟隨時依朝向旋轉
+        armorSpawnOffsets.add(spawnOff);
+        armorAssembleDelay.add(0); // 暫填，buildArmorShell 結束後 assignAssembleDelays 改寫
         armorLegSide.add(legSide);
+    }
+
+    // 變身過場結束後或方塊組裝後，給每塊方塊指派飛入起飛 tick：順序隨機洗牌，間距用 sqrt 縮放 → 早期稀疏、後期密集（觀感由慢到快）
+    private void assignAssembleDelays(ServerLevel sl) {
+        int n = armorParts.size();
+        if (n == 0) return;
+        java.util.List<Integer> order = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) order.add(i);
+        java.util.Collections.shuffle(order, new java.util.Random(sl.random.nextLong()));
+        int span = Math.max(1, PHASE2_TRANSITION_LEN - ARMOR_TRAVEL_TICKS - 5); // 預留 5 tick 收尾
+        for (int k = 0; k < n; k++) {
+            float u = k / (float) Math.max(1, n - 1);
+            float biased = (float) Math.pow(u, 1.8); // 後期更密 → 觀感加速
+            int delay = Math.round(biased * span);
+            armorAssembleDelay.set(order.get(k), delay);
+        }
+    }
+
+    // 變身過場期間：每塊方塊各自有起飛延遲（從 spawnOffset 飛到 final offset），單塊用 ease-in（t²，慢→快）。tickArmorFollow 在過場結束後接手。
+    private void tickArmorAssemble() {
+        if (armorParts.isEmpty()) return;
+        int elapsed = PHASE2_TRANSITION_LEN - phase2TransitionTicks;
+        float yawRad = getYRot() * ((float) Math.PI / 180F);
+        double sinY = Math.sin(yawRad), cosY = Math.cos(yawRad);
+        for (int i = 0; i < armorParts.size(); i++) {
+            Display.BlockDisplay d = armorParts.get(i);
+            if (d == null || !d.isAlive()) continue;
+            Vec3 f = armorOffsets.get(i);
+            Vec3 sp = i < armorSpawnOffsets.size() ? armorSpawnOffsets.get(i) : f;
+            int delay = i < armorAssembleDelay.size() ? armorAssembleDelay.get(i) : 0;
+            float local = Mth.clamp((elapsed - delay) / (float) ARMOR_TRAVEL_TICKS, 0F, 1F);
+            float s = local * local; // ease-in 單塊由慢加速到位
+            double ox = Mth.lerp(s, sp.x, f.x);
+            double oy = Mth.lerp(s, sp.y, f.y);
+            double oz = Mth.lerp(s, sp.z, f.z);
+            double wx = ox * cosY - oz * sinY;
+            double wz = ox * sinY + oz * cosY;
+            d.setPos(getX() + wx - 0.5, getY() + oy, getZ() + wz - 0.5);
+        }
     }
 
     // 每 tick 讓外殼方塊跟著本體移動
@@ -1085,7 +1421,7 @@ public class PlayerCloneEntity extends Monster {
         // 剝落：每塊外殼位置噴深邃石碎裂粒子，再移除（比單一爆炸更像機甲崩解）
         net.minecraft.core.particles.BlockParticleOption crumble =
                 new net.minecraft.core.particles.BlockParticleOption(ParticleTypes.BLOCK,
-                        Blocks.POLISHED_DEEPSLATE.defaultBlockState());
+                        Blocks.OBSIDIAN.defaultBlockState());
         for (Display.BlockDisplay d : armorParts) {
             if (d == null || !d.isAlive()) continue;
             sl.sendParticles(crumble, d.getX(), d.getY() + 0.5, d.getZ(), 6, 0.2, 0.2, 0.2, 0.12);
@@ -1106,6 +1442,8 @@ public class PlayerCloneEntity extends Monster {
         }
         armorParts.clear();
         armorOffsets.clear();
+        armorSpawnOffsets.clear();
+        armorAssembleDelay.clear();
         armorLegSide.clear();
     }
 

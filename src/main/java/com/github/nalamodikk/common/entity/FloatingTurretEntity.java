@@ -265,6 +265,10 @@ public class FloatingTurretEntity extends PathfinderMob {
             this.discard();
             return;
         }
+        // 二階段變身過場期間：boss 凍結 + 無敵，砲也跟著凍結不打、不繞、不射（畫面感一致）
+        if (cloneOwner instanceof PlayerCloneEntity pc && pc.isPhase2Transitioning()) {
+            return;
+        }
         int slotIdx = entityData.get(SLOT_INDEX_DATA);
 
         float angle = entityData.get(ORBIT_ANGLE);
@@ -281,16 +285,33 @@ public class FloatingTurretEntity extends PathfinderMob {
     }
 
     // 自走砲：繞行分身背後左右兩側，自動射擊（每 4 發蓄力）
+    // 機甲狀態下，若結構模板有 LIME_WOOL 砲位則坐在那；否則 fallback 到頭頂繞行
     private void cloneOrbitTick(int slotIdx) {
         float yawRad = cloneOwner.getYRot() * (float) (Math.PI / 180.0);
-        float behindAngle = (float) Math.atan2(-Math.cos(yawRad), Math.sin(yawRad));
-        float spread = (float) (Math.PI / 5);
-        float finalAngle = behindAngle + (slotIdx == 0 ? -spread : spread);
         float bob = (float) (Math.sin(tickCount * 0.08) * 0.2);
-        this.setPos(
-                cloneOwner.getX() + Math.cos(finalAngle) * ORBIT_RADIUS,
-                cloneOwner.getY() + ORBIT_HEIGHT + bob,
-                cloneOwner.getZ() + Math.sin(finalAngle) * ORBIT_RADIUS);
+        boolean mechaHead = cloneOwner instanceof PlayerCloneEntity pc && pc.isArmored();
+        net.minecraft.world.phys.Vec3 mount = mechaHead
+                ? ((PlayerCloneEntity) cloneOwner).getTurretMountOffset(slotIdx)
+                : null;
+        if (mount != null) {
+            double sinY = Math.sin(yawRad), cosY = Math.cos(yawRad);
+            double wx = mount.x * cosY - mount.z * sinY;
+            double wz = mount.x * sinY + mount.z * cosY;
+            this.setPos(
+                    cloneOwner.getX() + wx,
+                    cloneOwner.getY() + mount.y + bob * 0.5,
+                    cloneOwner.getZ() + wz);
+        } else {
+            float behindAngle = (float) Math.atan2(-Math.cos(yawRad), Math.sin(yawRad));
+            float spread = (float) (Math.PI / 5);
+            float finalAngle = behindAngle + (slotIdx == 0 ? -spread : spread);
+            float radius = mechaHead ? 0.9F : ORBIT_RADIUS;
+            double yOffset = mechaHead ? (PlayerCloneEntity.ARMORED_HEAD_TOP_Y + 2.0) : ORBIT_HEIGHT;
+            this.setPos(
+                    cloneOwner.getX() + Math.cos(finalAngle) * radius,
+                    cloneOwner.getY() + yOffset + bob,
+                    cloneOwner.getZ() + Math.sin(finalAngle) * radius);
+        }
 
         if (attackTimer == 0) {
             LivingEntity target = cloneTarget();
@@ -308,19 +329,34 @@ public class FloatingTurretEntity extends PathfinderMob {
     }
 
     // 手持模式：站在分身手邊，蓄力後發強化彈（鏡射玩家雙持蓄力）
+    // 機甲狀態下，若結構模板有對應 LIME_WOOL 砲位則坐在那
     private void cloneHandTick(int slotIdx) {
         float yawRad = cloneOwner.getYRot() * (float) (Math.PI / 180.0);
-        double rightX = -Math.cos(yawRad);
-        double rightZ = -Math.sin(yawRad);
-        double forwardX = -Math.sin(yawRad);
-        double forwardZ = Math.cos(yawRad);
-        boolean isLeftHanded = cloneOwner.getMainArm() == HumanoidArm.LEFT;
-        double mainHandSide = isLeftHanded ? -1.0 : 1.0;
-        double side = (slotIdx == 2) ? mainHandSide : -mainHandSide;
-        this.setPos(
-                cloneOwner.getX() + rightX * side * 1.0 + forwardX * 1.2,
-                cloneOwner.getEyeY() + 0.3,
-                cloneOwner.getZ() + rightZ * side * 1.0 + forwardZ * 1.2);
+        boolean mechaHead = cloneOwner instanceof PlayerCloneEntity pc && pc.isArmored();
+        net.minecraft.world.phys.Vec3 mount = mechaHead
+                ? ((PlayerCloneEntity) cloneOwner).getTurretMountOffset(slotIdx)
+                : null;
+        if (mount != null) {
+            double sinY = Math.sin(yawRad), cosY = Math.cos(yawRad);
+            double wx = mount.x * cosY - mount.z * sinY;
+            double wz = mount.x * sinY + mount.z * cosY;
+            this.setPos(
+                    cloneOwner.getX() + wx,
+                    cloneOwner.getY() + mount.y,
+                    cloneOwner.getZ() + wz);
+        } else {
+            double rightX = -Math.cos(yawRad);
+            double rightZ = -Math.sin(yawRad);
+            double forwardX = -Math.sin(yawRad);
+            double forwardZ = Math.cos(yawRad);
+            boolean isLeftHanded = cloneOwner.getMainArm() == HumanoidArm.LEFT;
+            double mainHandSide = isLeftHanded ? -1.0 : 1.0;
+            double side = (slotIdx == 2) ? mainHandSide : -mainHandSide;
+            this.setPos(
+                    cloneOwner.getX() + rightX * side * 1.0 + forwardX * 1.2,
+                    cloneOwner.getEyeY() + 0.3,
+                    cloneOwner.getZ() + rightZ * side * 1.0 + forwardZ * 1.2);
+        }
 
         if (attackTimer > 0) {
             // 蓄力末段的砲口集氣特效

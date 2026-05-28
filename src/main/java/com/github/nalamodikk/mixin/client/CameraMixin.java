@@ -1,5 +1,6 @@
 package com.github.nalamodikk.mixin.client;
 
+import com.github.nalamodikk.client.cinematic.Phase2TransitionManager;
 import com.github.nalamodikk.client.cinematic.VoidMirrorIntroManager;
 import net.minecraft.client.Camera;
 import net.minecraft.world.entity.Entity;
@@ -22,10 +23,20 @@ public abstract class CameraMixin {
     @Inject(method = "setup", at = @At("TAIL"))
     private void koniava$voidMirrorIntroCamera(BlockGetter level, Entity entity, boolean detached,
                                                boolean thirdPersonReverse, float partialTick, CallbackInfo ci) {
-        if (!VoidMirrorIntroManager.isActive()) return;
-        VoidMirrorIntroManager.CameraPose pose = VoidMirrorIntroManager.getCameraPose(partialTick);
-        if (pose == null) return;
-        this.setRotation(pose.yaw(), pose.pitch());
-        this.setPosition(pose.x(), pose.y(), pose.z());
+        if (VoidMirrorIntroManager.isActive()) {
+            VoidMirrorIntroManager.CameraPose pose = VoidMirrorIntroManager.getCameraPose(partialTick);
+            if (pose != null) {
+                this.setRotation(pose.yaw(), pose.pitch());
+                this.setPosition(pose.x(), pose.y(), pose.z());
+            }
+            return;
+        }
+        if (Phase2TransitionManager.isActive()) {
+            Phase2TransitionManager.CameraPose pose = Phase2TransitionManager.getCameraPose(partialTick);
+            if (pose != null) {
+                this.setRotation(pose.yaw(), pose.pitch());
+                this.setPosition(pose.x(), pose.y(), pose.z());
+            }
+        }
     }
 }

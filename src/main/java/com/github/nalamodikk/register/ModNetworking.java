@@ -4,7 +4,9 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.network.packet.client.altar.AltarUpgradeAnimPacket;
 import com.github.nalamodikk.common.network.packet.client.FormationStagePacket;
 import com.github.nalamodikk.common.network.packet.client.altar.RitualExplosionPacket;
+import com.github.nalamodikk.common.network.packet.client.Phase2TransitionPacket;
 import com.github.nalamodikk.common.network.packet.client.VoidMirrorIntroPacket;
+import com.github.nalamodikk.common.network.packet.server.Phase2SkipPacket;
 import com.github.nalamodikk.common.network.packet.server.VoidMirrorSkipIntroPacket;
 import com.github.nalamodikk.common.network.packet.client.armor.ManaShieldHitPacket;
 import com.github.nalamodikk.common.network.packet.client.turret.DamageNumberPacket;
@@ -99,6 +101,8 @@ public class ModNetworking {
         ManaShieldHitPacket.registerToClient(registrar);
         VoidMirrorIntroPacket.registerToClient(registrar);
         VoidMirrorSkipIntroPacket.registerTo(registrar);
+        Phase2TransitionPacket.registerToClient(registrar);
+        Phase2SkipPacket.registerTo(registrar);
         NaraTauntPacket.registerToClient(registrar);
     }
 }

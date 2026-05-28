@@ -20,6 +20,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -28,18 +29,26 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID)
 public class VoidMirrorEvents {
 
-    // 戰鬥中在鏡中世界放置的方塊（分身的牆 + 玩家蓋的 + 寶箱），重製時清掉
+    // 戰鬥中在鏡中世界放置的方塊（分身的牆 + 玩家蓋的 + 寶箱），重製時設回空氣
     private static final Set<Long> MODIFIED_BLOCKS = new HashSet<>();
+    // 機甲組裝時挖走的環境方塊（{pos: 原始狀態}），重製時還原原狀（避免地形殘留空洞）
+    private static final Map<Long, BlockState> MINED_TERRAIN = new HashMap<>();
 
     public static void addModifiedBlock(long packedPos) {
         MODIFIED_BLOCKS.add(packedPos);
+    }
+
+    public static void addMinedTerrain(long packedPos, BlockState original) {
+        MINED_TERRAIN.putIfAbsent(packedPos, original); // 第一次挖才記，避免後續同位置被覆蓋遮蔽原狀
     }
 
     private static boolean isShulkerItem(ItemStack stack) {
@@ -82,7 +91,7 @@ public class VoidMirrorEvents {
         MODIFIED_BLOCKS.add(event.getPos().asLong());
     }
 
-    // 重製場地：清掉戰鬥放置的方塊 + 移除所有 boss 相關實體
+    // 重製場地：清掉戰鬥放置的方塊（→AIR）、還原機甲挖走的環境方塊（→原狀）、移除所有 boss 相關實體
     private static void resetArena(ServerLevel mirror) {
         for (long l : MODIFIED_BLOCKS) {
             BlockPos p = BlockPos.of(l);
@@ -91,6 +100,13 @@ public class VoidMirrorEvents {
             }
         }
         MODIFIED_BLOCKS.clear();
+        for (Map.Entry<Long, BlockState> e : MINED_TERRAIN.entrySet()) {
+            BlockPos p = BlockPos.of(e.getKey());
+            if (mirror.isLoaded(p)) {
+                mirror.setBlockAndUpdate(p, e.getValue());
+            }
+        }
+        MINED_TERRAIN.clear();
 
         AABB box = new AABB(BlockPos.ZERO).inflate(300);
         mirror.getEntitiesOfClass(PlayerCloneEntity.class, box).forEach(Entity::discard);
