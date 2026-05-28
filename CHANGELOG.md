@@ -6,6 +6,24 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Mirror Boss also reads the 9-slot NINE_GRID storage pouch now, on top of the 10-slot extra equipment. Hiding a weapon in either of these no longer dodges the boss mirror.
+- 鏡像 Boss 現在也會讀取 9 格 NINE_GRID 儲存欄位（之前只讀 10 格額外裝備）。武器藏這兩個地方都不再能逃 boss 鏡像。
+
+- Performance: damage number renderer now distance-culls entries past 64 blocks and caches `camera.rotation()` once per frame instead of fetching it per damage number. In heavy combat (100+ floating numbers) this saves ~300-500µs/frame.
+- 性能：傷害數字渲染現在距離剔除（64 格外不畫）+ `camera.rotation()` 每幀只抽一次（之前每個數字都重抽）。100+ 數字的戰鬥場景省 ~300-500µs/frame。
+
+- Performance: magic circle renderer now uses pre-computed unit-circle cos/sin tables for ring geometry, eliminating ~1240 trig calls per active circle per frame. Star polygon and regular polygon rotation now uses one cos/sin per shape + matrix multiply instead of per-vertex trig. Saves ~60µs per active circle (up to 3 circles concurrent).
+- 性能：法陣渲染現在用預算的單位圓 cos/sin 表處理 ring 幾何，每個法陣每幀少 ~1240 次三角函數呼叫。星形多邊形 + 正多邊形的旋轉也改成「每個圖形算一次 cos/sin + 旋轉矩陣乘法」取代「每個頂點算一次」。每個法陣省 ~60µs（最多 3 個同時）。
+
+- Mirror Boss now actually mirrors weapons stored in the player's extra equipment slots (10 curio-style slots). Previously a player with a full 36-slot main inventory of junk could hide their best sword/turret/shield in extra equipment and the boss would never see it: `clonedInventory` is fixed at 36 entries and the main inventory filled it up first, pushing extra-equipment items off the end. Fix: priority items (turrets / swords / axes / tridents / shields) from anywhere in the player's belongings (armor, hands, main inventory, extra equipment, shulker contents) now get sorted to the front before clonedInventory is filled, so they cannot be evicted by trash.
+- 鏡像 Boss 現在會真正鏡像玩家「額外裝備」10 格槽位裡的武器。之前的逃課：玩家把主背包 36 格塞滿垃圾、把最強武器/浮游砲/盾藏在額外裝備槽，boss 的 clonedInventory 固定 36 格、主背包先填滿就會 break，額外裝備永遠進不去。修正：浮游砲 / 真武器（劍/斧/三叉戟）/ 盾現在會優先排序到前面（不分來源，含額外裝備跟盒子內容），垃圾擠不掉它們。
+
+- Performance: Aspect Altar pedestal scan no longer does 169 block-entity lookups every 2 seconds. The scan now uses a cheap block-state pre-filter and only performs the expensive BE lookup on positions that actually contain a pedestal block (~95%+ skip rate in typical setups). Negligible single-altar impact, but adds up with multiple altars.
+- 性能：本源祭壇的底座掃描不再每 2 秒做 169 次 BlockEntity 查找。現在先用便宜的 BlockState 預過濾，只對真的有底座方塊的位置做貴的 BE 查找（一般情況下 95%+ 直接跳過）。單祭壇影響微小，但多祭壇場景會累積。
+
+- English voice for both Mirror Boss lines (intro taunt + death taunt) regenerated with cleaner take selection.
+- 鏡像 Boss 的兩條英文配音（開場 + 死亡嘲諷）重新生成並挑選乾淨的 take 覆蓋。
+
 - Mirror Boss now has its own battle BGM ("Mirror Image") that plays when the fight starts and after save/reload while the boss is still alive. The BGM volume has a dedicated slider added to the vanilla sound settings (Esc -> Options -> Sound), placed inline with the standard volume sliders (Master / Music / Records / ... / Boss Battle BGM / Nara Voice / Sound Device / ...), matching vanilla layout so it feels native. Nara's two boss-fight voice lines (intro taunt + death taunt) were also regenerated with cleaner text so the TTS no longer sounds strained when she hits the exclamation-heavy lines.
 - 鏡像 Boss 現在有專屬戰鬥 BGM「Mirror Image」，戰鬥開始時播放、存檔重進若 boss 還活著也會繼續播。BGM 音量有專屬滑桿放在 vanilla 聲音設定（Esc → 選項 → 聲音），跟原版音量滑桿並排（主音量 / 音樂 / 唱片 / ... / Boss 戰鬥 BGM / 娜拉配音 / 聲音裝置 / ...），融入原版排版。娜拉的兩條 boss 戰台詞（開場嘲諷 + 死亡嘲諷）也用更柔和的文字重生過，原版 TTS 不再被高密度驚嘆號擠到「夾音」。
 

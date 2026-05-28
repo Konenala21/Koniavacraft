@@ -326,6 +326,9 @@ public class PlayerCloneEntity extends Monster {
         pool.addAll(player.getInventory().items);
         NonNullList<ItemStack> extra = player.getData(ModDataAttachments.EXTRA_EQUIPMENT.get());
         pool.addAll(extra);
+        // 9 格儲存欄位（NINE_GRID 飾品背包）— 玩家會把武器藏這裡逃 boss 鏡像
+        NonNullList<ItemStack> nineGrid = player.getData(ModDataAttachments.NINE_GRID.get());
+        pool.addAll(nineGrid);
         List<ItemStack> contained = new ArrayList<>();
         for (ItemStack s : pool) collectContained(s, contained, 0);
         pool.addAll(contained);
@@ -348,10 +351,23 @@ public class PlayerCloneEntity extends Monster {
         }
 
         // clonedInventory：把擁有的物品填進去（供疊牆 AI 取方塊、equipBestWeapon 選到盒裡的武器）
-        int idx = 0;
+        // 重要物品（浮游砲/武器/盾）先排前面，避免主背包滿 36 格垃圾把 EXTRA_EQUIPMENT / 盒子內武器擠掉
+        // 之前 bug：玩家把好武器藏進 EXTRA_EQUIPMENT 而主背包塞滿雜物 → boss 永遠選不到那把武器
+        java.util.List<ItemStack> prioritized = new ArrayList<>(pool.size());
+        for (ItemStack s : pool) if (!s.isEmpty() && s.getItem() instanceof FloatingTurretItem) prioritized.add(s);
+        for (ItemStack s : pool) if (!s.isEmpty() && isProperWeapon(s)) prioritized.add(s);
+        for (ItemStack s : pool) if (!s.isEmpty() && s.getItem() instanceof net.minecraft.world.item.ShieldItem) prioritized.add(s);
+        // 其餘物品（包含工具、方塊等）尾隨在後
         for (ItemStack s : pool) {
-            if (idx >= clonedInventory.size()) break;
             if (s.isEmpty()) continue;
+            if (s.getItem() instanceof FloatingTurretItem) continue;
+            if (isProperWeapon(s)) continue;
+            if (s.getItem() instanceof net.minecraft.world.item.ShieldItem) continue;
+            prioritized.add(s);
+        }
+        int idx = 0;
+        for (ItemStack s : prioritized) {
+            if (idx >= clonedInventory.size()) break;
             clonedInventory.set(idx++, s.copy());
         }
         while (idx < clonedInventory.size()) clonedInventory.set(idx++, ItemStack.EMPTY);

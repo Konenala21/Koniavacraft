@@ -52,15 +52,14 @@ public class SpaceCrackRenderer extends EntityRenderer<SpaceCrackEntity> {
         float t = entity.tickCount + partialTick;
         Matrix4f pose = poseStack.last().pose();
 
-        // 1. 黑洞核心（shader 平滑徑向漸層）
-        VertexConsumer dark = buffer.getBuffer(MIRenderTypes.voidCoreShader());
-        drawVoidShaderQuad(dark, pose, 0.55f, 1.20f, 0, 0, 8, 230);
-
-        // 2. 紫色撕裂縫 — alpha 降低避免 3 層 additive 疊起來像閃光彈
+        // 1. 紫色裂縫光暈（鋸齒形狀，additive）— 外圍能量外洩
         VertexConsumer rift = buffer.getBuffer(MIRenderTypes.voidRiftShader());
-        drawVoidShaderQuad(rift, pose, 1.20f, 2.50f, 90, 50, 160, 50);    // 外暈：80→50
-        drawVoidShaderQuad(rift, pose, 0.95f, 2.30f, 130, 90, 200, 70);   // 中層：140→70
-        drawVoidShaderQuad(rift, pose, 0.70f, 2.10f, 180, 130, 230, 90);  // 內亮：220→90，色彩也降一點
+        drawVoidShaderQuad(rift, pose, 0.85f, 1.75f,  90,  50, 160, 150);
+        drawVoidShaderQuad(rift, pose, 0.75f, 1.70f, 150, 100, 220, 200);
+        drawVoidShaderQuad(rift, pose, 0.68f, 1.65f, 220, 180, 250, 230);
+        // 2. 黑色虛空核心（同 noise 形狀的 alpha blend，把後面挖空）
+        VertexConsumer dark = buffer.getBuffer(MIRenderTypes.voidCoreShader());
+        drawVoidShaderQuad(dark, pose, 0.62f, 1.55f, 0, 0, 4, 255);
 
         // 3. 邊緣放射閃電弧 — 用穿透方塊版本
         VertexConsumer bolts = buffer.getBuffer(MIRenderTypes.lightningNoDepth());
@@ -112,7 +111,7 @@ public class SpaceCrackRenderer extends EntityRenderer<SpaceCrackEntity> {
     private static void drawLightningBolt(VertexConsumer vc, Matrix4f pose, float t, int boltIdx) {
         int phaseTick = (int) (t / 10); // 10 tick 換一輪（之前 4 太快會閃爍）
         int seed = boltIdx * 73 + phaseTick * 191;
-        float yOnEdge = (pseudoRand(seed + 1) - 0.5f) * 1.8f;
+        float yOnEdge = (pseudoRand(seed + 1) - 0.5f) * 1.4f;
         float edgeHW = halfWidth(yOnEdge, 0.32f, t);
         float xStart = (pseudoRand(seed + 2) > 0.5f ? 1f : -1f) * edgeHW;
         float dirX = (xStart > 0 ? 1f : -1f) * (0.5f + pseudoRand(seed + 4) * 0.5f);

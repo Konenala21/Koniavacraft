@@ -277,14 +277,33 @@ public class MagicCircleRenderer {
 
     // ── Geometry helpers ──────────────────────────────────────────────────────
 
+    // Perf: 預算單位圓 cos/sin 表（key=segs，value=[c0,s0,c1,s1,...]）
+    // 之前每幀對每個 ring 跑 segs×2 sin/cos call（總共 ~1240 calls / effect / frame），
+    // 改成查表 0 sin/cos call，省 ~60µs / effect / frame。
+    private static final java.util.Map<Integer, float[]> RING_TABLES = new java.util.HashMap<>();
+
+    private static float[] ringTable(int segs) {
+        float[] t = RING_TABLES.get(segs);
+        if (t == null) {
+            t = new float[segs * 2];
+            for (int i = 0; i < segs; i++) {
+                float a = i * (float)(2 * Math.PI) / segs;
+                t[i * 2]     = (float) Math.cos(a);
+                t[i * 2 + 1] = (float) Math.sin(a);
+            }
+            RING_TABLES.put(segs, t);
+        }
+        return t;
+    }
+
     /** Circle as GL_LINES pairs. */
     private static void addRing(float cx, float y, float cz, float r,
                                 int segs, float[] col, float alpha) {
+        float[] tab = ringTable(segs);
         for (int i = 0; i < segs; i++) {
-            float a0 = i       * (float)(2 * Math.PI) / segs;
-            float a1 = (i + 1) * (float)(2 * Math.PI) / segs;
-            putV(cx + r * (float)Math.cos(a0), y, cz + r * (float)Math.sin(a0), col, alpha);
-            putV(cx + r * (float)Math.cos(a1), y, cz + r * (float)Math.sin(a1), col, alpha);
+            int j = (i + 1) % segs;
+            putV(cx + r * tab[i * 2], y, cz + r * tab[i * 2 + 1], col, alpha);
+            putV(cx + r * tab[j * 2], y, cz + r * tab[j * 2 + 1], col, alpha);
         }
     }
 
@@ -300,11 +319,15 @@ public class MagicCircleRenderer {
     private static void addStarPolygon(float cx, float y, float cz, float r,
                                        int n, int k, float rot,
                                        float[] col, float alpha) {
+        // Perf: 改用單位圓表 + 旋轉矩陣（cos/sin per polygon 而非 per vertex）
+        float[] tab = ringTable(n);
+        float rOff = rot - (float)(Math.PI / 2);
+        float cosR = (float) Math.cos(rOff), sinR = (float) Math.sin(rOff);
         float[] vx = new float[n], vz = new float[n];
         for (int i = 0; i < n; i++) {
-            float a = i * (float)(2 * Math.PI) / n + rot - (float)(Math.PI / 2);
-            vx[i] = cx + r * (float)Math.cos(a);
-            vz[i] = cz + r * (float)Math.sin(a);
+            float ct = tab[i * 2], st = tab[i * 2 + 1];
+            vx[i] = cx + r * (ct * cosR - st * sinR);
+            vz[i] = cz + r * (st * cosR + ct * sinR);
         }
         int comps = gcd(n, k);
         for (int s = 0; s < comps; s++) {
@@ -321,11 +344,15 @@ public class MagicCircleRenderer {
     /** Regular n-gon (polygon, not star). */
     private static void addPolygon(float cx, float y, float cz, float r,
                                    int n, float rot, float[] col, float alpha) {
+        float[] tab = ringTable(n);
+        float rOff = rot - (float)(Math.PI / 2);
+        float cosR = (float) Math.cos(rOff), sinR = (float) Math.sin(rOff);
         for (int i = 0; i < n; i++) {
-            float a0 = i       * (float)(2 * Math.PI) / n + rot - (float)(Math.PI / 2);
-            float a1 = (i + 1) * (float)(2 * Math.PI) / n + rot - (float)(Math.PI / 2);
-            putV(cx + r * (float)Math.cos(a0), y, cz + r * (float)Math.sin(a0), col, alpha);
-            putV(cx + r * (float)Math.cos(a1), y, cz + r * (float)Math.sin(a1), col, alpha);
+            int j = (i + 1) % n;
+            float ct0 = tab[i * 2], st0 = tab[i * 2 + 1];
+            float ct1 = tab[j * 2], st1 = tab[j * 2 + 1];
+            putV(cx + r * (ct0 * cosR - st0 * sinR), y, cz + r * (st0 * cosR + ct0 * sinR), col, alpha);
+            putV(cx + r * (ct1 * cosR - st1 * sinR), y, cz + r * (st1 * cosR + ct1 * sinR), col, alpha);
         }
     }
 

@@ -102,10 +102,15 @@ public class DamageNumberRenderer {
 
         Camera camera = mc.gameRenderer.getMainCamera();
         Vec3 camPos = camera.getPosition();
+        // Perf: camera.rotation() 提到 loop 外（每個 entry 都同一個四元數，沒道理每次重抽）
+        org.joml.Quaternionf camRot = camera.rotation();
 
         PoseStack pose = event.getPoseStack();
         MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
         Font font = mc.font;
+
+        // Perf: 距離剔除上限 64 格平方 = 4096，超過直接跳過（vanilla 標籤可視距離也是 64）
+        final double MAX_DIST_SQ = 64.0 * 64.0;
 
         RenderSystem.disableCull();
 
@@ -117,14 +122,17 @@ public class DamageNumberRenderer {
             double wy = e.spawnY + 0.04 * age;
             double wz = e.spawnZ + e.driftZ * age;
 
+            double dx = wx - camPos.x, dy = wy - camPos.y, dz = wz - camPos.z;
+            double distSq = dx * dx + dy * dy + dz * dz;
+            if (distSq > MAX_DIST_SQ) continue; // 太遠不畫，省 font.width / drawInBatch
+
             float alphaF = age < FADE_START
                     ? 1.0f
                     : 1.0f - (age - FADE_START) / (MAX_AGE - FADE_START);
             int alpha = (int)(alphaF * 255);
             if (alpha <= 0) continue;
 
-            double dx = wx - camPos.x, dy = wy - camPos.y, dz = wz - camPos.z;
-            float dist = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+            float dist = (float) Math.sqrt(distSq);
             float scale = Math.max(0.045f, 0.012f * dist);
 
             int argb = (alpha << 24) | e.colorRGB;
@@ -133,7 +141,7 @@ public class DamageNumberRenderer {
 
             pose.pushPose();
             pose.translate(dx, dy, dz);
-            pose.mulPose(camera.rotation());
+            pose.mulPose(camRot);
             pose.scale(scale, -scale, scale);
 
             font.drawInBatch(text, -tw / 2f, 0, argb, true,

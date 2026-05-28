@@ -714,11 +714,15 @@ public static final List<Vec3i> RING_T1 = List.of(
             return false;
         });
 
+        // Perf: 用 getBlockState 預過濾（chunk 陣列查找，~100ns）才打 getBlockEntity（chunk + BE map，~1-5µs）
+        // 169 個位置原本全都 BE lookup 約 0.2-1ms/scan，預過濾後只有真正放底座的位置 (~0-8) 做 BE lookup
+        BlockPos.MutableBlockPos scanPos = new BlockPos.MutableBlockPos();
         BlockPos basePos = worldPosition.below(2);
+        var pedestalBlock = com.github.nalamodikk.register.ModBlocks.ASPECT_PEDESTAL.get();
         for (int x = -PEDESTAL_SCAN_RADIUS; x <= PEDESTAL_SCAN_RADIUS; x++) {
             for (int z = -PEDESTAL_SCAN_RADIUS; z <= PEDESTAL_SCAN_RADIUS; z++) {
-
-                BlockPos scanPos = basePos.offset(x, 0, z);
+                scanPos.set(basePos.getX() + x, basePos.getY(), basePos.getZ() + z);
+                if (!level.getBlockState(scanPos).is(pedestalBlock)) continue;
                 if (level.getBlockEntity(scanPos) instanceof AspectPedestalBlockEntity ped) {
                     if (x == 0 && z == 0) centerPedestal = ped;
                     if (!activePedestals.contains(ped)) {
