@@ -6,6 +6,15 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Space Crack visual rewrite. The return rift in the Mirror World no longer has a flat white center: it's now a smooth dark elliptical "tear into void" rendered via 36 pie-slice wedges (GPU interpolation, no visible banding), surrounded by purple glow layers and white-purple lightning bolts. Each lightning bolt is drawn as 3 stacked additive strokes (wide dim violet halo + mid bright purple + thin white core) so the bolts have a proper electric-glow look instead of hard quad edges. Render order was fixed so the dark center no longer punches through the surrounding glow.
+- 空間裂縫視覺重寫。鏡中世界的返回裂縫不再是中間白色亮片：現在是用 36 片 pie-slice 楔形拼出的平滑黑色橢圓「破口」（GPU 線性插值，無環邊接縫），外面包紫色光暈跟白紫雙色閃電。每支閃電用 3 層 additive 疊加（寬+暗紫光暈/中+亮紫/細+白核），看起來像真正的電弧發光，不再是硬邊 quad。順便修了渲染順序問題（之前黑色核會穿透光暈）。
+
+- Inventory sort buttons moved 8px higher so they sit clearly above the container/inventory slot grids instead of overlapping the top row.
+- 物品欄整理按鈕往上移 8px，現在貼在容器/物品欄頂端上方而不是壓到第一排格子。
+
+- Title screen splash pool now uses "Zako." instead of "Pathetic." for the whispered taunt line, matching the existing Nara TTS dialogue (zako is the established anime-fandom English usage for that specific tsundere taunt).
+- 主選單 splash 池把「Pathetic.」改成「Zako.」對齊娜拉既有的 TTS 配音（zako 已經是英文 anime 圈通用的傲嬌嘲諷講法）。
+
 - Title screen polish + modpack-friendly behavior: the custom title image now scales down on small windows (anchored at the top so it never overlaps the Singleplayer button), no matter how small the window gets. Two new config options were added in the titleScreen section: showTitleToggleButton (hide the corner toggle button entirely) and deferToOtherMenuMods (auto-defer to FancyMenu / CustomMainMenu / BetterTitleScreen / TitleTweaks if any of them is loaded). Filled in 25+ missing config translation strings (boss section, title screen section, all section headers in the config GUI, and tooltips for older config entries that previously showed raw keys).
 - 主選單微調 + 模組包友善：客製標題圖片在小視窗時會自動縮小（錨在頂端，再小也不會壓到「單人遊戲」按鈕）。titleScreen 區段新增兩個配置：showTitleToggleButton（完全隱藏右上角切換按鈕）跟 deferToOtherMenuMods（偵測到 FancyMenu / CustomMainMenu / BetterTitleScreen / TitleTweaks 任一就自動退讓）。補了 25+ 個漏翻的 config 翻譯（boss 區段、主選單區段、所有 config GUI section header、跟舊的 config 條目的 tooltip）。
 

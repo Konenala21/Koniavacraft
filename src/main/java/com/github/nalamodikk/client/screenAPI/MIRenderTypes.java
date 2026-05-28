@@ -54,6 +54,16 @@ public class MIRenderTypes {
         return SOLAR_GLOW;
     }
 
+    private static RenderType VOID_CORE;
+
+    // 黑洞核心：POSITION_COLOR、QUADS、普通 alpha 混合（黑色顯示為黑）、不寫深度
+    public static RenderType voidCore() {
+        if (VOID_CORE == null) {
+            VOID_CORE = Factory.makeVoidCore();
+        }
+        return VOID_CORE;
+    }
+
     private static RenderType SEAL_CHAIN;
 
     // 封印鍊子：半透明、寫深度、無貼圖、POSITION_COLOR
@@ -98,6 +108,17 @@ public class MIRenderTypes {
                     CompositeState.builder()
                             .setShaderState(POSITION_COLOR_SHADER)
                             .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                            .setWriteMaskState(COLOR_WRITE)
+                            .setTextureState(NO_TEXTURE)
+                            .createCompositeState(false));
+        }
+
+        // 黑洞核心：用 TRANSLUCENT_TRANSPARENCY（普通 alpha）+ COLOR_WRITE，可正確顯示黑色 + 不寫深度避免遮蔽
+        private static RenderType makeVoidCore() {
+            return create("koniava_void_core", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 2048, false, false,
+                    CompositeState.builder()
+                            .setShaderState(POSITION_COLOR_SHADER)
+                            .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
                             .setWriteMaskState(COLOR_WRITE)
                             .setTextureState(NO_TEXTURE)
                             .createCompositeState(false));

@@ -59,7 +59,7 @@ public abstract class TitleScreenMixin {
             "可惡你這個壞人！…算了算了。",
             "Meanie! ...Whatever, I forgive you.",
             "雜魚！(小聲)",
-            "Pathetic. (whispered)",
+            "Zako. (whispered)",
             "哦齁！看起來有好戲看了哦！",
             "Looks like things are getting good!",
             "別讓我說第二次。",

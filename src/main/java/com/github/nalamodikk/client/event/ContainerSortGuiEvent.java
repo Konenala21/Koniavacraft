@@ -61,12 +61,12 @@ public class ContainerSortGuiEvent {
         int guiTop = screen.getGuiTop();
 
         if (containerMinY != Integer.MAX_VALUE) {
-            int btnY = guiTop + containerMinY - 6;
+            int btnY = guiTop + containerMinY - 14; // 上移到容器頂格上方更明顯
             event.addListener(new SortButton(guiLeft + 156, btnY, 12, 10, SortTarget.CONTAINER));
         }
 
         if (playerInvMinY != Integer.MAX_VALUE) {
-            int btnY = guiTop + playerInvMinY - 6;
+            int btnY = guiTop + playerInvMinY - 14;
             event.addListener(new SortButton(guiLeft + 156, btnY, 12, 10, SortTarget.PLAYER_INVENTORY));
         }
     }
