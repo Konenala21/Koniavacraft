@@ -230,6 +230,12 @@ public class PlayerCloneEntity extends Monster {
     private int hotbarIdx = 0;
     private int hotbarSwitchCooldown = 0;
     private static final int HOTBAR_SWITCH_INTERVAL = 80; // 4 秒切一次
+    // Boss 主動發砲齊射技能：1 秒 telegraph + 同步所有 boss 砲對玩家蓄力齊射
+    private int turretVolleyCooldown = 80; // 開戰初始 4 秒緩衝再開始算
+    private int turretVolleyTelegraph = 0;
+    private static final int TURRET_VOLLEY_INTERVAL = 200; // 10 秒一次齊射
+    private static final int TURRET_VOLLEY_TELEGRAPH = 20; // 1 秒前搖
+    private static final double TURRET_VOLLEY_RANGE_SQ = 32 * 32;
 
     private final ServerBossEvent bossEvent = new ServerBossEvent(
             this.getDisplayName(), BossEvent.BossBarColor.WHITE, BossEvent.BossBarOverlay.PROGRESS);
@@ -387,9 +393,57 @@ public class PlayerCloneEntity extends Monster {
         this.bossEvent.setName(player.getDisplayName());
     }
 
+    // Boss 主動發砲齊射：每 10 秒一次，前 1 秒在每門砲上噴 END_ROD 粒子當預兆，然後同時對玩家蓄力齊射
+    private void tickTurretVolley() {
+        if (!com.github.nalamodikk.common.config.ModCommonConfig.INSTANCE.bossTurretVolleyEnabled.get()) return;
+        if (turretVolleyTelegraph > 0) {
+            turretVolleyTelegraph--;
+            if (level() instanceof ServerLevel sl) {
+                for (FloatingTurretEntity t : findOwnedTurrets(sl)) {
+                    sl.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,
+                            t.getX(), t.getY(), t.getZ(), 2, 0.1, 0.1, 0.1, 0.02);
+                }
+            }
+            if (turretVolleyTelegraph == 0) executeTurretVolley();
+            return;
+        }
+        if (turretVolleyCooldown > 0) { turretVolleyCooldown--; return; }
+        LivingEntity tgt = getTarget();
+        if (tgt == null || !tgt.isAlive()) return;
+        if (this.distanceToSqr(tgt) > TURRET_VOLLEY_RANGE_SQ) return;
+        // 啟動前搖：播一個低沉蓄力音效讓玩家有反應時間
+        turretVolleyTelegraph = TURRET_VOLLEY_TELEGRAPH;
+        if (level() instanceof ServerLevel sl) {
+            sl.playSound(null, blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 1.0F, 1.4F);
+        }
+    }
+
+    private void executeTurretVolley() {
+        turretVolleyCooldown = TURRET_VOLLEY_INTERVAL;
+        LivingEntity tgt = getTarget();
+        if (tgt == null || !tgt.isAlive()) return;
+        if (!(level() instanceof ServerLevel sl)) return;
+        Vec3 targetPos = tgt.getBoundingBox().getCenter();
+        for (FloatingTurretEntity t : findOwnedTurrets(sl)) {
+            com.github.nalamodikk.common.entity.FloatingTurretProjectile proj =
+                    com.github.nalamodikk.common.entity.FloatingTurretProjectile.shootAt(
+                            sl, this, t.position(), targetPos, 1.0F); // charged
+            proj.setNoBlockDamage(true);
+            sl.addFreshEntity(proj);
+        }
+        sl.playSound(null, blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 0.8F, 1.6F);
+    }
+
+    private java.util.List<FloatingTurretEntity> findOwnedTurrets(ServerLevel sl) {
+        return sl.getEntitiesOfClass(FloatingTurretEntity.class,
+                getBoundingBox().inflate(32.0),
+                t -> t.getCloneOwner() == this);
+    }
+
     // 戰鬥中切換主手：每 HOTBAR_SWITCH_INTERVAL tick 切到下一個有東西的快捷欄槽
     // 浮游砲跳過（已經是手持砲實體在打了），改換其他武器讓戰鬥節奏有變化
     private void tickHotbarSwitch() {
+        if (!com.github.nalamodikk.common.config.ModCommonConfig.INSTANCE.bossHotbarSwitchEnabled.get()) return;
         if (hotbarSwitchCooldown > 0) { hotbarSwitchCooldown--; return; }
         hotbarSwitchCooldown = HOTBAR_SWITCH_INTERVAL;
         if (getTarget() == null || !getTarget().isAlive()) return;
@@ -570,6 +624,7 @@ public class PlayerCloneEntity extends Monster {
 
     // 副手有盾且攻擊來自前方 (dot > 0.5) 就擋下：盾消耗耐久 + 播音效，不阻擋穿盾類型傷害
     private boolean tryShieldBlock(DamageSource source) {
+        if (!com.github.nalamodikk.common.config.ModCommonConfig.INSTANCE.bossShieldBlockEnabled.get()) return false;
         if (!(this.getOffhandItem().getItem() instanceof net.minecraft.world.item.ShieldItem)) return false;
         if (source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_SHIELD)) return false;
         net.minecraft.world.entity.Entity src = source.getDirectEntity();
@@ -919,6 +974,7 @@ public class PlayerCloneEntity extends Monster {
 
         tickAntiPillar(); // 全階段防墊高，開場就不給 cheese
         tickHotbarSwitch(); // 模擬玩家：戰鬥中定時切換主手快捷欄武器，讓 boss 戰鬥節奏有變化
+        tickTurretVolley(); // 主動齊射：boss 親自下令所有浮游砲蓄力齊射玩家（10 秒一次）
         tickPillarSkill(); // 招牌技能：墊方塊衝撞擊飛（全階段）
         tickMeleeStrafe(); // 近戰：邊繞圈邊攻擊（取代 MeleeAttackGoal 的站定揮擊）
         tickReflect(); // 週期性鏡反狀態（取代純機率反傷）
@@ -1163,16 +1219,20 @@ public class PlayerCloneEntity extends Monster {
         armoredDimensions = true; // 放大碰撞箱（getDimensions），讓玩家打得到外殼
         refreshDimensions();
         // 啟動變身過場（先設 ticks 再 buildArmorShell，讓 spawnArmorPart 偵測到過場進行中、把方塊放在遠處等待飛入）
-        phase2TransitionTicks = PHASE2_TRANSITION_LEN;
+        // config 關閉時：略過過場，方塊直接到位、不鎖相機
+        boolean cinematic = com.github.nalamodikk.common.config.ModCommonConfig.INSTANCE.phase2CinematicEnabled.get();
+        phase2TransitionTicks = cinematic ? PHASE2_TRANSITION_LEN : 0;
         buildArmorShell(sl);
-        assignAssembleDelays(sl); // 每塊方塊隨機洗牌 + 後期更密的延遲（觀感從慢到快）
+        if (cinematic) assignAssembleDelays(sl); // 每塊方塊隨機洗牌 + 後期更密的延遲（觀感從慢到快）
         sl.playSound(null, blockPosition(), SoundEvents.IRON_GOLEM_REPAIR, SoundSource.HOSTILE, 1.2F, 0.7F);
         sl.sendParticles(ParticleTypes.LARGE_SMOKE, getX(), getY() + 1.0, getZ(), 60, 1.5, 2.0, 1.5, 0.02);
-        // 廣播 client 端鎖相機環繞演出
-        Phase2TransitionPacket payload = new Phase2TransitionPacket(this.getId());
-        for (ServerPlayer p : sl.players()) {
-            if (this.distanceToSqr(p) <= 300.0 * 300.0) {
-                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p, payload);
+        // 廣播 client 端鎖相機環繞演出（過場開啟時才送）
+        if (cinematic) {
+            Phase2TransitionPacket payload = new Phase2TransitionPacket(this.getId());
+            for (ServerPlayer p : sl.players()) {
+                if (this.distanceToSqr(p) <= 300.0 * 300.0) {
+                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p, payload);
+                }
             }
         }
     }

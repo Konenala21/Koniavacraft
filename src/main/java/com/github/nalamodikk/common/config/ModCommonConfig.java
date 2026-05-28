@@ -31,6 +31,11 @@ public class ModCommonConfig {
     public final ModConfigSpec.IntValue calculateThreadCount;
     public final ModConfigSpec.BooleanValue developerModeEnabled;
     public final ModConfigSpec.BooleanValue autoEnableDeveloperModeInDevEnvironment;
+    // 鏡中世界 boss 行為開關（預設全開，玩家覺得太難或不想看演出可關）
+    public final ModConfigSpec.BooleanValue bossTurretVolleyEnabled;
+    public final ModConfigSpec.BooleanValue bossHotbarSwitchEnabled;
+    public final ModConfigSpec.BooleanValue bossShieldBlockEnabled;
+    public final ModConfigSpec.BooleanValue phase2CinematicEnabled;
 
 
 
@@ -81,10 +86,31 @@ public class ModCommonConfig {
                 .define("autoEnableDeveloperModeInDevEnvironment", true);
 
         // ===============================
-        // 🌍 生物群系處理配置區段
+        // ⚔️ 鏡中世界 boss 行為開關
         // ===============================
+        builder.push("voidMirrorBoss");
 
+        bossTurretVolleyEnabled = builder
+                .comment("Enable the boss's active turret volley skill (4 turrets fire charged shots together every 10s after a 1s telegraph)")
+                .translation("koniava.config.boss.turretVolleyEnabled")
+                .define("turretVolleyEnabled", true);
 
+        bossHotbarSwitchEnabled = builder
+                .comment("Enable the boss switching its main-hand weapon mid-combat from its mirrored hotbar (every 4s)")
+                .translation("koniava.config.boss.hotbarSwitchEnabled")
+                .define("hotbarSwitchEnabled", true);
+
+        bossShieldBlockEnabled = builder
+                .comment("Enable the boss blocking frontal attacks with a shield in its offhand (60-degree cone, consumes durability)")
+                .translation("koniava.config.boss.shieldBlockEnabled")
+                .define("shieldBlockEnabled", true);
+
+        phase2CinematicEnabled = builder
+                .comment("Enable the phase 2 transformation cinematic (camera lock, shell pieces flying in over 11s). If disabled, the mecha appears instantly.")
+                .translation("koniava.config.boss.phase2CinematicEnabled")
+                .define("phase2CinematicEnabled", true);
+
+        builder.pop();
     }
 
 

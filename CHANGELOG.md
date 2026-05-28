@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- The boss got an active turret volley skill: every 10 seconds it telegraphs for 1 second (END_ROD particles + beacon-activate sound on each turret), then all 4 of its mirrored turrets fire charged shots at you simultaneously. The mirror world now blocks ender chests too (in addition to shulker boxes) so you can't sneak gear through. Arena resets are also more thorough now: blocks broken by the player or destroyed by explosions inside the mirror world are tracked and restored when the dimension resets, so repeat fights don't leave craters or pickaxe holes behind. Several boss behaviours got config toggles in voidMirrorBoss section: turret volley skill, hotbar weapon switching, shield blocking, and the phase 2 transformation cinematic (disable for instant mecha appearance). All default ON.
+- Boss 新增主動發砲齊射技能：每 10 秒前搖 1 秒（每門砲噴 END_ROD 粒子 + 信標啟動音效），然後 4 門鏡像砲一起對你發蓄力彈。鏡中世界現在也擋終界箱（之前只擋界伏盒），不能藉此偷帶裝備。場地重製更徹底：玩家挖掉或爆炸炸掉的方塊都會被追蹤、維度重置時還原原狀，反覆挑戰不會留下坑洞。多項 boss 行為加了配置開關在 voidMirrorBoss 區段：齊射技能、戰鬥中換武器、盾擋、二階段變身過場（關掉就直接顯示機甲不演動畫）。預設全開。
+
 - The main menu got a full makeover: the vanilla Minecraft logo is replaced with a custom image (src/main/resources/assets/koniava/textures/gui/title.png) with a subtle scale pulse, and the yellow splash text uses a custom pool of ~37 mixed Chinese/English lines pulled from the mod's lore documents. A toggle button appears in the top-right corner of the title screen so you can switch back to the vanilla menu instantly without restarting (no game restart needed). The custom title screen has its own config toggle in the titleScreen section. Default ON.
 - 主選單大改造：vanilla 的 Minecraft logo 被替換成自訂圖片（src/main/resources/assets/koniava/textures/gui/title.png），有輕微縮放脈動，黃色 splash 改用從模組設定文件抽出的 37 條中英混合台詞池。右上角會有一顆切換按鈕讓你即時切回原版選單，不用重開遊戲。客製主選單也有自己的開關在 titleScreen 區段。預設開啟。
 

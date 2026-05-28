@@ -249,6 +249,11 @@ public class FloatingTurretEntity extends PathfinderMob {
 
     // ── 分身砲模式 ────────────────────────────────────────────────────────────
 
+    @javax.annotation.Nullable
+    public LivingEntity getCloneOwner() {
+        return cloneOwner;
+    }
+
     public void setupAsCloneTurret(LivingEntity owner, ItemStack turretStack, int slotIndex) {
         this.cloneOwner = owner;
         this.cloneTurretStack = turretStack.copy();

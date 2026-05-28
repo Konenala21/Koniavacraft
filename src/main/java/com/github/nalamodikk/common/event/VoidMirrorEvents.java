@@ -19,6 +19,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.EnderChestBlock;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -28,6 +29,7 @@ import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.ExplosionEvent;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,16 +53,22 @@ public class VoidMirrorEvents {
         MINED_TERRAIN.putIfAbsent(packedPos, original); // 第一次挖才記，避免後續同位置被覆蓋遮蔽原狀
     }
 
-    private static boolean isShulkerItem(ItemStack stack) {
-        return stack.getItem() instanceof BlockItem bi && bi.getBlock() instanceof ShulkerBoxBlock;
+    // 鏡中世界禁止：界伏盒 + 終界箱（玩家可能從場外鏡像範圍藏裝備、進場內取出規避鏡像）
+    private static boolean isBannedContainerItem(ItemStack stack) {
+        if (!(stack.getItem() instanceof BlockItem bi)) return false;
+        return bi.getBlock() instanceof ShulkerBoxBlock || bi.getBlock() instanceof EnderChestBlock;
     }
 
-    // 鏡中世界禁止放置/開啟界伏盒子：杜絕把裝備藏盒子規避鏡像、再於場內取出的逃課
+    private static boolean isBannedContainerBlock(net.minecraft.world.level.block.state.BlockState state) {
+        return state.getBlock() instanceof ShulkerBoxBlock || state.getBlock() instanceof EnderChestBlock;
+    }
+
+    // 鏡中世界禁止放置/開啟禁用容器（界伏盒、終界箱）：杜絕逃課帶裝備進場
     @SubscribeEvent
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
         if (!event.getLevel().dimension().equals(ModDimensions.VOID_MIRROR)) return;
-        if (isShulkerItem(event.getItemStack())
-                || event.getLevel().getBlockState(event.getPos()).getBlock() instanceof ShulkerBoxBlock) {
+        if (isBannedContainerItem(event.getItemStack())
+                || isBannedContainerBlock(event.getLevel().getBlockState(event.getPos()))) {
             event.setCanceled(true);
             notifyContainerBlocked(event.getEntity());
         }
@@ -69,7 +77,7 @@ public class VoidMirrorEvents {
     @SubscribeEvent
     public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
         if (!event.getLevel().dimension().equals(ModDimensions.VOID_MIRROR)) return;
-        if (isShulkerItem(event.getItemStack())) {
+        if (isBannedContainerItem(event.getItemStack())) {
             event.setCanceled(true);
             notifyContainerBlocked(event.getEntity());
         }
@@ -89,6 +97,33 @@ public class VoidMirrorEvents {
         if (!(event.getEntity().level() instanceof ServerLevel sl)) return;
         if (!sl.dimension().equals(ModDimensions.VOID_MIRROR)) return;
         MODIFIED_BLOCKS.add(event.getPos().asLong());
+    }
+
+    // 玩家在鏡中世界破壞方塊 → 記原始狀態，重製時還原（避免戰鬥後 arena 一堆洞）
+    // 玩家自己之前放的（MODIFIED_BLOCKS 已記）不還原 → 反正 reset 會把它變成 AIR
+    @SubscribeEvent
+    public static void onBlockBreak(BlockEvent.BreakEvent event) {
+        if (!(event.getLevel() instanceof ServerLevel sl)) return;
+        if (!sl.dimension().equals(ModDimensions.VOID_MIRROR)) return;
+        long key = event.getPos().asLong();
+        if (MODIFIED_BLOCKS.contains(key)) return;
+        BlockState state = event.getState();
+        if (state.isAir()) return;
+        MINED_TERRAIN.putIfAbsent(key, state);
+    }
+
+    // 鏡中世界內的爆炸（TNT / 苦力怕 / 砲彈等）也會炸出洞 → 對每個受影響方塊記原狀
+    @SubscribeEvent
+    public static void onExplosionDetonate(ExplosionEvent.Detonate event) {
+        if (!(event.getLevel() instanceof ServerLevel sl)) return;
+        if (!sl.dimension().equals(ModDimensions.VOID_MIRROR)) return;
+        for (BlockPos pos : event.getAffectedBlocks()) {
+            long key = pos.asLong();
+            if (MODIFIED_BLOCKS.contains(key)) continue;
+            BlockState state = sl.getBlockState(pos);
+            if (state.isAir()) continue;
+            MINED_TERRAIN.putIfAbsent(key, state);
+        }
     }
 
     // 重製場地：清掉戰鬥放置的方塊（→AIR）、還原機甲挖走的環境方塊（→原狀）、移除所有 boss 相關實體
