@@ -52,6 +52,8 @@ public final class VoidMirrorTeleport {
 
         // 先清掉該玩家殘留的 clone/娜拉/裂縫，確保「退出再進去」是乾淨的全新一場
         clearExistingFor(target, player.getUUID());
+        // 清除上次 boss 死後遺留的「裂縫待清除」旗標 — 新一場 boss 開打要重新生成裂縫
+        VoidMirrorSavedData.get(server).clearCrackRemovalPending(player.getUUID());
 
         // 娜拉一開始就在場（過場從她的視角開始）
         spawnNaraPhantom(target, player.getUUID());

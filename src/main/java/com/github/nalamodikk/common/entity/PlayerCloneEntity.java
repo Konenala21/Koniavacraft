@@ -846,7 +846,10 @@ public class PlayerCloneEntity extends Monster {
     public void die(DamageSource cause) {
         super.die(cause);
         if (level().isClientSide || !(level() instanceof ServerLevel sl)) return;
-        this.bossEvent.removeAllPlayers();
+        // 死亡視覺/聽覺回饋（boss bar 不立刻撤掉，留給 deathTime 動畫期間漸層淡出）
+        playDeathFeedback(sl);
+        // 停止戰鬥 BGM
+        stopBgmForAll(sl);
         clearArmorParts(); // 死亡清掉殘留外殼方塊
         discardOwnedArmorDisplays(sl); // fallback：reload 後 pendingArmorRebuild 未消費就死的情況下，存盤孤兒仍會清掉
         MinecraftServer server = sl.getServer();
@@ -856,7 +859,11 @@ public class PlayerCloneEntity extends Monster {
             VoidMirrorSavedData saved = VoidMirrorSavedData.get(server);
             firstClear = !saved.isCleared(srcId); // 必須在 markCleared 前判斷
             saved.markCleared(srcId);
+            // 同步立刻嘗試刪本維度（mirror）內的裂縫；overworld 入口裂縫 chunk 通常已卸載，
+            // 改用 pendingCrackRemoval 旗標，讓裂縫自己 tick 時 self-discard
+            SpaceCrackEntity.removeForOwner(sl, srcId);
             SpaceCrackEntity.removeForOwner(server.overworld(), srcId);
+            saved.markCrackRemovalPending(srcId);
             // 勝利後娜拉消失
             for (NaraPhantomEntity nara : sl.getEntitiesOfClass(NaraPhantomEntity.class,
                     new AABB(BlockPos.ZERO).inflate(260),
@@ -870,9 +877,45 @@ public class PlayerCloneEntity extends Monster {
         if (!anyCloneLeft) spawnRewardChest(sl, firstClear);
     }
 
+    // 停掉所有收到 BGM 的玩家的戰鬥音樂
+    private void stopBgmForAll(ServerLevel sl) {
+        com.github.nalamodikk.common.network.packet.client.BossBgmPacket stop =
+                com.github.nalamodikk.common.network.packet.client.BossBgmPacket.STOP;
+        for (net.minecraft.server.level.ServerPlayer p : sl.getServer().getPlayerList().getPlayers()) {
+            if (bgmSentTo.contains(p.getUUID())) {
+                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p, stop);
+            }
+        }
+        bgmSentTo.clear();
+    }
+
+    // 死亡動畫回饋：爆破粒子環、震動音效、紫色靈魂消散
+    private void playDeathFeedback(ServerLevel sl) {
+        double x = getX(), y = getY() + 1.0, z = getZ();
+        // 爆破粒子環（紫紅色魔力消散感）
+        sl.sendParticles(net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE,
+                x, y, z, 40, 0.6, 1.0, 0.6, 0.05);
+        sl.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL_FIRE_FLAME,
+                x, y, z, 30, 0.8, 1.2, 0.8, 0.10);
+        sl.sendParticles(net.minecraft.core.particles.ParticleTypes.PORTAL,
+                x, y, z, 80, 1.2, 1.5, 1.2, 0.3);
+        sl.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL,
+                x, y, z, 20, 0.5, 0.8, 0.5, 0.05);
+        // 死亡音效（雙重音：vanilla ender_dragon_death 低頻 + wither_death 高頻 + 玻璃碎裂感）
+        sl.playSound(null, blockPosition(), SoundEvents.ENDER_DRAGON_DEATH,
+                SoundSource.HOSTILE, 1.4F, 1.2F);
+        sl.playSound(null, blockPosition(), SoundEvents.GLASS_BREAK,
+                SoundSource.HOSTILE, 1.8F, 0.55F);
+    }
+
     private void spawnRewardChest(ServerLevel sl, boolean includeShard) {
         BlockPos chestPos = new BlockPos(0, 64, -3);
-        // 強制覆蓋（即便玩家放東西在此），確保獎勵一定生成；若原本就是 chest 也清空再填，避免疊加殘留
+        // 先清空舊箱子內容物再 setBlock，避免 vanilla `setBlockAndUpdate` 觸發舊 chest 的
+        // Block.onRemove → dropResources → 內容物噴一地。之前玩家重打 boss 時就因為這個 bug
+        // 看到上次的獎勵掉在地上。
+        if (sl.getBlockEntity(chestPos) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity oldChest) {
+            oldChest.clearContent();
+        }
         sl.setBlockAndUpdate(chestPos, Blocks.CHEST.defaultBlockState());
         VoidMirrorEvents.addModifiedBlock(chestPos.asLong());
         if (sl.getBlockEntity(chestPos) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity chest) {

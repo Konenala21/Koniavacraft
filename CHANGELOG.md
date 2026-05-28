@@ -6,6 +6,15 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Mirror Boss death now has proper feedback: a burst of soul fire + portal + smoke particles, an Ender Dragon death roar layered with a sharp glass-break crack, and the boss bar stays visible during the vanilla 20-tick death animation instead of vanishing the instant the boss hits 0 HP.
+- 鏡像 Boss 死亡現在有完整視聽回饋：靈魂火 + 傳送門 + 大煙霧粒子爆環、末影龍死亡咆哮疊玻璃碎裂高頻音，boss 血條也會在 20-tick 死亡動畫期間保留（之前一掉血歸零就秒沒）。
+
+- Reward chest no longer spills its contents on the ground when the player re-enters the Mirror World for another fight. Cause: the previous run's chest was still there, and `setBlockAndUpdate` on it triggered vanilla's drop-on-remove behavior. Fix: clear the old chest's contents before overwriting the block.
+- 獎勵寶箱在玩家重進鏡中世界打第二場時不會把舊內容物噴一地了。原因：上次的寶箱還在原位，`setBlockAndUpdate` 蓋過去會觸發 vanilla 的 drop-on-remove 把舊內容物全噴出來。修法：覆蓋前先把舊箱子清空。
+
+- The overworld entry rift now actually disappears after the boss is defeated. Previously it would not, because the chunk it sat in was usually unloaded while the player was in the Mirror dimension, so the cleanup query found nothing. Fix: mark the rift for removal in saved-data, and let the rift self-discard on its next tick once its chunk loads. The flag is cleared when the player re-enters for another run.
+- 主世界入口裂縫在 boss 被擊敗後現在會真的消失。之前不會：玩家在鏡中世界打 boss 時，主世界裂縫所在的 chunk 通常已卸載，從 boss 那邊清裂縫的程式 query 不到實體。修法：用 SavedData 標記「該玩家的裂縫待清除」，裂縫自己 tick 時檢查並 self-discard（chunk 載入時自然觸發）。玩家重進挑戰時旗標會清掉，新一場 boss 的裂縫照常生成。
+
 - Mirror Boss also reads the 9-slot NINE_GRID storage pouch now, on top of the 10-slot extra equipment. Hiding a weapon in either of these no longer dodges the boss mirror.
 - 鏡像 Boss 現在也會讀取 9 格 NINE_GRID 儲存欄位（之前只讀 10 格額外裝備）。武器藏這兩個地方都不再能逃 boss 鏡像。
 
