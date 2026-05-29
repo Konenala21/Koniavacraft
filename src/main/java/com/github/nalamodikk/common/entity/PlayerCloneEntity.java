@@ -17,14 +17,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.particles.BlockParticleOption;
-import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -65,8 +62,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
-import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -168,13 +163,10 @@ public class PlayerCloneEntity extends Monster {
 
     // ── 二階段方塊機甲（半血變身：以 BlockDisplay 偽裝方塊組成大型人形包住本體）──
     // 已送出 BGM 觸發 packet 的玩家 UUID（避免重複送）。Transient，重載 / 重啟自動重置 → 玩家重進時 BGM 會再觸發
-    private final java.util.Set<UUID> bgmSentTo = new HashSet<>();
-    private final java.util.List<Display.BlockDisplay> armorParts = new ArrayList<>();
-    private final java.util.List<Vec3> armorSpawnOffsets = new ArrayList<>(); // 變身時方塊的初始飛來位置（local offset）
-    private final java.util.List<Integer> armorAssembleDelay = new ArrayList<>(); // 每塊方塊飛入的起飛延遲 tick（順序漸快）
-    private final java.util.List<Vec3> turretMountOffsets = new ArrayList<>(); // 結構模板的 LIME_WOOL 砲位（local offset，由左到右排序對應 slot index）
-    private static final int ARMOR_TRAVEL_TICKS = 50; // 每塊方塊飛入移動時間（過場拉長後也跟著拉長，讓飛入動作更從容）
-    private final java.util.List<Vec3> armorOffsets = new ArrayList<>();
+    final java.util.Set<UUID> bgmSentTo = new HashSet<>(); // package-private：啟動時在此寫入、死亡演出由 PlayerCloneDeathSequence.stopBgm 讀取
+    // 機甲視覺 controller（外殼建構 / 飛入動畫 / 跟隨擺腿 / 剝落 / 清理；擁有 display 清單）
+    private final PlayerCloneArmorRig armorRig = new PlayerCloneArmorRig(this);
+
     private boolean armorTriggered = false;   // 半血只觸發一次
     private boolean armoredDimensions = false; // 鏡像 ARMORED 給 getDimensions 用（避免在 entityData 尚未 define 時讀取）
     private boolean pendingArmorRebuild = false; // 重載時若仍在外殼狀態，首次 tick 重建外殼（接續二階段）
@@ -182,42 +174,17 @@ public class PlayerCloneEntity extends Monster {
     private static final float ARMOR_MAX_HP = 200f;
     private boolean armorWasBroken = false;   // 三階段判斷：曾經破過外殼回到本體型態
     // 二階段變身過場（server tick 倒數）：期間 boss 凍結 AI + 無敵，client 端鎖相機環繞
-    private static final int PHASE2_TRANSITION_LEN = 220;
-    private int phase2TransitionTicks = 0;
+    // package-private：PlayerCloneArmorRig 的飛入動畫需讀過場進度與總長
+    static final int PHASE2_TRANSITION_LEN = 220;
+    int phase2TransitionTicks = 0;
     private static final EntityDimensions ARMOR_DIMENSIONS =
             EntityDimensions.scalable(5.0F, 16.0F); // 涵蓋機甲外殼的碰撞箱
-    private final ArrayList<Integer> armorLegSide = new ArrayList<>(); // 與 armorParts 平行：0=非腿 1=左腿 2=右腿
-    private static final String ARMOR_TAG_PREFIX = "koniava_mecha_armor_"; // 後接 boss UUID，避免多 boss 場景下 cleanup 清掉別的 boss 的活 display
-
-    private String armorTag() {
-        return ARMOR_TAG_PREFIX + this.getStringUUID();
-    }
-    private double walkPhase = 0;                 // 走路動畫相位（移動時推進，讓雙腿前後擺動）
-    private static final int LEG_TOP_ROW = 11;    // 剪影此列(含)以下視為腿
-    private static final double LEG_HIP_Y = 3.0;  // 腿頂(髖)高度 = (rows-1) - LEG_TOP_ROW，繞此擺動
+    double walkPhase = 0;                 // package-private：走路動畫相位（本體移動時推進，PlayerCloneArmorRig 跟隨時讀來擺腿）
     // 本體鑲嵌深度：玩家模型整個藏進機甲，腳被胸甲擋住，只有頭剛好對齊 row 2 的眼縫從中露出
     // 玩家身高 ~1.8 → feet=11 head_center≈12.5 ≈ row 2 (oy 12-13) 中央
     public static final double ARMORED_BODY_OFFSET_Y = 11.0;
     // 機甲頭頂的世界座標 oy（rows-1 - row 0 = 14），浮游砲坐落在頭頂上方使用
     public static final double ARMORED_HEAD_TOP_Y = 14.0;
-    // 機甲剪影（7 寬人形 + 寬肩窄腰）：o=外殼方塊（材質從 clonedInventory→環境取得）、b=本體核心(不放方塊)、'.'=空
-    private static final String[] MECH_SHAPE = {
-            "...o...",   // 0 頭頂天線
-            "..ooo..",   // 1 頭頂
-            ".o.b.o.",   // 2 眼+核心
-            "..ooo..",   // 3 下顎
-            ".ooooo.",   // 4 頸
-            "ooooooo",   // 5 肩線 7 格
-            "ooooooo",   // 6 肩甲
-            ".ooooo.",   // 7 胸
-            ".ooooo.",   // 8 腹
-            "..ooo..",   // 9 腰收窄
-            ".ooooo.",   // 10 髖
-            ".oo.oo.",   // 11 大腿頂 (LEG_TOP_ROW)
-            ".oo.oo.",   // 12 大腿
-            ".oo.oo.",   // 13 小腿
-            ".oo.oo.",   // 14 小腿（無腳板）
-    };
 
     private static final EntityDataAccessor<Optional<UUID>> SOURCE_UUID =
             SynchedEntityData.defineId(PlayerCloneEntity.class, EntityDataSerializers.OPTIONAL_UUID);
@@ -264,6 +231,14 @@ public class PlayerCloneEntity extends Monster {
 
     private final ServerBossEvent bossEvent = new ServerBossEvent(
             this.getDisplayName(), BossEvent.BossBarColor.WHITE, BossEvent.BossBarOverlay.PROGRESS);
+
+    // 死亡演出 controller（五階段動畫 / 音效 / 粒子 / 停 BGM / 獎勵箱）
+    private final PlayerCloneDeathSequence deathSequence = new PlayerCloneDeathSequence(this);
+
+    // package-private 探針：暴露 LivingEntity.dead（protected）給 PlayerCloneDeathSequence 判斷其他 boss 是否已進入死亡
+    boolean isDeathMarked() {
+        return this.dead;
+    }
 
     public PlayerCloneEntity(EntityType<? extends PlayerCloneEntity> type, Level level) {
         super(type, level);
@@ -938,9 +913,9 @@ public class PlayerCloneEntity extends Monster {
         if (level().isClientSide || !(level() instanceof ServerLevel sl)) return;
         // 死亡演出：120-tick 五階段動畫由 tickDeath() 接手，這裡只負責停 BGM 與清理任務
         this.setGlowingTag(false); // 死亡演出期間不發光（保留戲劇 / 神秘感）
-        stopBgmForAll(sl);
-        clearArmorParts(); // 死亡清掉殘留外殼方塊
-        discardOwnedArmorDisplays(sl); // fallback：reload 後 pendingArmorRebuild 未消費就死的情況下，存盤孤兒仍會清掉
+        deathSequence.stopBgm(sl);
+        armorRig.clearParts(); // 死亡清掉殘留外殼方塊
+        armorRig.discardOwnedDisplays(sl); // fallback：reload 後 pendingArmorRebuild 未消費就死的情況下，存盤孤兒仍會清掉
         MinecraftServer server = sl.getServer();
         boolean firstClear = true; // 無 source 的 boss（/summon 邊角）視為首次
         if (getSourceUUID().isPresent()) {
@@ -967,7 +942,7 @@ public class PlayerCloneEntity extends Monster {
         if (isCommandKill) {
             boolean anyCloneLeft = !sl.getEntitiesOfClass(PlayerCloneEntity.class,
                     new AABB(BlockPos.ZERO).inflate(260), e -> e != this && e.isAlive()).isEmpty();
-            if (!anyCloneLeft) spawnRewardChest(sl, firstClear);
+            if (!anyCloneLeft) deathSequence.spawnRewardChest(sl, firstClear);
             // 立刻撤掉 Nara（沒人要看 outro）
             for (NaraPhantomEntity nara : sl.getEntitiesOfClass(NaraPhantomEntity.class,
                     new AABB(BlockPos.ZERO).inflate(260),
@@ -978,27 +953,22 @@ public class PlayerCloneEntity extends Monster {
         }
     }
 
-    private boolean pendingRewardFirstClear = false;
+    boolean pendingRewardFirstClear = false; // package-private：die() 寫入、死亡演出 Phase 5 由 PlayerCloneDeathSequence 讀取
 
-    // 覆寫 vanilla 20-tick 死亡 → 自製 120-tick 五階段演出
-    // Phase 1 (0-20):    Stagger      — 搖晃低頭、低吼，少量裂紋音
-    // Phase 2 (20-50):   Glow Up      — 全身白熱化、緩慢旋轉、能量充能音
-    // Phase 3 (50-80):   Crack        — 胸口裂痕擴張、紫光外洩、玻璃碎裂連音
-    // Phase 4 (80-110):  Shatter      — 碎片噴飛 + 大爆破 + slow-mo
-    // Phase 5 (110-120): Final Flash  — 全屏閃光、boss 消失、靈魂上飄
+    // 覆寫 vanilla 20-tick 死亡 → 自製 400-tick 五階段演出（內容見 PlayerCloneDeathSequence）
     @Override
     protected void tickDeath() {
         this.deathTime++;
         if (level().isClientSide) return;
         if (!(level() instanceof ServerLevel sl)) return;
 
-        int phase = computeDeathPhase(this.deathTime);
+        int phase = PlayerCloneDeathSequence.computeDeathPhase(this.deathTime);
         int currentPhase = entityData.get(DEATH_PHASE);
         if (phase != currentPhase) {
             entityData.set(DEATH_PHASE, phase);
-            onDeathPhaseEnter(sl, phase);
+            deathSequence.onPhaseEnter(sl, phase);
         }
-        tickDeathPhase(sl, this.deathTime, phase);
+        deathSequence.tickPhase(sl, this.deathTime, phase);
 
         if (this.deathTime >= DEATH_TOTAL_TICKS) {
             this.level().broadcastEntityEvent(this, (byte) 60);
@@ -1006,184 +976,12 @@ public class PlayerCloneEntity extends Monster {
         }
     }
 
-    private static int computeDeathPhase(int t) {
-        if (t <= DEATH_PHASE_STAGGER_END) return 1;
-        if (t <= DEATH_PHASE_GLOW_END)    return 2;
-        if (t <= DEATH_PHASE_CRACK_END)   return 3;
-        if (t <= DEATH_PHASE_SHATTER_END) return 4;
-        return 5;
-    }
-
-    // 取得這隻 boss 的 source player（多人模式下用來把死亡演出 sound/particle 只發給他）
-    private @Nullable ServerPlayer getSourcePlayer(ServerLevel sl) {
-        return getSourceUUID().map(id -> sl.getServer().getPlayerList().getPlayer(id)).orElse(null);
-    }
-
-    // 只發給 source player 的音效（fallback：沒 source 就廣播給所有人，例 /summon 邊角）
-    private void playDeathSound(ServerLevel sl, SoundEvent event, float vol, float pitch) {
-        ServerPlayer src = getSourcePlayer(sl);
-        if (src == null) {
-            sl.playSound(null, blockPosition(), event, SoundSource.HOSTILE, vol, pitch);
-            return;
-        }
-        src.connection.send(new ClientboundSoundPacket(
-                BuiltInRegistries.SOUND_EVENT.wrapAsHolder(event),
-                SoundSource.HOSTILE, getX(), getY(), getZ(), vol, pitch, sl.random.nextLong()));
-    }
-
-    // 只發給 source player 的粒子（fallback 同上）
-    private void sendDeathParticles(ServerLevel sl, ParticleOptions p, double x, double y, double z,
-                                    int count, double dx, double dy, double dz, double speed) {
-        ServerPlayer src = getSourcePlayer(sl);
-        if (src == null) {
-            sl.sendParticles(p, x, y, z, count, dx, dy, dz, speed);
-            return;
-        }
-        sl.sendParticles(src, p, true, x, y, z, count, dx, dy, dz, speed);
-    }
-
-    // 階段切換瞬間觸發 — 一次性大動作（音效、爆破粒子、slow-mo 開始等）
-    // 所有 sound/particle 走 playDeathSound / sendDeathParticles，多人模式下只給 source player
-    private void onDeathPhaseEnter(ServerLevel sl, int phase) {
-        double x = getX(), y = getY() + 1.0, z = getZ();
-        switch (phase) {
-            case 1 -> {
-                playDeathSound(sl, SoundEvents.GLASS_BREAK, 1.2F, 0.4F);
-                playDeathSound(sl, SoundEvents.WARDEN_HEARTBEAT, 2.0F, 0.5F);
-            }
-            case 2 -> {
-                sendDeathParticles(sl, ParticleTypes.END_ROD, x, y, z, 60, 0.8, 1.2, 0.8, 0.05);
-                sendDeathParticles(sl, ParticleTypes.PORTAL, x, y, z, 120, 1.0, 1.5, 1.0, 0.4);
-                playDeathSound(sl, SoundEvents.BEACON_ACTIVATE, 1.5F, 1.4F);
-                playDeathSound(sl, SoundEvents.AMETHYST_BLOCK_CHIME, 2.0F, 0.6F);
-            }
-            case 3 -> {
-                sendDeathParticles(sl, ParticleTypes.SOUL_FIRE_FLAME, x, y, z, 50, 0.6, 0.8, 0.6, 0.10);
-                playDeathSound(sl, SoundEvents.GLASS_BREAK, 2.0F, 0.7F);
-                playDeathSound(sl, SoundEvents.AMETHYST_CLUSTER_BREAK, 2.0F, 0.5F);
-                // 裂縫實體本身就是 entity，自然只有附近 client 看得到，不用特別過濾
-                com.github.nalamodikk.common.entity.SpaceCrackEntity rift =
-                        com.github.nalamodikk.register.ModEntities.SPACE_CRACK.get().create(sl);
-                if (rift != null) {
-                    rift.moveTo(x, y - 0.3, z, this.getYRot(), 0F);
-                    rift.setDecorative(60);
-                    sl.addFreshEntity(rift);
-                }
-            }
-            case 4 -> {
-                sendDeathParticles(sl, ParticleTypes.EXPLOSION_EMITTER, x, y, z, 2, 0.5, 0.5, 0.5, 0.0);
-                sendDeathParticles(sl, ParticleTypes.LARGE_SMOKE, x, y, z, 80, 1.5, 1.8, 1.5, 0.15);
-                sendDeathParticles(sl, ParticleTypes.FLASH, x, y, z, 2, 0.3, 0.3, 0.3, 0.0);
-                playDeathSound(sl, SoundEvents.ENDER_DRAGON_DEATH, 2.0F, 0.7F);
-                playDeathSound(sl, SoundEvents.GENERIC_EXPLODE.value(), 2.0F, 0.5F);
-                spawnDeathShards(sl);
-            }
-            case 5 -> {
-                sendDeathParticles(sl, ParticleTypes.FLASH, x, y, z, 4, 0.5, 0.5, 0.5, 0.0);
-                sendDeathParticles(sl, ParticleTypes.SOUL, x, y, z, 60, 1.2, 1.5, 1.2, 0.15);
-                playDeathSound(sl, SoundEvents.AMETHYST_BLOCK_CHIME, 2.0F, 1.8F);
-                boolean anyCloneLeft = !sl.getEntitiesOfClass(PlayerCloneEntity.class,
-                        new AABB(BlockPos.ZERO).inflate(260), e -> e != this && e.isAlive()).isEmpty();
-                if (!anyCloneLeft) spawnRewardChest(sl, pendingRewardFirstClear);
-            }
-        }
-    }
-
-    // 階段內每 tick 持續觸發 — 連續粒子流、發光殘留等
-    private void tickDeathPhase(ServerLevel sl, int t, int phase) {
-        double x = getX(), y = getY() + 1.0, z = getZ();
-        switch (phase) {
-            case 1 -> {
-                // Stagger：少量灰煙從身上飄出
-                if (t % 3 == 0) sendDeathParticles(sl, ParticleTypes.SMOKE, x, y, z, 2, 0.3, 0.5, 0.3, 0.02);
-            }
-            case 2 -> {
-                if (t % 2 == 0) sendDeathParticles(sl, ParticleTypes.END_ROD, x, y, z, 3, 0.3, 0.5, 0.3, 0.06);
-            }
-            case 3 -> {
-                if (t % 2 == 0) sendDeathParticles(sl, ParticleTypes.SOUL_FIRE_FLAME, x, y, z, 4, 0.5, 0.7, 0.5, 0.08);
-                if (t % 5 == 0) playDeathSound(sl, SoundEvents.GLASS_BREAK, 0.8F, 1.2F + this.random.nextFloat() * 0.6F);
-            }
-            case 4 -> {
-                if (t % 3 == 0) {
-                    sendDeathParticles(sl, ParticleTypes.LARGE_SMOKE, x, y, z, 4, 1.0, 1.2, 1.0, 0.05);
-                    sendDeathParticles(sl, ParticleTypes.SOUL, x, y, z, 3, 0.8, 1.0, 0.8, 0.08);
-                }
-            }
-            case 5 -> {
-                if (t % 2 == 0) sendDeathParticles(sl, ParticleTypes.SOUL, x, y + 1.5, z, 2, 0.6, 0.5, 0.6, 0.05);
-            }
-        }
-    }
-
-    // 碎片噴飛（Phase 4）— 16 個方向的 ITEM_SNOWBALL 用 motion 噴出（vanilla 粒子可帶速度）
-    // 不另外做實體，因為 vanilla 粒子已能達到「碎屑往外飛 + 重力下墜」的視覺效果
-    private void spawnDeathShards(ServerLevel sl) {
-        double x = getX(), y = getY() + 1.0, z = getZ();
-        for (int i = 0; i < 16; i++) {
-            double ang = i * (Math.PI * 2 / 16);
-            double vx = Math.cos(ang) * 0.6;
-            double vz = Math.sin(ang) * 0.6;
-            double vy = 0.3 + random.nextDouble() * 0.3;
-            // sendParticles 的 xSpeed/ySpeed/zSpeed 在 count > 1 時是 random 散度，count = 0 時直接當速度
-            // 這裡用 count=0 + ySpeed 當「初速」讓每個粒子都有方向性 ballistic
-            sendDeathParticles(sl, ParticleTypes.WHITE_ASH, x, y, z, 0, vx, vy, vz, 1.0);
-            sendDeathParticles(sl, ParticleTypes.POOF, x, y, z, 0, vx * 0.8, vy * 0.8, vz * 0.8, 0.8);
-        }
-        sendDeathParticles(sl, ParticleTypes.FLASH, x, y, z, 1, 0, 0, 0, 0);
-    }
-
-    // 停 BGM：多人模式下，**場上還有其他 boss 活著就不真的停**，等所有 boss 都死才停
-    // 不然兩人合作打 boss A、B，A 先死就把 B 的玩家 BGM 也停了，戰鬥下半場沒氣氛
-    private void stopBgmForAll(ServerLevel sl) {
-        boolean otherBossesAlive = !sl.getEntitiesOfClass(PlayerCloneEntity.class,
-                new AABB(BlockPos.ZERO).inflate(260),
-                e -> e != this && e.isAlive() && !e.dead).isEmpty();
-        if (otherBossesAlive) {
-            // 留 BGM 給場上的玩家繼續聽，只清自己這隻的 sentTo 記錄
-            bgmSentTo.clear();
-            return;
-        }
-        // 場上最後一隻 boss 了 → 真正停 BGM
-        com.github.nalamodikk.common.network.packet.client.BossBgmPacket stop =
-                com.github.nalamodikk.common.network.packet.client.BossBgmPacket.STOP;
-        for (ServerPlayer p : sl.getServer().getPlayerList().getPlayers()) {
-            if (bgmSentTo.contains(p.getUUID())) {
-                net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p, stop);
-            }
-        }
-        bgmSentTo.clear();
-    }
-
-
-    private void spawnRewardChest(ServerLevel sl, boolean includeShard) {
-        BlockPos chestPos = new BlockPos(0, 64, -3);
-        // 用 UPDATE_SUPPRESS_DROPS (flag 32) 換掉舊箱子，避免 vanilla 替換時觸發 Containers.dropContents
-        // 把上次的獎勵噴一地。先 clearContent + 再用 setBlock 雙層保險。
-        if (sl.getBlockEntity(chestPos) instanceof ChestBlockEntity oldChest) {
-            oldChest.clearContent();
-        }
-        sl.setBlock(chestPos, Blocks.CHEST.defaultBlockState(),
-                Block.UPDATE_CLIENTS | Block.UPDATE_SUPPRESS_DROPS);
-        VoidMirrorEvents.addModifiedBlock(chestPos.asLong());
-        if (sl.getBlockEntity(chestPos) instanceof ChestBlockEntity chest) {
-            chest.clearContent();
-            if (includeShard) {
-                chest.setItem(13, new ItemStack(ModItems.MIRROR_CORE_SHARD.get())); // 中央：紀念物（限首次）
-            }
-            chest.setItem(10, new ItemStack(ModItems.MANA_INGOT.get(), 4));
-            chest.setItem(11, new ItemStack(ModItems.MANA_DUST.get(), 8));
-            chest.setItem(15, new ItemStack(ModItems.CORRUPTED_MANA_DUST.get(), 4));
-            chest.setItem(16, new ItemStack(ModItems.MANA_INGOT.get(), 2));
-        }
-    }
-
     @Override
     public void remove(RemovalReason reason) {
         if (!level().isClientSide) {
             this.bossEvent.removeAllPlayers();
-            clearArmorParts();
-            if (level() instanceof ServerLevel sl) discardOwnedArmorDisplays(sl); // fallback 同 die()
+            armorRig.clearParts();
+            if (level() instanceof ServerLevel sl) armorRig.discardOwnedDisplays(sl); // fallback 同 die()
         }
         super.remove(reason);
     }
@@ -1227,7 +1025,7 @@ public class PlayerCloneEntity extends Monster {
             phase2TransitionTicks--;
             setTarget(null);
             this.setDeltaMovement(Vec3.ZERO);
-            tickArmorAssemble();
+            armorRig.tickAssemble();
             return;
         }
 
@@ -1296,7 +1094,7 @@ public class PlayerCloneEntity extends Monster {
             } else {
                 setDeltaMovement(0, getDeltaMovement().y, 0);
             }
-            tickArmorFollow(); // 設好朝向後再跟隨
+            armorRig.tickFollow(); // 設好朝向後再跟隨
             ensureCompanions(); // armored 期間也維護同源娜拉/返回裂縫（外殼期可能拉長，避免它們在這段消失）
             return;
         }
@@ -1649,8 +1447,8 @@ public class PlayerCloneEntity extends Monster {
         // config 關閉時：略過過場，方塊直接到位、不鎖相機
         boolean cinematic = com.github.nalamodikk.common.config.ModCommonConfig.INSTANCE.phase2CinematicEnabled.get();
         phase2TransitionTicks = cinematic ? PHASE2_TRANSITION_LEN : 0;
-        buildArmorShell(sl);
-        if (cinematic) assignAssembleDelays(sl); // 每塊方塊隨機洗牌 + 後期更密的延遲（觀感從慢到快）
+        armorRig.buildShell(sl);
+        if (cinematic) armorRig.assignAssembleDelays(sl); // 每塊方塊隨機洗牌 + 後期更密的延遲（觀感從慢到快）
         sl.playSound(null, blockPosition(), SoundEvents.IRON_GOLEM_REPAIR, SoundSource.HOSTILE, 1.2F, 0.7F);
         sl.sendParticles(ParticleTypes.LARGE_SMOKE, getX(), getY() + 1.0, getZ(), 60, 1.5, 2.0, 1.5, 0.02);
         // 廣播 client 端鎖相機環繞演出（過場開啟時才送）
@@ -1675,248 +1473,25 @@ public class PlayerCloneEntity extends Monster {
     // 重載後仍在外殼狀態：清掉存盤殘留的孤兒外殼並重建，接續二階段（不重播變身演出，armorHp 維持讀回值）
     // Reload 後重建外殼（接續二階段，不重播變身演出）
     private void rebuildArmor(ServerLevel sl) {
-        discardOwnedArmorDisplays(sl);
+        armorRig.discardOwnedDisplays(sl);
         entityData.set(ARMORED, true);
         armoredDimensions = true;
         refreshDimensions();
         this.bossEvent.setColor(BossEvent.BossBarColor.RED);
-        buildArmorShell(sl);
+        armorRig.buildShell(sl);
         updateBossBarName(); // reload 後也要顯示「二階段」尾標
         this.setGlowingTag(true); // 多人模式可見性，reload 後也要重新開
-    }
-
-    // 嘗試從結構模板（data/koniava/structure/mecha_shell.nbt）載入機甲形狀；若找不到回 false fallback 到 hardcoded MECH_SHAPE
-    private static final ResourceLocation MECH_TEMPLATE_ID =
-            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "mecha_shell");
-    // 模板標記方塊：玩家蓋圖時用這些方塊定位
-    // AMETHYST_BLOCK = 本體錨點（剛好對齊 boss 頭探出眼縫的位置），WHITE_WOOL = 一般外殼，RED_WOOL = 左腿（會擺動），BLUE_WOOL = 右腿（會擺動）
-    private static final double ARMORED_ANCHOR_Y = 12.0; // 錨點對應的 world oy（boss 頭部會出現處）
-
-    private boolean tryBuildArmorFromTemplate(ServerLevel sl) {
-        var templateOpt = sl.getStructureManager().get(MECH_TEMPLATE_ID);
-        if (templateOpt.isEmpty()) return false;
-        StructureTemplate template = templateOpt.get();
-        StructurePlaceSettings settings =
-                new StructurePlaceSettings();
-        var anchors = template.filterBlocks(BlockPos.ZERO, settings, Blocks.AMETHYST_BLOCK);
-        if (anchors.isEmpty()) return false; // 必須有錨點才能用
-        BlockPos anchorPos = anchors.get(0).pos();
-        placeArmorMarker(sl, template, settings, anchorPos, Blocks.WHITE_WOOL, 0);
-        placeArmorMarker(sl, template, settings, anchorPos, Blocks.RED_WOOL, 1);
-        placeArmorMarker(sl, template, settings, anchorPos, Blocks.BLUE_WOOL, 2);
-        placeFixedArmorMarker(sl, template, settings, anchorPos, Blocks.YELLOW_WOOL,
-                Blocks.SEA_LANTERN.defaultBlockState(), 0); // 機甲眼：固定 SEA_LANTERN 不被 inventory 替換
-        collectTurretMounts(template, settings, anchorPos);
-        return true;
-    }
-
-    private void collectTurretMounts(StructureTemplate template,
-                                     StructurePlaceSettings settings,
-                                     BlockPos anchorPos) {
-        turretMountOffsets.clear();
-        var blocks = template.filterBlocks(BlockPos.ZERO, settings, Blocks.LIME_WOOL);
-        // 由 X 升序排（左到右），對應到 turret slotIdx 0..N
-        blocks.sort(Comparator.comparingInt(info -> info.pos().getX()));
-        for (var info : blocks) {
-            BlockPos p = info.pos();
-            double ox = p.getX() - anchorPos.getX();
-            double oy = (p.getY() - anchorPos.getY()) + ARMORED_ANCHOR_Y;
-            double oz = p.getZ() - anchorPos.getZ();
-            turretMountOffsets.add(new Vec3(ox, oy, oz));
-        }
     }
 
     /** 提供給 FloatingTurretEntity：取得 slotIdx 對應的砲位 local offset（模板定義）。null = 沒有對應砲位，砲走 fallback 軌道。 */
     @Nullable
     public Vec3 getTurretMountOffset(int slotIdx) {
-        if (slotIdx < 0 || slotIdx >= turretMountOffsets.size()) return null;
-        return turretMountOffsets.get(slotIdx);
-    }
-
-    private void placeArmorMarker(ServerLevel sl,
-                                  StructureTemplate template,
-                                  StructurePlaceSettings settings,
-                                  BlockPos anchorPos, Block marker, int legSide) {
-        var blocks = template.filterBlocks(BlockPos.ZERO, settings, marker);
-        for (var info : blocks) {
-            BlockPos p = info.pos();
-            double ox = p.getX() - anchorPos.getX();
-            double oy = (p.getY() - anchorPos.getY()) + ARMORED_ANCHOR_Y;
-            double oz = p.getZ() - anchorPos.getZ();
-            BlockState state = pickShellBlockState(sl);
-            CompoundTag stateTag = new CompoundTag();
-            stateTag.put("block_state", NbtUtils.writeBlockState(state));
-            spawnArmorPart(sl, ox, oy, oz, stateTag, legSide);
-        }
-    }
-
-    // 固定材質標記：marker 位置 → 永遠生成 fixedState（不從 inventory/env 取代），用於「機甲眼」這類發光點綴
-    private void placeFixedArmorMarker(ServerLevel sl,
-                                       StructureTemplate template,
-                                       StructurePlaceSettings settings,
-                                       BlockPos anchorPos, Block marker,
-                                       BlockState fixedState, int legSide) {
-        var blocks = template.filterBlocks(BlockPos.ZERO, settings, marker);
-        for (var info : blocks) {
-            BlockPos p = info.pos();
-            double ox = p.getX() - anchorPos.getX();
-            double oy = (p.getY() - anchorPos.getY()) + ARMORED_ANCHOR_Y;
-            double oz = p.getZ() - anchorPos.getZ();
-            CompoundTag stateTag = new CompoundTag();
-            stateTag.put("block_state", NbtUtils.writeBlockState(fixedState));
-            spawnArmorPart(sl, ox, oy, oz, stateTag, legSide);
-        }
-    }
-
-    private void buildArmorShell(ServerLevel sl) {
-        if (tryBuildArmorFromTemplate(sl)) return; // 找得到模板就用，找不到 fallback 下面的 hardcoded 剪影
-        int rows = MECH_SHAPE.length;
-        for (int row = 0; row < rows; row++) {
-            String line = MECH_SHAPE[row];
-            int center = line.length() / 2; // 奇數寬度的中央 col (7→3, 5→2)
-            for (int col = 0; col < line.length(); col++) {
-                char ch = line.charAt(col);
-                if (ch != 'o') continue; // 只有 'o' 是外殼，b/'.' 跳過
-                BlockState state = pickShellBlockState(sl);
-                CompoundTag stateTag = new CompoundTag();
-                stateTag.put("block_state", NbtUtils.writeBlockState(state));
-                double ox = col - center;                // 中央對齊本體
-                double oy = (rows - 1 - row);            // 最後一列=腳=本體腳高
-                int leg = (row >= LEG_TOP_ROW) ? (col < center ? 1 : (col > center ? 2 : 0)) : 0;
-                spawnArmorPart(sl, ox, oy, 0, stateTag, leg);
-            }
-        }
-    }
-
-    // 機甲外殼方塊來源：優先從 clonedInventory（複製自玩家背包）扣除一個 BlockItem，否則從 boss 周圍環境取一格方塊（記入 modifiedBlocks 供離開時還原），最後 fallback 黑曜石
-    private BlockState pickShellBlockState(ServerLevel sl) {
-        for (ItemStack stack : clonedInventory) {
-            if (stack.isEmpty()) continue;
-            if (stack.getItem() instanceof BlockItem bi) {
-                stack.shrink(1);
-                return bi.getBlock().defaultBlockState();
-            }
-        }
-        BlockState env = takeNearbyTerrainBlock(sl);
-        if (env != null) return env;
-        return Blocks.OBSIDIAN.defaultBlockState();
-    }
-
-    // 從 boss 周圍掃描可用方塊（非空氣、非流體、非基岩、非已被本機改過），挖空並回傳狀態
-    private BlockState takeNearbyTerrainBlock(ServerLevel sl) {
-        BlockPos bp = blockPosition();
-        int r = 10;
-        for (int attempts = 0; attempts < 48; attempts++) {
-            int dx = sl.random.nextInt(2 * r + 1) - r;
-            int dy = sl.random.nextInt(r + 1) - (r / 2); // 偏向腰部高度
-            int dz = sl.random.nextInt(2 * r + 1) - r;
-            BlockPos p = bp.offset(dx, dy, dz);
-            BlockState state = sl.getBlockState(p);
-            if (state.isAir()) continue;
-            if (!state.getFluidState().isEmpty()) continue;
-            if (state.getDestroySpeed(sl, p) < 0) continue; // 不可破壞（基岩等）
-            // 避開被自己已經放過或挖過的紀錄方塊（VoidMirrorEvents.addModifiedBlock 用同樣 long key）
-            // 註：放/挖都會被加進來，所以這個 check 兼任避開自己組的外殼源頭
-            VoidMirrorEvents.addMinedTerrain(p.asLong(), state); // 記錄原始狀態，離開維度時還原
-            sl.setBlockAndUpdate(p, Blocks.AIR.defaultBlockState());
-            return state;
-        }
-        return null;
-    }
-
-    // Display.BlockDisplay.setBlockState 是 private，只能透過 NBT（block_state）設定外觀
-    private void spawnArmorPart(ServerLevel sl, double ox, double oy, double oz, CompoundTag stateTag, int legSide) {
-        Display.BlockDisplay d = EntityType.BLOCK_DISPLAY.create(sl);
-        if (d == null) return;
-        d.load(stateTag.copy());
-        d.addTag(armorTag());
-        // 變身過場進行中：方塊先放在隨機遠處（上空 + 散布），tickArmorAssemble 插值飛到正位
-        Vec3 spawnOff = phase2TransitionTicks > 0
-                ? new Vec3(ox + (sl.random.nextDouble() - 0.5) * 14.0,
-                           oy + 10.0 + sl.random.nextDouble() * 6.0,
-                           oz + (sl.random.nextDouble() - 0.5) * 14.0)
-                : new Vec3(ox, oy, oz);
-        d.setPos(getX() + spawnOff.x - 0.5, getY() + spawnOff.y, getZ() + spawnOff.z - 0.5);
-        sl.addFreshEntity(d);
-        armorParts.add(d);
-        armorOffsets.add(new Vec3(ox, oy, oz)); // local 偏移（右 x、上 y、前 z），跟隨時依朝向旋轉
-        armorSpawnOffsets.add(spawnOff);
-        armorAssembleDelay.add(0); // 暫填，buildArmorShell 結束後 assignAssembleDelays 改寫
-        armorLegSide.add(legSide);
-    }
-
-    // 變身過場結束後或方塊組裝後，給每塊方塊指派飛入起飛 tick：順序隨機洗牌，間距用 sqrt 縮放 → 早期稀疏、後期密集（觀感由慢到快）
-    private void assignAssembleDelays(ServerLevel sl) {
-        int n = armorParts.size();
-        if (n == 0) return;
-        java.util.List<Integer> order = new ArrayList<>(n);
-        for (int i = 0; i < n; i++) order.add(i);
-        java.util.Collections.shuffle(order, new java.util.Random(sl.random.nextLong()));
-        int span = Math.max(1, PHASE2_TRANSITION_LEN - ARMOR_TRAVEL_TICKS - 5); // 預留 5 tick 收尾
-        for (int k = 0; k < n; k++) {
-            float u = k / (float) Math.max(1, n - 1);
-            float biased = (float) Math.pow(u, 1.8); // 後期更密 → 觀感加速
-            int delay = Math.round(biased * span);
-            armorAssembleDelay.set(order.get(k), delay);
-        }
-    }
-
-    // 變身過場期間：每塊方塊各自有起飛延遲（從 spawnOffset 飛到 final offset），單塊用 ease-in（t²，慢→快）。tickArmorFollow 在過場結束後接手。
-    private void tickArmorAssemble() {
-        if (armorParts.isEmpty()) return;
-        int elapsed = PHASE2_TRANSITION_LEN - phase2TransitionTicks;
-        float yawRad = getYRot() * ((float) Math.PI / 180F);
-        double sinY = Math.sin(yawRad), cosY = Math.cos(yawRad);
-        for (int i = 0; i < armorParts.size(); i++) {
-            Display.BlockDisplay d = armorParts.get(i);
-            if (d == null || !d.isAlive()) continue;
-            Vec3 f = armorOffsets.get(i);
-            Vec3 sp = i < armorSpawnOffsets.size() ? armorSpawnOffsets.get(i) : f;
-            int delay = i < armorAssembleDelay.size() ? armorAssembleDelay.get(i) : 0;
-            float local = Mth.clamp((elapsed - delay) / (float) ARMOR_TRAVEL_TICKS, 0F, 1F);
-            float s = local * local; // ease-in 單塊由慢加速到位
-            double ox = Mth.lerp(s, sp.x, f.x);
-            double oy = Mth.lerp(s, sp.y, f.y);
-            double oz = Mth.lerp(s, sp.z, f.z);
-            double wx = ox * cosY - oz * sinY;
-            double wz = ox * sinY + oz * cosY;
-            d.setPos(getX() + wx - 0.5, getY() + oy, getZ() + wz - 0.5);
-        }
-    }
-
-    // 每 tick 讓外殼方塊跟著本體移動
-    private void tickArmorFollow() {
-        if (armorParts.isEmpty()) return;
-        float yawRad = getYRot() * ((float) Math.PI / 180F);
-        double sinY = Math.sin(yawRad), cosY = Math.cos(yawRad);
-        for (int i = 0; i < armorParts.size(); i++) {
-            Display.BlockDisplay d = armorParts.get(i);
-            if (d == null || !d.isAlive()) continue;
-            Vec3 o = armorOffsets.get(i);
-            double lz = o.z;
-            int leg = armorLegSide.get(i);
-            if (leg != 0) { // 腿沿前後方向繞髖擺動（越靠腳擺幅越大），左右反相
-                double phase = walkPhase + (leg == 2 ? Math.PI : 0.0);
-                lz += (LEG_HIP_Y - o.y) * Math.sin(phase) * 0.35;
-            }
-            // 依本體朝向把 local 偏移（右 x、前 z）旋轉到世界座標
-            double wx = o.x * cosY - lz * sinY;
-            double wz = o.x * sinY + lz * cosY;
-            d.setPos(getX() + wx - 0.5, getY() + o.y, getZ() + wz - 0.5);
-        }
+        return armorRig.getTurretMountOffset(slotIdx);
     }
 
     // 外殼被挖爆：剝落外殼、本體現身落地，回到一階段（玩家型態）行為繼續被攻擊
     private void breakArmor(ServerLevel sl) {
-        // 剝落：每塊外殼位置噴深邃石碎裂粒子，再移除（比單一爆炸更像機甲崩解）
-        BlockParticleOption crumble =
-                new BlockParticleOption(ParticleTypes.BLOCK,
-                        Blocks.OBSIDIAN.defaultBlockState());
-        for (Display.BlockDisplay d : armorParts) {
-            if (d == null || !d.isAlive()) continue;
-            sl.sendParticles(crumble, d.getX(), d.getY() + 0.5, d.getZ(), 6, 0.2, 0.2, 0.2, 0.12);
-        }
-        clearArmorParts();
+        armorRig.breakVisual(sl); // 剝落：噴碎裂粒子 + 移除外殼方塊
         entityData.set(ARMORED, false);
         armoredDimensions = false; // 碰撞箱還原正常
         refreshDimensions();
@@ -1925,27 +1500,6 @@ public class PlayerCloneEntity extends Monster {
         updateBossBarName(); // 顯示「三階段」尾標
         sl.playSound(null, blockPosition(), SoundEvents.IRON_GOLEM_DEATH, SoundSource.HOSTILE, 1.3F, 0.8F);
         sl.sendParticles(ParticleTypes.EXPLOSION, getX(), getY() + 1.0, getZ(), 12, 1.5, 2.0, 1.5, 0.0);
-    }
-
-    // 清掉殘留的外殼方塊（死亡 / 離開時呼叫，不留孤兒 display）
-    private void clearArmorParts() {
-        for (Display.BlockDisplay d : armorParts) {
-            if (d != null) d.discard();
-        }
-        armorParts.clear();
-        armorOffsets.clear();
-        armorSpawnOffsets.clear();
-        armorAssembleDelay.clear();
-        armorLegSide.clear();
-    }
-
-    // 額外掃描場地，清掉「自己」tag 的孤兒 display（fallback：pendingArmorRebuild 未消費就 die、或存盤殘留）
-    private void discardOwnedArmorDisplays(ServerLevel sl) {
-        String myTag = armorTag();
-        for (Display.BlockDisplay d : sl.getEntitiesOfClass(Display.BlockDisplay.class,
-                this.getBoundingBox().inflate(24.0), e -> e.getTags().contains(myTag))) {
-            d.discard();
-        }
     }
 
     // 玩家飛高（被擊飛或自行升空）時，分身墊方塊往上跳追擊，像玩家 pillar jump
@@ -1994,7 +1548,7 @@ public class PlayerCloneEntity extends Monster {
         if (!(level() instanceof ServerLevel sl)) return;
         naraCheckCooldown = 40;
         // 非變身狀態下清掉「自己」殘留的孤兒外殼方塊（重載後 armorParts 會清空但 BlockDisplay 存盤；owner-specific tag 避免清到別的 boss 的活外殼）
-        if (!isArmored()) discardOwnedArmorDisplays(sl);
+        if (!isArmored()) armorRig.discardOwnedDisplays(sl);
         UUID id = getSourceUUID().orElse(null);
         if (id == null) return;
         // 娜拉幻影（不存盤）
