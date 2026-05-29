@@ -11,10 +11,11 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -113,10 +114,11 @@ public class FloatingTurretEntity extends PathfinderMob {
 
     @Nullable
     LivingEntity findNearestHostile() {
-        List<Monster> hostiles = level().getEntitiesOfClass(
-                Monster.class,
+        // 用 Enemy 介面而非 Monster 類別：包含 Slime、Ghast、Phantom 等 Mob implements Enemy 的敵對生物
+        List<Mob> hostiles = level().getEntitiesOfClass(
+                Mob.class,
                 this.getBoundingBox().inflate(PASSIVE_RANGE),
-                LivingEntity::isAlive
+                e -> e.isAlive() && e instanceof Enemy
         );
         return hostiles.stream()
                 .min(Comparator.comparingDouble(e -> e.distanceToSqr(this)))

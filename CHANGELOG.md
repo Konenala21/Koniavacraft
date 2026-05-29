@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Floating turrets (slot 0/1 auto-attack mode) now target Slime, Ghast, Phantom, and other hostile Mobs that implement the `Enemy` interface but don't extend `Monster`. Previously the hostile filter used `Monster.class` directly, so non-Monster enemies like slimes were silently ignored and the turret just sat there doing nothing while the player took damage. Now it filters on `Mob` + `instanceof Enemy`, covering the full set of vanilla "hostile mob" types.
+- 浮游砲（裝備槽 0/1 自走砲模式）現在會攻擊史萊姆、惡魂、幻翼等實作 `Enemy` 介面但不繼承 `Monster` 的敵對生物了。之前的敵對過濾直接用 `Monster.class`，史萊姆這種非 Monster 的敵對被靜默漏掉，砲就乖乖站著不動看你被打。現在改成 `Mob` + `instanceof Enemy`，完整覆蓋 vanilla 所有「敵對生物」類型。
+
+- Player no longer gets controlled by their own floating turret's control projectiles. The control plug-in projectile (slow / root / levitation) was spawned with the turret entity as its owner, not the player; vanilla `canHitEntity` only skips the projectile's own owner, so the player was a valid target and could get hit by their own bullet on close-range firing arcs. Now the projectile is spawned with the player as owner, matching how the normal attack bullet already worked.
+- 玩家現在不會被自己浮游砲的控制彈控住了。控制彈插件（緩速 / 定身 / 漂浮）發射時 owner 是砲實體不是玩家，vanilla `canHitEntity` 只擋 owner，所以玩家是合法目標、近距離弧線會打到自己。現在改成 owner 傳玩家，跟普通攻擊彈本來就是這樣的行為一致。
+
 - Mirror Boss's orbiting / handheld floating turrets are now invulnerable AND non-pickable. Two-layer change: (1) `hurt` rejects any player-rooted damage on clone turrets so they can't be ground down; (2) `isPickable` returns false in clone mode so the player's arrows / turret projectiles / melee ray-cast skip the turret entirely and pass through to hit the boss behind it. Previously the turrets could be used as a shield wall around the boss, ruining the fight; now they're a pure visual / offensive threat that players have to dodge but can't waste attacks on. Same-source projectile self-damage is still ignored, and non-player environmental damage still applies.
 - 鏡像 Boss 身邊繞行/手持的浮游砲現在玩家完全打不到也選不到。兩層修法：(1) `hurt` 對玩家來源傷害一律回 false，無法被磨血；(2) `isPickable` 在 clone 模式回 false，玩家的箭/浮游砲彈/近戰 ray-cast 直接穿過砲，命中後面的 boss 本體。之前 boss 會把砲當肉盾擋玩家攻擊，體驗很差；現在砲純粹是視覺威脅 + 火力輸出，玩家要閃但不會浪費攻擊在砲上。同源彈自傷免疫保留，非玩家來源環境傷害仍有效。
 

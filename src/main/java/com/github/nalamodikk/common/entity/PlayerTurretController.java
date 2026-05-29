@@ -218,8 +218,9 @@ class PlayerTurretController {
             if (cd > 0) { controlCooldowns.put(b, cd - 1); continue; }
             Vec3 spawn = turret.position().add(0, 0.2, 0);
             Vec3 tgt = target.getBoundingBox().getCenter();
+            // owner 用 player 而非 turret：FloatingTurretProjectile.canHitEntity 會擋 owner，避免控制彈反控玩家自己
             sl.addFreshEntity(FloatingTurretProjectile.shootControl(
-                    sl, turret, spawn, tgt, b.getControlEffect(), b.getControlDuration()));
+                    sl, owner, spawn, tgt, b.getControlEffect(), b.getControlDuration()));
             controlCooldowns.put(b, b.getControlCooldown());
         }
     }
