@@ -810,6 +810,15 @@ public class PlayerCloneEntity extends Monster {
             // BGM 觸發改到 customServerAiStep 統一處理（per-player 一次性追蹤），這裡不直接送 packet
             graceTicks = 40; // 站定 2 秒給玩家準備，不立刻偷襲
             // 返回裂縫與娜拉幻影由 ensureCompanions（active tick）確保恰好一個
+            // 啟動 Nara 跟隨玩家：intro 結束後 Nara 不再固定在 spawn 點，
+            // 避免玩家追 boss 走遠後 boss 死亡演出抓不到她（findNara 範圍 80 格）
+            getSourceUUID().ifPresent(srcId -> {
+                for (NaraPhantomEntity nara : sl.getEntitiesOfClass(NaraPhantomEntity.class,
+                        new AABB(BlockPos.ZERO).inflate(300),
+                        n -> n.getSourceUUID().map(srcId::equals).orElse(false))) {
+                    nara.enablePlayerFollow();
+                }
+            });
         }
         // 繞行砲由 customServerAiStep 的 turretsSpawned 守門生成（涵蓋啟動 + 重載後重生）
     }
@@ -1994,6 +2003,14 @@ public class PlayerCloneEntity extends Monster {
                 n -> n.getSourceUUID().map(id::equals).orElse(false));
         if (naras.isEmpty()) {
             VoidMirrorTeleport.spawnNaraPhantom(sl, id);
+            // 重載後重生：若 intro 已結束（boss 進攻中）直接啟用跟隨，銜接 activateAfterIntro 漏掉的初始化
+            if (!introActive) {
+                for (NaraPhantomEntity nara : sl.getEntitiesOfClass(NaraPhantomEntity.class,
+                        new AABB(BlockPos.ZERO).inflate(300),
+                        n -> n.getSourceUUID().map(id::equals).orElse(false))) {
+                    nara.enablePlayerFollow();
+                }
+            }
         } else {
             for (int i = 1; i < naras.size(); i++) naras.get(i).discard();
         }

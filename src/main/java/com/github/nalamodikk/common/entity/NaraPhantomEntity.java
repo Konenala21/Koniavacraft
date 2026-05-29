@@ -4,6 +4,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
@@ -12,6 +13,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
 import java.util.Optional;
@@ -86,19 +88,52 @@ public class NaraPhantomEntity extends PathfinderMob {
     // Boss 死亡時設定一個倒數 tick，倒數到 0 自我 discard（讓死亡演出有時間用她當對白主角）
     private int victoryFarewellTicks = -1;
 
+    // 跟隨來源玩家：intro 結束後由 PlayerCloneEntity.activateAfterIntro 啟用，
+    // 確保 boss 死亡時 Nara 仍在玩家附近 (BossDeathCameraManager.findNara 範圍 80 格內)。
+    private boolean followingPlayer = false;
+    private static final double FOLLOW_DISTANCE = 15.0;
+    private static final double FOLLOW_DISTANCE_SQ = FOLLOW_DISTANCE * FOLLOW_DISTANCE;
+    private static final double FOLLOW_SPEED = 0.3; // 每 tick 移動上限（≈6 b/s，足以跟上奔跑玩家）
+
     public void startVictoryFarewell(int ticks) {
         this.victoryFarewellTicks = ticks;
+    }
+
+    public void enablePlayerFollow() {
+        this.followingPlayer = true;
     }
 
     @Override
     public void tick() {
         super.tick();
-        if (!level().isClientSide && victoryFarewellTicks > 0) {
+        if (level().isClientSide) return;
+        if (victoryFarewellTicks > 0) {
             victoryFarewellTicks--;
-            if (victoryFarewellTicks == 0) {
-                this.discard();
-            }
+            if (victoryFarewellTicks == 0) this.discard();
+            return; // 死亡演出期間凍結位置，配合相機鎖 Nara
         }
+        if (followingPlayer) followSourcePlayer();
+    }
+
+    private void followSourcePlayer() {
+        if (!(level() instanceof ServerLevel sl)) return;
+        UUID src = entityData.get(SOURCE_UUID).orElse(null);
+        if (src == null) return;
+        Player player = sl.getPlayerByUUID(src);
+        if (player == null) return;
+        Vec3 toPlayer = player.position().subtract(position());
+        double distSq = toPlayer.lengthSqr();
+        if (distSq <= FOLLOW_DISTANCE_SQ) return;
+        double dist = Math.sqrt(distSq);
+        double moveDist = Math.min(dist - FOLLOW_DISTANCE, FOLLOW_SPEED);
+        Vec3 dir = toPlayer.scale(1.0 / dist);
+        setPos(getX() + dir.x * moveDist,
+                getY() + dir.y * moveDist,
+                getZ() + dir.z * moveDist);
+        // body 朝向玩家（頭部視線由 LookAtPlayerGoal 處理）
+        float yaw = (float) Math.toDegrees(Math.atan2(-toPlayer.x, toPlayer.z));
+        setYRot(yaw);
+        yBodyRot = yaw;
     }
 
     @Override
