@@ -532,8 +532,11 @@ public class FloatingTurretEntity extends PathfinderMob {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        // 分身砲：玩家可以摧毀它（套用 DEFENSE 減傷）
+        // 分身砲：玩家無法傷害（強制把仇恨導向 boss 本體，避免玩家先清砲再打 boss）
         if (cloneOwner != null) {
+            if (source.getEntity() instanceof Player) {
+                return false;
+            }
             // 免疫同源浮游砲的傷害（含蓄力彈爆炸），不被自己或同伴的砲炸死
             if (source.getDirectEntity() instanceof FloatingTurretProjectile proj && proj.getOwner() == cloneOwner) {
                 return false;
@@ -601,6 +604,8 @@ public class FloatingTurretEntity extends PathfinderMob {
 
     @Override
     public boolean isPickable() {
+        // 分身砲對玩家不可選取：玩家近戰/箭/浮游砲彈的 ray-cast 直接穿過，避免 boss 拿砲當肉盾
+        if (cloneOwner != null) return false;
         return true;
     }
 
