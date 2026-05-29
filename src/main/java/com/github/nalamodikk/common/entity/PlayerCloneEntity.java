@@ -1,7 +1,6 @@
 package com.github.nalamodikk.common.entity;
 
 import com.github.nalamodikk.KoniavacraftMod;
-import com.github.nalamodikk.register.ModItems;
 import com.github.nalamodikk.common.dimension.VoidMirrorSavedData;
 import com.github.nalamodikk.common.dimension.VoidMirrorTeleport;
 import com.github.nalamodikk.common.event.VoidMirrorEvents;
@@ -13,66 +12,63 @@ import com.github.nalamodikk.common.network.packet.client.Phase2TransitionPacket
 import com.github.nalamodikk.register.ModDataAttachments;
 import com.github.nalamodikk.register.ModDataComponents;
 import com.github.nalamodikk.register.ModEntities;
+import com.github.nalamodikk.register.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.util.Mth;
 import net.minecraft.world.BossEvent;
-import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializers;
-import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.world.ContainerHelper;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.Display;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Equipable;
-import net.minecraft.tags.ItemTags;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.*;
 import net.minecraft.world.item.component.BundleContents;
 import net.minecraft.world.item.component.ItemContainerContents;
-import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 public class PlayerCloneEntity extends Monster {
 
@@ -173,8 +169,8 @@ public class PlayerCloneEntity extends Monster {
     // 二階段變身過場（server tick 倒數）：期間 boss 凍結 AI + 無敵，client 端鎖相機環繞
     private static final int PHASE2_TRANSITION_LEN = 220;
     private int phase2TransitionTicks = 0;
-    private static final net.minecraft.world.entity.EntityDimensions ARMOR_DIMENSIONS =
-            net.minecraft.world.entity.EntityDimensions.scalable(5.0F, 16.0F); // 涵蓋機甲外殼的碰撞箱
+    private static final EntityDimensions ARMOR_DIMENSIONS =
+            EntityDimensions.scalable(5.0F, 16.0F); // 涵蓋機甲外殼的碰撞箱
     private final ArrayList<Integer> armorLegSide = new ArrayList<>(); // 與 armorParts 平行：0=非腿 1=左腿 2=右腿
     private static final String ARMOR_TAG_PREFIX = "koniava_mecha_armor_"; // 後接 boss UUID，避免多 boss 場景下 cleanup 清掉別的 boss 的活 display
 
@@ -302,7 +298,7 @@ public class PlayerCloneEntity extends Monster {
     }
 
     @Override
-    protected net.minecraft.world.entity.EntityDimensions getDefaultDimensions(net.minecraft.world.entity.Pose pose) {
+    protected EntityDimensions getDefaultDimensions(Pose pose) {
         return armoredDimensions ? ARMOR_DIMENSIONS : super.getDefaultDimensions(pose);
     }
 
@@ -373,13 +369,13 @@ public class PlayerCloneEntity extends Monster {
         java.util.List<ItemStack> prioritized = new ArrayList<>(pool.size());
         for (ItemStack s : pool) if (!s.isEmpty() && s.getItem() instanceof FloatingTurretItem) prioritized.add(s);
         for (ItemStack s : pool) if (!s.isEmpty() && isProperWeapon(s)) prioritized.add(s);
-        for (ItemStack s : pool) if (!s.isEmpty() && s.getItem() instanceof net.minecraft.world.item.ShieldItem) prioritized.add(s);
+        for (ItemStack s : pool) if (!s.isEmpty() && s.getItem() instanceof ShieldItem) prioritized.add(s);
         // 其餘物品（包含工具、方塊等）尾隨在後
         for (ItemStack s : pool) {
             if (s.isEmpty()) continue;
             if (s.getItem() instanceof FloatingTurretItem) continue;
             if (isProperWeapon(s)) continue;
-            if (s.getItem() instanceof net.minecraft.world.item.ShieldItem) continue;
+            if (s.getItem() instanceof ShieldItem) continue;
             prioritized.add(s);
         }
         int idx = 0;
@@ -435,7 +431,7 @@ public class PlayerCloneEntity extends Monster {
             turretVolleyTelegraph--;
             if (level() instanceof ServerLevel sl) {
                 for (FloatingTurretEntity t : findOwnedTurrets(sl)) {
-                    sl.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,
+                    sl.sendParticles(ParticleTypes.END_ROD,
                             t.getX(), t.getY(), t.getZ(), 2, 0.1, 0.1, 0.1, 0.02);
                 }
             }
@@ -601,7 +597,7 @@ public class PlayerCloneEntity extends Monster {
             return;
         }
         this.setPos(introX, y, introZ);
-        this.setDeltaMovement(net.minecraft.world.phys.Vec3.ZERO);
+        this.setDeltaMovement(Vec3.ZERO);
         this.setYRot(180.0F);
         this.yBodyRot = 180.0F;
         this.yHeadRot = 180.0F;
@@ -660,9 +656,9 @@ public class PlayerCloneEntity extends Monster {
     // 副手有盾且攻擊來自前方 (dot > 0.5) 就擋下：盾消耗耐久 + 播音效，不阻擋穿盾類型傷害
     private boolean tryShieldBlock(DamageSource source) {
         if (!com.github.nalamodikk.common.config.ModCommonConfig.INSTANCE.bossShieldBlockEnabled.get()) return false;
-        if (!(this.getOffhandItem().getItem() instanceof net.minecraft.world.item.ShieldItem)) return false;
-        if (source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_SHIELD)) return false;
-        net.minecraft.world.entity.Entity src = source.getDirectEntity();
+        if (!(this.getOffhandItem().getItem() instanceof ShieldItem)) return false;
+        if (source.is(DamageTypeTags.BYPASSES_SHIELD)) return false;
+        Entity src = source.getDirectEntity();
         if (src == null) return false;
         Vec3 toSrc = src.position().subtract(this.position());
         if (toSrc.lengthSqr() < 1e-4) return false;
@@ -684,7 +680,7 @@ public class PlayerCloneEntity extends Monster {
         for (ItemStack st : clonedInventory) {
             if (st.isEmpty()) continue;
             if (turret.isEmpty() && st.getItem() instanceof FloatingTurretItem) turret = st;
-            else if (shield.isEmpty() && st.getItem() instanceof net.minecraft.world.item.ShieldItem) shield = st;
+            else if (shield.isEmpty() && st.getItem() instanceof ShieldItem) shield = st;
             if (!turret.isEmpty()) break;
         }
         ItemStack pick = !turret.isEmpty() ? turret : shield;
@@ -731,9 +727,9 @@ public class PlayerCloneEntity extends Monster {
     // 真武器：劍 / 斧 / 三叉戟（不含鎬鋤鏟那種純工具）
     private static boolean isProperWeapon(ItemStack stack) {
         if (stack.isEmpty()) return false;
-        return stack.getItem() instanceof net.minecraft.world.item.SwordItem
-                || stack.getItem() instanceof net.minecraft.world.item.AxeItem
-                || stack.getItem() instanceof net.minecraft.world.item.TridentItem;
+        return stack.getItem() instanceof SwordItem
+                || stack.getItem() instanceof AxeItem
+                || stack.getItem() instanceof TridentItem;
     }
 
     private static double weaponAttack(ItemStack stack) {
@@ -862,9 +858,8 @@ public class PlayerCloneEntity extends Monster {
     @Override
     public void die(DamageSource cause) {
         // 偵測指令殺死 / out_of_world：跳過 20s 演出直接 remove（管理員/開發 debug 方便）
-        boolean isCommandKill = cause.is(net.minecraft.world.damagesource.DamageTypes.GENERIC_KILL)
-                || cause.is(net.minecraft.world.damagesource.DamageTypes.OUT_OF_WORLD)
-                || cause.is(net.minecraft.world.damagesource.DamageTypes.FELL_OUT_OF_WORLD);
+        boolean isCommandKill = cause.is(DamageTypes.GENERIC_KILL)
+                || cause.is(DamageTypes.FELL_OUT_OF_WORLD);
         super.die(cause);
         if (level().isClientSide || !(level() instanceof ServerLevel sl)) return;
         // 死亡演出：120-tick 五階段動畫由 tickDeath() 接手，這裡只負責停 BGM 與清理任務
@@ -958,9 +953,9 @@ public class PlayerCloneEntity extends Monster {
             }
             case 2 -> {
                 // Glow Up：紫色能量湧出，全身發光開始
-                sl.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,
+                sl.sendParticles(ParticleTypes.END_ROD,
                         x, y, z, 60, 0.8, 1.2, 0.8, 0.05);
-                sl.sendParticles(net.minecraft.core.particles.ParticleTypes.PORTAL,
+                sl.sendParticles(ParticleTypes.PORTAL,
                         x, y, z, 120, 1.0, 1.5, 1.0, 0.4);
                 sl.playSound(null, blockPosition(), SoundEvents.BEACON_ACTIVATE,
                         SoundSource.HOSTILE, 1.5F, 1.4F);
@@ -969,7 +964,7 @@ public class PlayerCloneEntity extends Monster {
             }
             case 3 -> {
                 // Crack：玻璃連續碎裂 + 在 boss 中心生成裂縫實體（重用既有 SpaceCrack shader）
-                sl.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL_FIRE_FLAME,
+                sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
                         x, y, z, 50, 0.6, 0.8, 0.6, 0.10);
                 sl.playSound(null, blockPosition(), SoundEvents.GLASS_BREAK,
                         SoundSource.HOSTILE, 2.0F, 0.7F);
@@ -986,11 +981,11 @@ public class PlayerCloneEntity extends Monster {
             }
             case 4 -> {
                 // Shatter：大爆破 + slow-mo 啟動 + 碎片噴飛
-                sl.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER,
+                sl.sendParticles(ParticleTypes.EXPLOSION_EMITTER,
                         x, y, z, 2, 0.5, 0.5, 0.5, 0.0);
-                sl.sendParticles(net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE,
+                sl.sendParticles(ParticleTypes.LARGE_SMOKE,
                         x, y, z, 80, 1.5, 1.8, 1.5, 0.15);
-                sl.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH,
+                sl.sendParticles(ParticleTypes.FLASH,
                         x, y, z, 2, 0.3, 0.3, 0.3, 0.0);
                 sl.playSound(null, blockPosition(), SoundEvents.ENDER_DRAGON_DEATH,
                         SoundSource.HOSTILE, 2.0F, 0.7F);
@@ -1000,9 +995,9 @@ public class PlayerCloneEntity extends Monster {
             }
             case 5 -> {
                 // Final Flash：全屏白光 + 靈魂上飄 + 寶箱生成（演出尾聲才出）
-                sl.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH,
+                sl.sendParticles(ParticleTypes.FLASH,
                         x, y, z, 4, 0.5, 0.5, 0.5, 0.0);
-                sl.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL,
+                sl.sendParticles(ParticleTypes.SOUL,
                         x, y, z, 60, 1.2, 1.5, 1.2, 0.15);
                 sl.playSound(null, blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME,
                         SoundSource.HOSTILE, 2.0F, 1.8F);
@@ -1020,21 +1015,21 @@ public class PlayerCloneEntity extends Monster {
             case 1 -> {
                 // Stagger：少量灰煙從身上飄出
                 if (t % 3 == 0) {
-                    sl.sendParticles(net.minecraft.core.particles.ParticleTypes.SMOKE,
+                    sl.sendParticles(ParticleTypes.SMOKE,
                             x, y, z, 2, 0.3, 0.5, 0.3, 0.02);
                 }
             }
             case 2 -> {
                 // Glow Up：持續從中心向外噴 end rod 光點
                 if (t % 2 == 0) {
-                    sl.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,
+                    sl.sendParticles(ParticleTypes.END_ROD,
                             x, y, z, 3, 0.3, 0.5, 0.3, 0.06);
                 }
             }
             case 3 -> {
                 // Crack：靈魂火與玻璃碎片連續噴
                 if (t % 2 == 0) {
-                    sl.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL_FIRE_FLAME,
+                    sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
                             x, y, z, 4, 0.5, 0.7, 0.5, 0.08);
                 }
                 if (t % 5 == 0) {
@@ -1045,16 +1040,16 @@ public class PlayerCloneEntity extends Monster {
             case 4 -> {
                 // Shatter：碎片散開 + 雲煙繚繞
                 if (t % 3 == 0) {
-                    sl.sendParticles(net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE,
+                    sl.sendParticles(ParticleTypes.LARGE_SMOKE,
                             x, y, z, 4, 1.0, 1.2, 1.0, 0.05);
-                    sl.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL,
+                    sl.sendParticles(ParticleTypes.SOUL,
                             x, y, z, 3, 0.8, 1.0, 0.8, 0.08);
                 }
             }
             case 5 -> {
                 // Final Flash：靈魂緩緩上飄
                 if (t % 2 == 0) {
-                    sl.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL,
+                    sl.sendParticles(ParticleTypes.SOUL,
                             x, y + 1.5, z, 2, 0.6, 0.5, 0.6, 0.05);
                 }
             }
@@ -1072,13 +1067,13 @@ public class PlayerCloneEntity extends Monster {
             double vy = 0.3 + random.nextDouble() * 0.3;
             // sendParticles 的 xSpeed/ySpeed/zSpeed 在 count > 1 時是 random 散度，count = 0 時直接當速度
             // 這裡用 count=0 + ySpeed 當「初速」讓每個粒子都有方向性 ballistic
-            sl.sendParticles(net.minecraft.core.particles.ParticleTypes.WHITE_ASH,
+            sl.sendParticles(ParticleTypes.WHITE_ASH,
                     x, y, z, 0, vx, vy, vz, 1.0);
-            sl.sendParticles(net.minecraft.core.particles.ParticleTypes.POOF,
+            sl.sendParticles(ParticleTypes.POOF,
                     x, y, z, 0, vx * 0.8, vy * 0.8, vz * 0.8, 0.8);
         }
         // 中心一個大爆破閃光粒子
-        sl.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH,
+        sl.sendParticles(ParticleTypes.FLASH,
                 x, y, z, 1, 0, 0, 0, 0);
     }
 
@@ -1086,7 +1081,7 @@ public class PlayerCloneEntity extends Monster {
     private void stopBgmForAll(ServerLevel sl) {
         com.github.nalamodikk.common.network.packet.client.BossBgmPacket stop =
                 com.github.nalamodikk.common.network.packet.client.BossBgmPacket.STOP;
-        for (net.minecraft.server.level.ServerPlayer p : sl.getServer().getPlayerList().getPlayers()) {
+        for (ServerPlayer p : sl.getServer().getPlayerList().getPlayers()) {
             if (bgmSentTo.contains(p.getUUID())) {
                 net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p, stop);
             }
@@ -1097,15 +1092,15 @@ public class PlayerCloneEntity extends Monster {
 
     private void spawnRewardChest(ServerLevel sl, boolean includeShard) {
         BlockPos chestPos = new BlockPos(0, 64, -3);
-        // 先清空舊箱子內容物再 setBlock，避免 vanilla `setBlockAndUpdate` 觸發舊 chest 的
-        // Block.onRemove → dropResources → 內容物噴一地。之前玩家重打 boss 時就因為這個 bug
-        // 看到上次的獎勵掉在地上。
-        if (sl.getBlockEntity(chestPos) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity oldChest) {
+        // 用 UPDATE_SUPPRESS_DROPS (flag 32) 換掉舊箱子，避免 vanilla 替換時觸發 Containers.dropContents
+        // 把上次的獎勵噴一地。先 clearContent + 再用 setBlock 雙層保險。
+        if (sl.getBlockEntity(chestPos) instanceof ChestBlockEntity oldChest) {
             oldChest.clearContent();
         }
-        sl.setBlockAndUpdate(chestPos, Blocks.CHEST.defaultBlockState());
+        sl.setBlock(chestPos, Blocks.CHEST.defaultBlockState(),
+                Block.UPDATE_CLIENTS | Block.UPDATE_SUPPRESS_DROPS);
         VoidMirrorEvents.addModifiedBlock(chestPos.asLong());
-        if (sl.getBlockEntity(chestPos) instanceof net.minecraft.world.level.block.entity.ChestBlockEntity chest) {
+        if (sl.getBlockEntity(chestPos) instanceof ChestBlockEntity chest) {
             chest.clearContent();
             if (includeShard) {
                 chest.setItem(13, new ItemStack(ModItems.MIRROR_CORE_SHARD.get())); // 中央：紀念物（限首次）
@@ -1366,7 +1361,7 @@ public class PlayerCloneEntity extends Monster {
         entityData.set(SKILL_TARGET, skillTargetPos);
         entityData.set(TELEGRAPH_SKILL, pendingSkill.ordinal() + 1); // 同步給 client 畫預兆
         // 每招不同蓄力音，配合預兆讓玩家辨識
-        net.minecraft.sounds.SoundEvent windup = switch (pendingSkill) {
+        SoundEvent windup = switch (pendingSkill) {
             case RAM_WALL -> SoundEvents.WARDEN_SONIC_CHARGE;
             case LIFT_UP -> SoundEvents.PISTON_EXTEND;
             case CHARGE_RAMP -> SoundEvents.RAVAGER_ROAR;
@@ -1528,9 +1523,9 @@ public class PlayerCloneEntity extends Monster {
     private boolean tryBuildArmorFromTemplate(ServerLevel sl) {
         var templateOpt = sl.getStructureManager().get(MECH_TEMPLATE_ID);
         if (templateOpt.isEmpty()) return false;
-        net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate template = templateOpt.get();
-        net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings settings =
-                new net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings();
+        StructureTemplate template = templateOpt.get();
+        StructurePlaceSettings settings =
+                new StructurePlaceSettings();
         var anchors = template.filterBlocks(BlockPos.ZERO, settings, Blocks.AMETHYST_BLOCK);
         if (anchors.isEmpty()) return false; // 必須有錨點才能用
         BlockPos anchorPos = anchors.get(0).pos();
@@ -1543,13 +1538,13 @@ public class PlayerCloneEntity extends Monster {
         return true;
     }
 
-    private void collectTurretMounts(net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate template,
-                                     net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings settings,
+    private void collectTurretMounts(StructureTemplate template,
+                                     StructurePlaceSettings settings,
                                      BlockPos anchorPos) {
         turretMountOffsets.clear();
         var blocks = template.filterBlocks(BlockPos.ZERO, settings, Blocks.LIME_WOOL);
         // 由 X 升序排（左到右），對應到 turret slotIdx 0..N
-        blocks.sort(java.util.Comparator.comparingInt(info -> info.pos().getX()));
+        blocks.sort(Comparator.comparingInt(info -> info.pos().getX()));
         for (var info : blocks) {
             BlockPos p = info.pos();
             double ox = p.getX() - anchorPos.getX();
@@ -1567,9 +1562,9 @@ public class PlayerCloneEntity extends Monster {
     }
 
     private void placeArmorMarker(ServerLevel sl,
-                                  net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate template,
-                                  net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings settings,
-                                  BlockPos anchorPos, net.minecraft.world.level.block.Block marker, int legSide) {
+                                  StructureTemplate template,
+                                  StructurePlaceSettings settings,
+                                  BlockPos anchorPos, Block marker, int legSide) {
         var blocks = template.filterBlocks(BlockPos.ZERO, settings, marker);
         for (var info : blocks) {
             BlockPos p = info.pos();
@@ -1585,9 +1580,9 @@ public class PlayerCloneEntity extends Monster {
 
     // 固定材質標記：marker 位置 → 永遠生成 fixedState（不從 inventory/env 取代），用於「機甲眼」這類發光點綴
     private void placeFixedArmorMarker(ServerLevel sl,
-                                       net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate template,
-                                       net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings settings,
-                                       BlockPos anchorPos, net.minecraft.world.level.block.Block marker,
+                                       StructureTemplate template,
+                                       StructurePlaceSettings settings,
+                                       BlockPos anchorPos, Block marker,
                                        BlockState fixedState, int legSide) {
         var blocks = template.filterBlocks(BlockPos.ZERO, settings, marker);
         for (var info : blocks) {
@@ -1742,8 +1737,8 @@ public class PlayerCloneEntity extends Monster {
     // 外殼被挖爆：剝落外殼、本體現身落地，回到一階段（玩家型態）行為繼續被攻擊
     private void breakArmor(ServerLevel sl) {
         // 剝落：每塊外殼位置噴深邃石碎裂粒子，再移除（比單一爆炸更像機甲崩解）
-        net.minecraft.core.particles.BlockParticleOption crumble =
-                new net.minecraft.core.particles.BlockParticleOption(ParticleTypes.BLOCK,
+        BlockParticleOption crumble =
+                new BlockParticleOption(ParticleTypes.BLOCK,
                         Blocks.OBSIDIAN.defaultBlockState());
         for (Display.BlockDisplay d : armorParts) {
             if (d == null || !d.isAlive()) continue;

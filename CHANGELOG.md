@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 - The return rift inside the Mirror dimension no longer disappears when the boss dies. Previously the boss death cleanup ran `removeForOwner` on both the overworld AND the mirror dimension, accidentally erasing the player's only way out. Now only overworld entry rifts are cleared, and the pending-removal flag is dimension-aware (mirror dim rifts ignore it).
 - 鏡中世界的返回裂縫在 boss 死亡時不再被誤刪了。之前 boss 死亡清理同時跑了 overworld 跟 mirror dim 的 `removeForOwner`，把玩家唯一的出口也一起清掉。現在只清 overworld 入口裂縫，pending 旗標也改成只影響非 mirror 維度。
 
+- `/kill` (or any administrative kill via generic_kill / fell_out_of_world damage types) on the Mirror Boss now skips the 20-second cinematic and removes the boss instantly. The camera no longer locks up while admins / debug devs are wiping a stuck fight.
+- 對鏡像 Boss 用 `/kill`（或任何 generic_kill / fell_out_of_world 傷害類型的指令殺死）現在會跳過 20 秒演出直接 remove，玩家相機不會被鎖住，方便管理員 / debug 清場。
+
+- The reward chest at the end of the Mirror World really does keep its old contents from spilling now. The previous fix (clear the BlockEntity's items array) was incomplete because `setBlockAndUpdate` still went through vanilla's "drop contents on removal" path. Now the chest is replaced with `Block.UPDATE_SUPPRESS_DROPS` (flag 32), which tells vanilla to skip the drop step entirely.
+- 鏡中世界尾聲的獎勵寶箱舊內容物真的不會噴出來了。之前的修法（清 BlockEntity 的物品陣列）不完整，因為 `setBlockAndUpdate` 仍會走 vanilla 的「remove 時 drop」流程。現在用 `Block.UPDATE_SUPPRESS_DROPS`（flag 32）替換寶箱，告訴 vanilla 整個跳過 drop 步驟。
+
 - Mirror Boss death sequence extended to 20 seconds (65/100/110/90/35 tick phases) to give each phase room to breathe.
 - 鏡像 Boss 死亡演出延長到 20 秒（65/100/110/90/35 tick 階段），每階段都有時間鋪陳。
 
