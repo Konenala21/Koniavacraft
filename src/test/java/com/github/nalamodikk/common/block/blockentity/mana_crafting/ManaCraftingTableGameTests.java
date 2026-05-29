@@ -11,7 +11,6 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -27,8 +26,21 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 public class ManaCraftingTableGameTests {
 
     private static final BlockPos POS = new BlockPos(1, 2, 1);
-    /** 配方：slot 0 放 1 顆 diamond → mana_dust，mana_cost=1500 */
-    private static final int MANA_DUST_RECIPE_COST = 1500;
+    /**
+     * 用真實存在的 blank_core 配方（3x3 shaped，mana_cost=600）：
+     * 　W　 / CIC / 　W　   W=mana_wire, C=mana_crystal, I=mana_ingot → blank_core
+     */
+    private static final int BLANK_CORE_RECIPE_COST = 600;
+
+    /** 依 blank_core pattern 放滿 9 格輸入（slot 1/3/4/5/7）。 */
+    private static void placeBlankCoreIngredients(ManaCraftingTableBlockEntity table) {
+        var h = table.getItemHandler();
+        h.setStackInSlot(1, new ItemStack(ModItems.MANA_WIRE.get()));
+        h.setStackInSlot(3, new ItemStack(ModItems.MANA_CRYSTAL.get()));
+        h.setStackInSlot(4, new ItemStack(ModItems.MANA_INGOT.get()));
+        h.setStackInSlot(5, new ItemStack(ModItems.MANA_CRYSTAL.get()));
+        h.setStackInSlot(7, new ItemStack(ModItems.MANA_WIRE.get()));
+    }
 
     // -------------------------------------------------------------------------
     // 1. NBT 存取：魔力與 IO 設定保留
@@ -72,8 +84,7 @@ public class ManaCraftingTableGameTests {
     }
 
     // -------------------------------------------------------------------------
-    // 2. 放入 diamond + 足夠魔力，updateCraftingResult 應在輸出槽放出 mana_dust
-    //    mana_dust.json: slot 0 = diamond, mana_cost = 1500, result = mana_dust
+    // 2. 放入 blank_core 材料 + 足夠魔力，updateCraftingResult 應在輸出槽放出 blank_core
     // -------------------------------------------------------------------------
     @GameTest(template = "empty", templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 40)
     public static void craftingResultAppearsWithSufficientMana(GameTestHelper helper) {
@@ -82,22 +93,23 @@ public class ManaCraftingTableGameTests {
         helper.runAtTickTime(2, () -> {
             ManaCraftingTableBlockEntity table = getTable(helper);
             // 放入材料並補足魔力
-            table.getItemHandler().setStackInSlot(0, new ItemStack(Items.DIAMOND));
-            table.getManaStorage().setMana(MANA_DUST_RECIPE_COST + 500);
+            placeBlankCoreIngredients(table);
+            table.getManaStorage().setMana(BLANK_CORE_RECIPE_COST + 500);
             // 手動觸發配方更新（模擬 serverTick）
             table.updateCraftingResult();
 
             ItemStack output = table.getItemHandler().getStackInSlot(ManaCraftingTableBlockEntity.OUTPUT_SLOT);
             helper.assertTrue(
-                    !output.isEmpty() && output.is(ModItems.MANA_DUST.get()),
-                    "有材料且魔力充足時，輸出槽應顯示 mana_dust，實際=" + output
+                    !output.isEmpty() && output.is(ModItems.BLANK_CORE.get()),
+                    "有材料且魔力充足時，輸出槽應顯示 blank_core，實際=" + output
             );
             helper.succeed();
         });
     }
 
     // -------------------------------------------------------------------------
-    // 3. 同樣放入 diamond，但魔力為 0，輸出槽應為空
+    // 3. 放入相同的完整 blank_core 材料，但魔力為 0，輸出槽應為空
+    //    （配方符合但魔力不足 → 不出貨，這才是這個 case 真正要驗的事）
     // -------------------------------------------------------------------------
     @GameTest(template = "empty", templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 40)
     public static void craftingResultEmptyWithoutMana(GameTestHelper helper) {
@@ -105,9 +117,8 @@ public class ManaCraftingTableGameTests {
 
         helper.runAtTickTime(2, () -> {
             ManaCraftingTableBlockEntity table = getTable(helper);
-            // 有材料但沒有魔力
-            table.getItemHandler().setStackInSlot(0, new ItemStack(Items.DIAMOND));
-            // mana 預設為 0，不額外補充
+            // 有完整材料但沒有魔力（mana 預設為 0，不補充）
+            placeBlankCoreIngredients(table);
             table.updateCraftingResult();
 
             ItemStack output = table.getItemHandler().getStackInSlot(ManaCraftingTableBlockEntity.OUTPUT_SLOT);
