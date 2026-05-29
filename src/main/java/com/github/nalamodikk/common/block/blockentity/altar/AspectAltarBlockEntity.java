@@ -1,21 +1,13 @@
 package com.github.nalamodikk.common.block.blockentity.altar;
 
-import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.capability.ManaStorage;
-import com.github.nalamodikk.common.capability.mana.ManaAction;
 import com.github.nalamodikk.common.multiblock.AbstractMultiblockControllerBlockEntity;
 import com.github.nalamodikk.common.multiblock.api.IWandActivatable;
 import com.github.nalamodikk.common.multiblock.api.MultiblockPattern;
 import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
 import com.github.nalamodikk.register.ModBlockEntities;
 import com.github.nalamodikk.register.ModBlocks;
-import com.github.nalamodikk.register.ModRecipes;
-import com.github.nalamodikk.common.network.packet.client.altar.AltarUpgradeAnimPacket;
 import com.github.nalamodikk.narasystem.nara.event.NaraServerEvents;
-import com.github.nalamodikk.narasystem.nara.hud.NaraTutorialFlow;
-import com.github.nalamodikk.research.knowledge.ResearchSavedData;
-import net.minecraft.advancements.AdvancementHolder;
-import net.neoforged.neoforge.network.PacketDistributor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -25,31 +17,17 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.core.particles.BlockParticleOption;
-import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.Vec3;
 import java.util.UUID;
-import net.neoforged.neoforge.capabilities.Capabilities;
-import net.neoforged.neoforge.items.IItemHandler;
-import net.neoforged.neoforge.items.ItemHandlerHelper;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
-import java.util.Optional;
 
 public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEntity implements IWandActivatable {
 
@@ -60,33 +38,39 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
     private static final int MANA_TRANSFER_RATE = 200;
     private static final int PEDESTAL_SCAN_RADIUS = 6;
 
-    private static final int MIN_COMPLETION_TICKS = 320;
-    private static final int MAX_COMPLETION_TICKS = 700;
-    private static final int WARNING_TICKS    = 200; // 10 秒無魔力後爆炸
+    // package-private：由 AltarRitualProcessor 讀取
+    static final int MIN_COMPLETION_TICKS = 320;
+    static final int MAX_COMPLETION_TICKS = 700;
+    static final int WARNING_TICKS    = 200; // 10 秒無魔力後爆炸
 
     private int ticker = 0;
     private int tickCounter = 0;
-    private boolean active = false;
-    private float progress = 0f;
-    private int ritualTick = 0;
-    private int ritualMaxTick = 0;
-    private int upgradeTier = 0;
-    private long ringPhaseStart = 0;
-    private int completionAnimTick = 0;
-    private int completionDuration = MIN_COMPLETION_TICKS;
-    private UUID activatorUUID = null;
 
-    // 新增：持續消耗 + 警告爆炸機制
-    private int manaConsumedSoFar = 0;
-    private int warningTick = 0;    // 0 = 正常；> 0 = 警告中
-    private AltarRecipe cachedRecipe = null;
+    // ── 儀式 / 升級狀態（package-private：由 AltarRitualProcessor / AltarRingManager 共享操作）──
+    // NBT 序列化與客戶端同步仍集中在本 BE，狀態機邏輯委派給兩個 manager。
+    boolean active = false;
+    float progress = 0f;
+    int ritualTick = 0;
+    int ritualMaxTick = 0;
+    int upgradeTier = 0;
+    long ringPhaseStart = 0;
+    int completionAnimTick = 0;
+    int completionDuration = MIN_COMPLETION_TICKS;
+    UUID activatorUUID = null;
+    int manaConsumedSoFar = 0;
+    int warningTick = 0;    // 0 = 正常；> 0 = 警告中
+    AltarRecipe cachedRecipe = null;
 
     private final ManaStorage manaStorage = new ManaStorage(MAX_MANA, this::onManaChanged);
     private final EnumMap<Direction, IOHandlerUtils.IOType> directionConfig = new EnumMap<>(Direction.class);
 
-    private final List<AspectPedestalBlockEntity> activePedestals = new ArrayList<>();
+    // package-private：由 AltarRitualProcessor 讀取（findMatchingRecipe / completeRitual）
+    final List<AspectPedestalBlockEntity> activePedestals = new ArrayList<>();
     // 中心底座（y=-2 正下方），其物品為催化物
-    private AspectPedestalBlockEntity centerPedestal = null;
+    AspectPedestalBlockEntity centerPedestal = null;
+
+    private final AltarRitualProcessor ritualProcessor = new AltarRitualProcessor(this);
+    private final AltarRingManager ringManager = new AltarRingManager(this);
 
     public AspectAltarBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ASPECT_ALTAR_BE.get(), pos, state);
@@ -119,7 +103,7 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
         if (tickCounter % 20 == 0) extractManaFromNeighbors();
         tickCounter++;
 
-        if (active) tickRitual();
+        if (active) ritualProcessor.tick();
 
         if (completionAnimTick > 0) {
             completionAnimTick--;
@@ -131,186 +115,10 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
         IOHandlerUtils.extractManaFromNeighbors(level, worldPosition, manaStorage, directionConfig, MANA_TRANSFER_RATE);
     }
 
-    private void tickRitual() {
-        if (level == null || ritualMaxTick <= 0) return;
-        if (cachedRecipe == null) {
-            Optional<RecipeHolder<AltarRecipe>> holder = findMatchingRecipe();
-            if (holder.isEmpty()) { cancelRitual(); return; }
-            cachedRecipe = holder.get().value();
-        }
-
-        // 計算本 tick 應消耗的魔力
-        int totalCost  = cachedRecipe.getManaCost();
-        int remaining  = totalCost - manaConsumedSoFar;
-        int perTick    = Math.max(1, totalCost / ritualMaxTick);
-        int toExtract  = Math.min(perTick, remaining);
-
-        if (toExtract > 0) {
-            int extracted = manaStorage.extractMana(toExtract, ManaAction.EXECUTE);
-            if (extracted < toExtract) {
-                // 魔力不足，進入警告狀態，儀式暫停
-                warningTick++;
-                if (warningTick == 1 || warningTick % 20 == 0) syncToClient();
-                // 電弧警告特效：每 10 tick 噴一次電火花 + 閃電音效
-                if (level instanceof ServerLevel sl && warningTick % 10 == 0) {
-                    Vec3 wc = Vec3.atCenterOf(worldPosition);
-                    sl.sendParticles(ParticleTypes.ELECTRIC_SPARK,
-                            wc.x, wc.y + 0.5, wc.z,
-                            25, 0.4, 0.5, 0.4, 0.18);
-                    float pitch = 1.4f + level.random.nextFloat() * 0.6f;
-                    sl.playSound(null, worldPosition, SoundEvents.LIGHTNING_BOLT_THUNDER,
-                            SoundSource.BLOCKS, 0.5f, pitch);
-                }
-                if (warningTick >= WARNING_TICKS) {
-                    AltarExplosionTrigger.trigger(level, worldPosition, upgradeTier, activatorUUID, activePedestals);
-                    cancelRitual();
-                }
-                return;
-            }
-            manaConsumedSoFar += extracted;
-            warningTick = 0;
-        }
-
-        ritualTick++;
-        progress = (float) ritualTick / ritualMaxTick;
-        if (ritualTick >= ritualMaxTick) { completeRitual(); return; }
-        if (ritualTick % 10 == 0) syncToClient();
-    }
-
-    private void completeRitual() {
-        if (level == null) return;
-
-        AltarRecipe recipe = cachedRecipe;
-        if (recipe == null) { cancelRitual(); return; }
-
-        // Validate ingredient indices BEFORE consuming anything — defensive guard against
-        // findMatchedIndices diverging from the earlier matches() check
-        List<AspectPedestalBlockEntity> nonCenter = activePedestals.stream()
-                .filter(p -> p != centerPedestal).toList();
-        List<ItemStack> nonCenterItems = nonCenter.stream()
-                .map(AspectPedestalBlockEntity::getHeldItem).toList();
-        int[] matched = recipe.findMatchedIndices(nonCenterItems);
-        if (matched == null) { cancelRitual(); return; }
-
-        if (centerPedestal != null) centerPedestal.consumeItem();
-        for (int idx : matched) nonCenter.get(idx).consumeItem();
-
-        // 完成粒子
-        if (level instanceof ServerLevel sl) {
-            Vec3 center = Vec3.atCenterOf(worldPosition);
-            sl.sendParticles(ParticleTypes.END_ROD, center.x, center.y + 1, center.z, 40, 0.6, 0.6, 0.6, 0.12);
-            sl.sendParticles(ParticleTypes.ENCHANT, center.x, center.y + 0.5, center.z, 30, 1.0, 1.0, 1.0, 0.3);
-        }
-
-        ItemStack result = recipe.getResult().copy();
-
-        // 優先嘗試放入六面相鄰的容器，放不完的才掉落
-        result = tryOutputToAdjacentContainer(result);
-        if (!result.isEmpty()) {
-            Vec3 drop = Vec3.atCenterOf(worldPosition).add(0, 1.2, 0);
-            ItemEntity entity = new ItemEntity(level, drop.x, drop.y, drop.z, result);
-            entity.setDefaultPickUpDelay();
-            level.addFreshEntity(entity);
-        }
-
-        completionDuration = Math.max(MIN_COMPLETION_TICKS,
-                Math.min(MAX_COMPLETION_TICKS, ritualMaxTick / 3));
-        completionAnimTick = completionDuration;
-
-        if (level instanceof ServerLevel serverLevel && activatorUUID != null) {
-            ServerPlayer sp = serverLevel.getServer().getPlayerList().getPlayer(activatorUUID);
-            if (sp != null) {
-                AdvancementHolder adv = serverLevel.getServer().getAdvancements()
-                        .get(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "first_altar_ritual"));
-                if (adv != null) {
-                    var prog = sp.getAdvancements().getOrStartProgress(adv);
-                    if (!prog.isDone()) {
-                        for (String criterion : prog.getRemainingCriteria()) {
-                            sp.getAdvancements().award(adv, criterion);
-                        }
-                    }
-                }
-            }
-        }
-
-        active = false;
-        progress = 0f;
-        ritualTick = 0;
-        ritualMaxTick = 0;
-        manaConsumedSoFar = 0;
-        warningTick = 0;
-        cachedRecipe = null;
-        setChanged();
-        syncToClient();
-
-        level.playSound(null, worldPosition, net.minecraft.sounds.SoundEvents.EXPERIENCE_ORB_PICKUP,
-                net.minecraft.sounds.SoundSource.BLOCKS, 1.0f, 1.2f);
-    }
-
-    private ItemStack tryOutputToAdjacentContainer(ItemStack stack) {
-        for (Direction dir : Direction.values()) {
-            if (stack.isEmpty()) break;
-            IItemHandler handler = level.getCapability(
-                    Capabilities.ItemHandler.BLOCK, worldPosition.relative(dir), dir.getOpposite());
-            if (handler == null) continue;
-            stack = ItemHandlerHelper.insertItem(handler, stack, false);
-        }
-        return stack;
-    }
-
-    private void cancelRitual() {
-        active = false;
-        progress = 0f;
-        ritualTick = 0;
-        ritualMaxTick = 0;
-        manaConsumedSoFar = 0;
-        warningTick = 0;
-        cachedRecipe = null;
-        setChanged();
-        syncToClient();
-    }
-
-    // ── 儀式觸發 ─────────────────────────────────────────────────────────────
+    // ── 儀式觸發（委派給 AltarRitualProcessor）──────────────────────────────────
 
     public Component tryActivate(UUID playerUUID) {
-        if (!isFormed())
-            return Component.translatable("block.koniava.aspect_altar.not_formed");
-        if (active)
-            return Component.translatable("block.koniava.aspect_altar.ritual_active");
-        if (centerPedestal == null || centerPedestal.getHeldItem().isEmpty())
-            return Component.translatable("block.koniava.aspect_altar.no_catalyst");
-
-        Optional<RecipeHolder<AltarRecipe>> holder = findMatchingRecipe();
-        if (holder.isEmpty())
-            return Component.translatable("block.koniava.aspect_altar.no_recipe");
-
-        AltarRecipe recipe = holder.get().value();
-        active = true;
-        ritualTick = 0;
-        ritualMaxTick = recipe.getProcessingTime();
-        manaConsumedSoFar = 0;
-        warningTick = 0;
-        cachedRecipe = recipe;
-        progress = 0f;
-        activatorUUID = playerUUID;
-        setChanged();
-        syncToClient();
-        return Component.translatable("block.koniava.aspect_altar.ritual_started");
-    }
-
-    private Optional<RecipeHolder<AltarRecipe>> findMatchingRecipe() {
-        if (level == null || centerPedestal == null) return Optional.empty();
-        ItemStack catalyst = centerPedestal.getHeldItem();
-        List<ItemStack> ingredients = activePedestals.stream()
-                .filter(p -> p != centerPedestal)
-                .map(AspectPedestalBlockEntity::getHeldItem)
-                .toList();
-        AltarRecipe.AltarInput input = new AltarRecipe.AltarInput(catalyst, ingredients);
-        return level.getRecipeManager()
-                .getAllRecipesFor(ModRecipes.ALTAR_TYPE.get())
-                .stream()
-                .filter(h -> h.value().matches(input, level) && h.value().getMinTier() <= upgradeTier)
-                .findFirst();
+        return ritualProcessor.tryActivate(playerUUID);
     }
 
     // ── 結構生命週期 ──────────────────────────────────────────────────────────
@@ -360,7 +168,7 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
 
     @Override
     public void onStructureInvalid() {
-        if (level == null) { clearPedestals(); if (active) cancelRitual(); return; }
+        if (level == null) { clearPedestals(); if (active) ritualProcessor.cancelRitual(); return; }
         // 祭壇柱 → 還原魔力方塊
         for (Vec3i offset : AltarGeometry.PILLAR_OFFSETS) {
             BlockPos p = worldPosition.offset(offset);
@@ -374,9 +182,9 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
             level.setBlock(worldPosition, cs.setValue(AspectAltarBlock.FORMED, false), 2);
         }
         // 環狀 RESONANCE_RING → 還原魔力方塊
-        for (int i = 0; i < Math.min(upgradeTier, AltarGeometry.ALL_RINGS.size()); i++) restoreRingBlocks(AltarGeometry.ALL_RINGS.get(i));
+        for (int i = 0; i < Math.min(upgradeTier, AltarGeometry.ALL_RINGS.size()); i++) ringManager.restoreRingBlocks(AltarGeometry.ALL_RINGS.get(i));
         clearPedestals();
-        if (active) cancelRitual();
+        if (active) ritualProcessor.cancelRitual();
         upgradeTier = 0;
         syncToClient();
     }
@@ -447,7 +255,8 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
                 : net.minecraft.network.chat.Component.translatable("message.koniava.altar.not_formed");
     }
 
-    private void syncToClient() {
+    // package-private：AltarRitualProcessor / AltarRingManager 同步用
+    void syncToClient() {
         if (level != null && !level.isClientSide())
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
     }
@@ -465,7 +274,7 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
                         level.setBlock(p, ModBlocks.MANA_BLOCK.get().defaultBlockState(), 3);
                     }
                 }
-                for (int i = 0; i < Math.min(upgradeTier, AltarGeometry.ALL_RINGS.size()); i++) restoreRingBlocks(AltarGeometry.ALL_RINGS.get(i));
+                for (int i = 0; i < Math.min(upgradeTier, AltarGeometry.ALL_RINGS.size()); i++) ringManager.restoreRingBlocks(AltarGeometry.ALL_RINGS.get(i));
             }
             clearPedestals();
             active = false;
@@ -491,108 +300,9 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
     public int getCompletionAnimTick() { return completionAnimTick; }
     public int getCompletionDuration() { return completionDuration; }
 
+    // 委派給 AltarRingManager（升級環偵測 / 替換 / tier 推進）
     public void refreshUpgradeTier() {
-        if (level == null || !isFormed()) return;
-        // Restore tier silently when the core is rebuilt at a previously-upgraded position.
-        // applyRingReplace is called here (not by the comparison below) so rings become RESONANCE_RING
-        // immediately without triggering the upgrade animation packet.
-        if (upgradeTier == 0 && level instanceof ServerLevel sl) {
-            AltarTierSavedData tierData = AltarTierSavedData.get(sl);
-            int saved = tierData.peekTier(worldPosition);
-            if (saved > 0) {
-                int actualRings = 0;
-                for (List<Vec3i> ring : AltarGeometry.ALL_RINGS) {
-                    if (checkRingComplete(ring)) actualRings++;
-                    else break;
-                }
-                int toRestore = Math.min(saved, Math.min(actualRings, AltarGeometry.ALL_RINGS.size()));
-                if (toRestore > 0) {
-                    for (int i = 0; i < toRestore; i++) applyRingReplace(AltarGeometry.ALL_RINGS.get(i));
-                    upgradeTier = toRestore;
-                    tierData.clearTier(worldPosition);
-                    setChanged();
-                    // Return here so the normal newTier-comparison segment below does not fire
-                    // an upgrade animation packet in the same tick. Any extra rings the player
-                    // placed will be detected on the next CHECK_INTERVAL and trigger a proper
-                    // player-visible upgrade animation at that point.
-                    return;
-                }
-            }
-        }
-        upgradeTier = Math.min(upgradeTier, AltarGeometry.ALL_RINGS.size());
-        int newTier = 0;
-        for (List<Vec3i> ring : AltarGeometry.ALL_RINGS) {
-            if (checkRingComplete(ring)) newTier++;
-            else break;
-        }
-        if (newTier != upgradeTier) {
-            if (newTier > upgradeTier) {
-                for (int i = upgradeTier; i < newTier; i++) applyRingReplace(AltarGeometry.ALL_RINGS.get(i));
-                if (level instanceof ServerLevel serverLevel) {
-                    ResearchSavedData researchData = newTier == 6 ? ResearchSavedData.get(serverLevel) : null;
-                    AdvancementHolder tierAdv = null;
-                    if (newTier >= 5) {
-                        String advId = newTier == 6 ? "altar_upgrade_t6" : "altar_upgrade_t5";
-                        tierAdv = serverLevel.getServer().getAdvancements()
-                                .get(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, advId));
-                    }
-                    for (ServerPlayer sp : serverLevel.players()) {
-                        if (sp.blockPosition().distSqr(worldPosition) > 64 * 64) continue;
-                        boolean triggerDialogue = false;
-                        if (researchData != null) {
-                            var knowledge = researchData.getOrCreate(sp.getUUID());
-                            if (!knowledge.hasSeenTutorial(NaraTutorialFlow.ALTAR_T6)) {
-                                triggerDialogue = true;
-                                knowledge.markTutorialSeen(NaraTutorialFlow.ALTAR_T6);
-                                researchData.setDirty();
-                            }
-                        }
-                        PacketDistributor.sendToPlayer(sp, new AltarUpgradeAnimPacket(worldPosition, newTier, triggerDialogue));
-                        if (tierAdv != null) {
-                            var prog = sp.getAdvancements().getOrStartProgress(tierAdv);
-                            if (!prog.isDone()) {
-                                for (String c : prog.getRemainingCriteria()) sp.getAdvancements().award(tierAdv, c);
-                            }
-                        }
-                    }
-                }
-            } else {
-                for (int i = newTier; i < upgradeTier; i++) restoreRingBlocks(AltarGeometry.ALL_RINGS.get(i));
-            }
-            upgradeTier = newTier;
-            setChanged();
-            syncToClient();
-        }
-    }
-
-    private boolean checkRingComplete(List<Vec3i> ring) {
-        if (level == null) return false;
-        for (Vec3i offset : ring) {
-            BlockState s = level.getBlockState(worldPosition.offset(offset));
-            // 接受 MANA_BLOCK（尚未替換）或 RESONANCE_RING（已替換）
-            if (!s.is(ModBlocks.MANA_BLOCK.get()) && !s.is(ModBlocks.RESONANCE_RING.get())) return false;
-        }
-        return true;
-    }
-
-    private void applyRingReplace(List<Vec3i> ring) {
-        if (level == null) return;
-        for (Vec3i offset : ring) {
-            BlockPos p = worldPosition.offset(offset);
-            if (level.getBlockState(p).is(ModBlocks.MANA_BLOCK.get())) {
-                level.setBlock(p, ModBlocks.RESONANCE_RING.get().defaultBlockState(), 3);
-            }
-        }
-    }
-
-    private void restoreRingBlocks(List<Vec3i> ring) {
-        if (level == null) return;
-        for (Vec3i offset : ring) {
-            BlockPos p = worldPosition.offset(offset);
-            if (level.getBlockState(p).is(ModBlocks.RESONANCE_RING.get())) {
-                level.setBlock(p, ModBlocks.MANA_BLOCK.get().defaultBlockState(), 3);
-            }
-        }
+        ringManager.refreshUpgradeTier();
     }
 
     // ── Pattern ───────────────────────────────────────────────────────────────
