@@ -67,6 +67,9 @@ public record BossBgmPacket(boolean stop) implements CustomPacketPayload {
             if (currentInstance != null) {
                 mc.getSoundManager().stop(currentInstance);
             }
+            // 保留 SoundSource.MASTER：vanilla「音樂」slider 關掉時 boss BGM 仍會播放。
+            // bossMusicVolume config 是模組自己的獨立控制；只受 vanilla master slider 全域縮放，符合預期。
+            // forUI 內部就是 MASTER + Attenuation.NONE + relative=true（全域固定音量，不受位置影響）。
             net.minecraft.client.resources.sounds.SimpleSoundInstance inst =
                     net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
                             ModSounds.BOSS_BGM_MIRROR_IMAGE.get(), 1.0f, vol);

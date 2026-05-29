@@ -4,7 +4,6 @@ import com.github.nalamodikk.common.entity.NaraPhantomEntity;
 import com.github.nalamodikk.common.entity.PlayerCloneEntity;
 import com.github.nalamodikk.common.entity.SpaceCrackEntity;
 import com.github.nalamodikk.common.network.packet.client.VoidMirrorIntroPacket;
-import com.github.nalamodikk.dimension.BoundedFlatChunkGenerator;
 import com.github.nalamodikk.dimension.ModDimensions;
 import com.github.nalamodikk.register.ModDataAttachments;
 import com.github.nalamodikk.register.ModEntities;
@@ -16,7 +15,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.phys.AABB;
 
 import java.util.Optional;
@@ -37,12 +35,6 @@ public final class VoidMirrorTeleport {
         MinecraftServer server = player.server;
         ServerLevel target = server.getLevel(ModDimensions.VOID_MIRROR);
         if (target == null) return;
-
-        // 在玩家實際進入時設定邊界，避免被主世界邊界委派在啟動時覆蓋
-        int size = BoundedFlatChunkGenerator.HALF_SIZE * 2;
-        WorldBorder border = target.getWorldBorder();
-        border.setCenter(0, 0);
-        if (border.getSize() != size) border.setSize(size);
 
         GlobalPos returnPoint = GlobalPos.of(player.level().dimension(), player.blockPosition());
         player.setData(ModDataAttachments.RETURN_POINT.get(), Optional.of(returnPoint));

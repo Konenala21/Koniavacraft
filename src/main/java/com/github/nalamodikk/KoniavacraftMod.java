@@ -160,11 +160,16 @@ public class KoniavacraftMod {
 
     @SubscribeEvent
     public void onLevelLoad(LevelEvent.Load event) {
+        // 鏡中世界邊界已取消：未來規劃改為多 boss 共用維度，由各 boss 自行管理活動範圍。
+        // 若舊存檔殘留 501 大小的 WorldBorder，重設回 vanilla 預設（59999968 ≈ 6e7）。
+        // 地形仍由 BoundedFlatChunkGenerator 限制中央 501×501 平坦範圍，外圍是虛空。
         if (event.getLevel() instanceof ServerLevel serverLevel
                 && serverLevel.dimension().equals(ModDimensions.VOID_MIRROR)) {
             WorldBorder border = serverLevel.getWorldBorder();
-            border.setCenter(0, 0);
-            border.setSize(BoundedFlatChunkGenerator.HALF_SIZE * 2);
+            if (border.getSize() < 1_000_000) {
+                border.setCenter(0, 0);
+                border.setSize(WorldBorder.MAX_SIZE);
+            }
         }
     }
 

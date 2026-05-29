@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- The Mirror Dimension no longer has a 501x501 WorldBorder cage. The dimension is being repurposed as a shared boss-arena dimension for future fights, so the hard boundary is gone and each boss will manage its own active range. Center 501x501 still has flat terrain (the rest is void), but you can now walk past the old border. Existing save files with the leftover 501 border are reset to the vanilla maximum on level load.
+- 鏡中世界不再有 501x501 的 WorldBorder 籠子了。這個維度規劃改成多 boss 共用的場地維度，所以硬邊界取消，未來每隻 boss 自己管自己的活動範圍。中央 501x501 仍有平地（外圍是虛空），但現在可以走出原本邊界。舊存檔殘留的 501 邊界會在維度載入時自動重設回 vanilla 最大值。
+
 - Floating turrets (slot 0/1 auto-attack mode) now target Slime, Ghast, Phantom, and other hostile Mobs that implement the `Enemy` interface but don't extend `Monster`. Previously the hostile filter used `Monster.class` directly, so non-Monster enemies like slimes were silently ignored and the turret just sat there doing nothing while the player took damage. Now it filters on `Mob` + `instanceof Enemy`, covering the full set of vanilla "hostile mob" types.
 - 浮游砲（裝備槽 0/1 自走砲模式）現在會攻擊史萊姆、惡魂、幻翼等實作 `Enemy` 介面但不繼承 `Monster` 的敵對生物了。之前的敵對過濾直接用 `Monster.class`，史萊姆這種非 Monster 的敵對被靜默漏掉，砲就乖乖站著不動看你被打。現在改成 `Mob` + `instanceof Enemy`，完整覆蓋 vanilla 所有「敵對生物」類型。
 
