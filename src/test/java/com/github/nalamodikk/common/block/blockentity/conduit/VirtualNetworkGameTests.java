@@ -2,11 +2,22 @@ package com.github.nalamodikk.common.block.blockentity.conduit;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.capability.mana.ManaAction;
+import com.github.nalamodikk.common.item.tool.BasicTechWandItem;
+import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
 import com.github.nalamodikk.register.ModBlocks;
+import com.github.nalamodikk.register.ModItems;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -168,6 +179,62 @@ public class VirtualNetworkGameTests {
                     a.getMaxManaStored() == expected,
                     "B 升級後網路容量應為 " + expected + "，實際=" + a.getMaxManaStored()
             );
+            helper.succeed();
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // 7. NBT 存讀 round-trip：buffer 魔力 + tier 應還原
+    //    保護 saveAdditional / loadAdditional（即將抽出網路成員管理時，NBT 仍留在 BE）
+    // -------------------------------------------------------------------------
+    @GameTest(template = "empty", templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 20)
+    public static void nbtRoundTripPreservesBufferAndTier(GameTestHelper helper) {
+        var registries = helper.getLevel().registryAccess();
+        BlockState state = ModBlocks.BASIC_ARCANE_CONDUIT.get().defaultBlockState();
+
+        ArcaneConduitBlockEntity src = new ArcaneConduitBlockEntity(POS_A, state);
+        src.setTier(ConduitTier.ADVANCED);
+        src.setBufferMana(777);
+
+        CompoundTag tag = new CompoundTag();
+        src.saveAdditional(tag, registries);
+
+        ArcaneConduitBlockEntity dst = new ArcaneConduitBlockEntity(POS_A, state);
+        dst.loadAdditional(tag, registries);
+
+        helper.assertTrue(dst.getTier() == ConduitTier.ADVANCED,
+                "load 後 tier 應還原為 ADVANCED，實際=" + dst.getTier());
+        helper.assertTrue(dst.getBufferManaStored() == 777,
+                "load 後 buffer 魔力應還原為 777，實際=" + dst.getBufferManaStored());
+        helper.succeed();
+    }
+
+    // -------------------------------------------------------------------------
+    // 8. 扳手右鍵循環 IO 設定（DISABLED→OUTPUT→INPUT→BOTH→DISABLED）
+    //    保護 onUse / showConduitInfo（即將抽到 ConduitInteractionHandler）
+    // -------------------------------------------------------------------------
+    @GameTest(template = "empty", templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 30)
+    public static void wandRightClickCyclesIoConfig(GameTestHelper helper) {
+        helper.setBlock(POS_A, ModBlocks.BASIC_ARCANE_CONDUIT.get().defaultBlockState());
+
+        helper.runAtTickTime(5, () -> {
+            ArcaneConduitBlockEntity conduit = getConduit(helper, POS_A);
+            Direction face = Direction.NORTH;
+            IOHandlerUtils.IOType before = conduit.getIOConfig(face);
+
+            var player = helper.makeMockPlayer(GameType.SURVIVAL);
+            ItemStack wand = new ItemStack(ModItems.BASIC_TECH_WAND.get());
+            ((BasicTechWandItem) wand.getItem()).setMode(wand, BasicTechWandItem.TechWandMode.DIRECTION_CONFIG);
+            player.setItemInHand(InteractionHand.MAIN_HAND, wand);
+
+            BlockPos abs = helper.absolutePos(POS_A);
+            BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(abs), face, abs, false);
+            conduit.onUse(conduit.getBlockState(), helper.getLevel(), abs, player, hit);
+
+            IOHandlerUtils.IOType after = conduit.getIOConfig(face);
+            helper.assertTrue(after == IOHandlerUtils.nextIOType(before),
+                    "扳手右鍵應把 " + face + " 的 IO 從 " + before + " 切到 "
+                            + IOHandlerUtils.nextIOType(before) + "，實際=" + after);
             helper.succeed();
         });
     }
