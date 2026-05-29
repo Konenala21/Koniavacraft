@@ -22,6 +22,7 @@ import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.MovementInputUpdateEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
 import java.util.UUID;
@@ -195,8 +196,7 @@ public class BossDeathCameraManager {
         stateTick = 0;
         // 通知 server 把 Nara phantom discard（同步「配音講完她就消失」）
         try {
-            net.neoforged.neoforge.network.PacketDistributor.sendToServer(
-                    com.github.nalamodikk.common.network.packet.server.NaraOutroEndPacket.INSTANCE);
+            PacketDistributor.sendToServer(NaraOutroEndPacket.INSTANCE);
         } catch (Exception ignored) {}
     }
 
