@@ -132,7 +132,9 @@ public class BossDeathCameraManager {
             startFade();
             return;
         }
-        if (trackedBoss != null && trackedBoss.isAlive() && !trackedBoss.isRemoved()) {
+        // 注意：boss HP=0 時 isAlive() 直接回 false，但死亡演出期間 entity 還沒 remove，
+        // 不能用 isAlive() 否則整段 400-tick 演出都被當「已消失」直接轉 Nara
+        if (trackedBoss != null && !trackedBoss.isRemoved()) {
             bossLastPos = trackedBoss.position();
             int phase = trackedBoss.getDeathPhase();
             // Phase 5 boss 不再渲染（renderer return），繼續追蹤會讓玩家看到「boss 消失 + 等一下才切 Nara」
