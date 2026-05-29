@@ -49,9 +49,7 @@ import java.util.UUID;
 @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID)
 public class NaraServerEvents {
 
-    private static final Map<UUID, Integer> pendingPunishmentDialogue = new HashMap<>();
-    private static final Set<UUID> awaitingRespawn = new HashSet<>();
-    private static final Set<UUID> naraPunishmentActive = new HashSet<>();
+    // Punishment 子系統的 state 已搬到 NaraPunishmentManager
     private static final Map<UUID, Integer> pendingWardenDespawn = new HashMap<>();
     private static final Set<UUID> pendingResearchTableTutorial = new HashSet<>();
     private static final Map<UUID, Integer> tutorialLoginDelay = new HashMap<>();
@@ -97,9 +95,7 @@ public class NaraServerEvents {
 
     @SubscribeEvent
     public static void onServerStopping(ServerStoppingEvent event) {
-        pendingPunishmentDialogue.clear();
-        awaitingRespawn.clear();
-        naraPunishmentActive.clear();
+        NaraPunishmentManager.clearAll();
         pendingWardenDespawn.clear();
         pendingResearchTableTutorial.clear();
         tutorialLoginDelay.clear();
@@ -141,9 +137,7 @@ public class NaraServerEvents {
     public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
         UUID uuid = player.getUUID();
-        pendingPunishmentDialogue.remove(uuid);
-        naraPunishmentActive.remove(uuid);
-        awaitingRespawn.remove(uuid);
+        NaraPunishmentManager.clearForPlayer(uuid);
         pendingResearchTableTutorial.remove(uuid);
         tutorialLoginDelay.remove(uuid);
         pendingFirstScanTutorial.remove(uuid);
@@ -206,14 +200,11 @@ public class NaraServerEvents {
     }
 
     public static void schedulePunishmentDialogue(UUID playerUUID, int delayTicks) {
-        pendingPunishmentDialogue.put(playerUUID, delayTicks);
-        naraPunishmentActive.add(playerUUID);
+        NaraPunishmentManager.schedule(playerUUID, delayTicks);
     }
 
     public static void cancelPunishmentState(UUID uuid) {
-        pendingPunishmentDialogue.remove(uuid);
-        naraPunishmentActive.remove(uuid);
-        awaitingRespawn.remove(uuid);
+        NaraPunishmentManager.cancel(uuid);
     }
 
     public static void scheduleWardenDespawn(UUID wardenUUID, int delayTicks) {
@@ -614,22 +605,7 @@ public class NaraServerEvents {
             }
         }
 
-        Iterator<Map.Entry<UUID, Integer>> it = pendingPunishmentDialogue.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<UUID, Integer> entry = it.next();
-            int remaining = entry.getValue() - 1;
-            if (remaining <= 0) {
-                it.remove();
-                ServerPlayer player = event.getServer().getPlayerList().getPlayer(entry.getKey());
-                if (player != null) {
-                    sendPunishmentDialogue(player);
-                } else {
-                    awaitingRespawn.add(entry.getKey());
-                }
-            } else {
-                entry.setValue(remaining);
-            }
-        }
+        NaraPunishmentManager.tick(event);
 
         Iterator<Map.Entry<UUID, Integer>> wi = pendingWardenDespawn.entrySet().iterator();
         while (wi.hasNext()) {
@@ -651,19 +627,13 @@ public class NaraServerEvents {
     @SubscribeEvent
     public static void onPlayerDeath(LivingDeathEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
-        UUID uuid = player.getUUID();
-        if (!naraPunishmentActive.contains(uuid)) return;
-        PacketDistributor.sendToPlayer(player, new NaraCloseDialoguePacket());
-        pendingPunishmentDialogue.remove(uuid);
-        awaitingRespawn.add(uuid);
+        NaraPunishmentManager.handleDeath(player);
     }
 
     @SubscribeEvent
     public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
-        UUID uuid = player.getUUID();
-        if (!awaitingRespawn.remove(uuid)) return;
-        pendingPunishmentDialogue.put(uuid, 20);
+        NaraPunishmentManager.handleRespawn(player);
     }
 
     // All machine tutorials use setOverlayOnScreen(true) so they can render on top of the ghost GUI.
@@ -805,12 +775,6 @@ public class NaraServerEvents {
                 entry.setValue(remaining);
             }
         }
-    }
-
-    private static void sendPunishmentDialogue(ServerPlayer player) {
-        naraPunishmentActive.remove(player.getUUID());
-        grantAdvancement(player, "nara_ignored");
-        PacketDistributor.sendToPlayer(player, new NaraStartDialoguePacket.Punishment());
     }
 
     private static void grantAdvancement(ServerPlayer player, String id) {
