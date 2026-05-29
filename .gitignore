@@ -1,10 +1,6 @@
-<<<<<<< HEAD
-# Eclipse
-=======
 # ================================
 # Eclipse IDE
 # ================================
->>>>>>> b30810b (1)
 bin/
 *.launch
 .settings/
@@ -13,61 +9,15 @@ bin/
 .project
 eclipse/
 
-<<<<<<< HEAD
-# IntelliJ IDEA
-=======
 # ================================
 # IntelliJ IDEA
 # ================================
->>>>>>> b30810b (1)
 out/
 *.ipr
 *.iws
 *.iml
 .idea/
 
-<<<<<<< HEAD
-# Gradle
-build/
-.gradle/
-
-# NeoForge run directories
-eclipse/
-run/
-runs/
-run-data/
-
-# Generated resources (data generation)
-src/generated/
-
-# Local repository
-repo/
-
-# Temporary files
-*.tmp
-*.bak
-*.swp
-*~
-
-# OS specific
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-
-# Archives (but keep source archives in repo if needed)
-*.zip
-*.jar
-*.rar
-*.tar
-*.gz
-
-# Specific files to ignore
-.gitattributes
-.github/workflows/Konenala21.yml
-TEMPLATE_LICENSE.txt
-=======
 # ================================
 # Gradle
 # ================================
@@ -79,15 +29,14 @@ gradle-app.setting
 # ================================
 # NeoForge / Minecraft Development
 # ================================
+eclipse/
 run/
 runs/
 run-data/
 logs/
 
-# Generated resources (use patterns instead of specific files)
-src/generated/resources/.cache/
-src/generated/resources/assets/
-src/generated/resources/data/
+# Generated resources (data generation)
+src/generated/
 
 # ================================
 # Java
@@ -97,25 +46,19 @@ src/generated/resources/data/
 !gradle-wrapper.jar
 *.war
 *.ear
-*.zip
 hs_err_pid*
 
 # ================================
 # Operating System
 # ================================
-# macOS
 .DS_Store
 .AppleDouble
 .LSOverride
 ._*
-
-# Windows
 Thumbs.db
 ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
-
-# Linux
 *~
 .directory
 
@@ -130,6 +73,9 @@ $RECYCLE.BIN/
 # ================================
 個人開發者小記錄/
 repo/
+.gitattributes
+.github/workflows/Konenala21.yml
+TEMPLATE_LICENSE.txt
 
 # ================================
 # Temporary / Backup Files
