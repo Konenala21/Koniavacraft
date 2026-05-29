@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.1.9-1] - 2026-05-30
+
 ### Player Changes / 玩家更新內容
 
 - Pressing R to skip a cinematic now opens a confirmation popup ("Skipping cutscenes will miss the full experience / Skip this scene?") with Yes/No buttons and a "Don't ask again" checkbox. Covers all four R-skip points: boss intro, Phase 2 transition, Nara dialogue, and altar upgrade animation. Checking "Don't ask again" + Yes writes to the client config (`cinematicSkipDontAsk`) so future skips bypass the popup entirely. No = cinematic continues uninterrupted.
