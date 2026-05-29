@@ -77,8 +77,10 @@ public class CinematicSkipConfirmScreen extends Screen {
 
     @Override
     public void render(GuiGraphics gg, int mouseX, int mouseY, float partialTick) {
-        // 背景半透明 dim 但 cinematic 仍可見
-        gg.fill(0, 0, this.width, this.height, 0x88000000);
+        // 用 vanilla 模糊背景（renderBlurredBackground 由 super.renderBackground 觸發）
+        // 之上再蓋一層深色 dim 讓 panel 對比清楚
+        super.renderBackground(gg, mouseX, mouseY, partialTick);
+        gg.fill(0, 0, this.width, this.height, 0x66000000);
 
         int cx = this.width / 2;
         int cy = this.height / 2;
