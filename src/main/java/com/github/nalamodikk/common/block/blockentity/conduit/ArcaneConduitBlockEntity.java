@@ -15,7 +15,6 @@ import com.github.nalamodikk.common.capability.IUnifiedManaHandler;
 import com.github.nalamodikk.common.capability.ManaStorage;
 import com.github.nalamodikk.common.capability.mana.ManaAction;
 import com.github.nalamodikk.common.coreapi.block.IConfigurableBlock;
-import com.github.nalamodikk.common.item.tool.BasicTechWandItem;
 import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
 import com.github.nalamodikk.research.ResearchGate;
 import com.github.nalamodikk.register.ModBlockEntities;
@@ -25,26 +24,20 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import org.slf4j.Logger;
 
-import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedManaHandler, IConfigurableBlock {
-    private CompoundTag tempNetworkData = null;
-    private boolean needsNetworkRestore = false;
     // === 保留的常量和靜態字段 ===
     public static final Logger LOGGER = LogUtils.getLogger();
 
@@ -75,12 +68,16 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
     private final CacheManager cacheManager;
     private final NetworkManager networkManager;
     private final TransferManager transferManager;
-    private VirtualNetwork virtualNetwork;
+    // package-private：由 ConduitNetworkMembership 管理加入/離開/還原；魔力 facade 與 NBT 直接讀此欄位
+    VirtualNetwork virtualNetwork;
     private PullManager activePullManager;
     private UUID ownerId;
 
     // === 簡化的狀態 ===
     private int tickOffset;
+
+    private final ConduitNetworkMembership networkMembership = new ConduitNetworkMembership(this);
+    private final ConduitInteractionHandler interactionHandler = new ConduitInteractionHandler(this);
 
 
     /**
@@ -330,7 +327,7 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
         if (level != null && !level.isClientSide) {
             updateBlockStateConnections();
             if (virtualNetwork == null) {
-                tryJoinVirtualNetwork();
+                networkMembership.tryJoin();
             }
             // 通知所有相鄰的導管也重新掃描
             for (Direction dir : Direction.values()) {
@@ -352,7 +349,7 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
         LOGGER.debug("Removing conduit at {}", worldPosition);
 
         try {
-            leaveVirtualNetwork();
+            networkMembership.leave();
 
             // 委派給緩存管理器清理
             cacheManager.invalidateAll();
@@ -434,20 +431,8 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
             buffer.deserializeNBT(registries, tag.getCompound("Buffer"));
         }
 
-        // 🔧 關鍵修復：載入虛擬網路數據
-        if (tag.contains("VirtualNetworkMana")) {
-            tempNetworkData = new CompoundTag();
-            tempNetworkData.putInt("Mana", tag.getInt("VirtualNetworkMana"));
-            tempNetworkData.putInt("MaxMana", tag.getInt("VirtualNetworkMaxMana"));
-
-            if (tag.contains("VirtualNetworkConduits")) {
-                tempNetworkData.put("Conduits", tag.get("VirtualNetworkConduits"));
-            }
-
-            needsNetworkRestore = true;
-
-            LOGGER.debug("Queued virtual network mana restore: {}", tag.getInt("VirtualNetworkMana"));
-        }
+        // 🔧 關鍵修復：載入虛擬網路數據（暫存待 onLoad 網路建立後還原）
+        networkMembership.queueRestoreFromNBT(tag);
         // 🆕 載入拉取計數器
         pullTickCounter = tag.getInt("pullTickCounter");
 
@@ -515,54 +500,12 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
                     this);  // ← 改成傳入 this
 
             if (!level.isClientSide) {
-                tryJoinVirtualNetwork();
-
-
-                // 🔧 關鍵修復：恢復虛擬網路數據
-                if (needsNetworkRestore && tempNetworkData != null && virtualNetwork != null) {
-                    restoreVirtualNetworkData();
-                }
+                networkMembership.tryJoin();
+                // 🔧 關鍵修復：恢復虛擬網路數據（若 loadAdditional 有暫存）
+                networkMembership.restoreIfNeeded();
             }
         }
 
-    }
-
-    private void restoreVirtualNetworkData() {
-        if (tempNetworkData == null || virtualNetwork == null) return;
-
-        try {
-            int savedMana = tempNetworkData.getInt("Mana");
-
-            // 取最大值策略：若存檔魔力大於目前網路魔力則更新。
-            // 解決分批載入時容量尚未完全展開導致首次恢復被截斷的問題。
-            if (savedMana > virtualNetwork.getTotalManaStored()) {
-                virtualNetwork.setTotalManaStored(savedMana);
-                LOGGER.debug("Restored virtual network mana: {} at {}", savedMana, worldPosition);
-            }
-
-            needsNetworkRestore = false;
-            tempNetworkData = null;
-
-        } catch (Exception e) {
-            LOGGER.error("Failed to restore virtual network data: {}", e.getMessage());
-            needsNetworkRestore = false;
-            tempNetworkData = null;
-        }
-    }
-
-    // 🆕 判斷是否為網路主導管（位置最小的導管）
-    private boolean isNetworkMaster() {
-        if (virtualNetwork == null) return false;
-
-        Set<BlockPos> conduits = virtualNetwork.getConnectedConduits();
-        if (conduits.isEmpty()) return true;
-
-        // 找到位置最小的導管作為主導管
-        BlockPos minPos = conduits.stream()
-                .min(Comparator.comparingLong(BlockPos::asLong))
-                .orElse(worldPosition);
-
-        return worldPosition.equals(minPos);
     }
 
     // === 🆕 等級系統相關方法 ===
@@ -739,85 +682,10 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
         return container == 0 ? buffer.extractMana(amount, action) : 0;
     }
 
-    // === 保留的用戶交互邏輯 ===
+    // === 保留的用戶交互邏輯（委派給 ConduitInteractionHandler）===
     public InteractionResult onUse(BlockState state, Level level, BlockPos pos,
                                    Player player, BlockHitResult hit) {
-        if (level.isClientSide) return InteractionResult.SUCCESS;
-
-        ItemStack heldItem = player.getMainHandItem();
-
-        if (heldItem.getItem() instanceof BasicTechWandItem wand) {
-            BasicTechWandItem.TechWandMode mode = wand.getMode(heldItem);
-            Direction hitFace = hit.getDirection();
-
-            switch (mode) {
-                case DIRECTION_CONFIG -> {
-                    IOHandlerUtils.IOType current = getIOConfig(hitFace);
-                    IOHandlerUtils.IOType next = IOHandlerUtils.nextIOType(current);
-                    setIOConfig(hitFace, next);
-
-                    player.displayClientMessage(Component.translatable(
-                            "message.koniava.wrench.conduit_mode",
-                            Component.translatable("direction.koniava." + hitFace.name().toLowerCase()),
-                            Component.translatable("mode.koniava." + next.name().toLowerCase())
-                    ), true);
-
-                    return InteractionResult.SUCCESS;
-                }
-
-                case CONFIGURE_IO -> {
-                    showConduitInfo(player);
-                    return InteractionResult.SUCCESS;
-                }
-            }
-        }
-
-        if (heldItem.isEmpty()) {
-            showConduitInfo(player);
-            return InteractionResult.SUCCESS;
-        }
-
-        return InteractionResult.PASS;
-    }
-
-    // === 保留的信息顯示方法 ===
-    private void showConduitInfo(Player player) {
-        player.displayClientMessage(Component.translatable("message.koniava.conduit.info_header"), false);
-
-        // 🆕 顯示等級資訊
-        player.displayClientMessage(Component.translatable(
-                "message.koniava.conduit.tier",
-                Component.translatable(tier.getDisplayName())), false);
-
-        // 🆕 顯示傳輸速率
-        player.displayClientMessage(Component.translatable(
-                "message.koniava.conduit.transfer_rate",
-                tier.getTransferRate()), false);
-
-        player.displayClientMessage(Component.translatable(
-                "message.koniava.conduit.mana_status",
-                getManaStored(), getMaxManaStored()), false);
-
-        player.displayClientMessage(Component.translatable(
-                "message.koniava.conduit.connections",
-                getActiveConnectionCount()), false);
-
-        // 顯示IO配置
-        for (Direction dir : Direction.values()) {
-            IOHandlerUtils.IOType type = getIOConfig(dir);
-            String color = switch (type) {
-                case INPUT -> "§2";
-                case OUTPUT -> "§c";
-                case BOTH -> "§b";
-                case DISABLED -> "§8";
-            };
-
-            player.displayClientMessage(Component.translatable(
-                    "message.koniava.conduit.direction_config",
-                    Component.translatable("direction.koniava." + dir.name().toLowerCase()),
-                    Component.literal(color).append(Component.translatable("mode.koniava." + type.name().toLowerCase()))
-            ), false);
-        }
+        return interactionHandler.onUse(state, level, pos, player, hit);
     }
 
     // === 保留的輔助方法 ===
@@ -884,61 +752,4 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
         return virtualNetwork != null;
     }
 
-    /**
-     * 🆕 嘗試加入虛擬網路
-     */
-    private void tryJoinVirtualNetwork() {
-        if (virtualNetwork != null) return; // 已經在網路中
-
-        // 搜尋鄰近的導管
-        for (Direction dir : Direction.values()) {
-            BlockPos neighborPos = worldPosition.relative(dir);
-            BlockEntity neighborBE = level.getBlockEntity(neighborPos);
-
-            if (neighborBE instanceof ArcaneConduitBlockEntity neighborConduit) {
-                VirtualNetwork neighborNetwork = neighborConduit.getVirtualNetwork();
-
-                if (neighborNetwork != null) {
-                    // 加入鄰居的網路
-                    joinVirtualNetwork(neighborNetwork);
-                    return;
-                }
-            }
-        }
-
-        // 沒有鄰近網路，創建新的
-        createNewVirtualNetwork();
-    }
-
-    /**
-     * 🆕 創建新的虛擬網路
-     */
-    private void createNewVirtualNetwork() {
-        virtualNetwork = new VirtualNetwork();
-        virtualNetwork.addConduit(this);
-
-        LOGGER.debug("Created new virtual network at {}", worldPosition);
-    }
-
-    /**
-     * 🆕 加入現有的虛擬網路
-     */
-    private void joinVirtualNetwork(VirtualNetwork network) {
-        virtualNetwork = network;
-        network.addConduit(this);
-
-        LOGGER.debug("Joined virtual network at {}", worldPosition);
-    }
-
-    /**
-     * 🆕 離開虛擬網路
-     */
-    private void leaveVirtualNetwork() {
-        if (virtualNetwork != null) {
-            virtualNetwork.removeConduit(worldPosition);
-            virtualNetwork = null;
-
-            LOGGER.debug("Left virtual network at {}", worldPosition);
-        }
-    }
 }
