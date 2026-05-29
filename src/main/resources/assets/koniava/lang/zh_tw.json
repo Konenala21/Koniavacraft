@@ -1221,6 +1221,9 @@
   "biome.koniava.void_mirror": "鏡中世界",
   "entity.koniava.space_crack": "空間裂縫",
   "entity.koniava.player_clone": "鏡中的自己",
+  "entity.koniava.player_clone.bossbar": "鏡中的自己 - %s",
+  "entity.koniava.player_clone.phase2": "[二階段]",
+  "entity.koniava.player_clone.phase3": "[三階段]",
   "nara.dialogue.void_mirror.intro": "哦齁! 看起來有好戲看了哦!!",
   "nara.dialogue.void_mirror.death_taunt": "切！難道實力就這？爛透了！！雜魚！(小聲說話)",
   "nara.dialogue.void_mirror.victory": "欸? 比我想的還能打嘛⋯⋯哼，不錯啦不錯啦。戲看完囉，本小姐先撤啦~"

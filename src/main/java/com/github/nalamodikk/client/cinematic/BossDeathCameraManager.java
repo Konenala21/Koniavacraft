@@ -96,8 +96,12 @@ public class BossDeathCameraManager {
         AABB box = player.getBoundingBox().inflate(DETECT_RANGE);
         PlayerCloneEntity best = null;
         double bestSq = DETECT_RANGE_SQ;
+        UUID myId = player.getUUID();
         for (PlayerCloneEntity e : player.level().getEntitiesOfClass(PlayerCloneEntity.class, box)) {
             if (e.getDeathPhase() <= 0) continue;
+            // 多人模式：只觸發「自己這隻 boss」的演出，不要看到隔壁玩家的 cinematic
+            // 沒有 sourceUUID（/summon 的）就 fallback 用「最近」邏輯
+            if (e.getSourceUUID().isPresent() && !e.getSourceUUID().get().equals(myId)) continue;
             double dsq = e.distanceToSqr(player);
             if (dsq < bestSq) { bestSq = dsq; best = e; }
         }

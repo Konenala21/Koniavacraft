@@ -36,6 +36,12 @@ public class NaraSoundHelper {
         }
     }
 
+    /** 配音是否還在播放（用來擋玩家點下一句時把語音吃掉）。 */
+    public static boolean isPlaying() {
+        return currentSound != null
+                && Minecraft.getInstance().getSoundManager().isActive(currentSound);
+    }
+
     private static String resolveLocale() {
         String lang = Minecraft.getInstance().options.languageCode;
         return ModSounds.NARA.containsKey(lang + ".first_login.line1") ? lang : FALLBACK_LOCALE;

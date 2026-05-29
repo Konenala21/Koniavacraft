@@ -1194,6 +1194,9 @@
   "biome.koniava.void_mirror": "Mirror World",
   "entity.koniava.space_crack": "Space Crack",
   "entity.koniava.player_clone": "Mirror Self",
+  "entity.koniava.player_clone.bossbar": "Mirror Self - %s",
+  "entity.koniava.player_clone.phase2": "[Phase 2]",
+  "entity.koniava.player_clone.phase3": "[Phase 3]",
   "nara.dialogue.void_mirror.intro": "Oho! Looks like this'll be fun to watch!!",
   "nara.dialogue.void_mirror.death_taunt": "Tch! Is that all you've got? Pathetic!! Zako! (mutters)",
   "nara.dialogue.void_mirror.victory": "Huh? Not bad. Hmph, not bad at all. Show's done, this lady's out."

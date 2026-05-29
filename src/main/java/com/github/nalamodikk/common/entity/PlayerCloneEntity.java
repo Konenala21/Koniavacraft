@@ -18,7 +18,10 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.protocol.game.ClientboundSoundPacket;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
@@ -72,7 +75,7 @@ import java.util.*;
 
 public class PlayerCloneEntity extends Monster {
 
-    public static final float MAX_HP = 300.0F;
+    public static final float MAX_HP = 500.0F;
 
     public enum Phase { NORMAL, WALLING, BERSERK }
 
@@ -165,7 +168,8 @@ public class PlayerCloneEntity extends Monster {
     private boolean armoredDimensions = false; // 鏡像 ARMORED 給 getDimensions 用（避免在 entityData 尚未 define 時讀取）
     private boolean pendingArmorRebuild = false; // 重載時若仍在外殼狀態，首次 tick 重建外殼（接續二階段）
     private float armorHp = 0f;               // 外殼血量，與本體血量分離
-    private static final float ARMOR_MAX_HP = 120f;
+    private static final float ARMOR_MAX_HP = 200f;
+    private boolean armorWasBroken = false;   // 三階段判斷：曾經破過外殼回到本體型態
     // 二階段變身過場（server tick 倒數）：期間 boss 凍結 AI + 無敵，client 端鎖相機環繞
     private static final int PHASE2_TRANSITION_LEN = 220;
     private int phase2TransitionTicks = 0;
@@ -324,8 +328,21 @@ public class PlayerCloneEntity extends Monster {
         // 近戰改由 customServerAiStep 的 tickMeleeStrafe 處理（邊繞圈邊攻擊，不站定揮擊）
         this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
 
-        this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
+        // HurtByTargetGoal 設定要忽略其他 PlayerCloneEntity 的傷害 — 不然多人同場 boss
+        // 互相打 AoE 會啟動 retaliate，boss-vs-boss 互砍把 fight 變太簡單
+        this.targetSelector.addGoal(1, new HurtByTargetGoal(this).setAlertOthers());
+        // 只鎖定「自己這隻 boss 的 source player」— 多人模式下不會去抓別的玩家
+        // 沒有 sourceUUID（/summon 出來的）就 fallback 抓任何玩家
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false,
+                p -> getSourceUUID().map(id -> p.getUUID().equals(id)).orElse(true)));
+    }
+
+    // 多人同場：忽略其他 PlayerCloneEntity 之間的傷害（不然 AoE / 砲彈會誤傷
+    // 隔壁的 boss，那邊 retaliate 回打，雙方 source player 都看戲，戰鬥變得太簡單）
+    @Override
+    public boolean isInvulnerableTo(DamageSource source) {
+        if (source.getEntity() instanceof PlayerCloneEntity other && other != this) return true;
+        return super.isInvulnerableTo(source);
     }
 
     public void mirrorFrom(Player player) {
@@ -421,7 +438,23 @@ public class PlayerCloneEntity extends Monster {
         }
 
         this.setHealth(this.getMaxHealth());
-        this.bossEvent.setName(player.getDisplayName());
+        updateBossBarName();
+        // 多人混戰時讓 boss 一直發光（vanilla glowing outline），避免誤認玩家
+        this.setGlowingTag(true);
+    }
+
+    // 血條標題：「鏡中的自己 - PlayerName [二階段/三階段]」
+    private void updateBossBarName() {
+        String srcName = getSourceName();
+        if (srcName == null || srcName.isEmpty()) srcName = "???";
+        Component base = Component.translatable("entity.koniava.player_clone.bossbar", srcName);
+        Component phaseSuffix = isArmored()
+                ? Component.translatable("entity.koniava.player_clone.phase2")
+                : armorWasBroken
+                    ? Component.translatable("entity.koniava.player_clone.phase3")
+                    : null;
+        this.bossEvent.setName(phaseSuffix == null ? base
+                : base.copy().append(Component.literal(" ")).append(phaseSuffix));
     }
 
     // Boss 主動發砲齊射：每 10 秒一次，前 1 秒在每門砲上噴 END_ROD 粒子當預兆，然後同時對玩家蓄力齊射
@@ -834,13 +867,34 @@ public class PlayerCloneEntity extends Monster {
         }
         // 副手有盾且攻擊來自前方 → 擋掉這次傷害，盾消耗耐久（玩家要學會繞背攻）
         if (!isArmored() && tryShieldBlock(source)) return false;
-        // 變身期間：玩家攻擊打在方塊外殼上（與本體血量分離），其他傷害（環境/生物/自爆）走正常流程不被吞
+        // 變身期間：只有鎬 或 浮游砲蓄力彈（爆破力）能打破外殼，其他武器完全免疫
+        // 這樣玩家有近戰（鎬）+ 遠程（蓄力彈）兩個選項，不會被綁死在近戰
         if (isArmored() && level() instanceof ServerLevel armorLevel
                 && source.getEntity() instanceof Player attacker && attacker.isAlive()) {
-            float dealt = attacker.getMainHandItem().is(ItemTags.PICKAXES) ? amount : amount * 0.2F; // tag 涵蓋 modded 鎬
+            boolean isPickaxe = attacker.getMainHandItem().is(ItemTags.PICKAXES);
+            boolean isChargedTurret = source.getDirectEntity() instanceof FloatingTurretProjectile proj
+                    && proj.getChargeRatio() > 0F;
+            if (!isPickaxe && !isChargedTurret) {
+                // 既不是鎬也不是蓄力彈：完全擋下，給聲音 + 火星粒子但不掉血、不顯示傷害
+                armorLevel.playSound(null, blockPosition(), SoundEvents.ANVIL_LAND, SoundSource.HOSTILE, 0.6F, 1.6F);
+                armorLevel.sendParticles(ParticleTypes.ELECTRIC_SPARK, getX(), getY() + 1.0, getZ(), 4, 0.4, 0.6, 0.4, 0.05);
+                return false;
+            }
+            // 蓄力彈額外 +50% 因為爆破破甲合理，玩家也才有動機切換武器
+            float dealt = isChargedTurret ? amount * 1.5F : amount;
             armorHp -= dealt;
             armorLevel.playSound(null, blockPosition(), SoundEvents.DEEPSLATE_BREAK, SoundSource.HOSTILE, 0.9F, 0.8F);
             armorLevel.sendParticles(ParticleTypes.CRIT, getX(), getY() + 1.0, getZ(), 6, 0.6, 1.0, 0.6, 0.1);
+            // 顯示傷害數字（CRIT 色 = 黃色，提示「鎬有效」）
+            for (ServerPlayer p : armorLevel.players()) {
+                if (this.distanceToSqr(p) < 64 * 64) {
+                    net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(p,
+                            new com.github.nalamodikk.common.network.packet.client.turret.DamageNumberPacket(
+                                    getX(), getY() + getBbHeight() * 0.8, getZ(), amount,
+                                    com.github.nalamodikk.common.network.packet.client.turret.DamageNumberPacket.CRIT,
+                                    getId()));
+                }
+            }
             if (armorHp <= 0F) breakArmor(armorLevel);
             return false; // 玩家攻擊：本體血量受外殼保護
         }
@@ -940,37 +994,54 @@ public class PlayerCloneEntity extends Monster {
         return 5;
     }
 
+    // 取得這隻 boss 的 source player（多人模式下用來把死亡演出 sound/particle 只發給他）
+    private @Nullable ServerPlayer getSourcePlayer(ServerLevel sl) {
+        return getSourceUUID().map(id -> sl.getServer().getPlayerList().getPlayer(id)).orElse(null);
+    }
+
+    // 只發給 source player 的音效（fallback：沒 source 就廣播給所有人，例 /summon 邊角）
+    private void playDeathSound(ServerLevel sl, SoundEvent event, float vol, float pitch) {
+        ServerPlayer src = getSourcePlayer(sl);
+        if (src == null) {
+            sl.playSound(null, blockPosition(), event, SoundSource.HOSTILE, vol, pitch);
+            return;
+        }
+        src.connection.send(new ClientboundSoundPacket(
+                BuiltInRegistries.SOUND_EVENT.wrapAsHolder(event),
+                SoundSource.HOSTILE, getX(), getY(), getZ(), vol, pitch, sl.random.nextLong()));
+    }
+
+    // 只發給 source player 的粒子（fallback 同上）
+    private void sendDeathParticles(ServerLevel sl, ParticleOptions p, double x, double y, double z,
+                                    int count, double dx, double dy, double dz, double speed) {
+        ServerPlayer src = getSourcePlayer(sl);
+        if (src == null) {
+            sl.sendParticles(p, x, y, z, count, dx, dy, dz, speed);
+            return;
+        }
+        sl.sendParticles(src, p, true, x, y, z, count, dx, dy, dz, speed);
+    }
+
     // 階段切換瞬間觸發 — 一次性大動作（音效、爆破粒子、slow-mo 開始等）
+    // 所有 sound/particle 走 playDeathSound / sendDeathParticles，多人模式下只給 source player
     private void onDeathPhaseEnter(ServerLevel sl, int phase) {
         double x = getX(), y = getY() + 1.0, z = getZ();
         switch (phase) {
             case 1 -> {
-                // Stagger 開始：低音玻璃龜裂預兆
-                sl.playSound(null, blockPosition(), SoundEvents.GLASS_BREAK,
-                        SoundSource.HOSTILE, 1.2F, 0.4F);
-                sl.playSound(null, blockPosition(), SoundEvents.WARDEN_HEARTBEAT,
-                        SoundSource.HOSTILE, 2.0F, 0.5F);
+                playDeathSound(sl, SoundEvents.GLASS_BREAK, 1.2F, 0.4F);
+                playDeathSound(sl, SoundEvents.WARDEN_HEARTBEAT, 2.0F, 0.5F);
             }
             case 2 -> {
-                // Glow Up：紫色能量湧出，全身發光開始
-                sl.sendParticles(ParticleTypes.END_ROD,
-                        x, y, z, 60, 0.8, 1.2, 0.8, 0.05);
-                sl.sendParticles(ParticleTypes.PORTAL,
-                        x, y, z, 120, 1.0, 1.5, 1.0, 0.4);
-                sl.playSound(null, blockPosition(), SoundEvents.BEACON_ACTIVATE,
-                        SoundSource.HOSTILE, 1.5F, 1.4F);
-                sl.playSound(null, blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME,
-                        SoundSource.HOSTILE, 2.0F, 0.6F);
+                sendDeathParticles(sl, ParticleTypes.END_ROD, x, y, z, 60, 0.8, 1.2, 0.8, 0.05);
+                sendDeathParticles(sl, ParticleTypes.PORTAL, x, y, z, 120, 1.0, 1.5, 1.0, 0.4);
+                playDeathSound(sl, SoundEvents.BEACON_ACTIVATE, 1.5F, 1.4F);
+                playDeathSound(sl, SoundEvents.AMETHYST_BLOCK_CHIME, 2.0F, 0.6F);
             }
             case 3 -> {
-                // Crack：玻璃連續碎裂 + 在 boss 中心生成裂縫實體（重用既有 SpaceCrack shader）
-                sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
-                        x, y, z, 50, 0.6, 0.8, 0.6, 0.10);
-                sl.playSound(null, blockPosition(), SoundEvents.GLASS_BREAK,
-                        SoundSource.HOSTILE, 2.0F, 0.7F);
-                sl.playSound(null, blockPosition(), SoundEvents.AMETHYST_CLUSTER_BREAK,
-                        SoundSource.HOSTILE, 2.0F, 0.5F);
-                // 生成裝飾用裂縫（lifespan 約 60 tick，演出結束自動消失）
+                sendDeathParticles(sl, ParticleTypes.SOUL_FIRE_FLAME, x, y, z, 50, 0.6, 0.8, 0.6, 0.10);
+                playDeathSound(sl, SoundEvents.GLASS_BREAK, 2.0F, 0.7F);
+                playDeathSound(sl, SoundEvents.AMETHYST_CLUSTER_BREAK, 2.0F, 0.5F);
+                // 裂縫實體本身就是 entity，自然只有附近 client 看得到，不用特別過濾
                 com.github.nalamodikk.common.entity.SpaceCrackEntity rift =
                         com.github.nalamodikk.register.ModEntities.SPACE_CRACK.get().create(sl);
                 if (rift != null) {
@@ -980,27 +1051,17 @@ public class PlayerCloneEntity extends Monster {
                 }
             }
             case 4 -> {
-                // Shatter：大爆破 + slow-mo 啟動 + 碎片噴飛
-                sl.sendParticles(ParticleTypes.EXPLOSION_EMITTER,
-                        x, y, z, 2, 0.5, 0.5, 0.5, 0.0);
-                sl.sendParticles(ParticleTypes.LARGE_SMOKE,
-                        x, y, z, 80, 1.5, 1.8, 1.5, 0.15);
-                sl.sendParticles(ParticleTypes.FLASH,
-                        x, y, z, 2, 0.3, 0.3, 0.3, 0.0);
-                sl.playSound(null, blockPosition(), SoundEvents.ENDER_DRAGON_DEATH,
-                        SoundSource.HOSTILE, 2.0F, 0.7F);
-                sl.playSound(null, blockPosition(), SoundEvents.GENERIC_EXPLODE.value(),
-                        SoundSource.HOSTILE, 2.0F, 0.5F);
+                sendDeathParticles(sl, ParticleTypes.EXPLOSION_EMITTER, x, y, z, 2, 0.5, 0.5, 0.5, 0.0);
+                sendDeathParticles(sl, ParticleTypes.LARGE_SMOKE, x, y, z, 80, 1.5, 1.8, 1.5, 0.15);
+                sendDeathParticles(sl, ParticleTypes.FLASH, x, y, z, 2, 0.3, 0.3, 0.3, 0.0);
+                playDeathSound(sl, SoundEvents.ENDER_DRAGON_DEATH, 2.0F, 0.7F);
+                playDeathSound(sl, SoundEvents.GENERIC_EXPLODE.value(), 2.0F, 0.5F);
                 spawnDeathShards(sl);
             }
             case 5 -> {
-                // Final Flash：全屏白光 + 靈魂上飄 + 寶箱生成（演出尾聲才出）
-                sl.sendParticles(ParticleTypes.FLASH,
-                        x, y, z, 4, 0.5, 0.5, 0.5, 0.0);
-                sl.sendParticles(ParticleTypes.SOUL,
-                        x, y, z, 60, 1.2, 1.5, 1.2, 0.15);
-                sl.playSound(null, blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME,
-                        SoundSource.HOSTILE, 2.0F, 1.8F);
+                sendDeathParticles(sl, ParticleTypes.FLASH, x, y, z, 4, 0.5, 0.5, 0.5, 0.0);
+                sendDeathParticles(sl, ParticleTypes.SOUL, x, y, z, 60, 1.2, 1.5, 1.2, 0.15);
+                playDeathSound(sl, SoundEvents.AMETHYST_BLOCK_CHIME, 2.0F, 1.8F);
                 boolean anyCloneLeft = !sl.getEntitiesOfClass(PlayerCloneEntity.class,
                         new AABB(BlockPos.ZERO).inflate(260), e -> e != this && e.isAlive()).isEmpty();
                 if (!anyCloneLeft) spawnRewardChest(sl, pendingRewardFirstClear);
@@ -1014,44 +1075,23 @@ public class PlayerCloneEntity extends Monster {
         switch (phase) {
             case 1 -> {
                 // Stagger：少量灰煙從身上飄出
-                if (t % 3 == 0) {
-                    sl.sendParticles(ParticleTypes.SMOKE,
-                            x, y, z, 2, 0.3, 0.5, 0.3, 0.02);
-                }
+                if (t % 3 == 0) sendDeathParticles(sl, ParticleTypes.SMOKE, x, y, z, 2, 0.3, 0.5, 0.3, 0.02);
             }
             case 2 -> {
-                // Glow Up：持續從中心向外噴 end rod 光點
-                if (t % 2 == 0) {
-                    sl.sendParticles(ParticleTypes.END_ROD,
-                            x, y, z, 3, 0.3, 0.5, 0.3, 0.06);
-                }
+                if (t % 2 == 0) sendDeathParticles(sl, ParticleTypes.END_ROD, x, y, z, 3, 0.3, 0.5, 0.3, 0.06);
             }
             case 3 -> {
-                // Crack：靈魂火與玻璃碎片連續噴
-                if (t % 2 == 0) {
-                    sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME,
-                            x, y, z, 4, 0.5, 0.7, 0.5, 0.08);
-                }
-                if (t % 5 == 0) {
-                    sl.playSound(null, blockPosition(), SoundEvents.GLASS_BREAK,
-                            SoundSource.HOSTILE, 0.8F, 1.2F + this.random.nextFloat() * 0.6F);
-                }
+                if (t % 2 == 0) sendDeathParticles(sl, ParticleTypes.SOUL_FIRE_FLAME, x, y, z, 4, 0.5, 0.7, 0.5, 0.08);
+                if (t % 5 == 0) playDeathSound(sl, SoundEvents.GLASS_BREAK, 0.8F, 1.2F + this.random.nextFloat() * 0.6F);
             }
             case 4 -> {
-                // Shatter：碎片散開 + 雲煙繚繞
                 if (t % 3 == 0) {
-                    sl.sendParticles(ParticleTypes.LARGE_SMOKE,
-                            x, y, z, 4, 1.0, 1.2, 1.0, 0.05);
-                    sl.sendParticles(ParticleTypes.SOUL,
-                            x, y, z, 3, 0.8, 1.0, 0.8, 0.08);
+                    sendDeathParticles(sl, ParticleTypes.LARGE_SMOKE, x, y, z, 4, 1.0, 1.2, 1.0, 0.05);
+                    sendDeathParticles(sl, ParticleTypes.SOUL, x, y, z, 3, 0.8, 1.0, 0.8, 0.08);
                 }
             }
             case 5 -> {
-                // Final Flash：靈魂緩緩上飄
-                if (t % 2 == 0) {
-                    sl.sendParticles(ParticleTypes.SOUL,
-                            x, y + 1.5, z, 2, 0.6, 0.5, 0.6, 0.05);
-                }
+                if (t % 2 == 0) sendDeathParticles(sl, ParticleTypes.SOUL, x, y + 1.5, z, 2, 0.6, 0.5, 0.6, 0.05);
             }
         }
     }
@@ -1067,18 +1107,24 @@ public class PlayerCloneEntity extends Monster {
             double vy = 0.3 + random.nextDouble() * 0.3;
             // sendParticles 的 xSpeed/ySpeed/zSpeed 在 count > 1 時是 random 散度，count = 0 時直接當速度
             // 這裡用 count=0 + ySpeed 當「初速」讓每個粒子都有方向性 ballistic
-            sl.sendParticles(ParticleTypes.WHITE_ASH,
-                    x, y, z, 0, vx, vy, vz, 1.0);
-            sl.sendParticles(ParticleTypes.POOF,
-                    x, y, z, 0, vx * 0.8, vy * 0.8, vz * 0.8, 0.8);
+            sendDeathParticles(sl, ParticleTypes.WHITE_ASH, x, y, z, 0, vx, vy, vz, 1.0);
+            sendDeathParticles(sl, ParticleTypes.POOF, x, y, z, 0, vx * 0.8, vy * 0.8, vz * 0.8, 0.8);
         }
-        // 中心一個大爆破閃光粒子
-        sl.sendParticles(ParticleTypes.FLASH,
-                x, y, z, 1, 0, 0, 0, 0);
+        sendDeathParticles(sl, ParticleTypes.FLASH, x, y, z, 1, 0, 0, 0, 0);
     }
 
-    // 停掉所有收到 BGM 的玩家的戰鬥音樂
+    // 停 BGM：多人模式下，**場上還有其他 boss 活著就不真的停**，等所有 boss 都死才停
+    // 不然兩人合作打 boss A、B，A 先死就把 B 的玩家 BGM 也停了，戰鬥下半場沒氣氛
     private void stopBgmForAll(ServerLevel sl) {
+        boolean otherBossesAlive = !sl.getEntitiesOfClass(PlayerCloneEntity.class,
+                new AABB(BlockPos.ZERO).inflate(260),
+                e -> e != this && e.isAlive() && !e.dead).isEmpty();
+        if (otherBossesAlive) {
+            // 留 BGM 給場上的玩家繼續聽，只清自己這隻的 sentTo 記錄
+            bgmSentTo.clear();
+            return;
+        }
+        // 場上最後一隻 boss 了 → 真正停 BGM
         com.github.nalamodikk.common.network.packet.client.BossBgmPacket stop =
                 com.github.nalamodikk.common.network.packet.client.BossBgmPacket.STOP;
         for (ServerPlayer p : sl.getServer().getPlayerList().getPlayers()) {
@@ -1467,6 +1513,7 @@ public class PlayerCloneEntity extends Monster {
         entityData.set(ARMORED, true);
         armorHp = ARMOR_MAX_HP;
         this.bossEvent.setColor(BossEvent.BossBarColor.RED); // 血條轉紅，配合顯示外殼血量提示在打外殼
+        updateBossBarName(); // 顯示「二階段」尾標
         // 清掉進行中的技能狀態，否則變身前正在前搖的招式會卡住、變身後一直重放同一招
         pendingSkill = null;
         skillChargeTicks = 0;
@@ -1504,6 +1551,7 @@ public class PlayerCloneEntity extends Monster {
     }
 
     // 重載後仍在外殼狀態：清掉存盤殘留的孤兒外殼並重建，接續二階段（不重播變身演出，armorHp 維持讀回值）
+    // Reload 後重建外殼（接續二階段，不重播變身演出）
     private void rebuildArmor(ServerLevel sl) {
         discardOwnedArmorDisplays(sl);
         entityData.set(ARMORED, true);
@@ -1511,6 +1559,8 @@ public class PlayerCloneEntity extends Monster {
         refreshDimensions();
         this.bossEvent.setColor(BossEvent.BossBarColor.RED);
         buildArmorShell(sl);
+        updateBossBarName(); // reload 後也要顯示「二階段」尾標
+        this.setGlowingTag(true); // 多人模式可見性，reload 後也要重新開
     }
 
     // 嘗試從結構模板（data/koniava/structure/mecha_shell.nbt）載入機甲形狀；若找不到回 false fallback 到 hardcoded MECH_SHAPE
@@ -1748,7 +1798,9 @@ public class PlayerCloneEntity extends Monster {
         entityData.set(ARMORED, false);
         armoredDimensions = false; // 碰撞箱還原正常
         refreshDimensions();
+        armorWasBroken = true;   // 三階段：標記曾破殼
         this.bossEvent.setColor(BossEvent.BossBarColor.WHITE); // 外殼破，血條恢復白色顯示本體血量
+        updateBossBarName(); // 顯示「三階段」尾標
         sl.playSound(null, blockPosition(), SoundEvents.IRON_GOLEM_DEATH, SoundSource.HOSTILE, 1.3F, 0.8F);
         sl.sendParticles(ParticleTypes.EXPLOSION, getX(), getY() + 1.0, getZ(), 12, 1.5, 2.0, 1.5, 0.0);
     }
@@ -2080,6 +2132,7 @@ public class PlayerCloneEntity extends Monster {
         tag.putBoolean("ArmorTriggered", armorTriggered); // 重載後不重複觸發變身
         tag.putBoolean("Armored", isArmored());           // 仍在外殼狀態 → 重載時重建外殼接續二階段
         tag.putFloat("ArmorHp", armorHp);
+        tag.putBoolean("ArmorWasBroken", armorWasBroken); // 三階段判斷
         long[] walls = new long[placedWalls.size()];
         int wi = 0;
         for (long l : placedWalls) walls[wi++] = l;
@@ -2117,6 +2170,7 @@ public class PlayerCloneEntity extends Monster {
             phase = ord >= 0 && ord < values.length ? values[ord] : Phase.NORMAL;
         }
         armorTriggered = tag.getBoolean("ArmorTriggered");
+        armorWasBroken = tag.getBoolean("ArmorWasBroken");
         if (tag.getBoolean("Armored")) {
             armorHp = tag.getFloat("ArmorHp");
             pendingArmorRebuild = true;        // 首次 tick 重建外殼（此時 level 可能尚未 ready）

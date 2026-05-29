@@ -71,6 +71,9 @@ public class NaraDialogueManager {
                 if (charIndex < full.length()) {
                     charIndex = Math.min(charIndex + CHARS_PER_TICK, full.length());
                     charAddedThisTick = true;
+                } else if (NaraSoundHelper.isPlaying()) {
+                    // 文字打完但配音還在播：停在 typing 完成狀態，不要切到 WAITING
+                    // 否則玩家會看到「下一句」提示就點下去 → advanceLine 把配音吃掉
                 } else {
                     dialogueState = currentLine.choices().isEmpty()
                             ? DialogueState.WAITING
@@ -96,7 +99,7 @@ public class NaraDialogueManager {
 
     public static void onPlayerClick() {
         if (dialogueState == DialogueState.TYPING) {
-            // 跳到全文
+            // 跳到全文（state machine 會在配音播完才切到 WAITING，所以這個點擊只是把字補齊）
             charIndex = currentLine.text().getString().length();
         } else if (dialogueState == DialogueState.WAITING) {
             advanceLine();
