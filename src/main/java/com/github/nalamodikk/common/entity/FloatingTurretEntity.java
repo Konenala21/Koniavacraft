@@ -7,7 +7,6 @@ import com.github.nalamodikk.common.item.weapon.turret.TurretUpgradeItem;
 import com.github.nalamodikk.register.ModDataAttachments;
 import com.github.nalamodikk.register.ModDataComponents;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -15,11 +14,8 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -48,27 +44,26 @@ public class FloatingTurretEntity extends PathfinderMob {
     private static final EntityDataAccessor<Boolean> IN_COMBAT_DATA =
             SynchedEntityData.defineId(FloatingTurretEntity.class, EntityDataSerializers.BOOLEAN);
 
-    private static final float ORBIT_RADIUS = 1.5F;
-    private static final float ORBIT_HEIGHT = 1.0F;
-    private static final float ORBIT_SPEED = 0.04F;
-    private static final int PASSIVE_ATTACK_COOLDOWN = 40;
-    private static final int CLONE_HAND_CHARGE_COOLDOWN = 70; // 分身手持模式蓄力週期
-    private static final float PASSIVE_RANGE = 16.0F;
+    // package-private：CloneTurretController 共用
+    static final float ORBIT_RADIUS = 1.5F;
+    static final float ORBIT_HEIGHT = 1.0F;
+    static final float ORBIT_SPEED = 0.04F;
+    static final int PASSIVE_ATTACK_COOLDOWN = 40;
+    static final float PASSIVE_RANGE = 16.0F;
+
     private static final int MANA_PER_ATTACK = 50;
     private static final float ATTACK_DAMAGE = 5.0F;
     public static final long COMBAT_LINGER_TICKS = 200L; // 10 秒無戰鬥後解除
 
-    private int attackTimer = 0;
+    // package-private：兩個模式都會 mutate
+    int attackTimer = 0;
 
     // 控制彈各自獨立冷卻（自走砲模式；實體每次戰鬥重建故 transient）
     private final Map<TurretUpgradeBehavior, Integer> controlCooldowns =
             new EnumMap<>(TurretUpgradeBehavior.class);
 
-    // 分身砲模式：owner 是 boss 分身（非玩家），自帶鏡像過的砲 stack
-    @Nullable
-    private LivingEntity cloneOwner = null;
-    private ItemStack cloneTurretStack = ItemStack.EMPTY;
-    private int cloneShotCount = 0;
+    // boss 鏡像模式邏輯封裝
+    private final CloneTurretController cloneCtrl = new CloneTurretController(this);
 
     public FloatingTurretEntity(EntityType<? extends FloatingTurretEntity> type, Level level) {
         super(type, level);
@@ -107,8 +102,8 @@ public class FloatingTurretEntity extends PathfinderMob {
     }
 
     private void serverTick() {
-        if (cloneOwner != null) {
-            cloneServerTick();
+        if (cloneCtrl.isActive()) {
+            cloneCtrl.serverTick();
             return;
         }
         Player owner = getOwnerPlayer();
@@ -247,146 +242,15 @@ public class FloatingTurretEntity extends PathfinderMob {
         return nearest;
     }
 
-    // ── 分身砲模式 ────────────────────────────────────────────────────────────
+    // ── 分身砲模式：委派給 CloneTurretController ──────────────────────────────
 
-    @javax.annotation.Nullable
+    @Nullable
     public LivingEntity getCloneOwner() {
-        return cloneOwner;
+        return cloneCtrl.getCloneOwner();
     }
 
     public void setupAsCloneTurret(LivingEntity owner, ItemStack turretStack, int slotIndex) {
-        this.cloneOwner = owner;
-        this.cloneTurretStack = turretStack.copy();
-        entityData.set(SLOT_INDEX_DATA, slotIndex);
-        var attr = getAttribute(Attributes.MAX_HEALTH);
-        if (attr != null) {
-            attr.setBaseValue(100.0 + FloatingTurretItem.getHealthBonus(cloneTurretStack));
-            setHealth(getMaxHealth());
-        }
-    }
-
-    private void cloneServerTick() {
-        if (cloneOwner == null || !cloneOwner.isAlive() || cloneOwner.isRemoved()) {
-            this.discard();
-            return;
-        }
-        // 二階段變身過場期間：boss 凍結 + 無敵，砲也跟著凍結不打、不繞、不射（畫面感一致）
-        if (cloneOwner instanceof PlayerCloneEntity pc && pc.isPhase2Transitioning()) {
-            return;
-        }
-        int slotIdx = entityData.get(SLOT_INDEX_DATA);
-
-        float angle = entityData.get(ORBIT_ANGLE);
-        angle += ORBIT_SPEED;
-        if (angle > (float) (2 * Math.PI)) angle -= (float) (2 * Math.PI);
-        entityData.set(ORBIT_ANGLE, angle);
-        entityData.set(IN_COMBAT_DATA, true);
-
-        if (slotIdx >= 2) {
-            cloneHandTick(slotIdx);   // 鏡射「雙手持砲蓄力」
-        } else {
-            cloneOrbitTick(slotIdx);  // 鏡射「自走砲（繞行）」
-        }
-    }
-
-    // 自走砲：繞行分身背後左右兩側，自動射擊（每 4 發蓄力）
-    // 機甲狀態下，若結構模板有 LIME_WOOL 砲位則坐在那；否則 fallback 到頭頂繞行
-    private void cloneOrbitTick(int slotIdx) {
-        float yawRad = cloneOwner.getYRot() * (float) (Math.PI / 180.0);
-        float bob = (float) (Math.sin(tickCount * 0.08) * 0.2);
-        boolean mechaHead = cloneOwner instanceof PlayerCloneEntity pc && pc.isArmored();
-        net.minecraft.world.phys.Vec3 mount = mechaHead
-                ? ((PlayerCloneEntity) cloneOwner).getTurretMountOffset(slotIdx)
-                : null;
-        if (mount != null) {
-            double sinY = Math.sin(yawRad), cosY = Math.cos(yawRad);
-            double wx = mount.x * cosY - mount.z * sinY;
-            double wz = mount.x * sinY + mount.z * cosY;
-            this.setPos(
-                    cloneOwner.getX() + wx,
-                    cloneOwner.getY() + mount.y + bob * 0.5,
-                    cloneOwner.getZ() + wz);
-        } else {
-            float behindAngle = (float) Math.atan2(-Math.cos(yawRad), Math.sin(yawRad));
-            float spread = (float) (Math.PI / 5);
-            float finalAngle = behindAngle + (slotIdx == 0 ? -spread : spread);
-            float radius = mechaHead ? 0.9F : ORBIT_RADIUS;
-            double yOffset = mechaHead ? (PlayerCloneEntity.ARMORED_HEAD_TOP_Y + 2.0) : ORBIT_HEIGHT;
-            this.setPos(
-                    cloneOwner.getX() + Math.cos(finalAngle) * radius,
-                    cloneOwner.getY() + yOffset + bob,
-                    cloneOwner.getZ() + Math.sin(finalAngle) * radius);
-        }
-
-        if (attackTimer == 0) {
-            LivingEntity target = cloneTarget();
-            if (target != null && level() instanceof ServerLevel sl) {
-                cloneShotCount++;
-                float charge = (cloneShotCount % 4 == 0) ? 1.0F : 0.0F;
-                FloatingTurretProjectile proj = FloatingTurretProjectile.shootAt(
-                        sl, cloneOwner, this.position(), target.getBoundingBox().getCenter(), charge);
-                proj.setNoBlockDamage(true); // 分身砲不破壞 arena 地形
-                sl.addFreshEntity(proj);
-                attackTimer = PASSIVE_ATTACK_COOLDOWN;
-            }
-        }
-        if (attackTimer > 0) attackTimer--;
-    }
-
-    // 手持模式：站在分身手邊，蓄力後發強化彈（鏡射玩家雙持蓄力）
-    // 機甲狀態下，若結構模板有對應 LIME_WOOL 砲位則坐在那
-    private void cloneHandTick(int slotIdx) {
-        float yawRad = cloneOwner.getYRot() * (float) (Math.PI / 180.0);
-        boolean mechaHead = cloneOwner instanceof PlayerCloneEntity pc && pc.isArmored();
-        net.minecraft.world.phys.Vec3 mount = mechaHead
-                ? ((PlayerCloneEntity) cloneOwner).getTurretMountOffset(slotIdx)
-                : null;
-        if (mount != null) {
-            double sinY = Math.sin(yawRad), cosY = Math.cos(yawRad);
-            double wx = mount.x * cosY - mount.z * sinY;
-            double wz = mount.x * sinY + mount.z * cosY;
-            this.setPos(
-                    cloneOwner.getX() + wx,
-                    cloneOwner.getY() + mount.y,
-                    cloneOwner.getZ() + wz);
-        } else {
-            double rightX = -Math.cos(yawRad);
-            double rightZ = -Math.sin(yawRad);
-            double forwardX = -Math.sin(yawRad);
-            double forwardZ = Math.cos(yawRad);
-            boolean isLeftHanded = cloneOwner.getMainArm() == HumanoidArm.LEFT;
-            double mainHandSide = isLeftHanded ? -1.0 : 1.0;
-            double side = (slotIdx == 2) ? mainHandSide : -mainHandSide;
-            this.setPos(
-                    cloneOwner.getX() + rightX * side * 1.0 + forwardX * 1.2,
-                    cloneOwner.getEyeY() + 0.3,
-                    cloneOwner.getZ() + rightZ * side * 1.0 + forwardZ * 1.2);
-        }
-
-        if (attackTimer > 0) {
-            // 蓄力末段的砲口集氣特效
-            if (attackTimer <= 15 && level() instanceof ServerLevel sl) {
-                sl.sendParticles(ParticleTypes.END_ROD, getX(), getY(), getZ(), 2, 0.08, 0.08, 0.08, 0.01);
-            }
-            attackTimer--;
-        } else {
-            LivingEntity target = cloneTarget();
-            if (target != null && level() instanceof ServerLevel sl) {
-                FloatingTurretProjectile proj = FloatingTurretProjectile.shootAt(
-                        sl, cloneOwner, this.position(), target.getBoundingBox().getCenter(), 1.0F);
-                proj.setNoBlockDamage(true); // 分身砲不破壞 arena 地形
-                sl.addFreshEntity(proj);
-                attackTimer = CLONE_HAND_CHARGE_COOLDOWN;
-            }
-        }
-    }
-
-    @Nullable
-    private LivingEntity cloneTarget() {
-        if (cloneOwner instanceof Mob mob && mob.getTarget() != null && mob.getTarget().isAlive()) {
-            return mob.getTarget();
-        }
-        return level().getNearestPlayer(this, PASSIVE_RANGE);
+        cloneCtrl.setup(owner, turretStack, slotIndex);
     }
 
     @Nullable
@@ -506,8 +370,18 @@ public class FloatingTurretEntity extends PathfinderMob {
         return entityData.get(IN_COMBAT_DATA);
     }
 
+    /** package-private：clone controller 用來在每 tick 強制標記戰鬥中。 */
+    void setInCombat(boolean v) {
+        entityData.set(IN_COMBAT_DATA, v);
+    }
+
     public float getOrbitAngle() {
         return entityData.get(ORBIT_ANGLE);
+    }
+
+    /** package-private：clone controller 用來推進軌道角度。 */
+    void setOrbitAngle(float angle) {
+        entityData.set(ORBIT_ANGLE, angle);
     }
 
     @Override
@@ -532,19 +406,10 @@ public class FloatingTurretEntity extends PathfinderMob {
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        // 分身砲：玩家無法傷害（強制把仇恨導向 boss 本體，避免玩家先清砲再打 boss）
-        if (cloneOwner != null) {
-            if (source.getEntity() instanceof Player) {
-                return false;
-            }
-            // 免疫同源浮游砲的傷害（含蓄力彈爆炸），不被自己或同伴的砲炸死
-            if (source.getDirectEntity() instanceof FloatingTurretProjectile proj && proj.getOwner() == cloneOwner) {
-                return false;
-            }
-            if (cloneTurretStack.getItem() instanceof FloatingTurretItem) {
-                amount *= (1f - FloatingTurretItem.getDamageReduction(cloneTurretStack));
-            }
-            return super.hurt(source, amount);
+        if (cloneCtrl.isActive()) {
+            CloneTurretController.HurtResult r = cloneCtrl.handleHurt(source, amount);
+            if (r.blocked()) return false;
+            return super.hurt(source, r.adjustedAmount());
         }
         if (source.getEntity() instanceof Player) return false;
         Player owner = getOwnerPlayer();
@@ -604,9 +469,8 @@ public class FloatingTurretEntity extends PathfinderMob {
 
     @Override
     public boolean isPickable() {
-        // 分身砲對玩家不可選取：玩家近戰/箭/浮游砲彈的 ray-cast 直接穿過，避免 boss 拿砲當肉盾
-        if (cloneOwner != null) return false;
-        return true;
+        // clone 模式對玩家不可選取：箭/砲彈/近戰 ray-cast 直接穿過
+        return !cloneCtrl.isActive();
     }
 
     @Override
