@@ -1,5 +1,6 @@
 package com.github.nalamodikk.common.item.tool;
 
+import com.github.nalamodikk.common.block.blockentity.altar.AltarGeometry;
 import com.github.nalamodikk.common.block.blockentity.altar.AspectAltarBlockEntity;
 import com.github.nalamodikk.common.network.packet.client.BlockHighlightPacket;
 import com.github.nalamodikk.register.ModBlocks;
@@ -52,9 +53,9 @@ public class StructureBuildWandItem extends Item {
             Component msg;
             if (!altar.isFormed()) {
                 msg = Component.translatable("message.koniava.build_wand.ready_to_form");
-            } else if (altar.getUpgradeTier() >= AspectAltarBlockEntity.ALL_RINGS.size()) {
+            } else if (altar.getUpgradeTier() >= AltarGeometry.ALL_RINGS.size()) {
                 msg = Component.translatable("message.koniava.build_wand.all_rings_done",
-                        AspectAltarBlockEntity.ALL_RINGS.size());
+                        AltarGeometry.ALL_RINGS.size());
             } else {
                 msg = Component.translatable("message.koniava.build_wand.ring_ready",
                         altar.getUpgradeTier() + 1);
@@ -116,14 +117,14 @@ public class StructureBuildWandItem extends Item {
                                    List<BlockPos> blocked) {
         if (!altar.isFormed()) {
             // 未成形：檢查柱子 + 底座
-            checkPillarPositions(level, altarPos, AspectAltarBlockEntity.PILLAR_BOTTOM, missingPillar, blocked);
-            checkPillarPositions(level, altarPos, AspectAltarBlockEntity.PILLAR_TOP,   missingPillar, blocked);
-            checkPedestalPositions(level, altarPos, AspectAltarBlockEntity.PEDESTAL_OFFSETS, missingPedestal, blocked);
+            checkPillarPositions(level, altarPos, AltarGeometry.PILLAR_BOTTOM, missingPillar, blocked);
+            checkPillarPositions(level, altarPos, AltarGeometry.PILLAR_TOP,   missingPillar, blocked);
+            checkPedestalPositions(level, altarPos, AltarGeometry.PEDESTAL_OFFSETS, missingPedestal, blocked);
         } else {
             // 已成形：檢查下一個升級環
             int nextTier = altar.getUpgradeTier() + 1;
-            if (nextTier <= AspectAltarBlockEntity.ALL_RINGS.size()) {
-                checkRingPositions(level, altarPos, AspectAltarBlockEntity.ALL_RINGS.get(nextTier - 1),
+            if (nextTier <= AltarGeometry.ALL_RINGS.size()) {
+                checkRingPositions(level, altarPos, AltarGeometry.ALL_RINGS.get(nextTier - 1),
                         missingPillar, blocked);
             }
         }

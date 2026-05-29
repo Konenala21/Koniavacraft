@@ -1,5 +1,6 @@
 package com.github.nalamodikk.common.item.wand.core;
 
+import com.github.nalamodikk.common.block.blockentity.altar.AltarGeometry;
 import com.github.nalamodikk.common.block.blockentity.altar.AspectAltarBlockEntity;
 import com.github.nalamodikk.common.item.wand.WandCoreData;
 import com.github.nalamodikk.common.item.wand.WandRodItem;
@@ -254,9 +255,9 @@ public enum WandCoreBehavior {
                 Component msg;
                 if (!altar.isFormed()) {
                     msg = Component.translatable("message.koniava.build_wand.ready_to_form");
-                } else if (altar.getUpgradeTier() >= AspectAltarBlockEntity.ALL_RINGS.size()) {
+                } else if (altar.getUpgradeTier() >= AltarGeometry.ALL_RINGS.size()) {
                     msg = Component.translatable("message.koniava.build_wand.all_rings_done",
-                            AspectAltarBlockEntity.ALL_RINGS.size());
+                            AltarGeometry.ALL_RINGS.size());
                 } else {
                     msg = Component.translatable("message.koniava.build_wand.ring_ready",
                             altar.getUpgradeTier() + 1);
@@ -326,13 +327,13 @@ public enum WandCoreBehavior {
                                                List<BlockPos> missingPillar, List<BlockPos> missingPedestal,
                                                List<BlockPos> blocked) {
         if (!altar.isFormed()) {
-            checkPillarPositions(level, altarPos, AspectAltarBlockEntity.PILLAR_BOTTOM, missingPillar, blocked);
-            checkPillarPositions(level, altarPos, AspectAltarBlockEntity.PILLAR_TOP,   missingPillar, blocked);
-            checkPedestalPositions(level, altarPos, AspectAltarBlockEntity.PEDESTAL_OFFSETS, missingPedestal, blocked);
+            checkPillarPositions(level, altarPos, AltarGeometry.PILLAR_BOTTOM, missingPillar, blocked);
+            checkPillarPositions(level, altarPos, AltarGeometry.PILLAR_TOP,   missingPillar, blocked);
+            checkPedestalPositions(level, altarPos, AltarGeometry.PEDESTAL_OFFSETS, missingPedestal, blocked);
         } else {
             int nextTier = altar.getUpgradeTier() + 1;
-            if (nextTier <= AspectAltarBlockEntity.ALL_RINGS.size()) {
-                checkRingPositions(level, altarPos, AspectAltarBlockEntity.ALL_RINGS.get(nextTier - 1),
+            if (nextTier <= AltarGeometry.ALL_RINGS.size()) {
+                checkRingPositions(level, altarPos, AltarGeometry.ALL_RINGS.get(nextTier - 1),
                         missingPillar, blocked);
             }
         }

@@ -3,7 +3,7 @@ package com.github.nalamodikk.common.block.blockentity.altar.jei;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.client.projection.GhostProjectionState;
 import com.github.nalamodikk.common.block.blockentity.altar.AltarPillarBlock;
-import com.github.nalamodikk.common.block.blockentity.altar.AspectAltarBlockEntity;
+import com.github.nalamodikk.common.block.blockentity.altar.AltarGeometry;
 import com.github.nalamodikk.register.ModBlocks;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -337,7 +337,7 @@ public class AltarMultiblockCategory implements IRecipeCategory<AltarStructureIn
     private int cumulativeManaCount() {
         int total = 8; // 8 corner blocks in base
         for (int i = 0; i < sliderTier; i++)
-            total += AspectAltarBlockEntity.ALL_RINGS.get(i).size();
+            total += AltarGeometry.ALL_RINGS.get(i).size();
         return total;
     }
 
@@ -444,7 +444,7 @@ public class AltarMultiblockCategory implements IRecipeCategory<AltarStructureIn
 
     private Map<BlockPos, BlockState> buildRingMap(int ringIdx) {
         Map<BlockPos, BlockState> map = new HashMap<>();
-        for (Vec3i v : AspectAltarBlockEntity.ALL_RINGS.get(ringIdx))
+        for (Vec3i v : AltarGeometry.ALL_RINGS.get(ringIdx))
             map.put(new BlockPos(v.getX(), v.getY(), v.getZ()),
                     ModBlocks.MANA_BLOCK.get().defaultBlockState());
         return map;
@@ -470,7 +470,7 @@ public class AltarMultiblockCategory implements IRecipeCategory<AltarStructureIn
     private double computeAutoScale() {
         int maxR = 3;
         for (int i = 0; i < sliderTier; i++)
-            for (Vec3i v : AspectAltarBlockEntity.ALL_RINGS.get(i))
+            for (Vec3i v : AltarGeometry.ALL_RINGS.get(i))
                 maxR = Math.max(maxR, Math.max(Math.abs(v.getX()),
                        Math.max(Math.abs(v.getY()), Math.abs(v.getZ()))));
         return Math.max(0.2, Math.min(2.0, 55.0 / (maxR * BLOCK_SIZE * 1.5)));

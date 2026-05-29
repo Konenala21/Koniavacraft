@@ -41,13 +41,13 @@ public class AspectAltarGameTests {
 
     private static void placeFullStructure(GameTestHelper helper) {
         helper.setBlock(ALTAR, ModBlocks.ASPECT_ALTAR.get().defaultBlockState());
-        for (Vec3i o : AspectAltarBlockEntity.PILLAR_BOTTOM) {
+        for (Vec3i o : AltarGeometry.PILLAR_BOTTOM) {
             helper.setBlock(ALTAR.offset(o), ModBlocks.MANA_BLOCK.get().defaultBlockState());
         }
-        for (Vec3i o : AspectAltarBlockEntity.PILLAR_TOP) {
+        for (Vec3i o : AltarGeometry.PILLAR_TOP) {
             helper.setBlock(ALTAR.offset(o), ModBlocks.MANA_BLOCK.get().defaultBlockState());
         }
-        for (Vec3i o : AspectAltarBlockEntity.PEDESTAL_OFFSETS) {
+        for (Vec3i o : AltarGeometry.PEDESTAL_OFFSETS) {
             helper.setBlock(ALTAR.offset(o), ModBlocks.ASPECT_PEDESTAL.get().defaultBlockState());
         }
     }
@@ -85,10 +85,10 @@ public class AspectAltarGameTests {
     public static void altarFailsWithMissingPedestal(GameTestHelper helper) {
         // 只放柱子，不放任何底座
         helper.setBlock(ALTAR, ModBlocks.ASPECT_ALTAR.get().defaultBlockState());
-        for (Vec3i o : AspectAltarBlockEntity.PILLAR_BOTTOM) {
+        for (Vec3i o : AltarGeometry.PILLAR_BOTTOM) {
             helper.setBlock(ALTAR.offset(o), ModBlocks.MANA_BLOCK.get().defaultBlockState());
         }
-        for (Vec3i o : AspectAltarBlockEntity.PILLAR_TOP) {
+        for (Vec3i o : AltarGeometry.PILLAR_TOP) {
             helper.setBlock(ALTAR.offset(o), ModBlocks.MANA_BLOCK.get().defaultBlockState());
         }
 
@@ -109,7 +109,7 @@ public class AspectAltarGameTests {
     public static void altarFailsWithMissingPillar(GameTestHelper helper) {
         // 放底座但不放角落柱子
         helper.setBlock(ALTAR, ModBlocks.ASPECT_ALTAR.get().defaultBlockState());
-        for (Vec3i o : AspectAltarBlockEntity.PEDESTAL_OFFSETS) {
+        for (Vec3i o : AltarGeometry.PEDESTAL_OFFSETS) {
             helper.setBlock(ALTAR.offset(o), ModBlocks.ASPECT_PEDESTAL.get().defaultBlockState());
         }
         // 故意省略 PILLAR_BOTTOM / PILLAR_TOP
@@ -208,7 +208,7 @@ public class AspectAltarGameTests {
         helper.runAtTickTime(12, () -> {
             helper.assertTrue(getAltar(helper).isFormed(), "前置條件：必須先成形");
             // 破壞其中一個柱頂（讓結構失效）
-            var pillarTopPos = ALTAR.offset(AspectAltarBlockEntity.PILLAR_TOP.get(0));
+            var pillarTopPos = ALTAR.offset(AltarGeometry.PILLAR_TOP.get(0));
             helper.destroyBlock(pillarTopPos);
         });
 
@@ -218,7 +218,7 @@ public class AspectAltarGameTests {
                 "柱子被破壞後結構應失效");
 
             // 其他角落的柱子應還原為魔力方塊（不是 ALTAR_PILLAR）
-            var anotherPillarPos = ALTAR.offset(AspectAltarBlockEntity.PILLAR_BOTTOM.get(1));
+            var anotherPillarPos = ALTAR.offset(AltarGeometry.PILLAR_BOTTOM.get(1));
             var state = helper.getLevel().getBlockState(helper.absolutePos(anotherPillarPos));
             helper.assertTrue(
                 state.is(ModBlocks.MANA_BLOCK.get()) || state.isAir(),

@@ -7,9 +7,6 @@ import com.github.nalamodikk.common.multiblock.AbstractMultiblockControllerBlock
 import com.github.nalamodikk.common.multiblock.api.IWandActivatable;
 import com.github.nalamodikk.common.multiblock.api.MultiblockPattern;
 import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
-import com.github.nalamodikk.common.entity.SpaceCrackEntity;
-import com.github.nalamodikk.dimension.ModDimensions;
-import com.github.nalamodikk.register.ModEntities;
 import com.github.nalamodikk.register.ModBlockEntities;
 import com.github.nalamodikk.register.ModBlocks;
 import com.github.nalamodikk.register.ModRecipes;
@@ -18,7 +15,6 @@ import com.github.nalamodikk.narasystem.nara.event.NaraServerEvents;
 import com.github.nalamodikk.narasystem.nara.hud.NaraTutorialFlow;
 import com.github.nalamodikk.research.knowledge.ResearchSavedData;
 import net.minecraft.advancements.AdvancementHolder;
-import com.github.nalamodikk.common.network.packet.client.altar.RitualExplosionPacket;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -32,9 +28,6 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -57,272 +50,19 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
 
 public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEntity implements IWandActivatable {
 
-    //   結構三層（核心在 y=0）：
-    //
-    //   y= 0：只有核心
-    //   y=-1：四斜角(±3,±3) MANA_BLOCK / ALTAR_PILLAR，核心正下方空氣
-    //   y=-2：四斜角(±3,±3) MANA_BLOCK / ALTAR_PILLAR
-    //         + 核心正下(0,0)催化物底座
-    //         + 東西南北(±3,0)/(0,±3)各一底座
-    //         其餘 . 位置可選擇性放置底座（PEDESTAL_SCAN_RADIUS 內皆可）
-    //
-    //   成形時角落自動換成 ALTAR_PILLAR；解散時還原 MANA_BLOCK。
-    private static final Predicate<BlockState> PILLAR_PRED =
-            state -> state.is(ModBlocks.MANA_BLOCK.get()) || state.is(ModBlocks.ALTAR_PILLAR.get());
-
-    // 必要底座位置（成形前需手動放置）
-    public static final List<Vec3i> PEDESTAL_OFFSETS = List.of(
-            new Vec3i( 0, -2,  0),  // 核心正下方（催化物）
-            new Vec3i( 0, -2, -3),  // North
-            new Vec3i( 0, -2,  3),  // South
-            new Vec3i(-3, -2,  0),  // West
-            new Vec3i( 3, -2,  0)   // East
-    );
-
-    // y=-2 = 底段（top=false），y=-1 = 頂段（top=true）；四斜角距中心 ±3
-    public static final List<Vec3i> PILLAR_BOTTOM = List.of(
-            new Vec3i(-3, -2, -3), new Vec3i(-3, -2, 3),
-            new Vec3i( 3, -2, -3), new Vec3i( 3, -2, 3)
-    );
-    public static final List<Vec3i> PILLAR_TOP = List.of(
-            new Vec3i(-3, -1, -3), new Vec3i(-3, -1, 3),
-            new Vec3i( 3, -1, -3), new Vec3i( 3, -1, 3)
-    );
-    private static final List<Vec3i> PILLAR_OFFSETS;
-    static {
-        PILLAR_OFFSETS = new ArrayList<>();
-        PILLAR_OFFSETS.addAll(PILLAR_BOTTOM);
-        PILLAR_OFFSETS.addAll(PILLAR_TOP);
-    }
-
-    private static final MultiblockPattern PATTERN = MultiblockPattern.builder()
-            // 催化物底座（核心正下方 y=-2）
-            .requireBlock(new Vec3i( 0, -2,  0), ModBlocks.ASPECT_PEDESTAL.get())
-            // 四方向底座 North/South/West/East
-            .requireBlock(new Vec3i( 0, -2, -3), ModBlocks.ASPECT_PEDESTAL.get())
-            .requireBlock(new Vec3i( 0, -2,  3), ModBlocks.ASPECT_PEDESTAL.get())
-            .requireBlock(new Vec3i(-3, -2,  0), ModBlocks.ASPECT_PEDESTAL.get())
-            .requireBlock(new Vec3i( 3, -2,  0), ModBlocks.ASPECT_PEDESTAL.get())
-            // 四斜角柱子底段
-            .require(new Vec3i(-3, -2, -3), PILLAR_PRED)
-            .require(new Vec3i(-3, -2,  3), PILLAR_PRED)
-            .require(new Vec3i( 3, -2, -3), PILLAR_PRED)
-            .require(new Vec3i( 3, -2,  3), PILLAR_PRED)
-            // 四斜角柱子頂段
-            .require(new Vec3i(-3, -1, -3), PILLAR_PRED)
-            .require(new Vec3i(-3, -1,  3), PILLAR_PRED)
-            .require(new Vec3i( 3, -1, -3), PILLAR_PRED)
-            .require(new Vec3i( 3, -1,  3), PILLAR_PRED)
-            .build();
+    // 結構幾何（柱子/底座/升級環偏移量、成形 pattern）已抽出至 AltarGeometry。
 
     private static final int CHECK_INTERVAL = 40;
     private static final int MAX_MANA = 50000;
     private static final int MANA_TRANSFER_RATE = 200;
     private static final int PEDESTAL_SCAN_RADIUS = 6;
 
-    // ── 升級環位置（T1–T12：半徑 7/9/11/13，各3個平面）───────────────────────────
-public static final List<Vec3i> RING_T1 = List.of(
-            new Vec3i( -7,  0,  0), new Vec3i( -6,  0, -3), new Vec3i( -6,  0, -2), new Vec3i( -6,  0, -1),
-            new Vec3i( -6,  0,  1), new Vec3i( -6,  0,  2), new Vec3i( -6,  0,  3), new Vec3i( -5,  0, -4),
-            new Vec3i( -5,  0,  4), new Vec3i( -4,  0, -5), new Vec3i( -4,  0,  5), new Vec3i( -3,  0, -6),
-            new Vec3i( -3,  0,  6), new Vec3i( -2,  0, -6), new Vec3i( -2,  0,  6), new Vec3i( -1,  0, -6),
-            new Vec3i( -1,  0,  6), new Vec3i(  0,  0, -7), new Vec3i(  0,  0,  7), new Vec3i(  1,  0, -6),
-            new Vec3i(  1,  0,  6), new Vec3i(  2,  0, -6), new Vec3i(  2,  0,  6), new Vec3i(  3,  0, -6),
-            new Vec3i(  3,  0,  6), new Vec3i(  4,  0, -5), new Vec3i(  4,  0,  5), new Vec3i(  5,  0, -4),
-            new Vec3i(  5,  0,  4), new Vec3i(  6,  0, -3), new Vec3i(  6,  0, -2), new Vec3i(  6,  0, -1),
-            new Vec3i(  6,  0,  1), new Vec3i(  6,  0,  2), new Vec3i(  6,  0,  3), new Vec3i(  7,  0,  0)
-    );
-    public static final List<Vec3i> RING_T2 = List.of(
-            new Vec3i( -7,  0,  0), new Vec3i( -6, -3,  0), new Vec3i( -6, -2,  0), new Vec3i( -6, -1,  0),
-            new Vec3i( -6,  1,  0), new Vec3i( -6,  2,  0), new Vec3i( -6,  3,  0), new Vec3i( -5, -4,  0),
-            new Vec3i( -5,  4,  0), new Vec3i( -4, -5,  0), new Vec3i( -4,  5,  0), new Vec3i( -3, -6,  0),
-            new Vec3i( -3,  6,  0), new Vec3i( -2, -6,  0), new Vec3i( -2,  6,  0), new Vec3i( -1, -6,  0),
-            new Vec3i( -1,  6,  0), new Vec3i(  0, -7,  0), new Vec3i(  0,  7,  0), new Vec3i(  1, -6,  0),
-            new Vec3i(  1,  6,  0), new Vec3i(  2, -6,  0), new Vec3i(  2,  6,  0), new Vec3i(  3, -6,  0),
-            new Vec3i(  3,  6,  0), new Vec3i(  4, -5,  0), new Vec3i(  4,  5,  0), new Vec3i(  5, -4,  0),
-            new Vec3i(  5,  4,  0), new Vec3i(  6, -3,  0), new Vec3i(  6, -2,  0), new Vec3i(  6, -1,  0),
-            new Vec3i(  6,  1,  0), new Vec3i(  6,  2,  0), new Vec3i(  6,  3,  0), new Vec3i(  7,  0,  0)
-    );
-    public static final List<Vec3i> RING_T3 = List.of(
-            new Vec3i(  0, -7,  0), new Vec3i(  0, -6, -3), new Vec3i(  0, -6, -2), new Vec3i(  0, -6, -1),
-            new Vec3i(  0, -6,  1), new Vec3i(  0, -6,  2), new Vec3i(  0, -6,  3), new Vec3i(  0, -5, -4),
-            new Vec3i(  0, -5,  4), new Vec3i(  0, -4, -5), new Vec3i(  0, -4,  5), new Vec3i(  0, -3, -6),
-            new Vec3i(  0, -3,  6), new Vec3i(  0, -2, -6), new Vec3i(  0, -2,  6), new Vec3i(  0, -1, -6),
-            new Vec3i(  0, -1,  6), new Vec3i(  0,  0, -7), new Vec3i(  0,  0,  7), new Vec3i(  0,  1, -6),
-            new Vec3i(  0,  1,  6), new Vec3i(  0,  2, -6), new Vec3i(  0,  2,  6), new Vec3i(  0,  3, -6),
-            new Vec3i(  0,  3,  6), new Vec3i(  0,  4, -5), new Vec3i(  0,  4,  5), new Vec3i(  0,  5, -4),
-            new Vec3i(  0,  5,  4), new Vec3i(  0,  6, -3), new Vec3i(  0,  6, -2), new Vec3i(  0,  6, -1),
-            new Vec3i(  0,  6,  1), new Vec3i(  0,  6,  2), new Vec3i(  0,  6,  3), new Vec3i(  0,  7,  0)
-    );
-    public static final List<Vec3i> RING_T4 = List.of(
-            new Vec3i( -9,  0,  0), new Vec3i( -8,  0, -4), new Vec3i( -8,  0, -3), new Vec3i( -8,  0, -2),
-            new Vec3i( -8,  0, -1), new Vec3i( -8,  0,  1), new Vec3i( -8,  0,  2), new Vec3i( -8,  0,  3),
-            new Vec3i( -8,  0,  4), new Vec3i( -7,  0, -5), new Vec3i( -7,  0,  5), new Vec3i( -6,  0, -6),
-            new Vec3i( -6,  0,  6), new Vec3i( -5,  0, -7), new Vec3i( -5,  0,  7), new Vec3i( -4,  0, -8),
-            new Vec3i( -4,  0,  8), new Vec3i( -3,  0, -8), new Vec3i( -3,  0,  8), new Vec3i( -2,  0, -8),
-            new Vec3i( -2,  0,  8), new Vec3i( -1,  0, -8), new Vec3i( -1,  0,  8), new Vec3i(  0,  0, -9),
-            new Vec3i(  0,  0,  9), new Vec3i(  1,  0, -8), new Vec3i(  1,  0,  8), new Vec3i(  2,  0, -8),
-            new Vec3i(  2,  0,  8), new Vec3i(  3,  0, -8), new Vec3i(  3,  0,  8), new Vec3i(  4,  0, -8),
-            new Vec3i(  4,  0,  8), new Vec3i(  5,  0, -7), new Vec3i(  5,  0,  7), new Vec3i(  6,  0, -6),
-            new Vec3i(  6,  0,  6), new Vec3i(  7,  0, -5), new Vec3i(  7,  0,  5), new Vec3i(  8,  0, -4),
-            new Vec3i(  8,  0, -3), new Vec3i(  8,  0, -2), new Vec3i(  8,  0, -1), new Vec3i(  8,  0,  1),
-            new Vec3i(  8,  0,  2), new Vec3i(  8,  0,  3), new Vec3i(  8,  0,  4), new Vec3i(  9,  0,  0)
-    );
-    public static final List<Vec3i> RING_T5 = List.of(
-            new Vec3i( -9,  0,  0), new Vec3i( -8, -4,  0), new Vec3i( -8, -3,  0), new Vec3i( -8, -2,  0),
-            new Vec3i( -8, -1,  0), new Vec3i( -8,  1,  0), new Vec3i( -8,  2,  0), new Vec3i( -8,  3,  0),
-            new Vec3i( -8,  4,  0), new Vec3i( -7, -5,  0), new Vec3i( -7,  5,  0), new Vec3i( -6, -6,  0),
-            new Vec3i( -6,  6,  0), new Vec3i( -5, -7,  0), new Vec3i( -5,  7,  0), new Vec3i( -4, -8,  0),
-            new Vec3i( -4,  8,  0), new Vec3i( -3, -8,  0), new Vec3i( -3,  8,  0), new Vec3i( -2, -8,  0),
-            new Vec3i( -2,  8,  0), new Vec3i( -1, -8,  0), new Vec3i( -1,  8,  0), new Vec3i(  0, -9,  0),
-            new Vec3i(  0,  9,  0), new Vec3i(  1, -8,  0), new Vec3i(  1,  8,  0), new Vec3i(  2, -8,  0),
-            new Vec3i(  2,  8,  0), new Vec3i(  3, -8,  0), new Vec3i(  3,  8,  0), new Vec3i(  4, -8,  0),
-            new Vec3i(  4,  8,  0), new Vec3i(  5, -7,  0), new Vec3i(  5,  7,  0), new Vec3i(  6, -6,  0),
-            new Vec3i(  6,  6,  0), new Vec3i(  7, -5,  0), new Vec3i(  7,  5,  0), new Vec3i(  8, -4,  0),
-            new Vec3i(  8, -3,  0), new Vec3i(  8, -2,  0), new Vec3i(  8, -1,  0), new Vec3i(  8,  1,  0),
-            new Vec3i(  8,  2,  0), new Vec3i(  8,  3,  0), new Vec3i(  8,  4,  0), new Vec3i(  9,  0,  0)
-    );
-    public static final List<Vec3i> RING_T6 = List.of(
-            new Vec3i(  0, -9,  0), new Vec3i(  0, -8, -4), new Vec3i(  0, -8, -3), new Vec3i(  0, -8, -2),
-            new Vec3i(  0, -8, -1), new Vec3i(  0, -8,  1), new Vec3i(  0, -8,  2), new Vec3i(  0, -8,  3),
-            new Vec3i(  0, -8,  4), new Vec3i(  0, -7, -5), new Vec3i(  0, -7,  5), new Vec3i(  0, -6, -6),
-            new Vec3i(  0, -6,  6), new Vec3i(  0, -5, -7), new Vec3i(  0, -5,  7), new Vec3i(  0, -4, -8),
-            new Vec3i(  0, -4,  8), new Vec3i(  0, -3, -8), new Vec3i(  0, -3,  8), new Vec3i(  0, -2, -8),
-            new Vec3i(  0, -2,  8), new Vec3i(  0, -1, -8), new Vec3i(  0, -1,  8), new Vec3i(  0,  0, -9),
-            new Vec3i(  0,  0,  9), new Vec3i(  0,  1, -8), new Vec3i(  0,  1,  8), new Vec3i(  0,  2, -8),
-            new Vec3i(  0,  2,  8), new Vec3i(  0,  3, -8), new Vec3i(  0,  3,  8), new Vec3i(  0,  4, -8),
-            new Vec3i(  0,  4,  8), new Vec3i(  0,  5, -7), new Vec3i(  0,  5,  7), new Vec3i(  0,  6, -6),
-            new Vec3i(  0,  6,  6), new Vec3i(  0,  7, -5), new Vec3i(  0,  7,  5), new Vec3i(  0,  8, -4),
-            new Vec3i(  0,  8, -3), new Vec3i(  0,  8, -2), new Vec3i(  0,  8, -1), new Vec3i(  0,  8,  1),
-            new Vec3i(  0,  8,  2), new Vec3i(  0,  8,  3), new Vec3i(  0,  8,  4), new Vec3i(  0,  9,  0)
-    );
-    public static final List<Vec3i> RING_T7 = List.of(
-            new Vec3i(-11,  0,  0), new Vec3i(-10,  0, -4), new Vec3i(-10,  0, -3), new Vec3i(-10,  0, -2),
-            new Vec3i(-10,  0, -1), new Vec3i(-10,  0,  1), new Vec3i(-10,  0,  2), new Vec3i(-10,  0,  3),
-            new Vec3i(-10,  0,  4), new Vec3i( -9,  0, -6), new Vec3i( -9,  0, -5), new Vec3i( -9,  0,  5),
-            new Vec3i( -9,  0,  6), new Vec3i( -8,  0, -7), new Vec3i( -8,  0,  7), new Vec3i( -7,  0, -8),
-            new Vec3i( -7,  0,  8), new Vec3i( -6,  0, -9), new Vec3i( -6,  0,  9), new Vec3i( -5,  0, -9),
-            new Vec3i( -5,  0,  9), new Vec3i( -4,  0,-10), new Vec3i( -4,  0, 10), new Vec3i( -3,  0,-10),
-            new Vec3i( -3,  0, 10), new Vec3i( -2,  0,-10), new Vec3i( -2,  0, 10), new Vec3i( -1,  0,-10),
-            new Vec3i( -1,  0, 10), new Vec3i(  0,  0,-11), new Vec3i(  0,  0, 11), new Vec3i(  1,  0,-10),
-            new Vec3i(  1,  0, 10), new Vec3i(  2,  0,-10), new Vec3i(  2,  0, 10), new Vec3i(  3,  0,-10),
-            new Vec3i(  3,  0, 10), new Vec3i(  4,  0,-10), new Vec3i(  4,  0, 10), new Vec3i(  5,  0, -9),
-            new Vec3i(  5,  0,  9), new Vec3i(  6,  0, -9), new Vec3i(  6,  0,  9), new Vec3i(  7,  0, -8),
-            new Vec3i(  7,  0,  8), new Vec3i(  8,  0, -7), new Vec3i(  8,  0,  7), new Vec3i(  9,  0, -6),
-            new Vec3i(  9,  0, -5), new Vec3i(  9,  0,  5), new Vec3i(  9,  0,  6), new Vec3i( 10,  0, -4),
-            new Vec3i( 10,  0, -3), new Vec3i( 10,  0, -2), new Vec3i( 10,  0, -1), new Vec3i( 10,  0,  1),
-            new Vec3i( 10,  0,  2), new Vec3i( 10,  0,  3), new Vec3i( 10,  0,  4), new Vec3i( 11,  0,  0)
-    );
-    public static final List<Vec3i> RING_T8 = List.of(
-            new Vec3i(-11,  0,  0), new Vec3i(-10, -4,  0), new Vec3i(-10, -3,  0), new Vec3i(-10, -2,  0),
-            new Vec3i(-10, -1,  0), new Vec3i(-10,  1,  0), new Vec3i(-10,  2,  0), new Vec3i(-10,  3,  0),
-            new Vec3i(-10,  4,  0), new Vec3i( -9, -6,  0), new Vec3i( -9, -5,  0), new Vec3i( -9,  5,  0),
-            new Vec3i( -9,  6,  0), new Vec3i( -8, -7,  0), new Vec3i( -8,  7,  0), new Vec3i( -7, -8,  0),
-            new Vec3i( -7,  8,  0), new Vec3i( -6, -9,  0), new Vec3i( -6,  9,  0), new Vec3i( -5, -9,  0),
-            new Vec3i( -5,  9,  0), new Vec3i( -4,-10,  0), new Vec3i( -4, 10,  0), new Vec3i( -3,-10,  0),
-            new Vec3i( -3, 10,  0), new Vec3i( -2,-10,  0), new Vec3i( -2, 10,  0), new Vec3i( -1,-10,  0),
-            new Vec3i( -1, 10,  0), new Vec3i(  0,-11,  0), new Vec3i(  0, 11,  0), new Vec3i(  1,-10,  0),
-            new Vec3i(  1, 10,  0), new Vec3i(  2,-10,  0), new Vec3i(  2, 10,  0), new Vec3i(  3,-10,  0),
-            new Vec3i(  3, 10,  0), new Vec3i(  4,-10,  0), new Vec3i(  4, 10,  0), new Vec3i(  5, -9,  0),
-            new Vec3i(  5,  9,  0), new Vec3i(  6, -9,  0), new Vec3i(  6,  9,  0), new Vec3i(  7, -8,  0),
-            new Vec3i(  7,  8,  0), new Vec3i(  8, -7,  0), new Vec3i(  8,  7,  0), new Vec3i(  9, -6,  0),
-            new Vec3i(  9, -5,  0), new Vec3i(  9,  5,  0), new Vec3i(  9,  6,  0), new Vec3i( 10, -4,  0),
-            new Vec3i( 10, -3,  0), new Vec3i( 10, -2,  0), new Vec3i( 10, -1,  0), new Vec3i( 10,  1,  0),
-            new Vec3i( 10,  2,  0), new Vec3i( 10,  3,  0), new Vec3i( 10,  4,  0), new Vec3i( 11,  0,  0)
-    );
-    public static final List<Vec3i> RING_T9 = List.of(
-            new Vec3i(  0,-11,  0), new Vec3i(  0,-10, -4), new Vec3i(  0,-10, -3), new Vec3i(  0,-10, -2),
-            new Vec3i(  0,-10, -1), new Vec3i(  0,-10,  1), new Vec3i(  0,-10,  2), new Vec3i(  0,-10,  3),
-            new Vec3i(  0,-10,  4), new Vec3i(  0, -9, -6), new Vec3i(  0, -9, -5), new Vec3i(  0, -9,  5),
-            new Vec3i(  0, -9,  6), new Vec3i(  0, -8, -7), new Vec3i(  0, -8,  7), new Vec3i(  0, -7, -8),
-            new Vec3i(  0, -7,  8), new Vec3i(  0, -6, -9), new Vec3i(  0, -6,  9), new Vec3i(  0, -5, -9),
-            new Vec3i(  0, -5,  9), new Vec3i(  0, -4,-10), new Vec3i(  0, -4, 10), new Vec3i(  0, -3,-10),
-            new Vec3i(  0, -3, 10), new Vec3i(  0, -2,-10), new Vec3i(  0, -2, 10), new Vec3i(  0, -1,-10),
-            new Vec3i(  0, -1, 10), new Vec3i(  0,  0,-11), new Vec3i(  0,  0, 11), new Vec3i(  0,  1,-10),
-            new Vec3i(  0,  1, 10), new Vec3i(  0,  2,-10), new Vec3i(  0,  2, 10), new Vec3i(  0,  3,-10),
-            new Vec3i(  0,  3, 10), new Vec3i(  0,  4,-10), new Vec3i(  0,  4, 10), new Vec3i(  0,  5, -9),
-            new Vec3i(  0,  5,  9), new Vec3i(  0,  6, -9), new Vec3i(  0,  6,  9), new Vec3i(  0,  7, -8),
-            new Vec3i(  0,  7,  8), new Vec3i(  0,  8, -7), new Vec3i(  0,  8,  7), new Vec3i(  0,  9, -6),
-            new Vec3i(  0,  9, -5), new Vec3i(  0,  9,  5), new Vec3i(  0,  9,  6), new Vec3i(  0, 10, -4),
-            new Vec3i(  0, 10, -3), new Vec3i(  0, 10, -2), new Vec3i(  0, 10, -1), new Vec3i(  0, 10,  1),
-            new Vec3i(  0, 10,  2), new Vec3i(  0, 10,  3), new Vec3i(  0, 10,  4), new Vec3i(  0, 11,  0)
-    );
-    public static final List<Vec3i> RING_T10 = List.of(
-            new Vec3i(-13,  0,  0), new Vec3i(-12,  0, -5), new Vec3i(-12,  0, -4), new Vec3i(-12,  0, -3),
-            new Vec3i(-12,  0, -2), new Vec3i(-12,  0, -1), new Vec3i(-12,  0,  1), new Vec3i(-12,  0,  2),
-            new Vec3i(-12,  0,  3), new Vec3i(-12,  0,  4), new Vec3i(-12,  0,  5), new Vec3i(-11,  0, -6),
-            new Vec3i(-11,  0,  6), new Vec3i(-10,  0, -8), new Vec3i(-10,  0, -7), new Vec3i(-10,  0,  7),
-            new Vec3i(-10,  0,  8), new Vec3i( -9,  0, -9), new Vec3i( -9,  0,  9), new Vec3i( -8,  0,-10),
-            new Vec3i( -8,  0, 10), new Vec3i( -7,  0,-10), new Vec3i( -7,  0, 10), new Vec3i( -6,  0,-11),
-            new Vec3i( -6,  0, 11), new Vec3i( -5,  0,-12), new Vec3i( -5,  0, 12), new Vec3i( -4,  0,-12),
-            new Vec3i( -4,  0, 12), new Vec3i( -3,  0,-12), new Vec3i( -3,  0, 12), new Vec3i( -2,  0,-12),
-            new Vec3i( -2,  0, 12), new Vec3i( -1,  0,-12), new Vec3i( -1,  0, 12), new Vec3i(  0,  0,-13),
-            new Vec3i(  0,  0, 13), new Vec3i(  1,  0,-12), new Vec3i(  1,  0, 12), new Vec3i(  2,  0,-12),
-            new Vec3i(  2,  0, 12), new Vec3i(  3,  0,-12), new Vec3i(  3,  0, 12), new Vec3i(  4,  0,-12),
-            new Vec3i(  4,  0, 12), new Vec3i(  5,  0,-12), new Vec3i(  5,  0, 12), new Vec3i(  6,  0,-11),
-            new Vec3i(  6,  0, 11), new Vec3i(  7,  0,-10), new Vec3i(  7,  0, 10), new Vec3i(  8,  0,-10),
-            new Vec3i(  8,  0, 10), new Vec3i(  9,  0, -9), new Vec3i(  9,  0,  9), new Vec3i( 10,  0, -8),
-            new Vec3i( 10,  0, -7), new Vec3i( 10,  0,  7), new Vec3i( 10,  0,  8), new Vec3i( 11,  0, -6),
-            new Vec3i( 11,  0,  6), new Vec3i( 12,  0, -5), new Vec3i( 12,  0, -4), new Vec3i( 12,  0, -3),
-            new Vec3i( 12,  0, -2), new Vec3i( 12,  0, -1), new Vec3i( 12,  0,  1), new Vec3i( 12,  0,  2),
-            new Vec3i( 12,  0,  3), new Vec3i( 12,  0,  4), new Vec3i( 12,  0,  5), new Vec3i( 13,  0,  0)
-    );
-    public static final List<Vec3i> RING_T11 = List.of(
-            new Vec3i(-13,  0,  0), new Vec3i(-12, -5,  0), new Vec3i(-12, -4,  0), new Vec3i(-12, -3,  0),
-            new Vec3i(-12, -2,  0), new Vec3i(-12, -1,  0), new Vec3i(-12,  1,  0), new Vec3i(-12,  2,  0),
-            new Vec3i(-12,  3,  0), new Vec3i(-12,  4,  0), new Vec3i(-12,  5,  0), new Vec3i(-11, -6,  0),
-            new Vec3i(-11,  6,  0), new Vec3i(-10, -8,  0), new Vec3i(-10, -7,  0), new Vec3i(-10,  7,  0),
-            new Vec3i(-10,  8,  0), new Vec3i( -9, -9,  0), new Vec3i( -9,  9,  0), new Vec3i( -8,-10,  0),
-            new Vec3i( -8, 10,  0), new Vec3i( -7,-10,  0), new Vec3i( -7, 10,  0), new Vec3i( -6,-11,  0),
-            new Vec3i( -6, 11,  0), new Vec3i( -5,-12,  0), new Vec3i( -5, 12,  0), new Vec3i( -4,-12,  0),
-            new Vec3i( -4, 12,  0), new Vec3i( -3,-12,  0), new Vec3i( -3, 12,  0), new Vec3i( -2,-12,  0),
-            new Vec3i( -2, 12,  0), new Vec3i( -1,-12,  0), new Vec3i( -1, 12,  0), new Vec3i(  0,-13,  0),
-            new Vec3i(  0, 13,  0), new Vec3i(  1,-12,  0), new Vec3i(  1, 12,  0), new Vec3i(  2,-12,  0),
-            new Vec3i(  2, 12,  0), new Vec3i(  3,-12,  0), new Vec3i(  3, 12,  0), new Vec3i(  4,-12,  0),
-            new Vec3i(  4, 12,  0), new Vec3i(  5,-12,  0), new Vec3i(  5, 12,  0), new Vec3i(  6,-11,  0),
-            new Vec3i(  6, 11,  0), new Vec3i(  7,-10,  0), new Vec3i(  7, 10,  0), new Vec3i(  8,-10,  0),
-            new Vec3i(  8, 10,  0), new Vec3i(  9, -9,  0), new Vec3i(  9,  9,  0), new Vec3i( 10, -8,  0),
-            new Vec3i( 10, -7,  0), new Vec3i( 10,  7,  0), new Vec3i( 10,  8,  0), new Vec3i( 11, -6,  0),
-            new Vec3i( 11,  6,  0), new Vec3i( 12, -5,  0), new Vec3i( 12, -4,  0), new Vec3i( 12, -3,  0),
-            new Vec3i( 12, -2,  0), new Vec3i( 12, -1,  0), new Vec3i( 12,  1,  0), new Vec3i( 12,  2,  0),
-            new Vec3i( 12,  3,  0), new Vec3i( 12,  4,  0), new Vec3i( 12,  5,  0), new Vec3i( 13,  0,  0)
-    );
-    public static final List<Vec3i> RING_T12 = List.of(
-            new Vec3i(  0,-13,  0), new Vec3i(  0,-12, -5), new Vec3i(  0,-12, -4), new Vec3i(  0,-12, -3),
-            new Vec3i(  0,-12, -2), new Vec3i(  0,-12, -1), new Vec3i(  0,-12,  1), new Vec3i(  0,-12,  2),
-            new Vec3i(  0,-12,  3), new Vec3i(  0,-12,  4), new Vec3i(  0,-12,  5), new Vec3i(  0,-11, -6),
-            new Vec3i(  0,-11,  6), new Vec3i(  0,-10, -8), new Vec3i(  0,-10, -7), new Vec3i(  0,-10,  7),
-            new Vec3i(  0,-10,  8), new Vec3i(  0, -9, -9), new Vec3i(  0, -9,  9), new Vec3i(  0, -8,-10),
-            new Vec3i(  0, -8, 10), new Vec3i(  0, -7,-10), new Vec3i(  0, -7, 10), new Vec3i(  0, -6,-11),
-            new Vec3i(  0, -6, 11), new Vec3i(  0, -5,-12), new Vec3i(  0, -5, 12), new Vec3i(  0, -4,-12),
-            new Vec3i(  0, -4, 12), new Vec3i(  0, -3,-12), new Vec3i(  0, -3, 12), new Vec3i(  0, -2,-12),
-            new Vec3i(  0, -2, 12), new Vec3i(  0, -1,-12), new Vec3i(  0, -1, 12), new Vec3i(  0,  0,-13),
-            new Vec3i(  0,  0, 13), new Vec3i(  0,  1,-12), new Vec3i(  0,  1, 12), new Vec3i(  0,  2,-12),
-            new Vec3i(  0,  2, 12), new Vec3i(  0,  3,-12), new Vec3i(  0,  3, 12), new Vec3i(  0,  4,-12),
-            new Vec3i(  0,  4, 12), new Vec3i(  0,  5,-12), new Vec3i(  0,  5, 12), new Vec3i(  0,  6,-11),
-            new Vec3i(  0,  6, 11), new Vec3i(  0,  7,-10), new Vec3i(  0,  7, 10), new Vec3i(  0,  8,-10),
-            new Vec3i(  0,  8, 10), new Vec3i(  0,  9, -9), new Vec3i(  0,  9,  9), new Vec3i(  0, 10, -8),
-            new Vec3i(  0, 10, -7), new Vec3i(  0, 10,  7), new Vec3i(  0, 10,  8), new Vec3i(  0, 11, -6),
-            new Vec3i(  0, 11,  6), new Vec3i(  0, 12, -5), new Vec3i(  0, 12, -4), new Vec3i(  0, 12, -3),
-            new Vec3i(  0, 12, -2), new Vec3i(  0, 12, -1), new Vec3i(  0, 12,  1), new Vec3i(  0, 12,  2),
-            new Vec3i(  0, 12,  3), new Vec3i(  0, 12,  4), new Vec3i(  0, 12,  5), new Vec3i(  0, 13,  0)
-    );
-    // Only T1-T6 are active. RING_T7-T12 are defined below but not yet included here.
-    public static final List<List<Vec3i>> ALL_RINGS = List.of(
-            RING_T1, RING_T2, RING_T3, RING_T4, RING_T5, RING_T6
-    );
-
-
     private static final int MIN_COMPLETION_TICKS = 320;
     private static final int MAX_COMPLETION_TICKS = 700;
     private static final int WARNING_TICKS    = 200; // 10 秒無魔力後爆炸
-    private static final int EXPLOSION_RADIUS = 64;
-    private static final float ITEM_PERM_LOSS_CHANCE = 0.15f; // 15% 永久消失
-    private static final float ITEM_DROP_CHANCE      = 0.50f; // 50% 掉落
 
     private int ticker = 0;
     private int tickCounter = 0;
@@ -422,7 +162,7 @@ public static final List<Vec3i> RING_T1 = List.of(
                             SoundSource.BLOCKS, 0.5f, pitch);
                 }
                 if (warningTick >= WARNING_TICKS) {
-                    triggerExplosion();
+                    AltarExplosionTrigger.trigger(level, worldPosition, upgradeTier, activatorUUID, activePedestals);
                     cancelRitual();
                 }
                 return;
@@ -530,65 +270,6 @@ public static final List<Vec3i> RING_T1 = List.of(
         syncToClient();
     }
 
-    private void triggerExplosion() {
-        if (!(level instanceof ServerLevel serverLevel)) return;
-        Vec3 center = Vec3.atCenterOf(worldPosition);
-
-        serverLevel.playSound(null, worldPosition, SoundEvents.WITHER_DEATH,
-                SoundSource.BLOCKS, 1.5f, 0.6f);
-        serverLevel.sendParticles(ParticleTypes.EXPLOSION_EMITTER,
-                center.x, center.y, center.z, 1, 0, 0, 0, 0);
-        serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE,
-                center.x, center.y + 1, center.z, 30, 1.5, 1.0, 1.5, 0.05);
-
-        // 傳送衝擊波封包給 64 格內所有玩家，客戶端播放紅色擴散環
-        for (ServerPlayer sp : serverLevel.players()) {
-            if (sp.blockPosition().distSqr(worldPosition) <= EXPLOSION_RADIUS * EXPLOSION_RADIUS) {
-                PacketDistributor.sendToPlayer(sp, new RitualExplosionPacket(worldPosition));
-            }
-        }
-
-        // 50% 最大 HP 魔法傷害 + 緩速 II 10 秒，只影響玩家
-        double dmgRadius = EXPLOSION_RADIUS;
-        List<ServerPlayer> nearbyPlayers = serverLevel.getEntitiesOfClass(
-                ServerPlayer.class,
-                AABB.ofSize(center, dmgRadius * 2, dmgRadius * 2, dmgRadius * 2));
-        for (ServerPlayer sp : nearbyPlayers) {
-            sp.hurt(serverLevel.damageSources().magic(), sp.getMaxHealth() * 0.5f);
-            sp.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 200, 1));
-        }
-
-        // 底座物品：15% 永久消失，50% 掉落，其餘保留
-        for (AspectPedestalBlockEntity pedestal : activePedestals) {
-            ItemStack held = pedestal.getHeldItem();
-            if (held.isEmpty()) continue;
-            float rand = level.random.nextFloat();
-            if (rand < ITEM_PERM_LOSS_CHANCE) {
-                pedestal.consumeItem();
-            } else if (rand < ITEM_PERM_LOSS_CHANCE + ITEM_DROP_CHANCE) {
-                ItemStack drop = held.copy();
-                pedestal.consumeItem();
-                Vec3 dropPos = Vec3.atCenterOf(pedestal.getBlockPos()).add(0, 0.5, 0);
-                ItemEntity ie = new ItemEntity(level, dropPos.x, dropPos.y, dropPos.z, drop);
-                ie.setDefaultPickUpDelay();
-                level.addFreshEntity(ie);
-            }
-        }
-
-        // T3+ 祭壇爆炸：在核心上方 10 格撕開一道通往鏡中世界的裂縫
-        if (upgradeTier >= 3 && activatorUUID != null
-                && !serverLevel.dimension().equals(ModDimensions.VOID_MIRROR)) {
-            BlockPos crackPos = worldPosition.above(10);
-            if (!SpaceCrackEntity.existsNear(serverLevel, crackPos)) {
-                SpaceCrackEntity crack = new SpaceCrackEntity(ModEntities.SPACE_CRACK.get(), serverLevel);
-                crack.setOwnerUUID(activatorUUID);
-                crack.moveTo(crackPos.getX() + 0.5, crackPos.getY(), crackPos.getZ() + 0.5,
-                        serverLevel.random.nextFloat() * 360F, 0F);
-                serverLevel.addFreshEntity(crack);
-            }
-        }
-    }
-
     // ── 儀式觸發 ─────────────────────────────────────────────────────────────
 
     public Component tryActivate(UUID playerUUID) {
@@ -640,14 +321,14 @@ public static final List<Vec3i> RING_T1 = List.of(
         // 角落魔力方塊 → 祭壇柱（底段 top=false，頂段 top=true）
         // 每個角落依據 XZ 象限賦予對應旋轉角度
         BlockState pillarBase = ModBlocks.ALTAR_PILLAR.get().defaultBlockState();
-        for (Vec3i offset : PILLAR_BOTTOM) {
+        for (Vec3i offset : AltarGeometry.PILLAR_BOTTOM) {
             BlockPos p = worldPosition.offset(offset);
             if (level.getBlockState(p).is(ModBlocks.MANA_BLOCK.get())) {
                 level.setBlock(p, pillarBase.setValue(AltarPillarBlock.TOP, false), 3);
                 applyPillarRotation(p, offset.getX(), offset.getZ());
             }
         }
-        for (Vec3i offset : PILLAR_TOP) {
+        for (Vec3i offset : AltarGeometry.PILLAR_TOP) {
             BlockPos p = worldPosition.offset(offset);
             if (level.getBlockState(p).is(ModBlocks.MANA_BLOCK.get())) {
                 level.setBlock(p, pillarBase.setValue(AltarPillarBlock.TOP, true), 3);
@@ -681,7 +362,7 @@ public static final List<Vec3i> RING_T1 = List.of(
     public void onStructureInvalid() {
         if (level == null) { clearPedestals(); if (active) cancelRitual(); return; }
         // 祭壇柱 → 還原魔力方塊
-        for (Vec3i offset : PILLAR_OFFSETS) {
+        for (Vec3i offset : AltarGeometry.PILLAR_OFFSETS) {
             BlockPos p = worldPosition.offset(offset);
             if (level.getBlockState(p).is(ModBlocks.ALTAR_PILLAR.get())) {
                 level.setBlock(p, ModBlocks.MANA_BLOCK.get().defaultBlockState(), 3);
@@ -693,7 +374,7 @@ public static final List<Vec3i> RING_T1 = List.of(
             level.setBlock(worldPosition, cs.setValue(AspectAltarBlock.FORMED, false), 2);
         }
         // 環狀 RESONANCE_RING → 還原魔力方塊
-        for (int i = 0; i < Math.min(upgradeTier, ALL_RINGS.size()); i++) restoreRingBlocks(ALL_RINGS.get(i));
+        for (int i = 0; i < Math.min(upgradeTier, AltarGeometry.ALL_RINGS.size()); i++) restoreRingBlocks(AltarGeometry.ALL_RINGS.get(i));
         clearPedestals();
         if (active) cancelRitual();
         upgradeTier = 0;
@@ -778,13 +459,13 @@ public static final List<Vec3i> RING_T1 = List.of(
         if (level != null && !level.isClientSide() && isFormed()) {
             net.minecraft.server.MinecraftServer server = level.getServer();
             if (server != null && server.isRunning()) {
-                for (Vec3i offset : PILLAR_OFFSETS) {
+                for (Vec3i offset : AltarGeometry.PILLAR_OFFSETS) {
                     BlockPos p = worldPosition.offset(offset);
                     if (level.getBlockState(p).is(ModBlocks.ALTAR_PILLAR.get())) {
                         level.setBlock(p, ModBlocks.MANA_BLOCK.get().defaultBlockState(), 3);
                     }
                 }
-                for (int i = 0; i < Math.min(upgradeTier, ALL_RINGS.size()); i++) restoreRingBlocks(ALL_RINGS.get(i));
+                for (int i = 0; i < Math.min(upgradeTier, AltarGeometry.ALL_RINGS.size()); i++) restoreRingBlocks(AltarGeometry.ALL_RINGS.get(i));
             }
             clearPedestals();
             active = false;
@@ -820,13 +501,13 @@ public static final List<Vec3i> RING_T1 = List.of(
             int saved = tierData.peekTier(worldPosition);
             if (saved > 0) {
                 int actualRings = 0;
-                for (List<Vec3i> ring : ALL_RINGS) {
+                for (List<Vec3i> ring : AltarGeometry.ALL_RINGS) {
                     if (checkRingComplete(ring)) actualRings++;
                     else break;
                 }
-                int toRestore = Math.min(saved, Math.min(actualRings, ALL_RINGS.size()));
+                int toRestore = Math.min(saved, Math.min(actualRings, AltarGeometry.ALL_RINGS.size()));
                 if (toRestore > 0) {
-                    for (int i = 0; i < toRestore; i++) applyRingReplace(ALL_RINGS.get(i));
+                    for (int i = 0; i < toRestore; i++) applyRingReplace(AltarGeometry.ALL_RINGS.get(i));
                     upgradeTier = toRestore;
                     tierData.clearTier(worldPosition);
                     setChanged();
@@ -838,15 +519,15 @@ public static final List<Vec3i> RING_T1 = List.of(
                 }
             }
         }
-        upgradeTier = Math.min(upgradeTier, ALL_RINGS.size());
+        upgradeTier = Math.min(upgradeTier, AltarGeometry.ALL_RINGS.size());
         int newTier = 0;
-        for (List<Vec3i> ring : ALL_RINGS) {
+        for (List<Vec3i> ring : AltarGeometry.ALL_RINGS) {
             if (checkRingComplete(ring)) newTier++;
             else break;
         }
         if (newTier != upgradeTier) {
             if (newTier > upgradeTier) {
-                for (int i = upgradeTier; i < newTier; i++) applyRingReplace(ALL_RINGS.get(i));
+                for (int i = upgradeTier; i < newTier; i++) applyRingReplace(AltarGeometry.ALL_RINGS.get(i));
                 if (level instanceof ServerLevel serverLevel) {
                     ResearchSavedData researchData = newTier == 6 ? ResearchSavedData.get(serverLevel) : null;
                     AdvancementHolder tierAdv = null;
@@ -876,7 +557,7 @@ public static final List<Vec3i> RING_T1 = List.of(
                     }
                 }
             } else {
-                for (int i = newTier; i < upgradeTier; i++) restoreRingBlocks(ALL_RINGS.get(i));
+                for (int i = newTier; i < upgradeTier; i++) restoreRingBlocks(AltarGeometry.ALL_RINGS.get(i));
             }
             upgradeTier = newTier;
             setChanged();
@@ -917,7 +598,7 @@ public static final List<Vec3i> RING_T1 = List.of(
     // ── Pattern ───────────────────────────────────────────────────────────────
 
     @Override
-    public MultiblockPattern getPattern() { return PATTERN; }
+    public MultiblockPattern getPattern() { return AltarGeometry.PATTERN; }
 
     // ── NBT ──────────────────────────────────────────────────────────────────
 
