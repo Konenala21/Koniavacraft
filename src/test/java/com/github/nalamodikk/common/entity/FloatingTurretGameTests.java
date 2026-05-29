@@ -143,4 +143,98 @@ public class FloatingTurretGameTests {
             helper.succeed();
         });
     }
+
+    // -------------------------------------------------------------------------
+    // 6. 多人：兩個玩家輪流打同一個 clone 砲 → 全部 blocked
+    //    驗 immunity 不是基於攻擊者身分，而是基於「攻擊源頭是 Player」這個一般性條件
+    // -------------------------------------------------------------------------
+    @GameTest(template = "empty", templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 40)
+    public static void cloneTurret_immuneToBothPlayersInMultiplayer(GameTestHelper helper) {
+        helper.runAtTickTime(2, () -> {
+            FloatingTurretEntity turret = spawnCloneTurret(helper);
+            float fullHp = turret.getMaxHealth();
+            Player p1 = helper.makeMockPlayer(GameType.SURVIVAL);
+            Player p2 = helper.makeMockPlayer(GameType.SURVIVAL);
+
+            turret.hurt(helper.getLevel().damageSources().playerAttack(p1), 10.0f);
+            turret.hurt(helper.getLevel().damageSources().playerAttack(p2), 10.0f);
+            // 第二個 player 用箭傷
+            DamageSource arrowFromP2 = new DamageSource(
+                    helper.getLevel().registryAccess()
+                            .registryOrThrow(Registries.DAMAGE_TYPE)
+                            .getHolderOrThrow(DamageTypes.ARROW),
+                    null, p2);
+            turret.hurt(arrowFromP2, 10.0f);
+
+            helper.assertTrue(turret.getHealth() == fullHp,
+                    "clone turret hp changed under multi-player attacks: " + turret.getHealth() + "/" + fullHp);
+            helper.succeed();
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // 7. 多人：兩個獨立 owner + 兩個 clone 砲，cross-attack 全部 blocked
+    //    驗每個 turret 的 cloneCtrl 是獨立的，不會因為共用 controller 類別而互相干擾
+    // -------------------------------------------------------------------------
+    @GameTest(template = "empty", templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 40)
+    public static void twoCloneTurrets_independentOwners_bothImmuneToPlayers(GameTestHelper helper) {
+        helper.runAtTickTime(2, () -> {
+            // owner A + turret A
+            Zombie ownerA = helper.spawn(EntityType.ZOMBIE, OWNER_POS);
+            FloatingTurretEntity turretA = helper.spawn(ModEntities.FLOATING_TURRET.get(), TURRET_POS);
+            turretA.setupAsCloneTurret(ownerA, ItemStack.EMPTY, 0);
+            float fullA = turretA.getMaxHealth();
+
+            // owner B + turret B
+            Zombie ownerB = helper.spawn(EntityType.ZOMBIE, new BlockPos(4, 2, 1));
+            FloatingTurretEntity turretB = helper.spawn(
+                    ModEntities.FLOATING_TURRET.get(), new BlockPos(5, 2, 1));
+            turretB.setupAsCloneTurret(ownerB, ItemStack.EMPTY, 0);
+            float fullB = turretB.getMaxHealth();
+
+            Player p1 = helper.makeMockPlayer(GameType.SURVIVAL);
+            Player p2 = helper.makeMockPlayer(GameType.SURVIVAL);
+
+            // p1 attack turret A, p2 attack turret B, p1 attack turret B, p2 attack turret A
+            turretA.hurt(helper.getLevel().damageSources().playerAttack(p1), 10.0f);
+            turretB.hurt(helper.getLevel().damageSources().playerAttack(p2), 10.0f);
+            turretB.hurt(helper.getLevel().damageSources().playerAttack(p1), 10.0f);
+            turretA.hurt(helper.getLevel().damageSources().playerAttack(p2), 10.0f);
+
+            helper.assertTrue(turretA.getHealth() == fullA,
+                    "turretA hp changed: " + turretA.getHealth() + "/" + fullA);
+            helper.assertTrue(turretB.getHealth() == fullB,
+                    "turretB hp changed: " + turretB.getHealth() + "/" + fullB);
+
+            // 兩個 turret 都仍為 non-pickable
+            helper.assertTrue(!turretA.isPickable(), "turretA should remain non-pickable");
+            helper.assertTrue(!turretB.isPickable(), "turretB should remain non-pickable");
+            helper.succeed();
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // 8. 多人：第一個 player 死亡後，第二個 player 仍然無法傷害 clone 砲
+    //    驗免疫不依賴第一次攻擊者存活
+    // -------------------------------------------------------------------------
+    @GameTest(template = "empty", templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 40)
+    public static void cloneTurret_immuneAfterFirstAttackerDies(GameTestHelper helper) {
+        helper.runAtTickTime(2, () -> {
+            FloatingTurretEntity turret = spawnCloneTurret(helper);
+            float fullHp = turret.getMaxHealth();
+            Player p1 = helper.makeMockPlayer(GameType.SURVIVAL);
+            Player p2 = helper.makeMockPlayer(GameType.SURVIVAL);
+
+            // p1 attack → blocked
+            turret.hurt(helper.getLevel().damageSources().playerAttack(p1), 10.0f);
+            // p1 dies
+            p1.setHealth(0);
+            // p2 attack → still blocked
+            turret.hurt(helper.getLevel().damageSources().playerAttack(p2), 10.0f);
+
+            helper.assertTrue(turret.getHealth() == fullHp,
+                    "clone turret took damage after first attacker died: " + turret.getHealth() + "/" + fullHp);
+            helper.succeed();
+        });
+    }
 }
