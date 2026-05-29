@@ -1,6 +1,0 @@
-{
-  "sound_event": "koniava:music.disc.quantified_mana_b",
-  "description": { "translate": "jukebox_song.koniava.quantified_mana_b" },
-  "length_in_seconds": 195.0,
-  "comparator_output": 2
-}

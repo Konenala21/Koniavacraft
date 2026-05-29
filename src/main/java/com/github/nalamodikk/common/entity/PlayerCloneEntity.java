@@ -116,6 +116,17 @@ public class PlayerCloneEntity extends Monster {
     private static final double SKILL_RANGE_SQR = 144.0; // 12 格內才發
     private static final double SKILL_MIN_SQR = 4.0;     // 太近不發
     private static final double SKILL_DODGE_RADIUS = 2.5; // 前搖內跑出鎖定點這個距離即閃過
+
+    // 俯衝技能：玩家高處 / 太遠 / 卡住打不到時，boss 跳起來俯衝過去重新接戰
+    // Phase 0=inactive, 1=蓄力(20t), 2=跳起(15t), 3=頂點鎖定目標(10t), 4=俯衝(<=20t), 5=落地(10t)
+    private int divePhase = 0;
+    private int divePhaseTicks = 0;
+    private Vec3 diveTarget = null;
+    private boolean diveIsRangeTrigger = false; // 距離觸發 = 蓄力縮短、跳更高更快
+    private int diveCooldown = 60; // 開場 3 秒緩衝
+    private static final int DIVE_COOLDOWN = 300; // 15 秒一次（不要太頻繁）
+    private static final double DIVE_DIST_TRIGGER_SQ = 12.0 * 12.0; // 12 格外觸發
+    private static final double DIVE_HEIGHT_TRIGGER = 3.0;          // 高度差 > 3 觸發
     private BlockPos skillTargetPos = BlockPos.ZERO;      // 前搖時鎖定的地點（技能對此點生效，非鎖定玩家本人）
     // 技能墊的方塊：擊飛後 1 秒（20t）開始依序快速打掉，分身收拾自己墊的方塊
     private final List<Long> skillBlocks = new ArrayList<>();
@@ -1284,6 +1295,8 @@ public class PlayerCloneEntity extends Monster {
         tickAntiPillar(); // 全階段防墊高，開場就不給 cheese
         tickHotbarSwitch(); // 模擬玩家：戰鬥中定時切換主手快捷欄武器，讓 boss 戰鬥節奏有變化
         tickTurretVolley(); // 主動齊射：boss 親自下令所有浮游砲蓄力齊射玩家（10 秒一次）
+        tickDive(); // 玩家躲高處 / 太遠 → boss 跳起來俯衝重接戰
+        if (divePhase > 0) return; // 俯衝期間不跑其他 AI（不然會卡技能或停下來）
         tickPillarSkill(); // 招牌技能：墊方塊衝撞擊飛（全階段）
         tickMeleeStrafe(); // 近戰：邊繞圈邊攻擊（取代 MeleeAttackGoal 的站定揮擊）
         tickReflect(); // 週期性鏡反狀態（取代純機率反傷）
@@ -1372,6 +1385,101 @@ public class PlayerCloneEntity extends Monster {
     }
 
     // ── 招牌技能：墊方塊衝撞擊飛（三種形態隨機輪用，玩家可蹲下緩衝）──────────────
+    // 俯衝重接戰：玩家躲太遠 / 太高 / 卡住打不到 → boss 跳起來俯衝回玩家面前
+    // 5 階段：WINDUP 蓄力 → JUMP 跳起 → APEX 頂點鎖定 → DIVE 俯衝 → LAND 落地
+    private void tickDive() {
+        if (diveCooldown > 0) diveCooldown--;
+        if (!(level() instanceof ServerLevel sl)) return;
+        LivingEntity target = getTarget();
+
+        // === 進行中：分階段處理 ===
+        if (divePhase > 0) {
+            divePhaseTicks++;
+            switch (divePhase) {
+                case 1 -> { // WINDUP：距離觸發 5t (0.25s)，高度觸發 20t (1s)
+                    int windup = diveIsRangeTrigger ? 5 : 20;
+                    setDeltaMovement(0, getDeltaMovement().y, 0);
+                    if (divePhaseTicks % 2 == 0) {
+                        sl.sendParticles(ParticleTypes.FLAME, getX(), getY() + 0.5, getZ(),
+                                3, 0.5, 0.3, 0.5, 0.05);
+                    }
+                    if (divePhaseTicks >= windup) { divePhase = 2; divePhaseTicks = 0;
+                        sl.playSound(null, blockPosition(), SoundEvents.ENDER_DRAGON_FLAP,
+                                SoundSource.HOSTILE, 1.2F, 0.7F);
+                        // 距離觸發 = 跳更高（飛得更遠才打得到），高度觸發 = 標準
+                        setDeltaMovement(0, diveIsRangeTrigger ? 2.5 : 1.8, 0);
+                    }
+                }
+                case 2 -> { // JUMP 15t：飛上去，每 tick 補一點上升力
+                    if (getDeltaMovement().y < 0.5) setDeltaMovement(getDeltaMovement().x, 0.5, getDeltaMovement().z);
+                    if (divePhaseTicks >= 15) { divePhase = 3; divePhaseTicks = 0; }
+                }
+                case 3 -> { // APEX 10t：頂點靜止 + 鎖定玩家當下位置
+                    setDeltaMovement(0, 0, 0);
+                    this.fallDistance = 0; // 防 apex 期間累積墜落傷害
+                    if (divePhaseTicks == 1 && target != null) {
+                        diveTarget = target.position();
+                    }
+                    if (divePhaseTicks >= 10) { divePhase = 4; divePhaseTicks = 0;
+                        sl.playSound(null, blockPosition(), SoundEvents.ENDER_DRAGON_GROWL,
+                                SoundSource.HOSTILE, 1.5F, 1.2F);
+                    }
+                }
+                case 4 -> { // DIVE 最多 20t：往鎖定點俯衝
+                    if (diveTarget != null) {
+                        Vec3 dir = diveTarget.subtract(position()).normalize();
+                        setDeltaMovement(dir.x * 1.2, -1.5, dir.z * 1.2); // 強下衝
+                        if (divePhaseTicks % 2 == 0) {
+                            sl.sendParticles(ParticleTypes.LARGE_SMOKE, getX(), getY(), getZ(),
+                                    2, 0.2, 0.2, 0.2, 0.05);
+                        }
+                    }
+                    // 落地觸發：撞到地面 OR 接近鎖定點
+                    if (onGround() || divePhaseTicks >= 20) { divePhase = 5; divePhaseTicks = 0;
+                        sl.playSound(null, blockPosition(), SoundEvents.GENERIC_EXPLODE.value(),
+                                SoundSource.HOSTILE, 1.5F, 0.8F);
+                        sl.sendParticles(ParticleTypes.EXPLOSION, getX(), getY(), getZ(),
+                                1, 0, 0, 0, 0);
+                        sl.sendParticles(ParticleTypes.CLOUD, getX(), getY() + 0.2, getZ(),
+                                30, 1.5, 0.3, 1.5, 0.2);
+                        // 範圍擊飛
+                        for (Player p : sl.getEntitiesOfClass(Player.class, getBoundingBox().inflate(3))) {
+                            if (p == target || target == null) {
+                                Vec3 push = p.position().subtract(position()).normalize();
+                                p.push(push.x * 1.0, 0.6, push.z * 1.0);
+                                p.hurt(damageSources().mobAttack(this), 4F); // 中等傷害
+                            }
+                        }
+                        this.fallDistance = 0; // 自己的墜落不算
+                    }
+                }
+                case 5 -> { // LAND 10t：靜止恢復（給玩家也喘息）
+                    setDeltaMovement(0, getDeltaMovement().y, 0);
+                    if (divePhaseTicks >= 10) {
+                        divePhase = 0;
+                        diveTarget = null;
+                        diveIsRangeTrigger = false;
+                        diveCooldown = DIVE_COOLDOWN;
+                    }
+                }
+            }
+            return;
+        }
+
+        // === 觸發判定 ===
+        if (diveCooldown > 0 || target == null || phase2TransitionTicks > 0 || introActive) return;
+        double dsq = this.distanceToSqr(target);
+        double hdiff = target.getY() - this.getY();
+        boolean tooFar = dsq > DIVE_DIST_TRIGGER_SQ;
+        boolean tooHigh = hdiff > DIVE_HEIGHT_TRIGGER && dsq > 16.0; // 不能太近就跳
+        if (tooFar || tooHigh) {
+            divePhase = 1;
+            divePhaseTicks = 0;
+            diveIsRangeTrigger = tooFar; // 距離觸發走快版（短蓄力 + 高跳），高度走標準版
+            entityData.set(TELEGRAPH_SKILL, 4);
+        }
+    }
+
     private void tickPillarSkill() {
         if (skillCooldown > 0) skillCooldown--;
         if (!(level() instanceof ServerLevel sl)) return;

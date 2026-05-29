@@ -1,6 +1,0 @@
-{
-  "sound_event": "koniava:music.disc.u_key_core_a",
-  "description": { "translate": "jukebox_song.koniava.u_key_core_a" },
-  "length_in_seconds": 185.0,
-  "comparator_output": 7
-}

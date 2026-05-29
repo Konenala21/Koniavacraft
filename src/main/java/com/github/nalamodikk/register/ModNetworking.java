@@ -7,6 +7,7 @@ import com.github.nalamodikk.common.network.packet.client.altar.RitualExplosionP
 import com.github.nalamodikk.common.network.packet.client.BossBgmPacket;
 import com.github.nalamodikk.common.network.packet.client.Phase2TransitionPacket;
 import com.github.nalamodikk.common.network.packet.client.VoidMirrorIntroPacket;
+import com.github.nalamodikk.common.network.packet.server.NaraOutroEndPacket;
 import com.github.nalamodikk.common.network.packet.server.Phase2SkipPacket;
 import com.github.nalamodikk.common.network.packet.server.VoidMirrorSkipIntroPacket;
 import com.github.nalamodikk.common.network.packet.client.armor.ManaShieldHitPacket;
@@ -106,5 +107,6 @@ public class ModNetworking {
         Phase2SkipPacket.registerTo(registrar);
         BossBgmPacket.registerToClient(registrar);
         NaraTauntPacket.registerToClient(registrar);
+        NaraOutroEndPacket.registerTo(registrar);
     }
 }

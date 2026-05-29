@@ -3,6 +3,7 @@ package com.github.nalamodikk.client.cinematic;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.entity.PlayerCloneEntity;
 import com.github.nalamodikk.common.entity.NaraPhantomEntity;
+import com.github.nalamodikk.common.network.packet.server.NaraOutroEndPacket;
 import com.github.nalamodikk.narasystem.nara.hud.NaraSoundHelper;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
@@ -179,8 +180,11 @@ public class BossDeathCameraManager {
             NaraSoundHelper.play("void_mirror", "victory");
             voicePlayed = true;
         }
-        // Nara 失蹤或 outro 時間到 → 進入淡出
-        if (stateTick >= OUTRO_NARA_TICKS || trackedNara == null
+        // 配音播完 → 立刻 fade（Nara 也跟著消失），不要等 OUTRO_NARA_TICKS 走完
+        // 加 20t 啟動緩衝以免 play() 還沒讓 SoundManager 認得就誤判已停
+        boolean voiceEnded = voicePlayed && stateTick > NARA_VOICE_DELAY + 20
+                && !NaraSoundHelper.isPlaying();
+        if (voiceEnded || stateTick >= OUTRO_NARA_TICKS || trackedNara == null
                 || !trackedNara.isAlive() || trackedNara.isRemoved()) {
             startFade();
         }
@@ -189,6 +193,11 @@ public class BossDeathCameraManager {
     private static void startFade() {
         state = State.OUTRO_FADE;
         stateTick = 0;
+        // 通知 server 把 Nara phantom discard（同步「配音講完她就消失」）
+        try {
+            net.neoforged.neoforge.network.PacketDistributor.sendToServer(
+                    com.github.nalamodikk.common.network.packet.server.NaraOutroEndPacket.INSTANCE);
+        } catch (Exception ignored) {}
     }
 
     private static void tickOutroFade() {
