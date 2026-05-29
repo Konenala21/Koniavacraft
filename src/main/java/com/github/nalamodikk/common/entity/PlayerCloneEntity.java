@@ -74,9 +74,6 @@ public class PlayerCloneEntity extends Monster {
 
     public enum Phase { NORMAL, WALLING, BERSERK }
 
-    // 分身招牌技能：墊方塊衝撞，三種形態隨機輪用
-    private enum PillarSkill { RAM_WALL, LIFT_UP, CHARGE_RAMP }
-
     private static final int WALL_CAP = 24;
     private static final int WALL_INTERVAL = 25;
     private static final int DRAIN_INTERVAL = 20;
@@ -94,43 +91,12 @@ public class PlayerCloneEntity extends Monster {
             new AttributeModifier(ANTI_KITE_SPEED_ID, 0.45, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
 
     private Phase phase = Phase.NORMAL;
-    private final Set<Long> placedWalls = new HashSet<>();
+    final Set<Long> placedWalls = new HashSet<>(); // package-private：牆系統主人，PlayerCloneCombatSkills 借讀（避免拆到自己疊的方塊）
     private int wallCooldown = 0;
     private int drainCooldown = 0;
-    private int breakCooldown = 0;
-    private int antiPillarCooldown = 0;
-    // 玩家高出分身達此格數 → 視為墊柱逃避，從腳下往下連拆整段支撐讓他摔回地面
-    private static final int PILLAR_HEIGHT_TRIGGER = 3;
 
-    // 墊方塊衝撞技能狀態
-    private PillarSkill pendingSkill = null;
-    private int skillChargeTicks = 0;
-    private int skillCooldown = 100; // 開場緩衝，不一進場就放
-    private static final int SKILL_COOLDOWN = 80; // 技能頻繁（~4s 一次），壓迫靠技能而非高傷
-    private static final int SKILL_TELEGRAPH = 20;  // 前搖 1 秒：站定蓄力 + 漸強預警，給玩家反應/閃避
-    private static final double SKILL_RANGE_SQR = 144.0; // 12 格內才發
-    private static final double SKILL_MIN_SQR = 4.0;     // 太近不發
-    private static final double SKILL_DODGE_RADIUS = 2.5; // 前搖內跑出鎖定點這個距離即閃過
-
-    // 俯衝技能：玩家高處 / 太遠 / 卡住打不到時，boss 跳起來俯衝過去重新接戰
-    // Phase 0=inactive, 1=蓄力(20t), 2=跳起(15t), 3=頂點鎖定目標(10t), 4=俯衝(<=20t), 5=落地(10t)
-    private int divePhase = 0;
-    private int divePhaseTicks = 0;
-    private Vec3 diveTarget = null;
-    private boolean diveIsRangeTrigger = false; // 距離觸發 = 蓄力縮短、跳更高更快
-    private int diveCooldown = 60; // 開場 3 秒緩衝
-    private static final int DIVE_COOLDOWN = 300; // 15 秒一次（不要太頻繁）
-    private static final double DIVE_DIST_TRIGGER_SQ = 12.0 * 12.0; // 12 格外觸發
-    private static final double DIVE_HEIGHT_TRIGGER = 3.0;          // 高度差 > 3 觸發
-    private BlockPos skillTargetPos = BlockPos.ZERO;      // 前搖時鎖定的地點（技能對此點生效，非鎖定玩家本人）
-    // 技能墊的方塊：擊飛後 1 秒（20t）開始依序快速打掉，分身收拾自己墊的方塊
-    private final List<Long> skillBlocks = new ArrayList<>();
-    private int skillClearTimer = -1; // -1 閒置；>0 倒數；0 清理中（每 tick 打一格）
-    private static final int SKILL_BLOCK_LIFETIME = 20;
-    // 分段擊飛（RAM_WALL）：先把玩家拋飛離地，數 tick 後玩家在空中時再強水平轟飛（空中無摩擦才飛得誇張）
-    @Nullable private Player pendingLaunchTarget = null;
-    private int pendingLaunchTimer = 0;
-    private Vec3 pendingLaunchDir = Vec3.ZERO;
+    // 主動戰術 controller（反墊柱 / 拆工事 / 俯衝 / 招牌墊方塊技能 / 上彈 / 技能方塊清理；擁有技能 state）
+    private final PlayerCloneCombatSkills skills = new PlayerCloneCombatSkills(this);
     // 確保同源娜拉幻影恰好一個（娜拉不存盤，重載後由 boss 重建）
     private int naraCheckCooldown = 0;
     // 空中追擊墊的柱：追完落地就清掉，避免殘留把 arena 弄得坑坑疤疤讓 boss 走路卡頓
@@ -152,7 +118,7 @@ public class PlayerCloneEntity extends Monster {
     private static final int INTRO_REVEAL_TICK = 570;
     private static final int INTRO_DESCEND_START = 575;
     private static final int INTRO_LEN = 620;
-    private boolean introActive = false;
+    boolean introActive = false; // package-private：intro 系統主人，PlayerCloneCombatSkills.tickDive 讀（過場期間不觸發俯衝）
     private int introTicks = 0;
     private double introX, introBaseY, introZ;
     private final EnumMap<EquipmentSlot, ItemStack> pendingEquipment = new EnumMap<>(EquipmentSlot.class);
@@ -275,6 +241,15 @@ public class PlayerCloneEntity extends Monster {
 
     public BlockPos getSkillTarget() {
         return entityData.get(SKILL_TARGET);
+    }
+
+    // package-private setter：PlayerCloneCombatSkills 透過這兩個把技能預兆 / 鎖定點同步給 client（entityData 是 protected）
+    void setTelegraphSkill(int v) {
+        entityData.set(TELEGRAPH_SKILL, v);
+    }
+
+    void setSkillTarget(BlockPos pos) {
+        entityData.set(SKILL_TARGET, pos);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -1099,293 +1074,39 @@ public class PlayerCloneEntity extends Monster {
             return;
         }
 
-        tickAntiPillar(); // 全階段防墊高，開場就不給 cheese
+        skills.tickAntiPillar(); // 全階段防墊高，開場就不給 cheese
         tickHotbarSwitch(); // 模擬玩家：戰鬥中定時切換主手快捷欄武器，讓 boss 戰鬥節奏有變化
         tickTurretVolley(); // 主動齊射：boss 親自下令所有浮游砲蓄力齊射玩家（10 秒一次）
-        tickDive(); // 玩家躲高處 / 太遠 → boss 跳起來俯衝重接戰
-        if (divePhase > 0) return; // 俯衝期間不跑其他 AI（不然會卡技能或停下來）
-        tickPillarSkill(); // 招牌技能：墊方塊衝撞擊飛（全階段）
+        skills.tickDive(); // 玩家躲高處 / 太遠 → boss 跳起來俯衝重接戰
+        if (skills.isDiving()) return; // 俯衝期間不跑其他 AI（不然會卡技能或停下來）
+        skills.tickPillarSkill(); // 招牌技能：墊方塊衝撞擊飛（全階段）
         tickMeleeStrafe(); // 近戰：邊繞圈邊攻擊（取代 MeleeAttackGoal 的站定揮擊）
         tickReflect(); // 週期性鏡反狀態（取代純機率反傷）
         tickAirChase(); // 玩家飛高時墊方塊往上跳追擊（像玩家 pillar jump）
-        tickPendingLaunch(); // RAM_WALL 橫向擊退後的第二段上彈
-        tickSkillBlockClear(); // 擊飛後依序打掉技能墊的方塊
+        skills.tickPendingLaunch(); // RAM_WALL 橫向擊退後的第二段上彈
+        skills.tickSkillBlockClear(); // 擊飛後依序打掉技能墊的方塊
         ensureCompanions(); // 確保同源娜拉幻影 + 返回裂縫各恰好一個（重載/死亡重進入後重建、去重）
         if (phase == Phase.WALLING) {
             tickWallBuilding();
-            tickBreakSurroundings();
+            skills.tickBreakSurroundings();
         } else if (phase == Phase.BERSERK) {
             tickManaDrain();
-            tickBreakSurroundings();
+            skills.tickBreakSurroundings();
         }
     }
 
-    // 反 pillar：玩家墊方塊升高 → 拆腳下支撐讓他掉下來；墊太高就一次連拆整段柱摔回地面
-    private void tickAntiPillar() {
-        if (antiPillarCooldown > 0) { antiPillarCooldown--; return; }
-        if (!(level() instanceof ServerLevel sl)) return;
-        LivingEntity target = getTarget();
-        if (!(target instanceof Player)) return;
+    // 壓迫式徘徊：追到 2~3 格威脅距離就繞圈、保持距離（不貼臉），主要威脅靠頻繁技能
+    private static final double KEEP_DISTANCE = 2.5;
 
-        BlockPos support = target.blockPosition().below();
-        if (support.getY() < 64) return; // 站在地形上、沒墊高 → 不處理
-
-        int heightAbove = target.blockPosition().getY() - this.blockPosition().getY();
-        if (heightAbove >= PILLAR_HEIGHT_TRIGGER) {
-            // 墊柱逃避：從腳下往下連拆，一次解決整段支撐，讓玩家直接摔回分身高度
-            BlockPos.MutableBlockPos p = support.mutable();
-            int broken = 0;
-            for (int i = 0; i < 8 && p.getY() >= 64; i++) {
-                if (!placedWalls.contains(p.asLong())) {
-                    BlockState st = sl.getBlockState(p);
-                    if (!st.isAir() && st.getDestroySpeed(sl, p) >= 0) {
-                        sl.destroyBlock(p, false);
-                        broken++;
-                    }
-                }
-                p.move(Direction.DOWN);
-            }
-            antiPillarCooldown = broken > 0 ? 4 : 8;
-            return;
-        }
-
-        // 一般情形：拆腳下支撐一格
-        BlockState st = sl.getBlockState(support);
-        if (!st.isAir() && st.getDestroySpeed(sl, support) >= 0 && !placedWalls.contains(support.asLong())) {
-            sl.destroyBlock(support, false);
-            antiPillarCooldown = 6;
-        } else {
-            antiPillarCooldown = 8;
-        }
-    }
-
-    // 拆玩家蓋的防禦工事 / 逃跑路線（地表 Y>=64 以上、非分身自己疊的方塊）
-    private void tickBreakSurroundings() {
-        if (breakCooldown > 0) { breakCooldown--; return; }
-        if (!(level() instanceof ServerLevel sl)) return;
-        LivingEntity target = getTarget();
-        if (!(target instanceof Player)) return;
-
-        BlockPos center = target.blockPosition();
-        BlockPos found = null;
-        double best = Double.MAX_VALUE;
-        int r = 5;
-        BlockPos.MutableBlockPos p = new BlockPos.MutableBlockPos();
-        for (int dx = -r; dx <= r; dx++) {
-            for (int dy = 0; dy <= 3; dy++) {
-                for (int dz = -r; dz <= r; dz++) {
-                    p.set(center.getX() + dx, center.getY() + dy, center.getZ() + dz);
-                    if (p.getY() < 64) continue;                 // 不拆地形
-                    if (placedWalls.contains(p.asLong())) continue; // 不拆自己的牆
-                    BlockState st = sl.getBlockState(p);
-                    if (st.isAir()) continue;
-                    if (st.getDestroySpeed(sl, p) < 0) continue;  // 不可破壞跳過
-                    double d = p.distSqr(center);
-                    if (d < best) { best = d; found = p.immutable(); }
-                }
-            }
-        }
-        if (found != null) {
-            sl.destroyBlock(found, false); // 不掉落，避免玩家撿回
-        }
-        breakCooldown = 10;
-    }
-
-    // ── 招牌技能：墊方塊衝撞擊飛（三種形態隨機輪用，玩家可蹲下緩衝）──────────────
-    // 俯衝重接戰：玩家躲太遠 / 太高 / 卡住打不到 → boss 跳起來俯衝回玩家面前
-    // 5 階段：WINDUP 蓄力 → JUMP 跳起 → APEX 頂點鎖定 → DIVE 俯衝 → LAND 落地
-    private void tickDive() {
-        if (diveCooldown > 0) diveCooldown--;
-        if (!(level() instanceof ServerLevel sl)) return;
-        LivingEntity target = getTarget();
-
-        // === 進行中：分階段處理 ===
-        if (divePhase > 0) {
-            divePhaseTicks++;
-            switch (divePhase) {
-                case 1 -> { // WINDUP：距離觸發 5t (0.25s)，高度觸發 20t (1s)
-                    int windup = diveIsRangeTrigger ? 5 : 20;
-                    setDeltaMovement(0, getDeltaMovement().y, 0);
-                    if (divePhaseTicks % 2 == 0) {
-                        sl.sendParticles(ParticleTypes.FLAME, getX(), getY() + 0.5, getZ(),
-                                3, 0.5, 0.3, 0.5, 0.05);
-                    }
-                    if (divePhaseTicks >= windup) { divePhase = 2; divePhaseTicks = 0;
-                        sl.playSound(null, blockPosition(), SoundEvents.ENDER_DRAGON_FLAP,
-                                SoundSource.HOSTILE, 1.2F, 0.7F);
-                        // 距離觸發 = 跳更高（飛得更遠才打得到），高度觸發 = 標準
-                        setDeltaMovement(0, diveIsRangeTrigger ? 2.5 : 1.8, 0);
-                    }
-                }
-                case 2 -> { // JUMP 15t：飛上去，每 tick 補一點上升力
-                    if (getDeltaMovement().y < 0.5) setDeltaMovement(getDeltaMovement().x, 0.5, getDeltaMovement().z);
-                    if (divePhaseTicks >= 15) { divePhase = 3; divePhaseTicks = 0; }
-                }
-                case 3 -> { // APEX 10t：頂點靜止 + 鎖定玩家當下位置
-                    setDeltaMovement(0, 0, 0);
-                    this.fallDistance = 0; // 防 apex 期間累積墜落傷害
-                    if (divePhaseTicks == 1 && target != null) {
-                        diveTarget = target.position();
-                    }
-                    if (divePhaseTicks >= 10) { divePhase = 4; divePhaseTicks = 0;
-                        sl.playSound(null, blockPosition(), SoundEvents.ENDER_DRAGON_GROWL,
-                                SoundSource.HOSTILE, 1.5F, 1.2F);
-                    }
-                }
-                case 4 -> { // DIVE 最多 20t：往鎖定點俯衝
-                    if (diveTarget != null) {
-                        Vec3 dir = diveTarget.subtract(position()).normalize();
-                        setDeltaMovement(dir.x * 1.2, -1.5, dir.z * 1.2); // 強下衝
-                        if (divePhaseTicks % 2 == 0) {
-                            sl.sendParticles(ParticleTypes.LARGE_SMOKE, getX(), getY(), getZ(),
-                                    2, 0.2, 0.2, 0.2, 0.05);
-                        }
-                    }
-                    // 落地觸發：撞到地面 OR 接近鎖定點
-                    if (onGround() || divePhaseTicks >= 20) { divePhase = 5; divePhaseTicks = 0;
-                        sl.playSound(null, blockPosition(), SoundEvents.GENERIC_EXPLODE.value(),
-                                SoundSource.HOSTILE, 1.5F, 0.8F);
-                        sl.sendParticles(ParticleTypes.EXPLOSION, getX(), getY(), getZ(),
-                                1, 0, 0, 0, 0);
-                        sl.sendParticles(ParticleTypes.CLOUD, getX(), getY() + 0.2, getZ(),
-                                30, 1.5, 0.3, 1.5, 0.2);
-                        // 範圍擊飛
-                        for (Player p : sl.getEntitiesOfClass(Player.class, getBoundingBox().inflate(3))) {
-                            if (p == target || target == null) {
-                                Vec3 push = p.position().subtract(position()).normalize();
-                                p.push(push.x * 1.0, 0.6, push.z * 1.0);
-                                p.hurt(damageSources().mobAttack(this), 4F); // 中等傷害
-                            }
-                        }
-                        this.fallDistance = 0; // 自己的墜落不算
-                    }
-                }
-                case 5 -> { // LAND 10t：靜止恢復（給玩家也喘息）
-                    setDeltaMovement(0, getDeltaMovement().y, 0);
-                    if (divePhaseTicks >= 10) {
-                        divePhase = 0;
-                        diveTarget = null;
-                        diveIsRangeTrigger = false;
-                        diveCooldown = DIVE_COOLDOWN;
-                    }
-                }
-            }
-            return;
-        }
-
-        // === 觸發判定 ===
-        if (diveCooldown > 0 || target == null || phase2TransitionTicks > 0 || introActive) return;
-        double dsq = this.distanceToSqr(target);
-        double hdiff = target.getY() - this.getY();
-        boolean tooFar = dsq > DIVE_DIST_TRIGGER_SQ;
-        boolean tooHigh = hdiff > DIVE_HEIGHT_TRIGGER && dsq > 16.0; // 不能太近就跳
-        if (tooFar || tooHigh) {
-            divePhase = 1;
-            divePhaseTicks = 0;
-            diveIsRangeTrigger = tooFar; // 距離觸發走快版（短蓄力 + 高跳），高度走標準版
-            entityData.set(TELEGRAPH_SKILL, 4);
-        }
-    }
-
-    private void tickPillarSkill() {
-        if (skillCooldown > 0) skillCooldown--;
-        if (!(level() instanceof ServerLevel sl)) return;
-        if (!(getTarget() instanceof Player p) || !p.isAlive()) {
-            pendingSkill = null;
-            entityData.set(TELEGRAPH_SKILL, 0);
-            return;
-        }
-
-        if (pendingSkill != null) {
-            // 前置動作：站定蓄力、面向玩家，朝玩家噴漸強預警粒子，給玩家 1 秒反應/閃避
-            this.setDeltaMovement(0.0, this.getDeltaMovement().y, 0.0);
-            this.getNavigation().stop();
-            this.getLookControl().setLookAt(p);
-            Vec3 d = horizUnit(p.position().subtract(this.position()));
-            float prog = 1.0f - skillChargeTicks / (float) SKILL_TELEGRAPH;
-            int count = 4 + (int) (prog * 10); // 越接近發動越密
-            sl.sendParticles(ParticleTypes.CRIT,
-                    getX() + d.x * 0.6, getY() + 1.0, getZ() + d.z * 0.6,
-                    count, 0.3, 0.3, 0.3, 0.12 + prog * 0.1);
-            sl.sendParticles(ParticleTypes.ENCHANTED_HIT,
-                    getX(), getY() + 1.2, getZ(), 2, 0.4, 0.4, 0.4, 0.0);
-            if (--skillChargeTicks <= 0) {
-                executeSkill(sl, pendingSkill, p);
-                pendingSkill = null;
-                entityData.set(TELEGRAPH_SKILL, 0);
-                skillCooldown = SKILL_COOLDOWN;
-            }
-            return;
-        }
-
-        if (skillCooldown > 0) return;
-        double d2 = this.distanceToSqr(p);
-        if (d2 > SKILL_RANGE_SQR || d2 < SKILL_MIN_SQR) return;
-        pendingSkill = PillarSkill.values()[this.random.nextInt(PillarSkill.values().length)];
-        skillChargeTicks = SKILL_TELEGRAPH;
-        skillTargetPos = p.blockPosition();                  // 鎖定當下地點：預兆固定於此，玩家跑出即可閃避
-        entityData.set(SKILL_TARGET, skillTargetPos);
-        entityData.set(TELEGRAPH_SKILL, pendingSkill.ordinal() + 1); // 同步給 client 畫預兆
-        // 每招不同蓄力音，配合預兆讓玩家辨識
-        SoundEvent windup = switch (pendingSkill) {
-            case RAM_WALL -> SoundEvents.WARDEN_SONIC_CHARGE;
-            case LIFT_UP -> SoundEvents.PISTON_EXTEND;
-            case CHARGE_RAMP -> SoundEvents.RAVAGER_ROAR;
-        };
-        sl.playSound(null, blockPosition(), windup, SoundSource.HOSTILE, 1.0F, 1.0F);
-    }
-
+    // 水平單位向量（tickMeleeStrafe 用）。PlayerCloneCombatSkills 也有一份同樣的 helper。
     private static Vec3 horizUnit(Vec3 v) {
         double len = Math.sqrt(v.x * v.x + v.z * v.z);
         if (len < 1.0e-4) return new Vec3(0, 0, 1);
         return new Vec3(v.x / len, 0, v.z / len);
     }
 
-    // 水平面點(px,pz) 到線段 (ax,az)→(bx,bz) 的最短距離平方（CHARGE_RAMP 閃避用）
-    private static double pointToSegmentDistSqrXZ(double px, double pz,
-                                                  double ax, double az,
-                                                  double bx, double bz) {
-        double dx = bx - ax, dz = bz - az;
-        double lenSq = dx * dx + dz * dz;
-        if (lenSq < 1.0e-6) {
-            double rx = px - ax, rz = pz - az;
-            return rx * rx + rz * rz;
-        }
-        double t = ((px - ax) * dx + (pz - az) * dz) / lenSq;
-        if (t < 0) t = 0;
-        else if (t > 1) t = 1;
-        double projX = ax + dx * t, projZ = az + dz * t;
-        double rx = px - projX, rz = pz - projZ;
-        return rx * rx + rz * rz;
-    }
-
-    // 對玩家施加擊退（起飛弧線）。蹲下大幅緩衝。複用 LeggingsDoubleJumpHandler 的速度同步寫法。
-    private void knockbackPlayer(Player p, Vec3 awayDir, double horizPower, double vertPower) {
-        double mult = p.isCrouching() ? 0.35 : 1.0;
-        Vec3 h = horizUnit(awayDir);
-        p.setDeltaMovement(h.x * horizPower * mult, vertPower * mult, h.z * horizPower * mult);
-        p.hurtMarked = true; // server 同步速度給 client
-    }
-
-    // RAM_WALL 的第二段：拋飛後玩家在空中時，再強力水平轟飛（空中無摩擦才飛得遠，蹲下緩衝）
-    private void tickPendingLaunch() {
-        if (pendingLaunchTimer <= 0) return;
-        if (--pendingLaunchTimer > 0) return;
-        Player p = pendingLaunchTarget;
-        pendingLaunchTarget = null;
-        if (p == null || !p.isAlive()) return;
-        double mult = p.isCrouching() ? 0.35 : 1.0;
-        Vec3 h = horizUnit(pendingLaunchDir);
-        Vec3 m = p.getDeltaMovement();
-        p.setDeltaMovement(h.x * 3.0 * mult, Math.max(m.y, 0.2), h.z * 3.0 * mult);
-        p.hurtMarked = true;
-    }
-
-    // 壓迫式徘徊：追到 2~3 格威脅距離就繞圈、保持距離（不貼臉），主要威脅靠頻繁技能
-    private static final double KEEP_DISTANCE = 2.5;
-
     private void tickMeleeStrafe() {
-        if (graceTicks > 0 || pendingSkill != null) return; // 緩衝期/技能前搖時不動
+        if (graceTicks > 0 || skills.hasPendingSkill()) return; // 緩衝期/技能前搖時不動
         if (!(getTarget() instanceof LivingEntity tgt) || !tgt.isAlive()) return;
         if (attackCooldown > 0) attackCooldown--;
         getLookControl().setLookAt(tgt, 30f, 30f);
@@ -1435,12 +1156,7 @@ public class PlayerCloneEntity extends Monster {
         this.bossEvent.setColor(BossEvent.BossBarColor.RED); // 血條轉紅，配合顯示外殼血量提示在打外殼
         updateBossBarName(); // 顯示「二階段」尾標
         // 清掉進行中的技能狀態，否則變身前正在前搖的招式會卡住、變身後一直重放同一招
-        pendingSkill = null;
-        skillChargeTicks = 0;
-        skillCooldown = SKILL_COOLDOWN;
-        entityData.set(TELEGRAPH_SKILL, 0);
-        pendingLaunchTarget = null;
-        pendingLaunchTimer = 0;
+        skills.resetForArmored();
         armoredDimensions = true; // 放大碰撞箱（getDimensions），讓玩家打得到外殼
         refreshDimensions();
         // 啟動變身過場（先設 ticks 再 buildArmorShell，讓 spawnArmorPart 偵測到過場進行中、把方塊放在遠處等待飛入）
@@ -1584,93 +1300,6 @@ public class PlayerCloneEntity extends Monster {
         }
     }
 
-    private void executeSkill(ServerLevel sl, PillarSkill skill, Player p) {
-        clearSkillBlocksNow(sl); // 先收掉上次技能殘留的方塊，避免堆積
-        BlockPos target = skillTargetPos;                     // 前搖鎖定的地點（非玩家當下位置）
-        Vec3 targetCenter = Vec3.atCenterOf(target);
-        double dodgeRSq = SKILL_DODGE_RADIUS * SKILL_DODGE_RADIUS;
-        // CHARGE_RAMP 是線狀攻擊（boss→鎖定點），用點到線段距離；其他用以鎖定點為中心的球體距離
-        boolean dodged = skill == PillarSkill.CHARGE_RAMP
-                ? pointToSegmentDistSqrXZ(p.getX(), p.getZ(),
-                        this.getX(), this.getZ(), targetCenter.x, targetCenter.z) > dodgeRSq
-                : (p.getX() - targetCenter.x) * (p.getX() - targetCenter.x)
-                        + (p.getZ() - targetCenter.z) * (p.getZ() - targetCenter.z) > dodgeRSq;
-        Vec3 awayFromClone = p.position().subtract(this.position()); // 命中時的擊退方向（玩家當下位置）
-        Vec3 d = horizUnit(targetCenter.subtract(this.position()));
-        BlockState block = takeWallBlock();
-        switch (skill) {
-            case RAM_WALL -> {
-                // 從鎖定點朝分身方向水平排 3 格方塊，命中的玩家往反方向擊退
-                Direction toClone = Direction.getNearest(this.getX() - targetCenter.x, 0, this.getZ() - targetCenter.z);
-                int height = 1 + this.random.nextInt(2);
-                for (int i = 1; i <= 3; i++) {
-                    BlockPos col = target.relative(toClone, i).above(1);
-                    for (int dy = 0; dy < height; dy++) placeSkillBlock(sl, col.above(dy), block);
-                }
-                if (!dodged) {
-                    knockbackPlayer(p, awayFromClone, 0.3, 0.85);
-                    pendingLaunchTarget = p;
-                    pendingLaunchDir = awayFromClone;
-                    pendingLaunchTimer = 6;
-                }
-                sl.playSound(null, target, SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 0.8F);
-            }
-            case LIFT_UP -> {
-                // 鎖定點冒方塊往上頂飛命中的玩家
-                placeSkillBlock(sl, target, block);
-                placeSkillBlock(sl, target.above(), block);
-                if (!dodged) knockbackPlayer(p, awayFromClone, 0.5, 1.5);
-                sl.playSound(null, target, SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 1.2F);
-            }
-            case CHARGE_RAMP -> {
-                // 從分身身體高度往鎖定點方向排空中方塊 + 逼近一步，撞到的玩家強水平擊飛
-                for (int i = 1; i <= 3; i++) {
-                    BlockPos bp = BlockPos.containing(getX() + d.x * i, getY() + 1, getZ() + d.z * i);
-                    placeSkillBlock(sl, bp, block);
-                }
-                this.setDeltaMovement(d.x * 0.8, this.getDeltaMovement().y, d.z * 0.8); // 平滑衝刺逼近，不瞬移
-                this.hurtMarked = true;
-                if (!dodged && this.distanceToSqr(p) <= 25.0) knockbackPlayer(p, awayFromClone, 1.6, 0.6);
-                sl.playSound(null, blockPosition(), SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 1.0F, 0.6F);
-            }
-        }
-        entityData.set(SKILL_TARGET, BlockPos.ZERO); // 清鎖定點（client 停止畫預兆）
-        skillClearTimer = SKILL_BLOCK_LIFETIME; // 擊飛後 1 秒開始依序打掉
-    }
-
-    private void placeSkillBlock(ServerLevel sl, BlockPos p, BlockState block) {
-        if (!sl.getWorldBorder().isWithinBounds(p)) return;
-        if (!sl.getBlockState(p).canBeReplaced()) return; // 只放在空氣/可替換處，不覆蓋地板或既有方塊
-        sl.setBlockAndUpdate(p, block);
-        long key = p.asLong();
-        placedWalls.add(key);
-        skillBlocks.add(key);
-        VoidMirrorEvents.addModifiedBlock(key);
-    }
-
-    // 技能墊的方塊：倒數後每 tick 依序打掉一格（快速、按放置順序）
-    private void tickSkillBlockClear() {
-        if (skillClearTimer < 0) return;
-        if (skillClearTimer > 0) { skillClearTimer--; return; }
-        if (!(level() instanceof ServerLevel sl)) return;
-        if (skillBlocks.isEmpty()) { skillClearTimer = -1; return; }
-        long key = skillBlocks.remove(0);
-        BlockPos bp = BlockPos.of(key);
-        sl.destroyBlock(bp, false);
-        placedWalls.remove(key);
-        if (skillBlocks.isEmpty()) skillClearTimer = -1;
-    }
-
-    private void clearSkillBlocksNow(ServerLevel sl) {
-        for (long key : skillBlocks) {
-            BlockPos bp = BlockPos.of(key);
-            if (sl.isLoaded(bp)) sl.setBlockAndUpdate(bp, Blocks.AIR.defaultBlockState());
-            placedWalls.remove(key);
-        }
-        skillBlocks.clear();
-        skillClearTimer = -1;
-    }
-
     private void updatePhase() {
         float r = this.getHealth() / this.getMaxHealth();
         Phase next = r > 0.6F ? Phase.NORMAL : (r > 0.3F ? Phase.WALLING : Phase.BERSERK);
@@ -1719,7 +1348,7 @@ public class PlayerCloneEntity extends Monster {
         wallCooldown = WALL_INTERVAL;
     }
 
-    private BlockState takeWallBlock() {
+    BlockState takeWallBlock() { // package-private：PlayerCloneCombatSkills.executeSkill 借此取外殼/牆材
         for (ItemStack st : clonedInventory) {
             if (!st.isEmpty() && st.getItem() instanceof BlockItem bi) {
                 st.shrink(1);
