@@ -82,16 +82,7 @@ public class NaraServerEvents {
     private static final Set<UUID> pendingSolarCollectorPlaced = new HashSet<>();
     // Dev test tutorial (ghost block)
     // Phase 1: block placed, waiting for chunk update to reach client before opening GUI
-    private static final Map<UUID, Integer> ghostOpenDelay = new HashMap<>();
-    private static final Map<UUID, String> ghostOpenTutorialId = new HashMap<>();
-    private static final int GHOST_OPEN_DELAY = 10;
-    // Phase 2: GUI open, waiting for player to actually close it (no timeout: JEI tutorials need time)
-    private static final Set<UUID> pendingTestTutorial = new HashSet<>();
-    private static final Map<UUID, String> pendingTestTutorialId = new HashMap<>();
-    private static final Map<UUID, BlockPos> ghostBlocks = new HashMap<>();
-    private static final Map<UUID, ResourceKey<Level>> ghostBlockLevels = new HashMap<>();
-    // Positions being removed by ghost cleanup; machine onRemove checks this to skip NBT item drops
-    private static final Set<Long> ghostPositionKeys = new HashSet<>();
+    // Ghost tutorial 子系統的 state 已搬到 NaraGhostTutorialManager
 
     @SubscribeEvent
     public static void onServerStopping(ServerStoppingEvent event) {
@@ -114,20 +105,7 @@ public class NaraServerEvents {
         pendingManaDeployerPlaced.clear();
         pendingManaChargerPlaced.clear();
         pendingSolarCollectorPlaced.clear();
-        for (Map.Entry<UUID, BlockPos> e : ghostBlocks.entrySet()) {
-            ServerPlayer p = event.getServer().getPlayerList().getPlayer(e.getKey());
-            ResourceKey<Level> dimKey = ghostBlockLevels.get(e.getKey());
-            ServerLevel targetLvl = dimKey != null
-                    ? event.getServer().getLevel(dimKey)
-                    : (p != null ? p.serverLevel() : null);
-            if (targetLvl != null) removeGhostBlock(targetLvl, e.getValue());
-        }
-        ghostBlocks.clear();
-        ghostBlockLevels.clear();
-        ghostOpenDelay.clear();
-        ghostOpenTutorialId.clear();
-        pendingTestTutorial.clear();
-        pendingTestTutorialId.clear();
+        NaraGhostTutorialManager.clearAll(event.getServer());
         ArcaneConduitBlockEntity.clearAllStaticCachesGracefully();
         ArcaneConduitBlock.clearStaticCaches();
         ResearchGate.clearCache();
@@ -155,16 +133,7 @@ public class NaraServerEvents {
         pendingManaDeployerPlaced.remove(uuid);
         pendingManaChargerPlaced.remove(uuid);
         pendingSolarCollectorPlaced.remove(uuid);
-        ghostOpenDelay.remove(uuid);
-        ghostOpenTutorialId.remove(uuid);
-        ResourceKey<Level> dimKey = ghostBlockLevels.remove(uuid);
-        BlockPos ghostPos = ghostBlocks.remove(uuid);
-        if (ghostPos != null) {
-            ServerLevel targetLvl = dimKey != null ? player.server.getLevel(dimKey) : player.serverLevel();
-            if (targetLvl != null) removeGhostBlock(targetLvl, ghostPos);
-        }
-        pendingTestTutorial.remove(uuid);
-        pendingTestTutorialId.remove(uuid);
+        NaraGhostTutorialManager.clearForPlayer(player);
     }
 
     public static void scheduleFirstScanTutorial(ServerPlayer player) {
@@ -519,91 +488,7 @@ public class NaraServerEvents {
             pendingManaGenPlacement.entrySet().removeIf(e -> e.setValue(e.getValue() - 1) <= 0);
         }
 
-        // Phase 1: block placed, now wait for chunk update, then open GUI
-        if (!ghostOpenDelay.isEmpty()) {
-            Iterator<Map.Entry<UUID, Integer>> git = ghostOpenDelay.entrySet().iterator();
-            while (git.hasNext()) {
-                Map.Entry<UUID, Integer> entry = git.next();
-                UUID uuid = entry.getKey();
-                int remaining = entry.getValue() - 1;
-                if (remaining > 0) { entry.setValue(remaining); continue; }
-                git.remove();
-                String tid = ghostOpenTutorialId.remove(uuid);
-                ServerPlayer player = event.getServer().getPlayerList().getPlayer(uuid);
-                if (player == null) {
-                    BlockPos gp = ghostBlocks.remove(uuid);
-                    ResourceKey<Level> dimKey = ghostBlockLevels.remove(uuid);
-                    if (gp != null && dimKey != null) {
-                        ServerLevel ghostLvl = event.getServer().getLevel(dimKey);
-                        if (ghostLvl != null) removeGhostBlock(ghostLvl, gp);
-                    }
-                    continue;
-                }
-                BlockPos gp = ghostBlocks.get(uuid);
-                boolean opened = false;
-                if (gp != null) {
-                    ResourceKey<Level> ghostDim = ghostBlockLevels.get(uuid);
-                    ServerLevel ghostLvl = ghostDim != null ? event.getServer().getLevel(ghostDim) : player.serverLevel();
-                    BlockEntity be = ghostLvl != null ? ghostLvl.getBlockEntity(gp) : null;
-                    if (be instanceof MenuProvider mp) {
-                        player.openMenu(mp, gp);
-                        opened = true;
-                    } else if (be instanceof ResearchTableBlockEntity rbe) {
-                        player.openMenu(new SimpleMenuProvider(
-                                (id, inv, p) -> new ResearchTableMenu(id, inv, rbe),
-                                Component.translatable(ghostLvl.getBlockState(gp).getBlock().getDescriptionId())), gp);
-                        opened = true;
-                    }
-                }
-                if (opened) {
-                    pendingTestTutorial.add(uuid);
-                    if (FIRE_ON_GUI_OPEN.contains(tid)) {
-                        NaraTutorialPacket.send(player, tid);
-                        pendingTestTutorialId.put(uuid, null);
-                    } else {
-                        pendingTestTutorialId.put(uuid, tid);
-                    }
-                } else {
-                    BlockPos cleanPos = ghostBlocks.remove(uuid);
-                    ResourceKey<Level> cleanDim = ghostBlockLevels.remove(uuid);
-                    if (cleanPos != null) {
-                        ServerLevel cleanLvl = cleanDim != null ? event.getServer().getLevel(cleanDim) : player.serverLevel();
-                        if (cleanLvl != null) removeGhostBlock(cleanLvl, cleanPos);
-                    }
-                    if (tid != null) NaraTutorialPacket.send(player, tid);
-                }
-            }
-        }
-
-        if (!pendingTestTutorial.isEmpty()) {
-            Iterator<UUID> tit = pendingTestTutorial.iterator();
-            while (tit.hasNext()) {
-                UUID uuid = tit.next();
-                ServerPlayer player = event.getServer().getPlayerList().getPlayer(uuid);
-                if (player == null) {
-                    tit.remove();
-                    pendingTestTutorialId.remove(uuid);
-                    BlockPos gp = ghostBlocks.remove(uuid);
-                    ResourceKey<Level> dimKey = ghostBlockLevels.remove(uuid);
-                    if (gp != null && dimKey != null) {
-                        ServerLevel ghostLvl = event.getServer().getLevel(dimKey);
-                        if (ghostLvl != null) removeGhostBlock(ghostLvl, gp);
-                    }
-                    continue;
-                }
-                if (player.containerMenu == player.inventoryMenu) {
-                    tit.remove();
-                    String tid = pendingTestTutorialId.remove(uuid);
-                    BlockPos gp = ghostBlocks.remove(uuid);
-                    ResourceKey<Level> dimKey = ghostBlockLevels.remove(uuid);
-                    if (gp != null) {
-                        ServerLevel ghostLvl = dimKey != null ? event.getServer().getLevel(dimKey) : player.serverLevel();
-                        if (ghostLvl != null) removeGhostBlock(ghostLvl, gp);
-                    }
-                    if (tid != null) NaraTutorialPacket.send(player, tid);
-                }
-            }
-        }
+        NaraGhostTutorialManager.tick(event);
 
         NaraPunishmentManager.tick(event);
 
@@ -636,98 +521,12 @@ public class NaraServerEvents {
         NaraPunishmentManager.handleRespawn(player);
     }
 
-    // All machine tutorials use setOverlayOnScreen(true) so they can render on top of the ghost GUI.
-    private static final Set<String> FIRE_ON_GUI_OPEN = Set.of(
-            NaraTutorialFlow.MANA_GEN_PLACED,
-            NaraTutorialFlow.MANA_GEN_CRAFT,
-            NaraTutorialFlow.MANA_GRINDER_CRAFT,
-            NaraTutorialFlow.MANA_INFUSER_CRAFT,
-            NaraTutorialFlow.MANA_CRAFTING_CRAFT,
-            NaraTutorialFlow.MANA_DEPLOYER_CRAFT,
-            NaraTutorialFlow.MANA_CHARGER_CRAFT,
-            NaraTutorialFlow.SOLAR_COLLECTOR_CRAFT,
-            NaraTutorialFlow.RESEARCH_TABLE,
-            NaraTutorialFlow.FIRST_RESEARCH
-    );
-
     public static void scheduleTestTutorial(ServerPlayer player, String tutorialId) {
-        UUID uuid = player.getUUID();
-        // Clean up any previous ghost block before placing a new one (#2: double-call leak)
-        BlockPos existingGhost = ghostBlocks.remove(uuid);
-        ResourceKey<Level> existingDim = ghostBlockLevels.remove(uuid);
-        if (existingGhost != null) {
-            ServerLevel existingLvl = existingDim != null ? player.server.getLevel(existingDim) : player.serverLevel();
-            if (existingLvl != null) removeGhostBlock(existingLvl, existingGhost);
-        }
-        ghostOpenDelay.remove(uuid);
-        ghostOpenTutorialId.remove(uuid);
-        pendingTestTutorial.remove(uuid);
-        pendingTestTutorialId.remove(uuid);
-
-        BlockState ghostState = getGhostBlockState(tutorialId);
-        if (ghostState == null) {
-            NaraTutorialPacket.send(player, tutorialId);
-            return;
-        }
-        BlockPos ghostPos = findAirPos(player);
-        if (ghostPos == null) {
-            NaraTutorialPacket.send(player, tutorialId);
-            return;
-        }
-        ServerLevel level = player.serverLevel();
-        level.setBlock(ghostPos, ghostState, 3);
-        // Delay opening menu so the chunk update reaches the client first
-        ghostBlocks.put(uuid, ghostPos);
-        ghostBlockLevels.put(uuid, level.dimension());
-        ghostOpenDelay.put(uuid, GHOST_OPEN_DELAY);
-        ghostOpenTutorialId.put(uuid, tutorialId);
+        NaraGhostTutorialManager.schedule(player, tutorialId);
     }
 
     public static boolean isGhostBlock(BlockPos pos) {
-        return ghostPositionKeys.contains(pos.asLong());
-    }
-
-    private static void removeGhostBlock(ServerLevel level, BlockPos pos) {
-        ghostPositionKeys.add(pos.asLong());
-        try {
-            level.removeBlock(pos, false);
-        } finally {
-            ghostPositionKeys.remove(pos.asLong());
-        }
-    }
-
-    private static BlockState getGhostBlockState(String id) {
-        return switch (id) {
-            case NaraTutorialFlow.RESEARCH_TABLE, NaraTutorialFlow.FIRST_RESEARCH ->
-                    ModBlocks.RESEARCH_TABLE.get().defaultBlockState();
-            case NaraTutorialFlow.MANA_GEN_CRAFT, NaraTutorialFlow.MANA_GEN_PLACED ->
-                    ModBlocks.MANA_GENERATOR.get().defaultBlockState();
-            case NaraTutorialFlow.MANA_GRINDER_CRAFT ->
-                    ModBlocks.MANA_GRINDER.get().defaultBlockState();
-            case NaraTutorialFlow.MANA_INFUSER_CRAFT ->
-                    ModBlocks.MANA_INFUSER.get().defaultBlockState();
-            case NaraTutorialFlow.MANA_CRAFTING_CRAFT ->
-                    ModBlocks.MANA_CRAFTING_TABLE_BLOCK.get().defaultBlockState();
-            case NaraTutorialFlow.MANA_DEPLOYER_CRAFT ->
-                    ModBlocks.MANA_DEPLOYER.get().defaultBlockState();
-            case NaraTutorialFlow.MANA_CHARGER_CRAFT ->
-                    ModBlocks.MANA_CHARGER.get().defaultBlockState();
-            case NaraTutorialFlow.SOLAR_COLLECTOR_CRAFT ->
-                    ModBlocks.SOLAR_MANA_COLLECTOR.get().defaultBlockState();
-            default -> null;
-        };
-    }
-
-    private static BlockPos findAirPos(ServerPlayer player) {
-        ServerLevel level = player.serverLevel();
-        BlockPos base = player.blockPosition().above(2);
-        for (int dx = -2; dx <= 2; dx++) {
-            for (int dz = -2; dz <= 2; dz++) {
-                BlockPos pos = base.offset(dx, 0, dz);
-                if (level.isEmptyBlock(pos)) return pos;
-            }
-        }
-        return null;
+        return NaraGhostTutorialManager.isGhostBlock(pos);
     }
 
     private static void tickWhenGuiClosed(Map<UUID, Integer> pending, String tutorialId,
