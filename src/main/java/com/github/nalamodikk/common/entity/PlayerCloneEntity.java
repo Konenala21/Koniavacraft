@@ -439,8 +439,8 @@ public class PlayerCloneEntity extends Monster {
 
         this.setHealth(this.getMaxHealth());
         updateBossBarName();
-        // 多人混戰時讓 boss 一直發光（vanilla glowing outline），避免誤認玩家
-        this.setGlowingTag(true);
+        // 進場過場期間先不發光（保留神秘感），由 customServerAiStep 在「正常戰鬥」狀態才開
+        this.setGlowingTag(false);
     }
 
     // 血條標題：「鏡中的自己 - PlayerName [二階段/三階段]」
@@ -917,7 +917,7 @@ public class PlayerCloneEntity extends Monster {
         super.die(cause);
         if (level().isClientSide || !(level() instanceof ServerLevel sl)) return;
         // 死亡演出：120-tick 五階段動畫由 tickDeath() 接手，這裡只負責停 BGM 與清理任務
-        // 停止戰鬥 BGM（讓死亡演出有自己的音效時序，不被 BGM 蓋掉）
+        this.setGlowingTag(false); // 死亡演出期間不發光（保留戲劇 / 神秘感）
         stopBgmForAll(sl);
         clearArmorParts(); // 死亡清掉殘留外殼方塊
         discardOwnedArmorDisplays(sl); // fallback：reload 後 pendingArmorRebuild 未消費就死的情況下，存盤孤兒仍會清掉
@@ -1174,6 +1174,11 @@ public class PlayerCloneEntity extends Monster {
         if (pendingArmorRebuild && level() instanceof ServerLevel rebuildLevel) {
             pendingArmorRebuild = false;
             rebuildArmor(rebuildLevel); // 重載後仍在外殼狀態 → 重建外殼接續二階段
+        }
+        // glow outline 只在「正常戰鬥」狀態開（多人混戰可見性）；過場/變身/死亡不開保留神秘感
+        boolean inCinematic = introActive || phase2TransitionTicks > 0 || this.deathTime > 0;
+        if (this.hasGlowingTag() == inCinematic) {
+            this.setGlowingTag(!inCinematic);
         }
         // 變身期間血條顯示外殼血量（讓玩家看到挖外殼的進度），否則顯示本體血量
         this.bossEvent.setProgress(isArmored()
