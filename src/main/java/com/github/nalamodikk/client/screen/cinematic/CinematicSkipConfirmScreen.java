@@ -75,10 +75,16 @@ public class CinematicSkipConfirmScreen extends Screen {
         this.addRenderableWidget(box);
     }
 
+    /**
+     * 把 dim + panel + 標題 都畫進 renderBackground，而不是 render。
+     * 原因：vanilla {@code Screen.render} 第一行就會呼叫 {@code this.renderBackground}，
+     * 如果在 render 內呼叫 super.renderBackground 又呼叫 super.render，後者會再觸發一次
+     * renderBackground 把先前畫好的 panel 一併模糊掉。
+     * 改成只覆寫 renderBackground → vanilla Screen.render 自然會用我們改造過的背景，
+     * 然後在 widgets（按鈕、勾選框）之前完成，順序為：背景 → panel → widgets（最上層）。
+     */
     @Override
-    public void render(GuiGraphics gg, int mouseX, int mouseY, float partialTick) {
-        // 用 vanilla 模糊背景（renderBlurredBackground 由 super.renderBackground 觸發）
-        // 之上再蓋一層深色 dim 讓 panel 對比清楚
+    public void renderBackground(GuiGraphics gg, int mouseX, int mouseY, float partialTick) {
         super.renderBackground(gg, mouseX, mouseY, partialTick);
         gg.fill(0, 0, this.width, this.height, 0x66000000);
 
@@ -87,20 +93,14 @@ public class CinematicSkipConfirmScreen extends Screen {
         int px = cx - PANEL_W / 2;
         int py = cy - PANEL_H / 2;
 
-        // 視覺面板邊框
         gg.fill(px, py, px + PANEL_W, py + PANEL_H, 0xE0101820);
         gg.renderOutline(px, py, PANEL_W, PANEL_H, 0xFFBFA060);
 
-        // 標題
         gg.drawCenteredString(this.font,
                 Component.translatable("gui.koniava.skip_confirm.title"),
                 cx, py + 12, 0xFFFFD080);
-
-        // 內文
         gg.drawCenteredString(this.font,
                 Component.translatable("gui.koniava.skip_confirm.body"),
                 cx, py + 36, 0xFFE0E0E0);
-
-        super.render(gg, mouseX, mouseY, partialTick);
     }
 }
