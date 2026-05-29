@@ -2,6 +2,7 @@ package com.github.nalamodikk.common.block.blockentity.altar;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.register.ModBlocks;
+import com.github.nalamodikk.register.ModItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.gametest.framework.GameTest;
@@ -59,6 +60,21 @@ public class AspectAltarGameTests {
             throw new IllegalStateException();
         }
         return altar;
+    }
+
+    private static AspectPedestalBlockEntity getPedestal(GameTestHelper helper, Vec3i offset) {
+        if (helper.getBlockEntity(ALTAR.offset(offset)) instanceof AspectPedestalBlockEntity ped) return ped;
+        helper.fail("pedestal block entity not found at offset " + offset);
+        throw new IllegalStateException();
+    }
+
+    // 依 mana_crystal_ritual 配方放料：中心催化物 refined_mana_dust + 四方向底座各一個 mana_crystal_fragment
+    private static void loadCrystalRitualIngredients(GameTestHelper helper) {
+        getPedestal(helper, new Vec3i( 0, -2,  0)).insertItem(new ItemStack(ModItems.REFINED_MANA_DUST.get()));
+        getPedestal(helper, new Vec3i( 0, -2, -3)).insertItem(new ItemStack(ModItems.MANA_CRYSTAL_FRAGMENT.get()));
+        getPedestal(helper, new Vec3i( 0, -2,  3)).insertItem(new ItemStack(ModItems.MANA_CRYSTAL_FRAGMENT.get()));
+        getPedestal(helper, new Vec3i(-3, -2,  0)).insertItem(new ItemStack(ModItems.MANA_CRYSTAL_FRAGMENT.get()));
+        getPedestal(helper, new Vec3i( 3, -2,  0)).insertItem(new ItemStack(ModItems.MANA_CRYSTAL_FRAGMENT.get()));
     }
 
     // ── Test 1：完整結構 → 成形 ───────────────────────────────────────────────
@@ -224,6 +240,98 @@ public class AspectAltarGameTests {
                 state.is(ModBlocks.MANA_BLOCK.get()) || state.isAir(),
                 "解散後柱子應還原為魔力方塊或空氣，實際=" + state.getBlock()
             );
+            helper.succeed();
+        });
+    }
+
+    // ── Test 7：完整儀式 → 消耗材料 + 掉出產物 ──────────────────────────────
+    // 鎖定 recipe / 儀式狀態機（tryActivate → tickRitual → completeRitual）
+
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 220)
+    public static void ritualCompletesConsumesIngredientsAndDropsResult(GameTestHelper helper) {
+        placeFullStructure(helper);
+
+        helper.runAtTickTime(5, () -> getAltar(helper).onWandActivate(helper.makeMockPlayer(GameType.SURVIVAL)));
+
+        helper.runAtTickTime(12, () -> {
+            AspectAltarBlockEntity altar = getAltar(helper);
+            helper.assertTrue(altar.isFormed(), "前置條件：必須先成形");
+            loadCrystalRitualIngredients(helper);
+            altar.getManaStorage().setMana(10000); // 配方 cost 8000，給足
+        });
+
+        helper.runAtTickTime(16, () -> {
+            AspectAltarBlockEntity altar = getAltar(helper);
+            altar.tryActivate(null);
+            helper.assertTrue(altar.isActive(), "材料 + 魔力齊全時儀式應啟動");
+        });
+
+        // processing_time = 120，從 tick16 起算約 tick136 完成，留到 tick200 驗
+        helper.runAtTickTime(200, () -> {
+            AspectAltarBlockEntity altar = getAltar(helper);
+            helper.assertFalse(altar.isActive(), "儀式應已完成（不再 active）");
+            helper.assertTrue(getPedestal(helper, new Vec3i(0, -2, 0)).getHeldItem().isEmpty(),
+                "完成後催化物應被消耗");
+            helper.assertItemEntityPresent(ModItems.MANA_CRYSTAL.get(), ALTAR, 3.0);
+            helper.succeed();
+        });
+    }
+
+    // ── Test 8：儀式中魔力耗盡 → 警告期後爆炸並取消 ─────────────────────────
+    // 鎖定 tickRitual 的 starvation 分支 + AltarExplosionTrigger 觸發路徑
+
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 260)
+    public static void ritualStarvedOfManaCancelsAfterWarning(GameTestHelper helper) {
+        placeFullStructure(helper);
+
+        helper.runAtTickTime(5, () -> getAltar(helper).onWandActivate(helper.makeMockPlayer(GameType.SURVIVAL)));
+
+        helper.runAtTickTime(12, () -> {
+            AspectAltarBlockEntity altar = getAltar(helper);
+            helper.assertTrue(altar.isFormed(), "前置條件：必須先成形");
+            loadCrystalRitualIngredients(helper);
+            altar.getManaStorage().setMana(100); // 遠不足 8000
+        });
+
+        helper.runAtTickTime(16, () -> {
+            AspectAltarBlockEntity altar = getAltar(helper);
+            altar.tryActivate(null);
+            // tryActivate 只看配方不看魔力，啟動瞬間應 active
+            helper.assertTrue(altar.isActive(), "啟動瞬間只檢查配方，應先 active");
+        });
+
+        // WARNING_TICKS = 200：魔力幾 tick 內耗盡後開始累積警告，~tick218 觸發爆炸 + cancel
+        helper.runAtTickTime(245, () -> {
+            helper.assertFalse(getAltar(helper).isActive(),
+                "魔力耗盡超過警告期應觸發爆炸並取消儀式");
+            helper.succeed();
+        });
+    }
+
+    // ── Test 9：鋪滿第一升級環 → tier 升到 1 + 方塊替換 ─────────────────────
+    // 鎖定 ring 升級狀態機（refreshUpgradeTier → checkRingComplete → applyRingReplace）
+
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
+    public static void ringUpgradeAdvancesToTier1AndReplacesBlocks(GameTestHelper helper) {
+        placeFullStructure(helper);
+
+        helper.runAtTickTime(5, () -> getAltar(helper).onWandActivate(helper.makeMockPlayer(GameType.SURVIVAL)));
+
+        helper.runAtTickTime(12, () -> {
+            helper.assertTrue(getAltar(helper).isFormed(), "前置條件：必須先成形");
+            // 鋪滿 RING_T1（半徑 7 水平環）魔力方塊
+            for (Vec3i o : AltarGeometry.RING_T1) {
+                helper.setBlock(ALTAR.offset(o), ModBlocks.MANA_BLOCK.get().defaultBlockState());
+            }
+        });
+
+        helper.runAtTickTime(16, () -> {
+            AspectAltarBlockEntity altar = getAltar(helper);
+            altar.refreshUpgradeTier();
+            helper.assertTrue(altar.getUpgradeTier() == 1,
+                "鋪滿第一環後 tier 應升到 1，實際=" + altar.getUpgradeTier());
+            // 環上方塊應被替換成 RESONANCE_RING
+            helper.assertBlockPresent(ModBlocks.RESONANCE_RING.get(), ALTAR.offset(AltarGeometry.RING_T1.get(0)));
             helper.succeed();
         });
     }
