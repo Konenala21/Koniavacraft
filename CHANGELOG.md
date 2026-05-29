@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+- Pressing R to skip a cinematic now opens a confirmation popup ("Skipping cutscenes will miss the full experience / Skip this scene?") with Yes/No buttons and a "Don't ask again" checkbox. Covers all four R-skip points: boss intro, Phase 2 transition, Nara dialogue, and altar upgrade animation. Checking "Don't ask again" + Yes writes to the client config (`cinematicSkipDontAsk`) so future skips bypass the popup entirely. No = cinematic continues uninterrupted.
+- 按 R 跳過 cinematic 現在會跳出確認小視窗（「跳過劇情將會缺少完整遊戲體驗 / 請問是否跳過？」）含「是 / 否」按鈕跟「以後不再提示」勾選框。覆蓋四個 R skip 點：boss 進場、Phase 2 變身、娜拉對話、祭壇升級動畫。勾選「以後不再提示」+ 是 → 寫進 client config (`cinematicSkipDontAsk`)，之後直接跳過確認。否 = cinematic 繼續不中斷。
+
 - The Mirror Dimension no longer has a 501x501 WorldBorder cage. The dimension is being repurposed as a shared boss-arena dimension for future fights, so the hard boundary is gone and each boss will manage its own active range. Center 501x501 still has flat terrain (the rest is void), but you can now walk past the old border. Existing save files with the leftover 501 border are reset to the vanilla maximum on level load.
 - 鏡中世界不再有 501x501 的 WorldBorder 籠子了。這個維度規劃改成多 boss 共用的場地維度，所以硬邊界取消，未來每隻 boss 自己管自己的活動範圍。中央 501x501 仍有平地（外圍是虛空），但現在可以走出原本邊界。舊存檔殘留的 501 邊界會在維度載入時自動重設回 vanilla 最大值。
 

@@ -8,6 +8,7 @@ import com.github.nalamodikk.client.renderer.altar.AltarUpgradeAnimManager;
 import com.github.nalamodikk.client.renderer.altar.AltarExplosionManager;
 import com.github.nalamodikk.client.renderer.altar.AltarExplosionRenderer;
 import com.github.nalamodikk.client.screen.armor.UnifiedArmorUpgradeScreen;
+import com.github.nalamodikk.client.screen.cinematic.CinematicSkipHelper;
 import com.github.nalamodikk.client.screen.turret.TurretUpgradeScreen;
 import com.github.nalamodikk.client.screen.wand.WandUpgradeScreen;
 import com.github.nalamodikk.common.item.weapon.FloatingTurretItem;
@@ -145,10 +146,12 @@ public class ClientTickHandler {
         }
 
         if (ModKeyMappings.SKIP_ALTAR_ANIM.consumeClick() && AltarUpgradeAnimManager.hasAnyActive()) {
-            AltarUpgradeAnimManager.skipAll();
-            AltarCameraController.reset();
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.player != null) mc.player.setXRot(0f);
+            CinematicSkipHelper.requestSkip(() -> {
+                AltarUpgradeAnimManager.skipAll();
+                AltarCameraController.reset();
+                Minecraft mcc = Minecraft.getInstance();
+                if (mcc.player != null) mcc.player.setXRot(0f);
+            });
         }
     }
 

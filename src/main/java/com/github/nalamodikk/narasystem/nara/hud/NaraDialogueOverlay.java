@@ -1,6 +1,7 @@
 package com.github.nalamodikk.narasystem.nara.hud;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.client.screen.cinematic.CinematicSkipHelper;
 import com.github.nalamodikk.register.client.ModKeyMappings;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraSkipIntroPacket;
 import com.github.nalamodikk.narasystem.nara.network.server.NaraTutorialSeenPacket;
@@ -70,10 +71,13 @@ public class NaraDialogueOverlay {
         int key = event.getKey();
 
         // 自訂跳過鍵（預設 R，可在控制設定更改）
+        // 先彈確認視窗（CinematicSkipHelper 依 config 決定是否略過確認）
         if (ModKeyMappings.NARA_SKIP.matches(key, event.getScanCode())) {
-            NaraDialogueManager.close();
-            NaraFirstLoginFlow.resetIgnoreCount();
-            NaraSkipIntroPacket.send();
+            CinematicSkipHelper.requestSkip(() -> {
+                NaraDialogueManager.close();
+                NaraFirstLoginFlow.resetIgnoreCount();
+                NaraSkipIntroPacket.send();
+            });
             return;
         }
 

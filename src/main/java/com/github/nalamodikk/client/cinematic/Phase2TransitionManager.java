@@ -1,6 +1,7 @@
 package com.github.nalamodikk.client.cinematic;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.client.screen.cinematic.CinematicSkipHelper;
 import com.github.nalamodikk.common.entity.PlayerCloneEntity;
 import com.github.nalamodikk.common.network.packet.server.Phase2SkipPacket;
 import com.github.nalamodikk.register.client.ModKeyMappings;
@@ -100,8 +101,10 @@ public class Phase2TransitionManager {
         }
         Minecraft mc = Minecraft.getInstance();
         if (ModKeyMappings.NARA_SKIP.consumeClick()) {
-            PacketDistributor.sendToServer(Phase2SkipPacket.INSTANCE);
-            if (ticks < FADE_IN_START) ticks = FADE_IN_START;
+            CinematicSkipHelper.requestSkip(() -> {
+                PacketDistributor.sendToServer(Phase2SkipPacket.INSTANCE);
+                if (ticks < FADE_IN_START) ticks = FADE_IN_START;
+            });
         }
         while (mc.options.keyTogglePerspective.consumeClick()) { /* swallow */ }
         if (mc.options.getCameraType() != CameraType.THIRD_PERSON_BACK) {

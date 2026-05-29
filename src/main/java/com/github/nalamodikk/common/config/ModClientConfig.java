@@ -28,6 +28,7 @@ public class ModClientConfig {
     public final ModConfigSpec.ConfigValue<String> customTitleText;
     public final ModConfigSpec.BooleanValue showTitleToggleButton;
     public final ModConfigSpec.BooleanValue deferToOtherMenuMods;
+    public final ModConfigSpec.BooleanValue cinematicSkipDontAsk;
 
     private ModClientConfig(ModConfigSpec.Builder builder) {
         builder.push("inventory");
@@ -77,6 +78,15 @@ public class ModClientConfig {
                 .comment("Volume for boss battle BGM (Mirror Image and future boss music) (0.0 = mute, 1.0 = 100%)")
                 .translation("koniava.config.boss.musicVolume")
                 .defineInRange("bossMusicVolume", 1.0D, 0.0D, 1.0D);
+
+        builder.pop();
+        builder.push("cinematic");
+
+        cinematicSkipDontAsk = builder
+                .comment("If true, pressing R to skip a cinematic (boss intro / Phase2 transition / Nara dialogue / altar animation)")
+                .comment("will skip immediately without showing a confirmation dialog. Toggle via the in-game checkbox on the confirm screen.")
+                .translation("koniava.config.cinematic.skipDontAsk")
+                .define("cinematicSkipDontAsk", false);
 
         builder.pop();
         builder.push("render");

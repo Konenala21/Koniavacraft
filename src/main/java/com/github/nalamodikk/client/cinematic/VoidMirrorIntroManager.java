@@ -1,6 +1,7 @@
 package com.github.nalamodikk.client.cinematic;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.client.screen.cinematic.CinematicSkipHelper;
 import com.github.nalamodikk.common.network.packet.server.VoidMirrorSkipIntroPacket;
 import com.github.nalamodikk.narasystem.nara.hud.NaraSoundHelper;
 import com.github.nalamodikk.register.client.ModKeyMappings;
@@ -105,10 +106,13 @@ public class VoidMirrorIntroManager {
             return;
         }
         Minecraft mc = Minecraft.getInstance();
-        // 跳過鍵（模組 NARA_SKIP，預設 R）：通知 server 結束 boss 進場，並跳到轉黑收尾交還控制
+        // 跳過鍵（模組 NARA_SKIP，預設 R）：通過 CinematicSkipHelper 顯示確認視窗，
+        // 玩家按「是」才送 packet 結束 boss 進場、推進到轉黑收尾。
         if (ModKeyMappings.NARA_SKIP.consumeClick()) {
-            PacketDistributor.sendToServer(VoidMirrorSkipIntroPacket.INSTANCE);
-            if (ticks < FADE_IN_START) ticks = FADE_IN_START;
+            CinematicSkipHelper.requestSkip(() -> {
+                PacketDistributor.sendToServer(VoidMirrorSkipIntroPacket.INSTANCE);
+                if (ticks < FADE_IN_START) ticks = FADE_IN_START;
+            });
         }
         // 鎖定第三人稱：吞掉切換視角(F5)按鍵，並把視角強制設回
         while (mc.options.keyTogglePerspective.consumeClick()) { /* swallow */ }
