@@ -452,7 +452,11 @@ modrinth {
         playerContent ? "${header}\n\n${playerContent}" : header
     }
 
-    syncBodyFrom = file("README.md").exists() ? file("README.md").text : ""
+    // Modrinth 頁面 body 的單一來源（英文，玩家向）。維護描述就改這個檔，發版自動同步。
+    // 必須放在 repo 內（被 git 追蹤），否則 GitHub Actions checkout 讀不到 → 描述被清空。
+    // 注意：不要改回 README.md，那是 GitHub 倉庫首頁（繁中、精簡、開發者向），用途不同。
+    def modrinthBody = file("MODRINTH_BODY.md")
+    syncBodyFrom = modrinthBody.exists() ? modrinthBody.text : ""
 }
 
 // ========== CurseForge ?澆? ==========

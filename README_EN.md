@@ -58,7 +58,7 @@ Open an Issue, but keep these in mind:
 
 ## Support
 
-A like or comment on [Modrinth](https://modrinth.com/mod/magical-industry) goes a long way.
+A like or comment on [Modrinth](https://modrinth.com/mod/koniavacraft) goes a long way.
 
 ---
 

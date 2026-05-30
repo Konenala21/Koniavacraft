@@ -1,4 +1,4 @@
-?# Koniavacraft - 魔法工業模組
+# Koniavacraft - 魔法工業模組
 
 **語言**: 繁體中文 | [English](./README_EN.md)
 
@@ -58,7 +58,7 @@
 
 ## 支持
 
-在 [Modrinth](https://modrinth.com/mod/magical-industry) 給個讚或留個言就夠了，真的很有用。
+在 [Modrinth](https://modrinth.com/mod/koniavacraft) 給個讚或留個言就夠了，真的很有用。
 
 ---
 
