@@ -15,6 +15,18 @@ Fixed: in the Mirror Dimension, Nara's phantom would clip into the ground while 
 Fixed: re-entering the Mirror boss fight would scatter the previous run's unclaimed reward chest items onto the floor. The arena reset no longer drops them.
 修復：重新挑戰鏡中 boss 時，上一場沒拿走的獎勵箱物品會散落一地。場地重置不再噴出它們。
 
+Fixed: the Mirror boss death no longer plays vanilla's red hurt overlay or the sideways fall-over. The custom death cinematic now shows clean.
+修復：鏡中 boss 死亡不再出現原版的紅色受傷濾鏡與側倒動畫。自製死亡演出現在乾淨呈現。
+
+Fixed: Nara's phantom no longer blocks your attacks during the boss fight. She is now non-targetable, so melee, projectiles, and turret auto-aim pass through her to the boss.
+修復：戰鬥中娜拉幻影不再擋住你的攻擊。她現在不可被瞄準，近戰、投射物、浮游砲自動瞄準都會穿過她打到 boss。
+
+The two sound settings (Nara voice volume and boss BGM volume) are now grouped together under a single "Sound" page in the mod config.
+模組設定中兩個聲音選項（娜拉配音音量、boss BGM 音量）現在合併到同一個「音效」分頁。
+
+Added a config toggle for floating damage numbers (render page). Turn it off if you prefer no damage numbers when dealing damage.
+新增浮動傷害數字的開關（在渲染分頁）。不想看到傷害數字可以關掉。
+
 ### Developer Notes / 開發者備註
 
 - Floating turret hand-mode control shots: FloatingTurretItem.releaseUsing splits the long-press charge-release into three bands via CONTROL_BAND_MIN/MAX (0.40/0.75, shared with the client). The middle band fires a control shot, picking the effect by equal-division index over installedControls(main, off) (union of both hands' control upgrades, enum-ordinal sorted for a stable bar order). New fireControlShot (charged-shot-level cost, single center bolt via shootControl) and the TurretChargeBarOverlay client HUD (RenderGuiEvent.Post, only on dual-wield + using item). Verified by compileJava + 66/66 GameTest; in-game behavior needs manual test.
@@ -23,6 +35,18 @@ Fixed: re-entering the Mirror boss fight would scatter the previous run's unclai
 - 修復（娜拉幻影鑲地底）：NaraPhantomEntity.followSourcePlayer 用 3D 方向 + setPos（無碰撞檢測），dir.y 把幻影沿直線往玩家腳底拉穿地形。改成只水平追蹤、Y 貼玩家高度。
 - Fix (reward chest re-drops previous run's items): VoidMirrorEvents.resetArena cleared MODIFIED_BLOCKS (which includes the reward chest position) with setBlockAndUpdate(air), triggering Containers.dropContents. Switched to setBlock with UPDATE_SUPPRESS_DROPS (flag 32). See reference_vanilla_chest_drop.
 - 修復（獎勵箱重噴上一場物品）：VoidMirrorEvents.resetArena 用 setBlockAndUpdate(air) 清 MODIFIED_BLOCKS（含獎勵箱位置），觸發 Containers.dropContents。改用 setBlock + UPDATE_SUPPRESS_DROPS（flag 32）。見 reference_vanilla_chest_drop。
+
+- Fix (boss death vanilla artifacts): new LivingEntityRendererMixin injects HEAD of getOverlayCoords returning NO_OVERLAY when PlayerCloneEntity.getDeathPhase() > 0 (kills the red hurt/death tint that vanilla applies whenever deathTime > 0, which spanned the whole custom cinematic). PlayerCloneRenderer.getFlipDegrees overridden to 0 to cancel the vanilla sideways fall-over (setupRotations tips the body 90 degrees on Z while deathTime > 0). Both scoped to the clone boss only.
+- 修復（boss 死亡原版殘留）：新增 LivingEntityRendererMixin，在 getOverlayCoords HEAD 注入，PlayerCloneEntity.getDeathPhase() > 0 時回 NO_OVERLAY（消掉 vanilla 在 deathTime > 0 全程套的紅色受傷/死亡濾鏡，蓋住整段自製演出）。PlayerCloneRenderer.getFlipDegrees 覆寫回 0，取消 vanilla 側倒（setupRotations 在 deathTime > 0 沿 Z 軸傾 90 度）。兩者都只限分身 boss。
+
+- Fix (Nara phantom blocks player damage): NaraPhantomEntity now overrides isPickable() to return false. While following the player she could stand between the player and the boss; isPickable controlling ray-cast / projectile / turret auto-aim hit detection meant she ate hits meant for the boss. Returning false makes her purely visual.
+- 修復（娜拉幻影擋玩家傷害）：NaraPhantomEntity 覆寫 isPickable() 回 false。跟隨玩家時她可能站到玩家與 boss 之間；isPickable 控制近戰 ray-cast / 投射物 / 浮游砲自動瞄準的命中判定，導致她吃掉本要打 boss 的攻擊。回 false 讓她純視覺。
+
+- Config (merge sound settings + fill missing translations): ModClientConfig moved naraVoiceVolume + bossMusicVolume out of the separate "nara"/"bossMusic" sections into one "sound" section; translation keys renamed to koniava.config.sound.{naraVoiceVolume,bossMusicVolume}. Added the missing koniava.config.sound.bossMusicVolume.tooltip, koniava.config.cinematic.skipDontAsk.tooltip, and section headers koniava.configuration.sound + koniava.configuration.cinematic (3-layer: header/tooltip/button), both en_us + zh_tw.
+- Config（合併聲音設定 + 補缺翻譯）：ModClientConfig 把 naraVoiceVolume + bossMusicVolume 從各自的 "nara"/"bossMusic" section 併進單一 "sound" section；翻譯鍵改名 koniava.config.sound.{naraVoiceVolume,bossMusicVolume}。補上缺的 koniava.config.sound.bossMusicVolume.tooltip、koniava.config.cinematic.skipDontAsk.tooltip，以及 section header koniava.configuration.sound + koniava.configuration.cinematic（三層：header/tooltip/button），en_us + zh_tw 都補。
+
+- Feature (floating damage number toggle): new ModClientConfig.showDamageNumbers BooleanValue (render section, default true). DamageNumberPacket's client handler now gates DamageNumberRenderer.add on showDamageNumbers.get(), so the toggle is client-side visual only (server still sends the packet). Lang koniava.config.render.showDamageNumbers + .tooltip in both locales.
+- 功能（浮動傷害數字開關）：新增 ModClientConfig.showDamageNumbers BooleanValue（render section，預設 true）。DamageNumberPacket 的 client handler 現在以 showDamageNumbers.get() 把關 DamageNumberRenderer.add，純 client 視覺開關（server 仍照發包）。lang koniava.config.render.showDamageNumbers + .tooltip 兩語系都補。
 
 - Refactor (PlayerCloneEntity split, Phase 5): extracted the mirror/turret and phase-state subsystems into two controllers. `PlayerCloneMirrorManager` owns the mirrored turret lists + volley state and holds mirrorFrom (recursive container expansion for anti-cheese), self-propelled/handheld turret spawning, and the boss volley skill (collectContained / armorScore / filterMirroredTurret moved with it). `PlayerClonePhaseAI` owns the phase field + wall/drain cooldowns and holds the NORMAL/WALLING/BERSERK transition, berserk wall-teardown + speed, wall-building, and mana drain (BERSERK_SPEED + WALL/DRAIN constants moved with it). The entity keeps thin delegates for the public mirrorFrom and the intro-called rebuildHandTurretsFromEquipped, routes customServerAiStep + NBT through the controllers via helper methods (isWalling / isBerserk / phaseOrdinal / loadPhaseOrdinal), and keeps placedWalls / takeWallBlock / bossHotbar / updateBossBarName on the hub since they are shared across subsystems. Dropped the dead addMirroredTurret. PlayerCloneEntity: 1360 -> 1034 lines; new controllers 293 + 157 lines. Mechanical extraction only, no logic or ordering changes. Verified by compileJava + the full GameTest suite (66/66 green).
 - 重構（PlayerCloneEntity 拆分，Phase 5）：把鏡像/浮游砲與血量階段兩個子系統抽成兩個 controller。`PlayerCloneMirrorManager` 擁有鏡像砲清單 + 齊射 state，持有 mirrorFrom（遞迴展開容器杜絕藏盒規避）、自走/手持砲生成、boss 齊射技能（collectContained / armorScore / filterMirroredTurret 一起搬走）。`PlayerClonePhaseAI` 擁有 phase field + 築牆/吸魔冷卻，持有 NORMAL/WALLING/BERSERK 切換、暴走拆牆 + 加速、築牆、吸魔（BERSERK_SPEED + WALL/DRAIN 常數一起搬走）。本體保留公開 mirrorFrom 與 intro 呼叫的 rebuildHandTurretsFromEquipped 兩個薄委派，customServerAiStep + NBT 透過 helper 方法（isWalling / isBerserk / phaseOrdinal / loadPhaseOrdinal）走 controller，placedWalls / takeWallBlock / bossHotbar / updateBossBarName 因跨子系統共用留在樞紐。刪掉死碼 addMirroredTurret。PlayerCloneEntity：1360 → 1034 行；新 controller 293 + 157 行。純機械搬移，沒動邏輯或順序。靠 compileJava + 完整 GameTest 套件驗證（66/66 綠）。

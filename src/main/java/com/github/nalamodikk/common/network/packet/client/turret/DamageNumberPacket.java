@@ -2,6 +2,7 @@ package com.github.nalamodikk.common.network.packet.client.turret;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.client.renderer.DamageNumberRenderer;
+import com.github.nalamodikk.common.config.ModClientConfig;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -40,7 +41,7 @@ public record DamageNumberPacket(double x, double y, double z, float damage, byt
     public static void registerToClient(PayloadRegistrar registrar) {
         registrar.playToClient(TYPE, STREAM_CODEC,
                 (packet, context) -> context.enqueueWork(() -> {
-                    if (FMLEnvironment.dist.isClient()) {
+                    if (FMLEnvironment.dist.isClient() && ModClientConfig.INSTANCE.showDamageNumbers.get()) {
                         DamageNumberRenderer.add(packet.x(), packet.y(), packet.z(),
                                 packet.damage(), packet.dmgType(), packet.entityId());
                     }

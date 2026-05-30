@@ -21,6 +21,7 @@ public class ModClientConfig {
     public final ModConfigSpec.IntValue fullAnimationDistance;
     public final ModConfigSpec.IntValue reducedAnimationDistance;
     public final ModConfigSpec.DoubleValue reducedAnimationScale;
+    public final ModConfigSpec.BooleanValue showDamageNumbers;
     public final ModConfigSpec.DoubleValue naraVoiceVolume;
     public final ModConfigSpec.DoubleValue bossMusicVolume;
     public final ModConfigSpec.BooleanValue sortButtonEnabled;
@@ -64,19 +65,16 @@ public class ModClientConfig {
                 .define("deferToOtherMenuMods", true);
 
         builder.pop();
-        builder.push("nara");
+        builder.push("sound");
 
         naraVoiceVolume = builder
                 .comment("Volume for Nara's voice dialogue (0.0 = mute, 1.0 = 100%)")
-                .translation("koniava.config.nara.voiceVolume")
+                .translation("koniava.config.sound.naraVoiceVolume")
                 .defineInRange("naraVoiceVolume", 1.0D, 0.0D, 1.0D);
-
-        builder.pop();
-        builder.push("bossMusic");
 
         bossMusicVolume = builder
                 .comment("Volume for boss battle BGM (Mirror Image and future boss music) (0.0 = mute, 1.0 = 100%)")
-                .translation("koniava.config.boss.musicVolume")
+                .translation("koniava.config.sound.bossMusicVolume")
                 .defineInRange("bossMusicVolume", 1.0D, 0.0D, 1.0D);
 
         builder.pop();
@@ -105,6 +103,11 @@ public class ModClientConfig {
                 .comment("Block entity render animation: animation speed/amplitude scale at reduced distance")
                 .translation("koniava.config.render.reducedAnimationScale")
                 .defineInRange("reducedAnimationScale", 0.35D, 0.0D, 1.0D);
+
+        showDamageNumbers = builder
+                .comment("Show floating damage numbers when you deal damage (normal / crit / magic)")
+                .translation("koniava.config.render.showDamageNumbers")
+                .define("showDamageNumbers", true);
 
         builder.pop();
     }
