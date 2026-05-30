@@ -6,6 +6,7 @@ import com.github.nalamodikk.common.entity.FloatingTurretProjectile;
 import com.github.nalamodikk.common.entity.SpaceCrackEntity;
 import com.github.nalamodikk.common.entity.PlayerCloneEntity;
 import com.github.nalamodikk.common.entity.NaraPhantomEntity;
+import com.github.nalamodikk.common.entity.TrainingDummyEntity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.neoforged.bus.api.IEventBus;
@@ -68,11 +69,20 @@ public class ModEntities {
                             .build(KoniavacraftMod.MOD_ID + ":nara_phantom")
             );
 
+    public static final DeferredHolder<EntityType<?>, EntityType<TrainingDummyEntity>> TRAINING_DUMMY =
+            ENTITY_TYPES.register("training_dummy", () ->
+                    EntityType.Builder.<TrainingDummyEntity>of(TrainingDummyEntity::new, MobCategory.MISC)
+                            .sized(0.7F, 1.9F)
+                            .clientTrackingRange(10)
+                            .build(KoniavacraftMod.MOD_ID + ":training_dummy")
+            );
+
     @SubscribeEvent
     public static void onEntityAttributeCreation(EntityAttributeCreationEvent event) {
         event.put(FLOATING_TURRET.get(), FloatingTurretEntity.createAttributes().build());
         event.put(PLAYER_CLONE.get(), PlayerCloneEntity.createAttributes().build());
         event.put(NARA_PHANTOM.get(), NaraPhantomEntity.createAttributes().build());
+        event.put(TRAINING_DUMMY.get(), TrainingDummyEntity.createAttributes().build());
     }
 
     public static void register(IEventBus bus) {

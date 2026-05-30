@@ -16,6 +16,8 @@ import com.github.nalamodikk.client.renderer.entity.FloatingTurretRenderer;
 import com.github.nalamodikk.client.renderer.entity.SpaceCrackRenderer;
 import com.github.nalamodikk.client.renderer.entity.PlayerCloneRenderer;
 import com.github.nalamodikk.client.renderer.entity.NaraPhantomRenderer;
+import com.github.nalamodikk.client.renderer.entity.TrainingDummyModel;
+import com.github.nalamodikk.client.renderer.entity.TrainingDummyRenderer;
 import com.github.nalamodikk.client.renderer.item.FloatingTurretBEWLR;
 import com.github.nalamodikk.client.renderer.turret.TurretHitEffectRenderer;
 import com.github.nalamodikk.dimension.BoundedFlatChunkGenerator;
@@ -110,9 +112,12 @@ public class KoniavacraftMod {
                     e.registerEntityRenderer(ModEntities.SPACE_CRACK.get(), SpaceCrackRenderer::new);
                     e.registerEntityRenderer(ModEntities.PLAYER_CLONE.get(), PlayerCloneRenderer::new);
                     e.registerEntityRenderer(ModEntities.NARA_PHANTOM.get(), NaraPhantomRenderer::new);
+                    e.registerEntityRenderer(ModEntities.TRAINING_DUMMY.get(), TrainingDummyRenderer::new);
             });
-            modEventBus.addListener((EntityRenderersEvent.RegisterLayerDefinitions e) ->
-                    e.registerLayerDefinition(FloatingTurretModel.LAYER_LOCATION, FloatingTurretModel::createBodyLayer));
+            modEventBus.addListener((EntityRenderersEvent.RegisterLayerDefinitions e) -> {
+                    e.registerLayerDefinition(FloatingTurretModel.LAYER_LOCATION, FloatingTurretModel::createBodyLayer);
+                    e.registerLayerDefinition(TrainingDummyModel.LAYER_LOCATION, TrainingDummyModel::createBodyLayer);
+            });
             modEventBus.addListener((ModelEvent.RegisterAdditional e) ->
                     e.register(FloatingTurretBEWLR.GEO_MODEL_LOCATION));
             modEventBus.addListener((RegisterClientReloadListenersEvent e) ->

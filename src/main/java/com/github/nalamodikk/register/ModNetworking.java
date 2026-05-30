@@ -12,6 +12,7 @@ import com.github.nalamodikk.common.network.packet.server.Phase2SkipPacket;
 import com.github.nalamodikk.common.network.packet.server.VoidMirrorSkipIntroPacket;
 import com.github.nalamodikk.common.network.packet.client.armor.ManaShieldHitPacket;
 import com.github.nalamodikk.common.network.packet.client.turret.DamageNumberPacket;
+import com.github.nalamodikk.common.network.packet.client.turret.TrainingDummyStatsPacket;
 import com.github.nalamodikk.common.network.packet.client.turret.TurretHitPacket;
 import com.github.nalamodikk.common.network.packet.server.OpenUpgradeGuiPacket;
 import com.github.nalamodikk.common.network.packet.server.armor.ArmorUpgradeSwapPacket;
@@ -91,6 +92,7 @@ public class ModNetworking {
         RitualExplosionPacket.registerToClient(registrar);
         TurretHitPacket.registerToClient(registrar);
         DamageNumberPacket.registerToClient(registrar);
+        TrainingDummyStatsPacket.registerToClient(registrar);
         WandCoreSwapPacket.registerTo(registrar);
         TurretUpgradeSwapPacket.registerTo(registrar);
         DashPacket.registerTo(registrar);

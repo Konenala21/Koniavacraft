@@ -83,6 +83,17 @@ public class ModRecipeProvider extends RecipeProvider {
                 .unlockedBy("has_mana_dust", has(ModItems.MANA_DUST.get()))
                 .save(output, "solar_mana_collector");
 
+        // 🌵 訓練假人：仙人掌身體 + 魔力塵填充 + 乾草底座，測傷害用
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.TRAINING_DUMMY.get())
+                .pattern(" C ")
+                .pattern("CMC")
+                .pattern("HHH")
+                .define('C', Items.CACTUS)
+                .define('M', ModItems.MANA_DUST.get())
+                .define('H', Items.HAY_BLOCK)
+                .unlockedBy("has_mana_dust", has(ModItems.MANA_DUST.get()))
+                .save(output, "training_dummy");
+
         // 🔗 基礎奧術導管 (舊 arcane_conduit 配方轉移至基礎版)
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.BASIC_ARCANE_CONDUIT.get(), 8)
                 .pattern("MMM")

@@ -2,6 +2,7 @@ package com.github.nalamodikk.register;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.item.NaraWatchItem;
+import com.github.nalamodikk.common.item.TrainingDummyItem;
 import com.github.nalamodikk.common.item.UpgradeItem;
 import com.github.nalamodikk.common.item.research.AspectTokenItem;
 import com.github.nalamodikk.common.item.research.CompletedResearchItem;
@@ -60,6 +61,9 @@ public class ModItems {
     // 鏡中世界 boss 擊敗紀念物（混入獎勵寶箱，純收藏 + 未來內容預留鑰匙）
     public static final DeferredItem<Item>  MIRROR_CORE_SHARD = ITEMS.register("mirror_core_shard",
             () -> new Item(new Item.Properties().rarity(Rarity.RARE)));
+    // 訓練假人放置物：右鍵生成一隻測傷害用的假人
+    public static final DeferredItem<Item> TRAINING_DUMMY = ITEMS.register("training_dummy",
+            () -> new TrainingDummyItem(new Item.Properties().stacksTo(16)));
     public static final DeferredItem<Item> RAW_MANA_DUST = ITEMS.register("raw_mana_dust", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> CONDENSED_MANA_DUST = ITEMS.register("condensed_mana_dust", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> MANA_CRYSTAL_FRAGMENT = ITEMS.register("mana_crystal_fragment", () -> new Item(new Item.Properties()));
