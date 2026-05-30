@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Developer Notes / 開發者備註
+
+- Refactor (PlayerCloneEntity split, Phase 4): extracted the boss intro cinematic into `PlayerCloneIntroSequence` (controller pattern with entity back-ref). Moved the intro animation state (introTicks / introX / introBaseY / introZ), the 6 INTRO_* timing constants, the smooth/frac easing helpers, and the tick() / revealEquipment / equipBestWeapon / equipBestOffhand / weaponAttack methods. The introActive flag stays on the entity as a cross-system gate (read by customServerAiStep, shouldBeSaved, respawn, and PlayerCloneCombatSkills.tickDive). activateAfterIntro stays on the entity as the boss-start hub (bossEvent / graceTicks / Nara follow / same-source dedup) and is invoked by the controller when the animation ends. isProperWeapon stays on the entity (shared with mirrorFrom's inventory prioritisation) and is referenced statically by the controller. Added a setNoDrop(EquipmentSlot) wrapper since Mob.setDropChance is protected and the same-package controller can't reach it; widened pendingEquipment + rebuildHandTurretsFromEquipped to package-private. PlayerCloneEntity: 1509 -> 1360 lines; new controller 208 lines. Mechanical extraction only, no logic or ordering changes. Verified by compileJava + the full GameTest suite (66/66 green).
+- 重構（PlayerCloneEntity 拆分，Phase 4）：把 boss 進場演出抽到 `PlayerCloneIntroSequence`（controller pattern，持 entity back-ref）。搬走進場動畫 state（introTicks / introX / introBaseY / introZ）、6 個 INTRO_* 時間常數、smooth/frac 緩動 helper，以及 tick() / revealEquipment / equipBestWeapon / equipBestOffhand / weaponAttack。introActive 旗標留本體當跨系統閘門（customServerAiStep / shouldBeSaved / 重生 / PlayerCloneCombatSkills.tickDive 都讀）。activateAfterIntro 留本體當 boss 開戰樞紐（bossEvent / graceTicks / Nara follow / 同源去重），動畫結束時由 controller 呼叫。isProperWeapon 留本體（跟 mirrorFrom 的背包排序共用），controller 靜態引用。因 Mob.setDropChance 是 protected、同 package 的 controller 碰不到，加了 setNoDrop(EquipmentSlot) wrapper；pendingEquipment + rebuildHandTurretsFromEquipped 放寬 package-private。PlayerCloneEntity：1509 → 1360 行；新 controller 208 行。純機械搬移，沒動邏輯或順序。靠 compileJava + 完整 GameTest 套件驗證（66/66 綠）。
+
 ## [0.0.1.9-1] - 2026-05-30
 
 ### Player Changes / 玩家更新內容

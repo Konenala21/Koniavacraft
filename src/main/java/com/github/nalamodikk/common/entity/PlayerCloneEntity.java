@@ -111,17 +111,10 @@ public class PlayerCloneEntity extends Monster {
     private static final int REFLECT_INTERVAL = 160; // 每 ~8 秒一次
     private static final int REFLECT_DURATION = 30;  // 持續 1.5 秒
 
-    // 進場演出（地底鑽出→飛高→浮動集氣→爆炸顯現裝備→降落→啟動），對齊過場時間軸（360t）
-    private static final int INTRO_RISE_START = 430;
-    private static final int INTRO_RISE_END = 480;
-    private static final int INTRO_FLY_END = 530;
-    private static final int INTRO_REVEAL_TICK = 570;
-    private static final int INTRO_DESCEND_START = 575;
-    private static final int INTRO_LEN = 620;
-    boolean introActive = false; // package-private：intro 系統主人，PlayerCloneCombatSkills.tickDive 讀（過場期間不觸發俯衝）
-    private int introTicks = 0;
-    private double introX, introBaseY, introZ;
-    private final EnumMap<EquipmentSlot, ItemStack> pendingEquipment = new EnumMap<>(EquipmentSlot.class);
+    // 進場演出 controller（地底鑽出 → 集氣 → 爆炸顯現裝備 → 降落；擁有動畫 state + 裝備顯現邏輯）
+    private final PlayerCloneIntroSequence intro = new PlayerCloneIntroSequence(this);
+    boolean introActive = false; // package-private：過場旗標，多處讀（customServerAiStep / shouldBeSaved / 重生 / PlayerCloneCombatSkills.tickDive）。動畫主人是 intro controller，本旗標是樞紐留本體
+    final EnumMap<EquipmentSlot, ItemStack> pendingEquipment = new EnumMap<>(EquipmentSlot.class); // package-private：鏡像時填，intro.revealEquipment 套用
     // 鏡像的浮游砲（已過濾不鏡射的升級）。自走砲（繞行）vs 手持（雙持蓄力）分開
     private final List<ItemStack> mirroredTurrets = new ArrayList<>();      // 裝備槽/背包 → 繞行自走砲
     private final List<ItemStack> mirroredHandTurrets = new ArrayList<>();  // 主手/副手 → 手持蓄力
@@ -554,10 +547,7 @@ public class PlayerCloneEntity extends Monster {
     /** 在登場點啟動演出：埋在地底、無敵、無 AI，等過場推進到此再鑽出。 */
     public void startIntro(double x, double baseY, double z) {
         this.introActive = true;
-        this.introTicks = 0;
-        this.introX = x;
-        this.introBaseY = baseY;
-        this.introZ = z;
+        this.intro.begin(x, baseY, z);
         this.setNoAi(true);
         this.setNoGravity(true);
         this.setInvulnerable(true);
@@ -568,83 +558,22 @@ public class PlayerCloneEntity extends Monster {
         return introActive;
     }
 
-    /** 玩家跳過過場：直接推進到進場結尾，下次 tickIntro 立即啟動 boss。 */
+    /** 玩家跳過過場：直接推進到進場結尾，下次 intro.tick 立即啟動 boss。 */
     public void skipIntro() {
-        if (introActive) introTicks = INTRO_LEN;
+        if (introActive) intro.skip();
     }
 
-    private void tickIntro() {
-        introTicks++;
-        double y;
-        if (introTicks < INTRO_RISE_START) {
-            y = introBaseY - 3.0;                                  // 埋在地底
-        } else if (introTicks < INTRO_RISE_END) {
-            y = Mth.lerp(smooth(frac(introTicks, INTRO_RISE_START, INTRO_RISE_END)), introBaseY - 3.0, introBaseY); // 鑽出
-        } else if (introTicks < INTRO_FLY_END) {
-            y = Mth.lerp(smooth(frac(introTicks, INTRO_RISE_END, INTRO_FLY_END)), introBaseY, introBaseY + 4.0);    // 飛高
-        } else if (introTicks < INTRO_DESCEND_START) {
-            y = introBaseY + 4.0 + Math.sin((introTicks - INTRO_FLY_END) * 0.25) * 0.25;                            // 浮動集氣
-        } else if (introTicks < INTRO_LEN) {
-            y = Mth.lerp(smooth(frac(introTicks, INTRO_DESCEND_START, INTRO_LEN)), introBaseY + 4.0, introBaseY);   // 降落
-        } else {
-            activateAfterIntro();
-            return;
-        }
-        this.setPos(introX, y, introZ);
-        this.setDeltaMovement(Vec3.ZERO);
-        this.setYRot(180.0F);
-        this.yBodyRot = 180.0F;
-        this.yHeadRot = 180.0F;
-
-        if (level() instanceof ServerLevel sl) {
-            if (introTicks == INTRO_RISE_START) {
-                // 鑽出瞬間：地面崩裂音 + 一圈塵土
-                sl.playSound(null, introX, introBaseY, introZ, SoundEvents.WARDEN_EMERGE, SoundSource.HOSTILE, 1.2F, 0.7F);
-                sl.sendParticles(ParticleTypes.EXPLOSION, introX, introBaseY, introZ, 1, 0, 0, 0, 0);
-            }
-            if (introTicks >= INTRO_RISE_START && introTicks < INTRO_RISE_END) {
-                // 地底鑽出：塵土 + 靈魂煙
-                sl.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, introX, introBaseY, introZ, 8, 0.5, 0.1, 0.5, 0.01);
-                sl.sendParticles(ParticleTypes.SCULK_SOUL, introX, y + 0.5, introZ, 4, 0.4, 0.6, 0.4, 0.02);
-            } else if (introTicks >= INTRO_FLY_END && introTicks < INTRO_REVEAL_TICK) {
-                // 集氣：粒子從四周遠處慢慢飄向中心（越接近爆炸越密越快）
-                float prog = frac(introTicks, INTRO_FLY_END, INTRO_REVEAL_TICK);
-                int count = 14 + (int) (prog * 26);
-                double radius = 7.0 - prog * 2.5;
-                for (int i = 0; i < count; i++) {
-                    double a = sl.random.nextDouble() * Math.PI * 2;
-                    double h = sl.random.nextDouble() * 3.5 - 1.4;
-                    // count=0：(dx,dy,dz) 為單位方向，speed 為速度大小 → 緩慢往中心飄
-                    sl.sendParticles(ParticleTypes.REVERSE_PORTAL,
-                            introX + Math.cos(a) * radius, y + h, introZ + Math.sin(a) * radius,
-                            0, -Math.cos(a), -h * 0.3, -Math.sin(a), 0.10 + prog * 0.14);
-                }
-                if (introTicks % 5 == 0) {
-                    sl.sendParticles(ParticleTypes.ENCHANT, introX, y + 1.0, introZ, 14, 2.5, 1.8, 2.5, 0.4);
-                }
-                if (introTicks % 10 == 0) {
-                    sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, introX, y + 0.5, introZ, 6, 1.5, 1.2, 1.5, 0.02);
-                }
-            }
-            if (introTicks == INTRO_REVEAL_TICK) {
-                // 爆炸：裝備此刻顯現
-                revealEquipment();
-                sl.sendParticles(ParticleTypes.EXPLOSION_EMITTER, introX, y, introZ, 1, 0, 0, 0, 0);
-                sl.sendParticles(ParticleTypes.FLASH, introX, y + 0.5, introZ, 1, 0, 0, 0, 0);
-                sl.sendParticles(ParticleTypes.REVERSE_PORTAL, introX, y + 0.5, introZ, 60, 0.1, 0.1, 0.1, 0.6);
-                sl.playSound(null, blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 1.5F, 0.7F);
-                sl.playSound(null, blockPosition(), SoundEvents.TOTEM_USE, SoundSource.HOSTILE, 1.0F, 0.6F);
-            }
-        }
+    // setDropChance 是 Mob protected，同 package 的 intro controller 碰不到，這裡開 package-private wrapper
+    void setNoDrop(EquipmentSlot slot) {
+        this.setDropChance(slot, 0.0F);
     }
 
-    private void revealEquipment() {
-        for (var e : pendingEquipment.entrySet()) {
-            this.setItemSlot(e.getKey(), e.getValue());
-        }
-        equipBestWeapon();
-        equipBestOffhand();
-        rebuildHandTurretsFromEquipped(); // 同步手持浮游砲列表（含 equipBestOffhand 從背包挑出的）
+    // 真武器：劍 / 斧 / 三叉戟（不含鎬鋤鏟那種純工具）。mirrorFrom 排序 + intro.equipBestWeapon 共用
+    static boolean isProperWeapon(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        return stack.getItem() instanceof SwordItem
+                || stack.getItem() instanceof AxeItem
+                || stack.getItem() instanceof TridentItem;
     }
 
     // 副手有盾且攻擊來自前方 (dot > 0.5) 就擋下：盾消耗耐久 + 播音效，不阻擋穿盾類型傷害
@@ -667,84 +596,15 @@ public class PlayerCloneEntity extends Monster {
         return true;
     }
 
-    // 副手優先：浮游砲 → 盾牌；都找不到就保留 player 原本副手（不做去重，玩家手上有一堆一樣的物品很正常）
-    private void equipBestOffhand() {
-        ItemStack turret = ItemStack.EMPTY;
-        ItemStack shield = ItemStack.EMPTY;
-        for (ItemStack st : clonedInventory) {
-            if (st.isEmpty()) continue;
-            if (turret.isEmpty() && st.getItem() instanceof FloatingTurretItem) turret = st;
-            else if (shield.isEmpty() && st.getItem() instanceof ShieldItem) shield = st;
-            if (!turret.isEmpty()) break;
-        }
-        ItemStack pick = !turret.isEmpty() ? turret : shield;
-        if (!pick.isEmpty()) {
-            this.setItemSlot(EquipmentSlot.OFFHAND, pick.copy());
-            this.setDropChance(EquipmentSlot.OFFHAND, 0.0F);
-        }
-    }
+    // 進場演出的裝備顯現（revealEquipment）+ 挑最強主/副手武器（equipBestWeapon / equipBestOffhand）已搬到 PlayerCloneIntroSequence
 
-    // 拿背包裡最強武器到主手，三層優先級：
-    //   tier 0: 浮游砲（本模組招牌武器）
-    //   tier 1: vanilla 真武器（劍/斧/三叉戟）
-    //   tier 2: vanilla 工具（鎬/鏟/任何有 ATTACK_DAMAGE）
-    // 前一 tier 有東西就直接用，後 tier 高傷不會搶走
-    private void equipBestWeapon() {
-        ItemStack[] bestPerTier = { ItemStack.EMPTY, ItemStack.EMPTY, ItemStack.EMPTY };
-        double[] bestAtkPerTier = { -1, -1, -1 };
-        java.util.List<ItemStack> candidates = new ArrayList<>(clonedInventory.size() + 1);
-        candidates.add(this.getMainHandItem());
-        candidates.addAll(clonedInventory);
-        for (ItemStack st : candidates) {
-            if (st.isEmpty()) continue;
-            int tier;
-            if (st.getItem() instanceof FloatingTurretItem) tier = 0;
-            else if (isProperWeapon(st)) tier = 1;
-            else tier = 2;
-            double a = weaponAttack(st);
-            if (tier == 2 && a <= 0) continue; // 工具沒攻擊加成不考慮
-            if (a > bestAtkPerTier[tier]) {
-                bestAtkPerTier[tier] = a;
-                bestPerTier[tier] = st;
-            }
-        }
-        ItemStack best = ItemStack.EMPTY;
-        for (int i = 0; i < bestPerTier.length; i++) {
-            if (!bestPerTier[i].isEmpty()) { best = bestPerTier[i]; break; }
-        }
-        if (!best.isEmpty() && !ItemStack.isSameItemSameComponents(best, this.getMainHandItem())) {
-            this.setItemSlot(EquipmentSlot.MAINHAND, best.copy());
-            this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
-        }
-    }
-
-    // 真武器：劍 / 斧 / 三叉戟（不含鎬鋤鏟那種純工具）
-    private static boolean isProperWeapon(ItemStack stack) {
-        if (stack.isEmpty()) return false;
-        return stack.getItem() instanceof SwordItem
-                || stack.getItem() instanceof AxeItem
-                || stack.getItem() instanceof TridentItem;
-    }
-
-    private static double weaponAttack(ItemStack stack) {
-        if (stack.isEmpty()) return 0;
-        double atk = 0;
-        for (var e : stack.getAttributeModifiers().modifiers()) {
-            if (e.attribute().equals(Attributes.ATTACK_DAMAGE) && e.slot().test(EquipmentSlot.MAINHAND)) {
-                atk += e.modifier().amount();
-            }
-        }
-        return atk;
-    }
-
-    private void activateAfterIntro() {
+    void activateAfterIntro() {
         introActive = false;
-        introTicks = 0;
-        revealEquipment(); // 保險：跳過動畫時不會經過 REVEAL_TICK，這裡補套裝備（冪等）
+        intro.revealEquipment(); // 保險：跳過動畫時不會經過 REVEAL_TICK，這裡補套裝備（冪等）
         setNoAi(false);
         setNoGravity(false);
         setInvulnerable(false);
-        setPos(introX, introBaseY, introZ);
+        setPos(intro.spawnX(), intro.spawnBaseY(), intro.spawnZ());
         if (level() instanceof ServerLevel sl) {
             // 同源去重保險：清掉任何殘留的同源分身（退出再進入時 chunk 載入時序可能漏網）
             getSourceUUID().ifPresent(id -> {
@@ -789,7 +649,7 @@ public class PlayerCloneEntity extends Monster {
 
     // 依目前裝備的主/副手浮游砲重建 mirroredHandTurrets（永遠 2 槽 [main, off]，可 EMPTY）
     // revealEquipment 後呼叫，讓 equipBestOffhand 從背包挑的浮游砲也能變成實體會射擊
-    private void rebuildHandTurretsFromEquipped() {
+    void rebuildHandTurretsFromEquipped() {
         mirroredHandTurrets.clear();
         ItemStack main = this.getMainHandItem();
         ItemStack off = this.getOffhandItem();
@@ -805,20 +665,11 @@ public class PlayerCloneEntity extends Monster {
         sl.addFreshEntity(turret);
     }
 
-    private static float frac(int t, int start, int end) {
-        return (t - start) / (float) (end - start);
-    }
-
-    private static float smooth(float t) {
-        t = Mth.clamp(t, 0f, 1f);
-        return t * t * (3f - 2f * t);
-    }
-
     @Override
     public void tick() {
         super.tick();
         if (!level().isClientSide && introActive) {
-            tickIntro();
+            intro.tick();
         }
     }
 
