@@ -50,6 +50,8 @@ public final class TurretChargeBarOverlay {
         int barY = sh * 2 / 3; // 中下
 
         List<TurretUpgradeBehavior> controls = FloatingTurretItem.installedControls(main, off);
+        // 沒裝控制插件：發射行為與改動前完全一致（全程蓄力彈、滿蓄強化彈），不顯示蓄力表，保持原有體驗
+        if (controls.isEmpty()) return;
 
         float min = FloatingTurretItem.CONTROL_BAND_MIN;
         float max = FloatingTurretItem.CONTROL_BAND_MAX;
@@ -63,18 +65,13 @@ public final class TurretChargeBarOverlay {
         g.fill(barX, barY, xMin, barY + BAR_H, 0xFF555555);
         // 右段：強蓄力彈（琥珀）
         g.fill(xMax, barY, barX + BAR_W, barY + BAR_H, 0xFFF39C12);
-        // 中段：控制區
-        if (controls.isEmpty()) {
-            // 沒裝控制插件：中段不可用，畫暗色（鬆手在這也只會發蓄力彈）
-            g.fill(xMin, barY, xMax, barY + BAR_H, 0xFF2A2A2A);
-        } else {
-            int n = controls.size();
-            for (int i = 0; i < n; i++) {
-                int cx0 = xMin + (xMax - xMin) * i / n;
-                int cx1 = xMin + (xMax - xMin) * (i + 1) / n;
-                g.fill(cx0, barY, cx1, barY + BAR_H, 0xFF000000 | controlColor(controls.get(i)));
-                if (i > 0) g.fill(cx0, barY, cx0 + 1, barY + BAR_H, 0xFF000000); // 格線
-            }
+        // 中段：控制區，依裝的控制插件數等分（沒裝的情況上面已 return，這裡 controls 必非空）
+        int n = controls.size();
+        for (int i = 0; i < n; i++) {
+            int cx0 = xMin + (xMax - xMin) * i / n;
+            int cx1 = xMin + (xMax - xMin) * (i + 1) / n;
+            g.fill(cx0, barY, cx1, barY + BAR_H, 0xFF000000 | controlColor(controls.get(i)));
+            if (i > 0) g.fill(cx0, barY, cx0 + 1, barY + BAR_H, 0xFF000000); // 格線
         }
 
         // 指針：隨蓄力進度移動，鬆手時所在段決定彈種
