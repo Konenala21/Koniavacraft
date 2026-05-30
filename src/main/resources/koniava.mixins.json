@@ -15,6 +15,7 @@
     "client.LanguageSelectScreenMixin",
     "client.MouseHandlerT6Mixin",
     "client.OptionsSubScreenAccessor",
+    "client.ScreenAccessor",
     "client.SoundOptionsScreenMixin",
     "client.ParticleEngineAddonMixin",
     "client.CameraMixin",

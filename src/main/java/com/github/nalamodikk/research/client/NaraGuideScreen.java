@@ -68,6 +68,10 @@ public class NaraGuideScreen extends Screen {
             {"guide.koniava.mana.grinder.title",   "guide.koniava.mana.grinder.body"},
             {"guide.koniava.mana.infuser.title",   "guide.koniava.mana.infuser.body"},
             {"guide.koniava.mana.crafting.title",  "guide.koniava.mana.crafting.body"},
+            {"guide.koniava.mana.solar.title",       "guide.koniava.mana.solar.body"},
+            {"guide.koniava.mana.charger.title",     "guide.koniava.mana.charger.body"},
+            {"guide.koniava.mana.deployer.title",    "guide.koniava.mana.deployer.body"},
+            {"guide.koniava.mana.plate_press.title", "guide.koniava.mana.plate_press.body"},
         },
         // Chapter 3: 祭壇系統
         {
@@ -81,6 +85,9 @@ public class NaraGuideScreen extends Screen {
             {"guide.koniava.weapons.overview.title", "guide.koniava.weapons.overview.body"},
             {"guide.koniava.weapons.hand.title",     "guide.koniava.weapons.hand.body"},
             {"guide.koniava.weapons.turret.title",   "guide.koniava.weapons.turret.body"},
+            {"guide.koniava.weapons.upgrade.title",  "guide.koniava.weapons.upgrade.body"},
+            {"guide.koniava.weapons.wand.title",     "guide.koniava.weapons.wand.body"},
+            {"guide.koniava.weapons.dummy.title",    "guide.koniava.weapons.dummy.body"},
         },
         // Chapter 5: 魔力裝備（需要完成 mana_equipment 研究）
         {

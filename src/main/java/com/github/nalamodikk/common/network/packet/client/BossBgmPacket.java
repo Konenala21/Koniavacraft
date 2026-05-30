@@ -67,14 +67,36 @@ public record BossBgmPacket(boolean stop) implements CustomPacketPayload {
             if (currentInstance != null) {
                 mc.getSoundManager().stop(currentInstance);
             }
-            // 保留 SoundSource.MASTER：vanilla「音樂」slider 關掉時 boss BGM 仍會播放。
-            // bossMusicVolume config 是模組自己的獨立控制；只受 vanilla master slider 全域縮放，符合預期。
-            // forUI 內部就是 MASTER + Attenuation.NONE + relative=true（全域固定音量，不受位置影響）。
-            net.minecraft.client.resources.sounds.SimpleSoundInstance inst =
-                    net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                            ModSounds.BOSS_BGM_MIRROR_IMAGE.get(), 1.0f, vol);
+            // 用 tickable instance：音量每 tick 重讀 bossMusicVolume config，拖滑桿即時生效、歸 0 即時停。
+            // 保留 SoundSource.MASTER（vanilla「音樂」slider 關掉時 boss BGM 仍會播）+ relative/NONE（全域固定音量）。
+            BgmInstance inst = new BgmInstance(ModSounds.BOSS_BGM_MIRROR_IMAGE.get());
             currentInstance = inst;
             mc.getSoundManager().play(inst);
+        }
+
+        // 戰鬥 BGM。音量不寫死，每 tick 跟 bossMusicVolume config 走 → 設定即時生效，不用等下一場。
+        private static final class BgmInstance extends net.minecraft.client.resources.sounds.AbstractTickableSoundInstance {
+            BgmInstance(net.minecraft.sounds.SoundEvent sound) {
+                super(sound, net.minecraft.sounds.SoundSource.MASTER,
+                        net.minecraft.client.resources.sounds.SoundInstance.createUnseededRandom());
+                this.relative = true;
+                this.attenuation = net.minecraft.client.resources.sounds.SoundInstance.Attenuation.NONE;
+                this.volume = currentConfigVolume();
+            }
+
+            private static float currentConfigVolume() {
+                return (float) ModClientConfig.INSTANCE.bossMusicVolume.get().doubleValue();
+            }
+
+            @Override
+            public void tick() {
+                float v = currentConfigVolume();
+                if (v <= 0.0f) {
+                    this.stop(); // 拖到 0 即時停止
+                    return;
+                }
+                this.volume = v;
+            }
         }
     }
 }

@@ -1,8 +1,12 @@
 package com.github.nalamodikk.mixin.client;
 
 import com.github.nalamodikk.common.config.ModClientConfig;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.OptionInstance;
 import net.minecraft.client.Options;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.SoundOptionsScreen;
 import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
@@ -43,6 +47,18 @@ public class SoundOptionsScreenMixin {
 
         // 兩兩配對 → 跟 vanilla source volumes 同樣的 addSmall 排版
         list.addSmall(new OptionInstance[]{ bossMusic, naraVoice });
+
+        // 「重載聲音」按鈕（螢幕右上）：只重啟 SoundEngine（重建 OpenAL），不碰 texture/model。
+        // 救 OS 切換音訊裝置後 OpenAL 卡死、聲音消失的情況（比 F3+T 輕，不用重開遊戲）。
+        Screen screen = (Screen) (Object) this;
+        int bw = 110, bh = 20;
+        Button reloadBtn = Button.builder(
+                        Component.translatable("gui.koniava.reload_sound"),
+                        b -> Minecraft.getInstance().getSoundManager().reload())
+                .bounds(screen.width - bw - 6, 6, bw, bh)
+                .tooltip(Tooltip.create(Component.translatable("gui.koniava.reload_sound.tooltip")))
+                .build();
+        ((ScreenAccessor) (Object) this).koniava_addRenderableWidget(reloadBtn);
     }
 
     @org.spongepowered.asm.mixin.Unique
