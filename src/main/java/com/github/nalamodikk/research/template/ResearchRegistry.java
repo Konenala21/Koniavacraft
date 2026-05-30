@@ -85,8 +85,9 @@ public final class ResearchRegistry {
     );
 
     /**
-     * Tools: player learns to forge mana-infused tools and the basic tech wand.
+     * Tools: player learns to forge mana-infused tools.
      * Blade↔Mechanism (both involve shaping metal), Crystal provides the mana conduit.
+     * (basic_tech_wand removed from unlocks: deprecated, recipe gone, replaced by the wand_rod modular system)
      */
     public static final ResearchTemplate MANA_TOOLS = register(
             ResearchTemplate.builder(id("mana_tools"))
@@ -94,7 +95,7 @@ public final class ResearchRegistry {
                     .aspects(ModAspects.BLADE, ModAspects.MECHANISM, ModAspects.CRYSTAL)
                     .holeRatio(0.30)
                     .prerequisites(id("mana_crystallisation"))
-                    .unlocks(id("basic_tech_wand"), id("mana_pickaxe"))
+                    .unlocks(id("mana_pickaxe"))
                     .build()
     );
 
