@@ -60,6 +60,13 @@ public class PlayerCloneRenderer extends HumanoidMobRenderer<PlayerCloneEntity, 
         renderInner(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
     }
 
+    // 不要 vanilla 的死亡側倒（deathTime>0 時 setupRotations 會沿 Z 軸傾倒 90 度）。
+    // 分身 boss 死亡走自製演出 applyDeathPhaseTransform（搖晃 / 旋轉 / 縮放），回 0 取消 vanilla 倒地。
+    @Override
+    protected float getFlipDegrees(PlayerCloneEntity entity) {
+        return 0.0F;
+    }
+
     private void renderInner(PlayerCloneEntity entity, float entityYaw, float partialTicks,
                               PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
         if (entity.isArmored()) {

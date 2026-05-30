@@ -18,7 +18,8 @@
     "client.SoundOptionsScreenMixin",
     "client.ParticleEngineAddonMixin",
     "client.CameraMixin",
-    "client.TitleScreenMixin"
+    "client.TitleScreenMixin",
+    "client.LivingEntityRendererMixin"
   ],
   "server": [],
   "injectors": {
