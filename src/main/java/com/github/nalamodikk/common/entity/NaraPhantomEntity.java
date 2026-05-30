@@ -62,6 +62,13 @@ public class NaraPhantomEntity extends PathfinderMob {
         return false;
     }
 
+    // 純視覺幻影：玩家近戰 ray-cast、投射物、浮游砲自動瞄準都不該命中她。
+    // 否則她跟隨玩家時站到 boss 前面，會吃掉玩家本要打 boss 的攻擊。
+    @Override
+    public boolean isPickable() {
+        return false;
+    }
+
     @Override
     public boolean shouldBeSaved() {
         return false; // 不存盤：由 boss（PlayerCloneEntity）在進攻中確保恰好一個同源娜拉，避免重載殘留/重複
