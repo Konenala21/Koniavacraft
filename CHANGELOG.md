@@ -4,7 +4,25 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Player Changes / 玩家更新內容
+
+Dual-wielded floating turrets can now fire control shots by charge-release timing. While charging, a bar appears at the lower-center of the screen: release in the left zone for a weak charged shot, the right zone for a full charged shot, and the middle zone for a control shot. The middle zone splits into one slot per installed control upgrade (slow / root / levitate), each its own color, so where you release picks which effect fires. No extra keys, no mode toggle: pure release-timing skill. Only shows when dual-wielding turrets.
+雙持浮游砲現在能靠蓄力鬆手時機發射控制彈。蓄力時螢幕中下出現一條蓄力表：鬆手在左段是弱蓄力彈，右段是強蓄力彈，中段則發射控制彈。中段依你裝的控制插件數量分格（緩速 / 定身 / 漂浮各一格、各自顏色），鬆手在哪格就放哪個效果。不用多按鍵、不用切模式，純靠鬆手時機。只在雙持浮游砲時顯示。
+
+Fixed: in the Mirror Dimension, Nara's phantom would clip into the ground while following you. She now tracks you horizontally and stays at your height.
+修復：鏡中世界裡娜拉幻影跟隨你時會鑲進地底。改成水平追蹤並貼合你的高度。
+
+Fixed: re-entering the Mirror boss fight would scatter the previous run's unclaimed reward chest items onto the floor. The arena reset no longer drops them.
+修復：重新挑戰鏡中 boss 時，上一場沒拿走的獎勵箱物品會散落一地。場地重置不再噴出它們。
+
 ### Developer Notes / 開發者備註
+
+- Floating turret hand-mode control shots: FloatingTurretItem.releaseUsing splits the long-press charge-release into three bands via CONTROL_BAND_MIN/MAX (0.40/0.75, shared with the client). The middle band fires a control shot, picking the effect by equal-division index over installedControls(main, off) (union of both hands' control upgrades, enum-ordinal sorted for a stable bar order). New fireControlShot (charged-shot-level cost, single center bolt via shootControl) and the TurretChargeBarOverlay client HUD (RenderGuiEvent.Post, only on dual-wield + using item). Verified by compileJava + 66/66 GameTest; in-game behavior needs manual test.
+- 浮游砲手持控制彈：FloatingTurretItem.releaseUsing 把長按蓄力鬆手依 CONTROL_BAND_MIN/MAX（0.40/0.75，與 client 共用）分三段。中段發控制彈，依 installedControls(main, off)（兩手控制升級聯集、按 enum ordinal 排序保證條上順序穩定）等分取 index 選效果。新增 fireControlShot（消耗同蓄力彈、單發中心彈走 shootControl）與 TurretChargeBarOverlay client HUD（RenderGuiEvent.Post，只在雙持 + 蓄力時顯示）。靠 compileJava + 66/66 GameTest 驗證；實機行為待手動測。
+- Fix (Nara phantom clipping into ground): NaraPhantomEntity.followSourcePlayer used a 3D direction + setPos (no collision check), so dir.y pulled the phantom through terrain toward the player's feet. Now tracks horizontally only and pins Y to the player's height.
+- 修復（娜拉幻影鑲地底）：NaraPhantomEntity.followSourcePlayer 用 3D 方向 + setPos（無碰撞檢測），dir.y 把幻影沿直線往玩家腳底拉穿地形。改成只水平追蹤、Y 貼玩家高度。
+- Fix (reward chest re-drops previous run's items): VoidMirrorEvents.resetArena cleared MODIFIED_BLOCKS (which includes the reward chest position) with setBlockAndUpdate(air), triggering Containers.dropContents. Switched to setBlock with UPDATE_SUPPRESS_DROPS (flag 32). See reference_vanilla_chest_drop.
+- 修復（獎勵箱重噴上一場物品）：VoidMirrorEvents.resetArena 用 setBlockAndUpdate(air) 清 MODIFIED_BLOCKS（含獎勵箱位置），觸發 Containers.dropContents。改用 setBlock + UPDATE_SUPPRESS_DROPS（flag 32）。見 reference_vanilla_chest_drop。
 
 - Refactor (PlayerCloneEntity split, Phase 5): extracted the mirror/turret and phase-state subsystems into two controllers. `PlayerCloneMirrorManager` owns the mirrored turret lists + volley state and holds mirrorFrom (recursive container expansion for anti-cheese), self-propelled/handheld turret spawning, and the boss volley skill (collectContained / armorScore / filterMirroredTurret moved with it). `PlayerClonePhaseAI` owns the phase field + wall/drain cooldowns and holds the NORMAL/WALLING/BERSERK transition, berserk wall-teardown + speed, wall-building, and mana drain (BERSERK_SPEED + WALL/DRAIN constants moved with it). The entity keeps thin delegates for the public mirrorFrom and the intro-called rebuildHandTurretsFromEquipped, routes customServerAiStep + NBT through the controllers via helper methods (isWalling / isBerserk / phaseOrdinal / loadPhaseOrdinal), and keeps placedWalls / takeWallBlock / bossHotbar / updateBossBarName on the hub since they are shared across subsystems. Dropped the dead addMirroredTurret. PlayerCloneEntity: 1360 -> 1034 lines; new controllers 293 + 157 lines. Mechanical extraction only, no logic or ordering changes. Verified by compileJava + the full GameTest suite (66/66 green).
 - 重構（PlayerCloneEntity 拆分，Phase 5）：把鏡像/浮游砲與血量階段兩個子系統抽成兩個 controller。`PlayerCloneMirrorManager` 擁有鏡像砲清單 + 齊射 state，持有 mirrorFrom（遞迴展開容器杜絕藏盒規避）、自走/手持砲生成、boss 齊射技能（collectContained / armorScore / filterMirroredTurret 一起搬走）。`PlayerClonePhaseAI` 擁有 phase field + 築牆/吸魔冷卻，持有 NORMAL/WALLING/BERSERK 切換、暴走拆牆 + 加速、築牆、吸魔（BERSERK_SPEED + WALL/DRAIN 常數一起搬走）。本體保留公開 mirrorFrom 與 intro 呼叫的 rebuildHandTurretsFromEquipped 兩個薄委派，customServerAiStep + NBT 透過 helper 方法（isWalling / isBerserk / phaseOrdinal / loadPhaseOrdinal）走 controller，placedWalls / takeWallBlock / bossHotbar / updateBossBarName 因跨子系統共用留在樞紐。刪掉死碼 addMirroredTurret。PlayerCloneEntity：1360 → 1034 行；新 controller 293 + 157 行。純機械搬移，沒動邏輯或順序。靠 compileJava + 完整 GameTest 套件驗證（66/66 綠）。

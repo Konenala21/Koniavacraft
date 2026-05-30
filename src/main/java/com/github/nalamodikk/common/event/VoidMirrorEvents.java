@@ -18,6 +18,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.EnderChestBlock;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
@@ -131,7 +132,10 @@ public class VoidMirrorEvents {
         for (long l : MODIFIED_BLOCKS) {
             BlockPos p = BlockPos.of(l);
             if (mirror.isLoaded(p)) {
-                mirror.setBlockAndUpdate(p, Blocks.AIR.defaultBlockState());
+                // SUPPRESS_DROPS：MODIFIED_BLOCKS 含上一場的獎勵箱，setBlockAndUpdate 還原成 air 會觸發
+                // Containers.dropContents 把上一場沒拿的物品噴一地。flag 32 才不掉落（arena 清場本就不該掉東西）。
+                mirror.setBlock(p, Blocks.AIR.defaultBlockState(),
+                        Block.UPDATE_CLIENTS | Block.UPDATE_SUPPRESS_DROPS);
             }
         }
         MODIFIED_BLOCKS.clear();

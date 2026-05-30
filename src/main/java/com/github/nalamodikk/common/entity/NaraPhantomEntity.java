@@ -121,15 +121,20 @@ public class NaraPhantomEntity extends PathfinderMob {
         if (src == null) return;
         Player player = sl.getPlayerByUUID(src);
         if (player == null) return;
+        // 只用水平距離追蹤，Y 直接貼玩家高度。
+        // 不可用 3D 方向 + setPos：setPos 不做碰撞檢測，dir.y 會把幻影沿直線往玩家腳底拉、穿過地形鑲進地底。
         Vec3 toPlayer = player.position().subtract(position());
-        double distSq = toPlayer.lengthSqr();
-        if (distSq <= FOLLOW_DISTANCE_SQ) return;
-        double dist = Math.sqrt(distSq);
-        double moveDist = Math.min(dist - FOLLOW_DISTANCE, FOLLOW_SPEED);
-        Vec3 dir = toPlayer.scale(1.0 / dist);
-        setPos(getX() + dir.x * moveDist,
-                getY() + dir.y * moveDist,
-                getZ() + dir.z * moveDist);
+        double horizSq = toPlayer.x * toPlayer.x + toPlayer.z * toPlayer.z;
+        if (horizSq <= FOLLOW_DISTANCE_SQ) {
+            // 水平已夠近：仍校正 Y 貼合玩家，消掉殘留的高度差（例如玩家爬上爬下後）
+            if (Math.abs(toPlayer.y) > 0.05) setPos(getX(), player.getY(), getZ());
+            return;
+        }
+        double horizDist = Math.sqrt(horizSq);
+        double moveDist = Math.min(horizDist - FOLLOW_DISTANCE, FOLLOW_SPEED);
+        double nx = toPlayer.x / horizDist;
+        double nz = toPlayer.z / horizDist;
+        setPos(getX() + nx * moveDist, player.getY(), getZ() + nz * moveDist);
         // body 朝向玩家（頭部視線由 LookAtPlayerGoal 處理）
         float yaw = (float) Math.toDegrees(Math.atan2(-toPlayer.x, toPlayer.z));
         setYRot(yaw);

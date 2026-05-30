@@ -27,6 +27,8 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class FloatingTurretItem extends Item implements ISpecificEquipment {
@@ -46,6 +48,11 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
     private static final float CHARGED_DAMAGE_MAX = 24.0F;
     public static final int MAX_CHARGE_TICKS = 40;    // 2 秒滿蓄
     private static final int QUICK_SHOT_THRESHOLD = 5; // 5 tick 內放開 = 雙普通彈
+
+    // 雙持蓄力鬆手三段：[0,MIN)=弱蓄力彈, [MIN,MAX)=控制彈（依裝的控制插件數等分選效果）, [MAX,1]=強蓄力彈
+    // public：client 蓄力表 overlay 共用同一組閾值，顯示才會跟 server 判定一致
+    public static final float CONTROL_BAND_MIN = 0.40f;
+    public static final float CONTROL_BAND_MAX = 0.75f;
 
     public FloatingTurretItem(Properties properties) {
         super(properties);
@@ -158,10 +165,20 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
             }
             fireDualNormalShot(serverLevel, player);
         } else {
-            // 長按：依蓄力比例發射強化彈；魔力不足則降格為雙普通彈
+            // 長按：依蓄力鬆手位置三段發射（弱蓄力彈 / 控制彈 / 強蓄力彈）；魔力不足則降格雙普通彈
             float chargeRatio = Math.min(1.0F, (float) ticksHeld / MAX_CHARGE_TICKS);
             if (mainMana >= CHARGED_MANA_COST_EACH && offMana >= CHARGED_MANA_COST_EACH) {
-                fireChargedShot(serverLevel, player, chargeRatio);
+                List<TurretUpgradeBehavior> controls =
+                        installedControls(player.getMainHandItem(), player.getOffhandItem());
+                // 鬆手落在控制區且有裝控制插件：依插件數等分，落在哪格就放那個控制效果
+                if (chargeRatio >= CONTROL_BAND_MIN && chargeRatio < CONTROL_BAND_MAX && !controls.isEmpty()) {
+                    int n = controls.size();
+                    int idx = (int) ((chargeRatio - CONTROL_BAND_MIN) / (CONTROL_BAND_MAX - CONTROL_BAND_MIN) * n);
+                    idx = Math.max(0, Math.min(n - 1, idx));
+                    fireControlShot(serverLevel, player, controls.get(idx));
+                } else {
+                    fireChargedShot(serverLevel, player, chargeRatio);
+                }
             } else {
                 fireDualNormalShot(serverLevel, player);
             }
@@ -322,6 +339,63 @@ public class FloatingTurretItem extends Item implements ISpecificEquipment {
 
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 ModSounds.TURRET_SHOOT_CHARGED.get(), SoundSource.PLAYERS, 1.2F, 0.7F + chargeRatio * 0.4F);
+    }
+
+    // 兩手已裝的控制升級聯集，按 enum ordinal 固定排序。
+    // 順序固定（不隨槽位變）才能讓蓄力表左→右穩定，玩家靠肌肉記憶選效果。
+    public static List<TurretUpgradeBehavior> installedControls(ItemStack mainStack, ItemStack offStack) {
+        List<TurretUpgradeBehavior> result = new ArrayList<>();
+        collectControls(mainStack, result);
+        collectControls(offStack, result);
+        result.sort(Comparator.comparingInt(Enum::ordinal));
+        return result;
+    }
+
+    private static void collectControls(ItemStack stack, List<TurretUpgradeBehavior> out) {
+        if (!(stack.getItem() instanceof FloatingTurretItem)) return;
+        for (ItemStack upg : getData(stack).upgrades().values()) {
+            if (upg.getItem() instanceof TurretUpgradeItem tu) {
+                TurretUpgradeBehavior b = tu.getBehavior();
+                if (b.isControl() && b.getControlEffect() != null && !out.contains(b)) out.add(b);
+            }
+        }
+    }
+
+    // 控制彈：消耗與蓄力彈同級（雙手各扣魔力 + 耐久），單發中心彈帶指定控制效果，朝準心/自動瞄準目標
+    private void fireControlShot(ServerLevel level, Player player, TurretUpgradeBehavior control) {
+        ItemStack mainStack = player.getMainHandItem();
+        ItemStack offStack  = player.getOffhandItem();
+
+        int mainMana = mainStack.getOrDefault(ModDataComponents.MANA_STORED, 0);
+        int offMana  = offStack.getOrDefault(ModDataComponents.MANA_STORED, 0);
+        if (mainMana < CHARGED_MANA_COST_EACH || offMana < CHARGED_MANA_COST_EACH) return;
+
+        mainStack.set(ModDataComponents.MANA_STORED, mainMana - CHARGED_MANA_COST_EACH);
+        offStack.set(ModDataComponents.MANA_STORED, offMana - CHARGED_MANA_COST_EACH);
+        if (player instanceof ServerPlayer sp) {
+            if (mainStack.isDamageableItem()) mainStack.hurtAndBreak(2, sp, EquipmentSlot.MAINHAND);
+            if (offStack.isDamageableItem())  offStack.hurtAndBreak(2, sp, EquipmentSlot.OFFHAND);
+        }
+
+        Vec3 mainPos  = turretPos(player, FloatingTurretEventHandler.HAND_MAIN_SLOT, 1.0F);
+        Vec3 offPos   = turretPos(player, FloatingTurretEventHandler.HAND_OFF_SLOT, 1.0F);
+        Vec3 spawnPos = mainPos.add(offPos).scale(0.5);
+        // 控制彈朝準心：優先自動瞄準目標，否則玩家視線前方
+        Vec3 aimTarget = (hasUpgrade(mainStack, TurretUpgradeBehavior.AUTO_AIM)
+                || hasUpgrade(offStack, TurretUpgradeBehavior.AUTO_AIM))
+                ? findAutoAimTarget(level, player) : null;
+        if (aimTarget == null) {
+            aimTarget = player.getEyePosition().add(player.getLookAngle().scale(AUTO_AIM_RANGE));
+        }
+        FloatingTurretProjectile proj = FloatingTurretProjectile.shootControl(
+                level, player, spawnPos, aimTarget, control.getControlEffect(), control.getControlDuration());
+        if (hasUpgrade(mainStack, TurretUpgradeBehavior.NO_BLOCK_DAMAGE)
+                || hasUpgrade(offStack, TurretUpgradeBehavior.NO_BLOCK_DAMAGE)) {
+            proj.setNoBlockDamage(true);
+        }
+        level.addFreshEntity(proj);
+        level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                ModSounds.TURRET_SHOOT_CHARGED.get(), SoundSource.PLAYERS, 1.0F, 1.3F);
     }
 
     // ── 升級插件 ──────────────────────────────────────────────────────────────
