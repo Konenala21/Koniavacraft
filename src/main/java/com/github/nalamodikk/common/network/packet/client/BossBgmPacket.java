@@ -95,7 +95,9 @@ public record BossBgmPacket(boolean stop) implements CustomPacketPayload {
                     this.stop(); // 拖到 0 即時停止
                     return;
                 }
-                this.volume = v;
+                if (v != this.volume) { // 只有滑桿真的動了才寫，沒變就跳過
+                    this.volume = v;
+                }
             }
         }
     }
