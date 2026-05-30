@@ -42,10 +42,12 @@ public class ManaPlatePressRenderer implements BlockEntityRenderer<ManaPlatePres
 
     private static final String PRESS_CORE_GROUP = "壓板核心";
     private static final String BODY_GROUP = "主體";
-    private static final float MAX_PRESS_OFFSET = 0.25f;
+    private static final float MAX_PRESS_OFFSET = 0.6875f; // 壓頭下壓行程（格），0.6875 = 11px：剛好貼底座不穿模
+    private static final float FALLBACK_CYCLE_TICKS = 80f;  // 拿不到配方時間時的循環長度
 
     private final Map<String, List<ModelElement>> groupElements = new HashMap<>();
     private final Map<BlockPos, Float> animatedOffsets = new HashMap<>();
+    private final Map<BlockPos, Long> pressStartTimes = new HashMap<>();
     private boolean modelLoaded = false;
 
     public ManaPlatePressRenderer(BlockEntityRendererProvider.Context context) {
@@ -69,25 +71,45 @@ public class ManaPlatePressRenderer implements BlockEntityRenderer<ManaPlatePres
 
         renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, BODY_GROUP, 0f, 0f, 0f);
 
-        float targetOffset = 0f;
-        if (isWorking) {
-            int progress = blockEntity.getPressingProgress();
-            int maxProgress = blockEntity.getMaxPressingTime();
-            if (maxProgress > 0) {
-                targetOffset = -((float) progress / maxProgress) * MAX_PRESS_OFFSET;
-            }
-        }
-
+        // 動畫由 WORKING blockstate 驅動（這個有同步到 client；progress 沒同步，靠它會永遠 0）。
+        // 加工中：用遊戲時間做本地壓印循環（下壓→回升反覆）。停止：平滑回到原位。
         BlockPos pos = blockEntity.getBlockPos();
-        float current = animatedOffsets.getOrDefault(pos, 0f);
-        boolean returning = targetOffset > current;
-        float lerpFactor = returning ? 0.18f : 0.35f;
-        current += (targetOffset - current) * lerpFactor;
+        float current;
+        if (isWorking) {
+            // 循環長度對齊配方壓製時間：一次壓印 = 一次合成
+            float cycle = blockEntity.getMaxPressingTime() > 0 ? blockEntity.getMaxPressingTime() : FALLBACK_CYCLE_TICKS;
+            // phase 鎖在 working 開始的時間點：phase 從 0 起算，壓頭從原位平滑下壓，不會一開工就瞬移
+            long now = blockEntity.getLevel().getGameTime();
+            long start = pressStartTimes.computeIfAbsent(pos, p -> now);
+            float elapsed = (now - start) + partialTick;
+            float phase = (elapsed % cycle) / cycle;                         // 0..1
+            current = -pressCurve(phase) * MAX_PRESS_OFFSET;
+        } else {
+            pressStartTimes.remove(pos);
+            current = animatedOffsets.getOrDefault(pos, 0f);
+            current += (0f - current) * 0.35f;                               // 收工平滑回原位
+        }
         animatedOffsets.put(pos, current);
 
         renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, PRESS_CORE_GROUP, 0f, current, 0f);
 
         poseStack.popPose();
+    }
+
+    // 壓印曲線：下壓（前段）→ 壓到底停住（中段）→ 回升（後段），回傳 0..1（1=壓到底）。
+    // 比純 sine 更像真的壓住：在底部有停留，看得出「壓到底」這個動作。
+    private static float pressCurve(float phase) {
+        final float DOWN_END = 0.30f;   // 下壓段
+        final float HOLD_END = 0.62f;   // 停底段
+        if (phase < DOWN_END) {
+            float t = phase / DOWN_END;
+            return t * t * (3f - 2f * t);            // smoothstep 0→1
+        } else if (phase < HOLD_END) {
+            return 1f;                                // 壓到底停住
+        } else {
+            float t = (phase - HOLD_END) / (1f - HOLD_END);
+            return 1f - t * t * (3f - 2f * t);        // smoothstep 1→0
+        }
     }
 
     private void renderGroup(PoseStack poseStack, VertexConsumer vertexConsumer,

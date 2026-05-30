@@ -267,7 +267,9 @@ public class ManaPlatePressBlockEntity extends AbstractManaMachineEntityBlock {
 
     public int getCurrentMana() { return manaStorage != null ? manaStorage.getManaStored() : 0; }
     public int getMaxMana() { return manaStorage != null ? manaStorage.getMaxManaStored() : 0; }
-    public boolean isWorking() { return progress > 0; }
+    // progress 在每次合成完成那一 tick 會歸 0；若此刻還能繼續加工就維持 working，
+    // 避免 WORKING blockstate 每個循環閃一下 false，導致 BER 壓印動畫週期性抽動。
+    public boolean isWorking() { return progress > 0 || canGenerate(); }
     public int getPressingProgress() { return progress; }
     public int getMaxPressingTime() { return maxProgress; }
 
