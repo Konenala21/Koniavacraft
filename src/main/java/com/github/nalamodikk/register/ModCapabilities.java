@@ -121,6 +121,10 @@ public class ModCapabilities {
         manaIO(event, ModBlockEntities.MANA_GRINDER_BE);
         itemHandlerIO(event, ModBlockEntities.MANA_GRINDER_BE);
 
+        // 魔力壓板機：可配置 IO + 物品槽（先前漏註冊，導致導管/鄰居無法灌入魔力）
+        manaIO(event, ModBlockEntities.MANA_PLATE_PRESS_BE);
+        itemHandlerIO(event, ModBlockEntities.MANA_PLATE_PRESS_BE);
+
         // 魔力部署器：INPUT only
         manaInput(event, ModBlockEntities.MANA_DEPLOYER_BE);
 
