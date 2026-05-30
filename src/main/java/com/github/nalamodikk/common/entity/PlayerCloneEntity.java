@@ -74,26 +74,16 @@ public class PlayerCloneEntity extends Monster {
 
     public enum Phase { NORMAL, WALLING, BERSERK }
 
-    private static final int WALL_CAP = 24;
-    private static final int WALL_INTERVAL = 25;
-    private static final int DRAIN_INTERVAL = 20;
-    private static final int DRAIN_AMOUNT = 300;
-
-    private static final ResourceLocation BERSERK_SPEED_ID =
-            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "clone_berserk_speed");
-    private static final AttributeModifier BERSERK_SPEED =
-            new AttributeModifier(BERSERK_SPEED_ID, 0.4, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
-
     // 防風箏：目標離太遠時暫時加速追上（距離判斷用遲滯，見 customServerAiStep）
     private static final ResourceLocation ANTI_KITE_SPEED_ID =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "clone_anti_kite_speed");
     private static final AttributeModifier ANTI_KITE_SPEED =
             new AttributeModifier(ANTI_KITE_SPEED_ID, 0.45, AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
 
-    private Phase phase = Phase.NORMAL;
-    final Set<Long> placedWalls = new HashSet<>(); // package-private：牆系統主人，PlayerCloneCombatSkills 借讀（避免拆到自己疊的方塊）
-    private int wallCooldown = 0;
-    private int drainCooldown = 0;
+    final Set<Long> placedWalls = new HashSet<>(); // package-private：牆系統主人，PlayerClonePhaseAI 築/拆牆、PlayerCloneCombatSkills 借讀（避免拆到自己疊的方塊）
+
+    // 血量階段狀態機 controller（NORMAL/WALLING/BERSERK 切換 + 築牆 + 吸魔；擁有 phase + 冷卻 state）
+    private final PlayerClonePhaseAI phaseAI = new PlayerClonePhaseAI(this);
 
     // 主動戰術 controller（反墊柱 / 拆工事 / 俯衝 / 招牌墊方塊技能 / 上彈 / 技能方塊清理；擁有技能 state）
     private final PlayerCloneCombatSkills skills = new PlayerCloneCombatSkills(this);
@@ -115,9 +105,8 @@ public class PlayerCloneEntity extends Monster {
     private final PlayerCloneIntroSequence intro = new PlayerCloneIntroSequence(this);
     boolean introActive = false; // package-private：過場旗標，多處讀（customServerAiStep / shouldBeSaved / 重生 / PlayerCloneCombatSkills.tickDive）。動畫主人是 intro controller，本旗標是樞紐留本體
     final EnumMap<EquipmentSlot, ItemStack> pendingEquipment = new EnumMap<>(EquipmentSlot.class); // package-private：鏡像時填，intro.revealEquipment 套用
-    // 鏡像的浮游砲（已過濾不鏡射的升級）。自走砲（繞行）vs 手持（雙持蓄力）分開
-    private final List<ItemStack> mirroredTurrets = new ArrayList<>();      // 裝備槽/背包 → 繞行自走砲
-    private final List<ItemStack> mirroredHandTurrets = new ArrayList<>();  // 主手/副手 → 手持蓄力
+    // 鏡像 + 浮游砲 controller（鏡像玩家裝備/背包/浮游砲、自走/手持砲生成、主動齊射；擁有鏡像砲清單 + 齊射 state）
+    private final PlayerCloneMirrorManager mirror = new PlayerCloneMirrorManager(this);
     private boolean turretsSpawned = false; // 不存盤：重載後為 false → 重新生成砲
 
     // ── 二階段方塊機甲（半血變身：以 BlockDisplay 偽裝方塊組成大型人形包住本體）──
@@ -177,16 +166,11 @@ public class PlayerCloneEntity extends Monster {
     // 鏡像玩家的整個主背包（快捷欄 0-8 + 背包 9-35），供疊方塊 AI 取用。不掉落、不同步。
     private final NonNullList<ItemStack> clonedInventory = NonNullList.withSize(36, ItemStack.EMPTY);
     // 鏡像玩家快捷欄（slot 0~8），戰鬥中定時切換主手；空槽跳過
-    private final NonNullList<ItemStack> bossHotbar = NonNullList.withSize(9, ItemStack.EMPTY);
+    // package-private：鏡像由 PlayerCloneMirrorManager.mirrorFrom 填，戰鬥中由本體 tickHotbarSwitch 讀
+    final NonNullList<ItemStack> bossHotbar = NonNullList.withSize(9, ItemStack.EMPTY);
     private int hotbarIdx = 0;
     private int hotbarSwitchCooldown = 0;
     private static final int HOTBAR_SWITCH_INTERVAL = 80; // 4 秒切一次
-    // Boss 主動發砲齊射技能：1 秒 telegraph + 同步所有 boss 砲對玩家蓄力齊射
-    private int turretVolleyCooldown = 80; // 開戰初始 4 秒緩衝再開始算
-    private int turretVolleyTelegraph = 0;
-    private static final int TURRET_VOLLEY_INTERVAL = 200; // 10 秒一次齊射
-    private static final int TURRET_VOLLEY_TELEGRAPH = 20; // 1 秒前搖
-    private static final double TURRET_VOLLEY_RANGE_SQ = 32 * 32;
 
     private final ServerBossEvent bossEvent = new ServerBossEvent(
             this.getDisplayName(), BossEvent.BossBarColor.WHITE, BossEvent.BossBarOverlay.PROGRESS);
@@ -299,106 +283,13 @@ public class PlayerCloneEntity extends Monster {
         return super.isInvulnerableTo(source);
     }
 
+    /** 鏡像來源玩家：裝備/背包/浮游砲。實作在 PlayerCloneMirrorManager（VoidMirrorTeleport 呼叫此公開入口）。 */
     public void mirrorFrom(Player player) {
-        setSourceUUID(player.getUUID());
-        setSourceName(player.getGameProfile().getName());
-
-        // 收集玩家「擁有的全部物品」：穿戴 + 主副手 + 背包 + 額外裝備槽，再遞迴展開容器內容
-        // （界伏盒/潛影盒/收納袋/巢狀），杜絕把裝備藏進盒子讓 boss 鏡像不到的逃課
-        List<ItemStack> pool = new ArrayList<>();
-        for (EquipmentSlot slot : EquipmentSlot.values()) pool.add(player.getItemBySlot(slot));
-        pool.addAll(player.getInventory().items);
-        NonNullList<ItemStack> extra = player.getData(ModDataAttachments.EXTRA_EQUIPMENT.get());
-        pool.addAll(extra);
-        // 9 格儲存欄位（NINE_GRID 飾品背包）— 玩家會把武器藏這裡逃 boss 鏡像
-        NonNullList<ItemStack> nineGrid = player.getData(ModDataAttachments.NINE_GRID.get());
-        pool.addAll(nineGrid);
-        List<ItemStack> contained = new ArrayList<>();
-        for (ItemStack s : pool) collectContained(s, contained, 0);
-        pool.addAll(contained);
-
-        // 裝備：每個防具槽鏡像「擁有的最強」（藏在盒子裡的也算進來），進場爆炸那刻才顯現
-        for (EquipmentSlot slot : EquipmentSlot.values()) {
-            if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
-                ItemStack best = ItemStack.EMPTY;
-                double bestScore = -1;
-                for (ItemStack s : pool) {
-                    double sc = armorScore(s, slot);
-                    if (sc > bestScore) { bestScore = sc; best = s; }
-                }
-                pendingEquipment.put(slot, best.copy());
-            } else {
-                // 主/副手先放玩家當下手持（供下方手持砲判定），武器最強由 equipBestWeapon 補
-                pendingEquipment.put(slot, player.getItemBySlot(slot).copy());
-            }
-            this.setDropChance(slot, 0.0F);
-        }
-
-        // clonedInventory：把擁有的物品填進去（供疊牆 AI 取方塊、equipBestWeapon 選到盒裡的武器）
-        // 重要物品（浮游砲/武器/盾）先排前面，避免主背包滿 36 格垃圾把 EXTRA_EQUIPMENT / 盒子內武器擠掉
-        // 之前 bug：玩家把好武器藏進 EXTRA_EQUIPMENT 而主背包塞滿雜物 → boss 永遠選不到那把武器
-        java.util.List<ItemStack> prioritized = new ArrayList<>(pool.size());
-        for (ItemStack s : pool) if (!s.isEmpty() && s.getItem() instanceof FloatingTurretItem) prioritized.add(s);
-        for (ItemStack s : pool) if (!s.isEmpty() && isProperWeapon(s)) prioritized.add(s);
-        for (ItemStack s : pool) if (!s.isEmpty() && s.getItem() instanceof ShieldItem) prioritized.add(s);
-        // 其餘物品（包含工具、方塊等）尾隨在後
-        for (ItemStack s : pool) {
-            if (s.isEmpty()) continue;
-            if (s.getItem() instanceof FloatingTurretItem) continue;
-            if (isProperWeapon(s)) continue;
-            if (s.getItem() instanceof ShieldItem) continue;
-            prioritized.add(s);
-        }
-        int idx = 0;
-        for (ItemStack s : prioritized) {
-            if (idx >= clonedInventory.size()) break;
-            clonedInventory.set(idx++, s.copy());
-        }
-        while (idx < clonedInventory.size()) clonedInventory.set(idx++, ItemStack.EMPTY);
-
-        // 鏡像浮游砲：mirroredHandTurrets[main, off]，mirroredTurrets 對應 player 的兩個 EXTRA_EQUIPMENT 槽
-        mirroredTurrets.clear();
-        mirroredHandTurrets.clear();
-        ItemStack mainHand = player.getMainHandItem();
-        ItemStack offHand = player.getOffhandItem();
-        mirroredHandTurrets.add(mainHand.getItem() instanceof FloatingTurretItem ? filterMirroredTurret(mainHand) : ItemStack.EMPTY);
-        mirroredHandTurrets.add(offHand.getItem() instanceof FloatingTurretItem ? filterMirroredTurret(offHand) : ItemStack.EMPTY);
-        // 繞行砲：優先從 EXTRA_EQUIPMENT 的 2 個槽鏡像
-        for (int i = 0; i < extra.size() && mirroredTurrets.size() < 2; i++) {
-            ItemStack s = extra.get(i);
-            if (s.isEmpty()) continue;
-            if (s.getItem() instanceof FloatingTurretItem) {
-                mirroredTurrets.add(filterMirroredTurret(s));
-            }
-        }
-        // 補位：玩家把浮游砲藏在背包/盒子也要鏡像（避免「不裝就規避」），從 pool 補到 2 個
-        // 跳過已經安排在主/副手/extra 那些浮游砲，避免重複鏡像
-        java.util.Set<ItemStack> alreadyMirrored = new java.util.HashSet<>();
-        if (mainHand.getItem() instanceof FloatingTurretItem) alreadyMirrored.add(mainHand);
-        if (offHand.getItem() instanceof FloatingTurretItem) alreadyMirrored.add(offHand);
-        for (ItemStack s : extra) if (s.getItem() instanceof FloatingTurretItem) alreadyMirrored.add(s);
-        for (ItemStack s : pool) {
-            if (mirroredTurrets.size() >= 2) break;
-            if (s.isEmpty() || alreadyMirrored.contains(s)) continue;
-            if (s.getItem() instanceof FloatingTurretItem) {
-                mirroredTurrets.add(filterMirroredTurret(s));
-            }
-        }
-
-        // 鏡像玩家快捷欄（前 9 格）供戰鬥中切換
-        for (int i = 0; i < 9; i++) {
-            ItemStack hot = i < player.getInventory().items.size() ? player.getInventory().items.get(i) : ItemStack.EMPTY;
-            bossHotbar.set(i, hot.copy());
-        }
-
-        this.setHealth(this.getMaxHealth());
-        updateBossBarName();
-        // 進場過場期間先不發光（保留神秘感），由 customServerAiStep 在「正常戰鬥」狀態才開
-        this.setGlowingTag(false);
+        mirror.mirrorFrom(player);
     }
 
     // 血條標題：「鏡中的自己 - PlayerName [二階段/三階段]」
-    private void updateBossBarName() {
+    void updateBossBarName() { // package-private：PlayerCloneMirrorManager.mirrorFrom 也會呼叫
         String srcName = getSourceName();
         if (srcName == null || srcName.isEmpty()) srcName = "???";
         Component base = Component.translatable("entity.koniava.player_clone.bossbar", srcName);
@@ -409,53 +300,6 @@ public class PlayerCloneEntity extends Monster {
                     : null;
         this.bossEvent.setName(phaseSuffix == null ? base
                 : base.copy().append(Component.literal(" ")).append(phaseSuffix));
-    }
-
-    // Boss 主動發砲齊射：每 10 秒一次，前 1 秒在每門砲上噴 END_ROD 粒子當預兆，然後同時對玩家蓄力齊射
-    private void tickTurretVolley() {
-        if (!com.github.nalamodikk.common.config.ModCommonConfig.INSTANCE.bossTurretVolleyEnabled.get()) return;
-        if (turretVolleyTelegraph > 0) {
-            turretVolleyTelegraph--;
-            if (level() instanceof ServerLevel sl) {
-                for (FloatingTurretEntity t : findOwnedTurrets(sl)) {
-                    sl.sendParticles(ParticleTypes.END_ROD,
-                            t.getX(), t.getY(), t.getZ(), 2, 0.1, 0.1, 0.1, 0.02);
-                }
-            }
-            if (turretVolleyTelegraph == 0) executeTurretVolley();
-            return;
-        }
-        if (turretVolleyCooldown > 0) { turretVolleyCooldown--; return; }
-        LivingEntity tgt = getTarget();
-        if (tgt == null || !tgt.isAlive()) return;
-        if (this.distanceToSqr(tgt) > TURRET_VOLLEY_RANGE_SQ) return;
-        // 啟動前搖：播一個低沉蓄力音效讓玩家有反應時間
-        turretVolleyTelegraph = TURRET_VOLLEY_TELEGRAPH;
-        if (level() instanceof ServerLevel sl) {
-            sl.playSound(null, blockPosition(), SoundEvents.BEACON_ACTIVATE, SoundSource.HOSTILE, 1.0F, 1.4F);
-        }
-    }
-
-    private void executeTurretVolley() {
-        turretVolleyCooldown = TURRET_VOLLEY_INTERVAL;
-        LivingEntity tgt = getTarget();
-        if (tgt == null || !tgt.isAlive()) return;
-        if (!(level() instanceof ServerLevel sl)) return;
-        Vec3 targetPos = tgt.getBoundingBox().getCenter();
-        for (FloatingTurretEntity t : findOwnedTurrets(sl)) {
-            com.github.nalamodikk.common.entity.FloatingTurretProjectile proj =
-                    com.github.nalamodikk.common.entity.FloatingTurretProjectile.shootAt(
-                            sl, this, t.position(), targetPos, 1.0F); // charged
-            proj.setNoBlockDamage(true);
-            sl.addFreshEntity(proj);
-        }
-        sl.playSound(null, blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.HOSTILE, 0.8F, 1.6F);
-    }
-
-    private java.util.List<FloatingTurretEntity> findOwnedTurrets(ServerLevel sl) {
-        return sl.getEntitiesOfClass(FloatingTurretEntity.class,
-                getBoundingBox().inflate(32.0),
-                t -> t.getCloneOwner() == this);
     }
 
     // 戰鬥中切換主手：每 HOTBAR_SWITCH_INTERVAL tick 切到下一個有東西的快捷欄槽
@@ -478,64 +322,6 @@ public class PlayerCloneEntity extends Monster {
             hotbarIdx = next;
             return;
         }
-    }
-
-    private static final int CONTAINER_DEPTH_CAP = 4;
-
-    // 遞迴展開容器物品內容：界伏盒/潛影盒等（CONTAINER component）+ 收納袋（BUNDLE_CONTENTS）
-    private static void collectContained(ItemStack stack, List<ItemStack> out, int depth) {
-        if (stack.isEmpty() || depth >= CONTAINER_DEPTH_CAP) return;
-        ItemContainerContents container = stack.get(DataComponents.CONTAINER);
-        if (container != null) {
-            for (ItemStack inner : container.nonEmptyItems()) {
-                out.add(inner);
-                collectContained(inner, out, depth + 1);
-            }
-        }
-        BundleContents bundle = stack.get(DataComponents.BUNDLE_CONTENTS);
-        if (bundle != null) {
-            bundle.itemCopyStream().forEach(inner -> {
-                out.add(inner);
-                collectContained(inner, out, depth + 1);
-            });
-        }
-    }
-
-    // 該物品作為指定防具槽的防護評分（ARMOR + ARMOR_TOUGHNESS），非該槽可穿戴回 -1
-    private static double armorScore(ItemStack stack, EquipmentSlot slot) {
-        if (stack.isEmpty()) return -1;
-        Equipable eq = Equipable.get(stack);
-        if (eq == null || eq.getEquipmentSlot() != slot) return -1;
-        double v = 0;
-        for (var e : stack.getAttributeModifiers().modifiers()) {
-            if (!e.slot().test(slot)) continue;
-            if (e.attribute().equals(Attributes.ARMOR) || e.attribute().equals(Attributes.ARMOR_TOUGHNESS)) {
-                v += e.modifier().amount();
-            }
-        }
-        return v;
-    }
-
-    private void addMirroredTurret(ItemStack stack) {
-        if (mirroredTurrets.size() >= 2) return;
-        if (stack.isEmpty() || !(stack.getItem() instanceof FloatingTurretItem)) return;
-        mirroredTurrets.add(filterMirroredTurret(stack));
-    }
-
-    // 不鏡射治療升級（避免分身自我回血變消耗戰）；其餘升級保留
-    private static ItemStack filterMirroredTurret(ItemStack original) {
-        ItemStack copy = original.copy();
-        EquipmentUpgradeData data = FloatingTurretItem.getData(copy);
-        if (data.upgrades().isEmpty()) return copy;
-        EquipmentUpgradeData filtered = data;
-        for (var e : new HashMap<>(data.upgrades()).entrySet()) {
-            if (e.getValue().getItem() instanceof TurretUpgradeItem tu
-                    && tu.getBehavior() == TurretUpgradeBehavior.HEALING) {
-                filtered = filtered.withUpgrade(e.getKey(), ItemStack.EMPTY);
-            }
-        }
-        FloatingTurretItem.setData(copy, filtered);
-        return copy;
     }
 
     public NonNullList<ItemStack> getClonedInventory() {
@@ -633,36 +419,9 @@ public class PlayerCloneEntity extends Monster {
         // 繞行砲由 customServerAiStep 的 turretsSpawned 守門生成（涵蓋啟動 + 重載後重生）
     }
 
-    private void spawnMirroredTurrets() {
-        if (!(level() instanceof ServerLevel sl)) return;
-        // 自走砲：slotIndex 0/1（繞行）
-        for (int i = 0; i < mirroredTurrets.size(); i++) {
-            spawnCloneTurret(sl, mirroredTurrets.get(i), i);
-        }
-        // 手持砲：mirroredHandTurrets 永遠 [main, off]（可為 EMPTY），slotIndex 2=主手、3=副手
-        for (int i = 0; i < mirroredHandTurrets.size(); i++) {
-            ItemStack hs = mirroredHandTurrets.get(i);
-            if (hs.isEmpty()) continue;
-            spawnCloneTurret(sl, hs, i + 2);
-        }
-    }
-
-    // 依目前裝備的主/副手浮游砲重建 mirroredHandTurrets（永遠 2 槽 [main, off]，可 EMPTY）
-    // revealEquipment 後呼叫，讓 equipBestOffhand 從背包挑的浮游砲也能變成實體會射擊
+    /** intro.tick 的 REVEAL 階段呼叫：依當下裝備重建手持砲清單。實作在 PlayerCloneMirrorManager。 */
     void rebuildHandTurretsFromEquipped() {
-        mirroredHandTurrets.clear();
-        ItemStack main = this.getMainHandItem();
-        ItemStack off = this.getOffhandItem();
-        mirroredHandTurrets.add(main.getItem() instanceof FloatingTurretItem ? filterMirroredTurret(main) : ItemStack.EMPTY);
-        mirroredHandTurrets.add(off.getItem() instanceof FloatingTurretItem ? filterMirroredTurret(off) : ItemStack.EMPTY);
-    }
-
-    private void spawnCloneTurret(ServerLevel sl, ItemStack stack, int slotIndex) {
-        FloatingTurretEntity turret = ModEntities.FLOATING_TURRET.get().create(sl);
-        if (turret == null) return;
-        turret.moveTo(getX(), getY() + 1.0, getZ(), 0f, 0f);
-        turret.setupAsCloneTurret(this, stack, slotIndex);
-        sl.addFreshEntity(turret);
+        mirror.rebuildHandTurretsFromEquipped();
     }
 
     @Override
@@ -884,13 +643,13 @@ public class PlayerCloneEntity extends Monster {
 
         // 啟動後（或重載後）生成繞行砲，只做一次
         if (!turretsSpawned) {
-            spawnMirroredTurrets();
+            mirror.spawnMirroredTurrets();
             turretsSpawned = true;
         }
 
         // BGM 觸發已移到上方 graceTicks 之前（避免 2 秒延遲），這裡留空
 
-        updatePhase();
+        phaseAI.updatePhase();
 
         // 半血變身：召喚方塊機甲包住本體（只觸發一次）
         if (!armorTriggered && getHealth() <= getMaxHealth() * 0.5F
@@ -927,7 +686,7 @@ public class PlayerCloneEntity extends Monster {
 
         skills.tickAntiPillar(); // 全階段防墊高，開場就不給 cheese
         tickHotbarSwitch(); // 模擬玩家：戰鬥中定時切換主手快捷欄武器，讓 boss 戰鬥節奏有變化
-        tickTurretVolley(); // 主動齊射：boss 親自下令所有浮游砲蓄力齊射玩家（10 秒一次）
+        mirror.tickTurretVolley(); // 主動齊射：boss 親自下令所有浮游砲蓄力齊射玩家（10 秒一次）
         skills.tickDive(); // 玩家躲高處 / 太遠 → boss 跳起來俯衝重接戰
         if (skills.isDiving()) return; // 俯衝期間不跑其他 AI（不然會卡技能或停下來）
         skills.tickPillarSkill(); // 招牌技能：墊方塊衝撞擊飛（全階段）
@@ -937,11 +696,11 @@ public class PlayerCloneEntity extends Monster {
         skills.tickPendingLaunch(); // RAM_WALL 橫向擊退後的第二段上彈
         skills.tickSkillBlockClear(); // 擊飛後依序打掉技能墊的方塊
         ensureCompanions(); // 確保同源娜拉幻影 + 返回裂縫各恰好一個（重載/死亡重進入後重建、去重）
-        if (phase == Phase.WALLING) {
-            tickWallBuilding();
+        if (phaseAI.isWalling()) {
+            phaseAI.tickWallBuilding();
             skills.tickBreakSurroundings();
-        } else if (phase == Phase.BERSERK) {
-            tickManaDrain();
+        } else if (phaseAI.isBerserk()) {
+            phaseAI.tickManaDrain();
             skills.tickBreakSurroundings();
         }
     }
@@ -1151,55 +910,7 @@ public class PlayerCloneEntity extends Monster {
         }
     }
 
-    private void updatePhase() {
-        float r = this.getHealth() / this.getMaxHealth();
-        Phase next = r > 0.6F ? Phase.NORMAL : (r > 0.3F ? Phase.WALLING : Phase.BERSERK);
-        if (next != phase) {
-            phase = next;
-            if (next == Phase.BERSERK) onEnterBerserk();
-        }
-    }
-
-    private void onEnterBerserk() {
-        // 全力進攻：拆掉自己建的所有牆，並加速
-        removeAllWalls();
-        AttributeInstance speed = this.getAttribute(Attributes.MOVEMENT_SPEED);
-        if (speed != null && !speed.hasModifier(BERSERK_SPEED_ID)) {
-            speed.addPermanentModifier(BERSERK_SPEED);
-        }
-    }
-
-    private void tickWallBuilding() {
-        if (wallCooldown > 0) { wallCooldown--; return; }
-        if (!(level() instanceof ServerLevel sl)) return;
-        if (placedWalls.size() >= WALL_CAP) return;
-        LivingEntity target = getTarget();
-        if (!(target instanceof Player)) return;
-        if (this.distanceToSqr(target) > 64.0) return; // 8 格內才封路
-
-        Vec3 toTarget = target.position().subtract(this.position());
-        Direction dir = Direction.getNearest(toTarget.x, 0.0, toTarget.z);
-        // 封住玩家遠離分身那一側的退路
-        BlockPos base = target.blockPosition().relative(dir);
-
-        BlockState wall = takeWallBlock();
-        boolean placed = false;
-        for (int dy = 0; dy <= 1; dy++) {
-            BlockPos p = base.above(dy);
-            if (!sl.getWorldBorder().isWithinBounds(p)) continue;
-            if (!sl.getBlockState(p).canBeReplaced()) continue;
-            sl.setBlockAndUpdate(p, wall);
-            placedWalls.add(p.asLong());
-            VoidMirrorEvents.addModifiedBlock(p.asLong());
-            placed = true;
-        }
-        if (placed) {
-            sl.playSound(null, base, SoundEvents.STONE_PLACE, SoundSource.HOSTILE, 0.6F, 1.0F);
-        }
-        wallCooldown = WALL_INTERVAL;
-    }
-
-    BlockState takeWallBlock() { // package-private：PlayerCloneCombatSkills.executeSkill 借此取外殼/牆材
+    BlockState takeWallBlock() { // package-private：PlayerClonePhaseAI 築牆 / tickAirChase 墊柱 / PlayerCloneCombatSkills.executeSkill 借此取外殼/牆材
         for (ItemStack st : clonedInventory) {
             if (!st.isEmpty() && st.getItem() instanceof BlockItem bi) {
                 st.shrink(1);
@@ -1207,41 +918,6 @@ public class PlayerCloneEntity extends Monster {
             }
         }
         return Blocks.STONE.defaultBlockState();
-    }
-
-    private void removeAllWalls() {
-        if (!(level() instanceof ServerLevel sl)) return;
-        for (long l : placedWalls) {
-            BlockPos p = BlockPos.of(l);
-            if (sl.isLoaded(p)) {
-                sl.setBlockAndUpdate(p, Blocks.AIR.defaultBlockState());
-            }
-        }
-        placedWalls.clear();
-    }
-
-    private void tickManaDrain() {
-        if (drainCooldown > 0) { drainCooldown--; return; }
-        drainCooldown = DRAIN_INTERVAL;
-        if (!(level() instanceof ServerLevel sl)) return;
-        LivingEntity target = getTarget();
-        if (!(target instanceof Player player)) return;
-        if (this.distanceToSqr(target) > 256.0) return; // 16 格內
-
-        boolean drained = false;
-        for (EquipmentSlot slot : EquipmentSlot.values()) {
-            ItemStack st = player.getItemBySlot(slot);
-            int mana = st.getOrDefault(ModDataComponents.MANA_STORED, 0);
-            if (mana > 0) {
-                st.set(ModDataComponents.MANA_STORED, Math.max(0, mana - DRAIN_AMOUNT));
-                drained = true;
-            }
-        }
-        if (drained) {
-            sl.sendParticles(ParticleTypes.SCULK_SOUL,
-                    player.getX(), player.getY() + 1.0, player.getZ(),
-                    8, 0.3, 0.5, 0.3, 0.02);
-        }
     }
 
     @Override
@@ -1292,7 +968,7 @@ public class PlayerCloneEntity extends Monster {
         CompoundTag invTag = new CompoundTag();
         ContainerHelper.saveAllItems(invTag, clonedInventory, this.registryAccess());
         tag.put("ClonedInventory", invTag);
-        tag.putInt("Phase", phase.ordinal());
+        tag.putInt("Phase", phaseAI.phaseOrdinal());
         tag.putBoolean("ArmorTriggered", armorTriggered); // 重載後不重複觸發變身
         tag.putBoolean("Armored", isArmored());           // 仍在外殼狀態 → 重載時重建外殼接續二階段
         tag.putFloat("ArmorHp", armorHp);
@@ -1302,12 +978,12 @@ public class PlayerCloneEntity extends Monster {
         for (long l : placedWalls) walls[wi++] = l;
         tag.putLongArray("PlacedWalls", walls);
         ListTag turretList = new ListTag();
-        for (ItemStack s : mirroredTurrets) {
+        for (ItemStack s : mirror.mirroredTurrets) {
             if (!s.isEmpty()) turretList.add(s.save(this.registryAccess()));
         }
         tag.put("MirroredTurrets", turretList);
         ListTag handList = new ListTag();
-        for (ItemStack s : mirroredHandTurrets) {
+        for (ItemStack s : mirror.mirroredHandTurrets) {
             if (!s.isEmpty()) handList.add(s.save(this.registryAccess()));
         }
         tag.put("MirroredHandTurrets", handList);
@@ -1329,9 +1005,7 @@ public class PlayerCloneEntity extends Monster {
             ContainerHelper.loadAllItems(tag.getCompound("ClonedInventory"), clonedInventory, this.registryAccess());
         }
         if (tag.contains("Phase")) {
-            Phase[] values = Phase.values();
-            int ord = tag.getInt("Phase");
-            phase = ord >= 0 && ord < values.length ? values[ord] : Phase.NORMAL;
+            phaseAI.loadPhaseOrdinal(tag.getInt("Phase"));
         }
         armorTriggered = tag.getBoolean("ArmorTriggered");
         armorWasBroken = tag.getBoolean("ArmorWasBroken");
@@ -1344,17 +1018,17 @@ public class PlayerCloneEntity extends Monster {
         }
         placedWalls.clear();
         for (long l : tag.getLongArray("PlacedWalls")) placedWalls.add(l);
-        mirroredTurrets.clear();
+        mirror.mirroredTurrets.clear();
         ListTag turretList = tag.getList("MirroredTurrets", Tag.TAG_COMPOUND);
         for (int i = 0; i < turretList.size(); i++) {
             ItemStack.parse(this.registryAccess(), turretList.getCompound(i))
-                    .ifPresent(s -> { if (!s.isEmpty()) mirroredTurrets.add(s); });
+                    .ifPresent(s -> { if (!s.isEmpty()) mirror.mirroredTurrets.add(s); });
         }
-        mirroredHandTurrets.clear();
+        mirror.mirroredHandTurrets.clear();
         ListTag handList = tag.getList("MirroredHandTurrets", Tag.TAG_COMPOUND);
         for (int i = 0; i < handList.size(); i++) {
             ItemStack.parse(this.registryAccess(), handList.getCompound(i))
-                    .ifPresent(s -> { if (!s.isEmpty()) mirroredHandTurrets.add(s); });
+                    .ifPresent(s -> { if (!s.isEmpty()) mirror.mirroredHandTurrets.add(s); });
         }
     }
 }
