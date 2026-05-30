@@ -94,13 +94,22 @@ public class TrainingDummyEntity extends Mob {
         return false;
     }
 
-    // 每次受傷取消無敵冷卻，讓連打（含浮游砲連發）每一下都算進 DPS
+    // 無視環境傷害（岩漿 / 火 / 仙人掌 / 掉落 / 溺水等）：這些來源沒有攻擊者（getEntity()==null）。
+    // 只對有攻擊者的傷害（玩家近戰 / 投射物 / 浮游砲）反應，純粹用來測傷害。
+    // 每次受傷取消無敵冷卻，讓連打（含浮游砲連發）每一下都算進 DPS。
     @Override
     public boolean hurt(DamageSource source, float amount) {
+        if (source.getEntity() == null) return false;
         this.invulnerableTime = 0;
         boolean result = super.hurt(source, amount);
         this.setHealth(this.getMaxHealth()); // 永遠回滿，不會死
         return result;
+    }
+
+    // 不在岩漿 / 火裡冒火燃燒
+    @Override
+    public boolean fireImmune() {
+        return true;
     }
 
     /** 由傷害事件 handler 用最終傷害值呼叫，累積 session 並把更新推給該玩家。 */
@@ -132,6 +141,21 @@ public class TrainingDummyEntity extends Mob {
                 it.remove();
             }
         }
+    }
+
+    // 實體被移除（拿起 / 死亡 / 卸載）時，把所有進行中的 session 收尾，
+    // 否則 client HUD 收不到結束封包，計時器會一直跑。
+    @Override
+    public void remove(RemovalReason reason) {
+        if (level() instanceof ServerLevel serverLevel && !sessions.isEmpty()) {
+            for (Map.Entry<UUID, Session> entry : sessions.entrySet()) {
+                if (serverLevel.getPlayerByUUID(entry.getKey()) instanceof ServerPlayer p) {
+                    sendStats(p, entry.getValue(), true);
+                }
+            }
+            sessions.clear();
+        }
+        super.remove(reason);
     }
 
     private void sendStats(ServerPlayer player, Session s, boolean ended) {
