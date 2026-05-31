@@ -140,11 +140,11 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
     }
 
     private void renderRoleCells(GuiGraphics g, int mouseX, int mouseY) {
-        renderAspectCell(g, carrier, leftPos + CARRIER_X, topPos + CARRIER_Y, CELL, mouseX, mouseY, true);
+        renderAspectCell(g, carrier, leftPos + CARRIER_X, topPos + CARRIER_Y, CELL, mouseX, mouseY, true, 0);
         for (int i = 0; i < effects.length; i++)
-            renderAspectCell(g, effects[i], leftPos + EFFECT_X + i * CELL, topPos + EFFECT_Y, CELL, mouseX, mouseY, true);
+            renderAspectCell(g, effects[i], leftPos + EFFECT_X + i * CELL, topPos + EFFECT_Y, CELL, mouseX, mouseY, true, 0);
         for (int i = 0; i < modifiers.length; i++)
-            renderAspectCell(g, modifiers[i], leftPos + MODIFIER_X + i * CELL, topPos + MODIFIER_Y, CELL, mouseX, mouseY, true);
+            renderAspectCell(g, modifiers[i], leftPos + MODIFIER_X + i * CELL, topPos + MODIFIER_Y, CELL, mouseX, mouseY, true, 0);
     }
 
     private void renderTargetSlots(GuiGraphics g, int mouseX, int mouseY) {
@@ -167,7 +167,9 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
             int x = leftPos + PALETTE_X + (i % PALETTE_COLS) * PALETTE_STEP;
             int y = topPos + PALETTE_Y + (i / PALETTE_COLS) * PALETTE_STEP;
             // palette sits over the texture's slot wells: don't draw our own well
-            renderAspectCell(g, aspects.get(i), x, y, 16, mouseX, mouseY, false);
+            Aspect a = aspects.get(i);
+            renderAspectCell(g, a, x, y, 16, mouseX, mouseY, false,
+                    ClientResearchCache.getAspectCount(a.getId()));
         }
         int pages = pageCount();
         if (pages > 1) {
@@ -179,7 +181,7 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
     }
 
     private void renderAspectCell(GuiGraphics g, @Nullable Aspect aspect, int x, int y, int size,
-                                  int mouseX, int mouseY, boolean drawWell) {
+                                  int mouseX, int mouseY, boolean drawWell, int count) {
         boolean hovered = mouseX >= x && mouseX < x + size && mouseY >= y && mouseY < y + size;
         if (drawWell) {
             g.fill(x - 1, y - 1, x + size + 1, y + size + 1, 0xFF1B1B1B);
@@ -192,11 +194,28 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
             RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
             String label = aspect.getId().getPath().substring(0, 1).toUpperCase();
             g.drawString(font, label, x + size / 3, y + size / 3, 0xFFFFFF, true);
+            if (count > 0) drawCount(g, x, y, size, count);
         }
         if (aspect != null && aspect == selected) {
             g.renderOutline(x - 1, y - 1, size + 2, size + 2, 0xFFEE7722);
         }
         if (hovered) g.fill(x, y, x + size, y + size, 0x44FFFFFF);
+    }
+
+    /** Owned-amount badge in the bottom-right corner, scaled down like the synthesis bench. */
+    private void drawCount(GuiGraphics g, int x, int y, int size, int count) {
+        String text = Integer.toString(count);
+        float scale = 0.5F;
+        int textW = Math.max(1, (int) Math.ceil(font.width(text) * scale));
+        int textH = Math.max(1, (int) Math.ceil(8 * scale));
+        int cx = x + size - textW - 1;
+        int cy = y + size - textH - 1;
+        g.fill(cx - 1, cy - 1, cx + textW + 1, cy + textH + 1, 0x66000000);
+        g.pose().pushPose();
+        g.pose().translate(cx, cy, 0.0F);
+        g.pose().scale(scale, scale, 1.0F);
+        g.drawString(font, text, 0, 0, 0xFFFFFF, false);
+        g.pose().popPose();
     }
 
     private void renderTooltips(GuiGraphics g, int mouseX, int mouseY) {
