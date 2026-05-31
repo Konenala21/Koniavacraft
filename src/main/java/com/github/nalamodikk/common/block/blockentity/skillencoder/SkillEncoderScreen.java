@@ -22,6 +22,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -319,6 +320,18 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
     }
 
     // ── input ─────────────────────────────────────────────────────────────────
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        // While typing in a field, swallow keys (except ESC) so the inventory key
+        // ('E' etc.) does not close the screen mid-word.
+        if (keyCode != GLFW.GLFW_KEY_ESCAPE
+                && (nameField.isFocused() || searchField.isFocused())) {
+            if (getFocused() != null) getFocused().keyPressed(keyCode, scanCode, modifiers);
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
 
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
