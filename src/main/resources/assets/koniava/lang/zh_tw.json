@@ -291,6 +291,8 @@
   "block.koniava.skill_encoder": "技能核心編碼台",
   "gui.koniava.skill_encoder.name": "技能名稱",
   "gui.koniava.skill_encoder.search": "搜尋",
+  "gui.koniava.skill_encoder.icon": "圖標",
+  "gui.koniava.skill_encoder.icon_hint": "圖標：手持物品點一下設成此技能圖標，空手點一下清除（清除後依本源自動生成）。",
   "gui.koniava.skill_encoder.encode": "編碼",
   "gui.koniava.skill_encoder.carrier": "載體",
   "gui.koniava.skill_encoder.effects": "效果",

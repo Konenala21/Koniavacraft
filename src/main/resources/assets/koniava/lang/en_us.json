@@ -264,6 +264,8 @@
   "block.koniava.skill_encoder": "Skill Core Encoding Bench",
   "gui.koniava.skill_encoder.name": "Skill name",
   "gui.koniava.skill_encoder.search": "Search",
+  "gui.koniava.skill_encoder.icon": "Icon",
+  "gui.koniava.skill_encoder.icon_hint": "Icon: click with an item to set it as this skill's icon, or click empty-handed to clear (auto-generated from aspects).",
   "gui.koniava.skill_encoder.encode": "Encode",
   "gui.koniava.skill_encoder.carrier": "Carrier",
   "gui.koniava.skill_encoder.effects": "Effects",

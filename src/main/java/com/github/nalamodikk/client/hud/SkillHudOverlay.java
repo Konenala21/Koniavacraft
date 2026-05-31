@@ -58,6 +58,8 @@ public final class SkillHudOverlay {
                 ? Component.translatable("gui.koniava.skill_encoder.unnamed").getString()
                 : skill.name();
 
+        int nameW = mc.font.width(name);
+        SkillIcon.render(g, mc.font, skill, cx - nameW / 2 - 20, baseY - 4, 16);
         drawCentered(g, mc, Component.literal(name), cx, baseY, ACCENT);
         drawCentered(g, mc, Component.translatable("hud.koniava.skill.info", idx + 1, skills.size(), mana),
                 cx, baseY + 10, 0xFFCCCCCC);

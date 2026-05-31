@@ -1,6 +1,7 @@
 package com.github.nalamodikk.common.block.blockentity.skillencoder;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.client.hud.SkillIcon;
 import com.github.nalamodikk.common.network.packet.server.skill.EncodeSkillPacket;
 import com.github.nalamodikk.research.aspect.Aspect;
 import com.github.nalamodikk.research.aspect.ModAspects;
@@ -14,15 +15,18 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * The Skill Core Encoding Bench screen. Mirrors the Aspect Synthesis bench's
@@ -52,6 +56,7 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
     private static final int EFFECT_X = 64, EFFECT_Y = 58;
     private static final int MODIFIER_X = 64, MODIFIER_Y = 78;
     private static final int SLOT_ROW_X = 64, SLOT_ROW_Y = 98, SLOT_CELL = 16;
+    private static final int ICON_X = 164, ICON_Y = 14, ICON_SIZE = 18;
     private static final int PALETTE_X = 50, PALETTE_Y = 122;
     // core slot icon lives in the texture's scrap area (right of the visible GUI)
     private static final int CORE_ICON_U = 235, CORE_ICON_V = 8, CORE_ICON_SRC = 17;
@@ -62,6 +67,7 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
     private final Aspect[] modifiers = new Aspect[2];
     @Nullable private Aspect carrier;
     @Nullable private Aspect selected;
+    @Nullable private Item iconItem;     // custom HUD icon; null = auto-generated
     private int targetSlot;
     private int palettePage;
 
@@ -122,6 +128,7 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
             effects[i] = ModAspects.get(s.effects().get(i));
         for (int i = 0; i < modifiers.length && i < s.modifiers().size(); i++)
             modifiers[i] = ModAspects.get(s.modifiers().get(i));
+        iconItem = SkillIcon.customItem(s);
         if (nameField != null) nameField.setValue(s.name());
     }
 
@@ -129,6 +136,7 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
         carrier = null;
         Arrays.fill(effects, null);
         Arrays.fill(modifiers, null);
+        iconItem = null;
         if (nameField != null) nameField.setValue("");
     }
 
@@ -142,7 +150,9 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
             status(Component.translatable("message.koniava.encode.incomplete"));
             return;
         }
-        EncodeSkillPacket.send(nameField.getValue(), carrier.getId(), eff, mod, targetSlot);
+        Optional<ResourceLocation> icon = iconItem == null
+                ? Optional.empty() : Optional.of(BuiltInRegistries.ITEM.getKey(iconItem));
+        EncodeSkillPacket.send(nameField.getValue(), carrier.getId(), eff, mod, icon, targetSlot);
     }
 
     private void status(Component message) {
@@ -187,6 +197,23 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
 
         renderRoleCells(g, mouseX, mouseY);
         renderTargetSlots(g, mouseX, mouseY);
+        renderIconCell(g, mouseX, mouseY);
+    }
+
+    private void renderIconCell(GuiGraphics g, int mouseX, int mouseY) {
+        int x = leftPos + ICON_X, y = topPos + ICON_Y;
+        g.fill(x - 1, y - 1, x + ICON_SIZE + 1, y + ICON_SIZE + 1, 0xFF1B1B1B);
+        g.fill(x, y, x + ICON_SIZE, y + ICON_SIZE, 0xFF2B2B2B);
+        SkillIcon.render(g, font, iconItem, dominantOfEditor(), x + 1, y + 1, 16);
+        if (mouseX >= x && mouseX < x + ICON_SIZE && mouseY >= y && mouseY < y + ICON_SIZE)
+            g.fill(x, y, x + ICON_SIZE, y + ICON_SIZE, 0x44FFFFFF);
+    }
+
+    /** The aspect that drives the auto-generated icon preview from the editor state. */
+    @Nullable
+    private Aspect dominantOfEditor() {
+        for (Aspect e : effects) if (e != null) return e;
+        return carrier;
     }
 
     @Override
@@ -203,16 +230,20 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
     }
 
     private void renderTargetSlots(GuiGraphics g, int mouseX, int mouseY) {
-        int stored = menu.getCore().isEmpty() ? 0 : SkillEncoding.getSkills(menu.getCore()).size();
+        ItemStack core = menu.getCore();
+        List<StoredSkill> skills = core.isEmpty() ? List.of() : SkillEncoding.getSkills(core);
         for (int i = 0; i < SkillEncoding.MAX_SLOTS; i++) {
             int x = leftPos + SLOT_ROW_X + i * SLOT_CELL;
             int y = topPos + SLOT_ROW_Y;
             int border = i == targetSlot ? 0xFFEE7722 : 0xFF1B1B1B;
             g.fill(x, y, x + SLOT_CELL, y + SLOT_CELL, border);
-            g.fill(x + 1, y + 1, x + SLOT_CELL - 1, y + SLOT_CELL - 1,
-                    i < stored ? 0xFF5A4A2A : 0xFF2B2B2B);
-            String n = Integer.toString(i + 1);
-            g.drawString(font, n, x + (SLOT_CELL - font.width(n)) / 2, y + 4, 0xCFCFCF, false);
+            g.fill(x + 1, y + 1, x + SLOT_CELL - 1, y + SLOT_CELL - 1, 0xFF2B2B2B);
+            if (i < skills.size()) {
+                SkillIcon.render(g, font, skills.get(i), x, y, SLOT_CELL);
+            } else {
+                String n = Integer.toString(i + 1);
+                g.drawString(font, n, x + (SLOT_CELL - font.width(n)) / 2, y + 4, 0xFF888888, false);
+            }
         }
     }
 
@@ -280,6 +311,10 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
             g.renderTooltip(font, a.getName(), mouseX, mouseY);
             return true;
         }
+        if (inCell(mouseX, mouseY, leftPos + ICON_X, topPos + ICON_Y, ICON_SIZE)) {
+            g.renderTooltip(font, Component.translatable("gui.koniava.skill_encoder.icon_hint"), mouseX, mouseY);
+            return true;
+        }
         return false;
     }
 
@@ -287,6 +322,12 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
 
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
+        // icon cell: set to the item on the cursor (not consumed), or clear empty-handed
+        if (inCell((int) mx, (int) my, leftPos + ICON_X, topPos + ICON_Y, ICON_SIZE)) {
+            ItemStack carried = menu.getCarried();
+            iconItem = carried.isEmpty() ? null : carried.getItem();
+            return true;
+        }
         Aspect clickedPalette = paletteAspectAt((int) mx, (int) my);
         if (clickedPalette != null) {
             selected = (selected == clickedPalette) ? null : clickedPalette;

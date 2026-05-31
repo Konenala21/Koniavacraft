@@ -20,6 +20,7 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * C2S: encode a player-authored skill onto the spell core sitting in the open
@@ -28,7 +29,7 @@ import java.util.List;
  */
 public record EncodeSkillPacket(String name, ResourceLocation carrier,
                                 List<ResourceLocation> effects, List<ResourceLocation> modifiers,
-                                int slot) implements CustomPacketPayload {
+                                Optional<ResourceLocation> icon, int slot) implements CustomPacketPayload {
 
     public static final Type<EncodeSkillPacket> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "encode_skill"));
@@ -39,6 +40,7 @@ public record EncodeSkillPacket(String name, ResourceLocation carrier,
                     ResourceLocation.STREAM_CODEC, EncodeSkillPacket::carrier,
                     ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), EncodeSkillPacket::effects,
                     ResourceLocation.STREAM_CODEC.apply(ByteBufCodecs.list()), EncodeSkillPacket::modifiers,
+                    ByteBufCodecs.optional(ResourceLocation.STREAM_CODEC), EncodeSkillPacket::icon,
                     ByteBufCodecs.VAR_INT, EncodeSkillPacket::slot,
                     EncodeSkillPacket::new
             );
@@ -62,7 +64,8 @@ public record EncodeSkillPacket(String name, ResourceLocation carrier,
             String name = packet.name().isBlank()
                     ? Component.translatable("gui.koniava.skill_encoder.unnamed").getString()
                     : packet.name();
-            StoredSkill skill = new StoredSkill(name, packet.carrier(), packet.effects(), packet.modifiers());
+            StoredSkill skill = new StoredSkill(name, packet.carrier(), packet.effects(),
+                    packet.modifiers(), packet.icon());
 
             if (!SkillEncoding.isValidRecipe(skill)) {
                 player.displayClientMessage(
@@ -90,7 +93,8 @@ public record EncodeSkillPacket(String name, ResourceLocation carrier,
     }
 
     public static void send(String name, ResourceLocation carrier,
-                            List<ResourceLocation> effects, List<ResourceLocation> modifiers, int slot) {
-        PacketDistributor.sendToServer(new EncodeSkillPacket(name, carrier, effects, modifiers, slot));
+                            List<ResourceLocation> effects, List<ResourceLocation> modifiers,
+                            Optional<ResourceLocation> icon, int slot) {
+        PacketDistributor.sendToServer(new EncodeSkillPacket(name, carrier, effects, modifiers, icon, slot));
     }
 }
