@@ -23,6 +23,7 @@ import com.github.nalamodikk.common.network.packet.server.boots.BootsUpgradeSwap
 import com.github.nalamodikk.common.network.packet.server.boots.DashPacket;
 import com.github.nalamodikk.common.network.packet.server.wand.WandCoreSwapPacket;
 import com.github.nalamodikk.common.network.packet.server.skill.CastSkillPacket;
+import com.github.nalamodikk.common.network.packet.server.skill.EncodeSkillPacket;
 import com.github.nalamodikk.common.network.packet.server.turret.TurretUpgradeSwapPacket;
 import com.github.nalamodikk.common.network.packet.server.deployer.SetDeployerIntervalPacket;
 import com.github.nalamodikk.common.network.packet.server.deployer.ToggleDeployerEnabledPacket;
@@ -96,6 +97,7 @@ public class ModNetworking {
         TrainingDummyStatsPacket.registerToClient(registrar);
         WandCoreSwapPacket.registerTo(registrar);
         CastSkillPacket.registerTo(registrar);
+        EncodeSkillPacket.registerTo(registrar);
         TurretUpgradeSwapPacket.registerTo(registrar);
         DashPacket.registerTo(registrar);
         BootsUpgradeSwapPacket.registerTo(registrar);

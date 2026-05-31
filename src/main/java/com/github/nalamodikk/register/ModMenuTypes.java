@@ -15,6 +15,8 @@ package com.github.nalamodikk.register;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.block.blockentity.collector.solarmana.SolarManaCollectorBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.collector.solarmana.SolarManaCollectorMenu;
+import com.github.nalamodikk.common.block.blockentity.skillencoder.SkillEncoderBlockEntity;
+import com.github.nalamodikk.common.block.blockentity.skillencoder.SkillEncoderMenu;
 import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitConfigMenu;
 import com.github.nalamodikk.common.block.blockentity.mana_crafting.ManaCraftingMenu;
 import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorBlockEntity;
@@ -107,6 +109,11 @@ public class ModMenuTypes {
                         }
                         return new ManaInfuserMenu(id, inv, infuser);
                     });
+
+    // === 🪄 技能核心編碼台菜單 ===
+    public static final DeferredHolder<MenuType<?>, MenuType<SkillEncoderMenu>> SKILL_ENCODER_MENU =
+            registerMenuType("skill_encoder",
+                    entityMenu(SkillEncoderBlockEntity.class, SkillEncoderMenu::new));
 
     // === ⚙️ 新增：魔力粉碎機菜單 ===
     public static final DeferredHolder<MenuType<?>, MenuType<ManaGrinderMenu>> MANA_GRINDER_MENU =

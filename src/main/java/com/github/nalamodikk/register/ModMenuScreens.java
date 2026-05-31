@@ -11,6 +11,7 @@ import com.github.nalamodikk.common.block.blockentity.mana_charger.ManaChargerSc
 import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderScreen;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserScreen;
 import com.github.nalamodikk.common.block.blockentity.mana_plate_press.ManaPlatePressScreen;
+import com.github.nalamodikk.common.block.blockentity.skillencoder.SkillEncoderScreen;
 import com.github.nalamodikk.common.screen.block.shared.UniversalConfigScreen;
 import com.github.nalamodikk.common.screen.block.shared.UpgradeScreen;
 import com.github.nalamodikk.common.screen.player.ExtraEquipmentScreen;
@@ -36,6 +37,7 @@ public class ModMenuScreens {
         event.register(ModMenuTypes.RESEARCH_TABLE_MENU.get(), ResearchTableScreen::new);
         event.register(ModMenuTypes.MANA_CHARGER_MENU.get(), ManaChargerScreen::new);
         event.register(ModMenuTypes.MANA_PLATE_PRESS_MENU.get(), ManaPlatePressScreen::new);
+        event.register(ModMenuTypes.SKILL_ENCODER_MENU.get(), SkillEncoderScreen::new);
     }
 
 }

@@ -28,6 +28,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
     protected void registerStatesAndModels() {
         blockWithItem(ModBlocks.MANA_CHARGER);
 
+        // 🪄 技能核心編碼台（暫借 mana_block 貼圖當 placeholder，專屬美術之後補）
+        simpleBlockWithItem(ModBlocks.SKILL_ENCODER.get(),
+                models().cubeAll("skill_encoder", modLoc("block/mana_block")));
+
         // 🏗️ 基礎方塊 (六面相同材質)
         blockWithItem(ModBlocks.MANA_BLOCK);
         blockWithItem(ModBlocks.MAGIC_ORE);

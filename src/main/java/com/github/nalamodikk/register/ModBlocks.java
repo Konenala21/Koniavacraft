@@ -16,6 +16,7 @@ import com.github.nalamodikk.common.block.blockentity.altar.AspectPedestalBlock;
 import com.github.nalamodikk.common.block.blockentity.altar.ResonanceRingBlock;
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserBlock;
 import com.github.nalamodikk.common.block.blockentity.mana_plate_press.ManaPlatePressBlock;
+import com.github.nalamodikk.common.block.blockentity.skillencoder.SkillEncoderBlock;
 import com.github.nalamodikk.common.block.blockentity.mana_charger.ManaChargerBlock;
 import com.github.nalamodikk.common.block.normal.DeepManaSoilBlock;
 import com.github.nalamodikk.common.block.normal.ManaBloomBlock;
@@ -158,6 +159,11 @@ public class ModBlocks {
             () -> new ManaPlatePressBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL)
                     .strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().lightLevel(state ->
                             state.getValue(ManaPlatePressBlock.WORKING) ? 5 : 0)));
+
+    // === 🪄 技能核心編碼台 ===
+    public static final DeferredBlock<SkillEncoderBlock> SKILL_ENCODER = registerBlock("skill_encoder",
+            () -> new SkillEncoderBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE)
+                    .strength(3.0f).sound(SoundType.METAL).requiresCorrectToolForDrops()));
 
     // === ⚙️ 新增：魔力粉碎機 ===
     public static final DeferredBlock<ManaGrinderBlock> MANA_GRINDER = registerBlock("mana_grinder",
