@@ -72,14 +72,24 @@ public final class SkillCompiler {
             ops.add(SkillEffectOp.ROOT);
         }
 
-        int count = modifiers.contains(ModAspects.REFRACTION) ? 3 : 1;
+        int baseCount = modifiers.contains(ModAspects.REFRACTION) ? 3 : 1;
+        if (modifiers.contains(ModAspects.RESONANCE)) baseCount += 1; // echo: one extra shot
+        final int count = baseCount;
         boolean pierce = modifiers.contains(ModAspects.BLADE);
         boolean warding = modifiers.contains(ModAspects.WARDING);
+        boolean resist = modifiers.contains(ModAspects.KUN);
+        boolean invis = modifiers.contains(ModAspects.SHADOW);
+        boolean strength = modifiers.contains(ModAspects.AURA);
         boolean homing = modifiers.contains(ModAspects.ANIMA);
         int chainCount = (modifiers.contains(ModAspects.ARC) || modifiers.contains(ModAspects.PROPAGATION)) ? 2 : 0;
         float power = 1.0F
                 + (modifiers.contains(ModAspects.FORTIFY) ? 0.5F : 0.0F)
-                + (modifiers.contains(ModAspects.QIAN) ? 1.0F : 0.0F);
+                + (modifiers.contains(ModAspects.QIAN) ? 1.0F : 0.0F)
+                + (modifiers.contains(ModAspects.MECHANISM) ? 0.3F : 0.0F)
+                + (modifiers.contains(ModAspects.INSTRUMENT) ? 0.3F : 0.0F)
+                + (modifiers.contains(ModAspects.ALCHEMY) ? 0.4F : 0.0F)
+                + (modifiers.contains(ModAspects.ENERGY) ? 0.5F : 0.0F)
+                + (modifiers.contains(ModAspects.ARCANA) ? 0.5F : 0.0F);
         int fuelTotal = fuel.values().stream().mapToInt(Integer::intValue).sum();
         float damage = (4.0F + 2.0F * effects.size() + fuelTotal) * power;
 
@@ -93,9 +103,10 @@ public final class SkillCompiler {
         Consumer<SkillContext> action = ctx -> {
             ServerPlayer caster = ctx.caster();
             ServerLevel level = ctx.level();
-            if (warding) {
-                caster.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 200, 1));
-            }
+            if (warding)  caster.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 200, 1));
+            if (resist)   caster.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 1));
+            if (invis)    caster.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 200, 0));
+            if (strength) caster.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 200, 0));
             if (isProjectile) {
                 Vec3 look = caster.getLookAngle();
                 for (int i = 0; i < count; i++) {
@@ -110,6 +121,8 @@ public final class SkillCompiler {
                 caster.setDeltaMovement(look.scale(1.6).add(0.0, 0.25, 0.0));
                 caster.hurtMarked = true; // sync the impulse to the client
                 caster.fallDistance = 0.0F;
+                // FLIGHT is the self carrier: effects land on the caster (heal/buff dash)
+                for (SkillEffectOp op : finalOps) op.apply(level, caster, caster, look, damage);
                 level.playSound(null, caster.blockPosition(),
                         SoundEvents.BREEZE_SHOOT, SoundSource.PLAYERS, 0.8F, 1.2F);
             } else if (carrier == ModAspects.PIPELINE) {
@@ -184,6 +197,9 @@ public final class SkillCompiler {
         if (effect == ModAspects.RADIANCE) return SkillEffectOp.BLIND;
         if (effect == ModAspects.GROWTH) return SkillEffectOp.ROOT;
         if (effect == ModAspects.VITAE) return SkillEffectOp.LIFESTEAL;
+        if (effect == ModAspects.VITALITY || effect == ModAspects.MENDING
+                || effect == ModAspects.LIFEFLOW || effect == ModAspects.NOURISH) return SkillEffectOp.HEAL;
+        if (effect == ModAspects.CRYSTAL || effect == ModAspects.ENERGY || effect == ModAspects.ARCANA) return SkillEffectOp.SHARD;
         if (effect == ModAspects.DEATH || effect == ModAspects.UNDEAD || effect == ModAspects.TAINT
                 || effect == ModAspects.ELDRITCH || effect == ModAspects.SPIRITUS
                 || effect == ModAspects.VOID_ASPECT) {

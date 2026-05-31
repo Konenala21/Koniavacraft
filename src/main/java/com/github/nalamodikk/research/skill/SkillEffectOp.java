@@ -79,6 +79,18 @@ public enum SkillEffectOp {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             if (caster != null && caster.isAlive()) caster.heal(Math.max(1.0F, power * 0.3F));
         }
+    },
+    HEAL {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            // heals whoever it lands on; with the FLIGHT self-cast that is the caster
+            target.heal(4.0F + power * 0.25F);
+        }
+    },
+    SHARD {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.invulnerableTime = 0;
+            target.hurt(level.damageSources().magic(), 2.0F + power * 0.2F); // bonus crystalline damage
+        }
     };
 
     public abstract void apply(ServerLevel level, LivingEntity target,
