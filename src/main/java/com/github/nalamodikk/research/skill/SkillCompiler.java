@@ -3,13 +3,19 @@ package com.github.nalamodikk.research.skill;
 import com.github.nalamodikk.common.entity.SpellProjectileEntity;
 import com.github.nalamodikk.research.aspect.Aspect;
 import com.github.nalamodikk.research.aspect.ModAspects;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
@@ -106,11 +112,63 @@ public final class SkillCompiler {
                 caster.fallDistance = 0.0F;
                 level.playSound(null, caster.blockPosition(),
                         SoundEvents.BREEZE_SHOOT, SoundSource.PLAYERS, 0.8F, 1.2F);
+            } else if (carrier == ModAspects.PIPELINE) {
+                castBeam(level, caster, damage, finalOps);
+            } else if (carrier == ModAspects.GRAVITY) {
+                castField(level, caster, damage, finalOps);
             }
-            // beam (PIPELINE) and field (GRAVITY) carriers come later
         };
 
         return new CompiledSkill(cost, action);
+    }
+
+    /** PIPELINE carrier: an instant hitscan beam from the caster's eyes. */
+    private static void castBeam(ServerLevel level, ServerPlayer caster, float damage, List<SkillEffectOp> ops) {
+        Vec3 start = caster.getEyePosition();
+        Vec3 look = caster.getLookAngle();
+        double range = 16.0;
+        Vec3 end = start.add(look.scale(range));
+        for (int s = 0; s <= 24; s++) {
+            Vec3 m = start.lerp(end, s / 24.0);
+            level.sendParticles(ParticleTypes.END_ROD, m.x, m.y, m.z, 1, 0.0, 0.0, 0.0, 0.0);
+        }
+        DamageSource src = caster.damageSources().indirectMagic(caster, caster);
+        AABB box = new AABB(start, end).inflate(1.5);
+        for (Entity e : level.getEntities(caster, box, x -> x instanceof LivingEntity && x.isAlive())) {
+            Vec3 c = e.position().add(0.0, e.getBbHeight() * 0.5, 0.0);
+            double t = c.subtract(start).dot(look);
+            if (t < 0.0 || t > range) continue;
+            if (start.add(look.scale(t)).distanceTo(c) > 1.3) continue;
+            e.invulnerableTime = 0;
+            e.hurt(src, damage);
+            if (e instanceof LivingEntity le) for (SkillEffectOp op : ops) op.apply(level, le, caster, look, damage);
+        }
+        level.playSound(null, caster.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 0.6F, 1.6F);
+    }
+
+    /** GRAVITY carrier: a singularity a few blocks ahead that pulls + damages. */
+    private static void castField(ServerLevel level, ServerPlayer caster, float damage, List<SkillEffectOp> ops) {
+        Vec3 center = caster.getEyePosition().add(caster.getLookAngle().scale(6.0));
+        double radius = 4.0;
+        for (int i = 0; i < 40; i++) {
+            double a = level.random.nextDouble() * Math.PI * 2;
+            double r = radius * Math.sqrt(level.random.nextDouble());
+            Vec3 p = center.add(Math.cos(a) * r, level.random.nextDouble() * 2 - 1, Math.sin(a) * r);
+            level.sendParticles(ParticleTypes.PORTAL, p.x, p.y, p.z, 1,
+                    (center.x - p.x) * 0.2, (center.y - p.y) * 0.2, (center.z - p.z) * 0.2, 0.3);
+        }
+        DamageSource src = caster.damageSources().indirectMagic(caster, caster);
+        AABB box = new AABB(center.subtract(radius, radius, radius), center.add(radius, radius, radius));
+        for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+            Vec3 pull = center.subtract(le.position());
+            if (pull.lengthSqr() > radius * radius) continue;
+            le.setDeltaMovement(le.getDeltaMovement().add(pull.normalize().scale(0.5)));
+            le.hurtMarked = true;
+            le.invulnerableTime = 0;
+            le.hurt(src, damage * 0.6F);
+            for (SkillEffectOp op : ops) op.apply(level, le, caster, pull.normalize().scale(-1.0), damage * 0.6F);
+        }
+        level.playSound(null, BlockPos.containing(center), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 0.5F, 1.4F);
     }
 
     private static SkillEffectOp opFor(Aspect effect) {
