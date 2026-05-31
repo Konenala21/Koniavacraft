@@ -118,7 +118,11 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
     public void render(GuiGraphics g, int mouseX, int mouseY, float partial) {
         super.render(g, mouseX, mouseY, partial);
         renderPalette(g, mouseX, mouseY);
-        renderTooltips(g, mouseX, mouseY);
+        // our palette is drawn after super.render, so re-draw the hovered item's
+        // vanilla tooltip on top (unless an aspect tooltip takes precedence).
+        if (!renderTooltips(g, mouseX, mouseY)) {
+            this.renderTooltip(g, mouseX, mouseY);
+        }
     }
 
     @Override
@@ -230,10 +234,14 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
         g.pose().popPose();
     }
 
-    private void renderTooltips(GuiGraphics g, int mouseX, int mouseY) {
+    private boolean renderTooltips(GuiGraphics g, int mouseX, int mouseY) {
         Aspect a = paletteAspectAt(mouseX, mouseY);
         if (a == null) a = roleAspectAt(mouseX, mouseY);
-        if (a != null) g.renderTooltip(font, a.getName(), mouseX, mouseY);
+        if (a != null) {
+            g.renderTooltip(font, a.getName(), mouseX, mouseY);
+            return true;
+        }
+        return false;
     }
 
     // ── input ─────────────────────────────────────────────────────────────────
