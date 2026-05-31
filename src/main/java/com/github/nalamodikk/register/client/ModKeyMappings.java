@@ -54,7 +54,7 @@ public final class ModKeyMappings {
     public static final KeyMapping CYCLE_SKILL = new KeyMapping(
         "key.koniava.cycle_skill",
         InputConstants.Type.KEYSYM,
-        GLFW.GLFW_KEY_X,
+        GLFW.GLFW_KEY_H,
         CATEGORY_MOD
     );
 
