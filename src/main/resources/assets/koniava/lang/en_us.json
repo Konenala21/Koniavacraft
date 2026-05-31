@@ -1123,6 +1123,11 @@
   "guide.koniava.easter.research_rules.nara.1": "Nara: I have this strange sense of familiarity with this rule. Anyway, that is just how it works.",
   "guide.koniava.easter.research_rules.nara.2": "Nara: this rule has always existed in this world. I just wrote it down for you. Do not ask further.",
   "guide.koniava.easter.research_rules.nara.3": "Nara: some knowledge seems to transcend time and space. Hm. Anyway.",
+  "guide.koniava.easter.altar.ritual_fail.nara.0": "Nara: Failure? Mm-hm... you sure that's failure? The instant it collapses, something just above the core turns a little... different.",
+  "guide.koniava.easter.altar.ritual_fail.nara.1": "Nara: Mm.. keep the mana fed and it won't blow up. But you know... aren't you curious whether something fun happens the moment it bursts? A little mischief never hurt anyone!",
+  "guide.koniava.easter.altar.ritual_fail.nara.2": "Nara: Knew you'd stop on this one. What's so scary about failure? Some things you just have to do on purpose to find out what happens! And failure is part of learning too, isn't it?",
+  "guide.koniava.easter.altar.ritual_fail.nara.3": "Nara: Eheheh... you just thought of it too, didn't you? Cut the mana supply, let it lose control. Relax, I only want to confirm the reaction, I'm not in it for the show... probably.",
+  "guide.koniava.easter.altar.ritual_fail.nara.4": "Nara: Mmhmm... if you really must keep the mana flowing... why not try cutting it off on purpose? Don't ask how I know. The moment it goes out of control, look up above the core. You'll understand.",
 
   "guide.koniava.aspect.intro.title": "What Are Aspects?",
   "guide.koniava.aspect.intro.body": "Aspects are the fundamental units that make up the mana in this world, think of them as the chemical elements of magic. Six primary aspects: Water, Fire, Wood, Metal, Earth, and Void, plus 80 compound aspects derived from them.\n\nScanning objects grants aspect points, which are spent on research (connecting aspect paths in the hex puzzle).",

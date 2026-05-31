@@ -123,7 +123,8 @@ public class NaraGuideScreen extends Screen {
     private record EasterEgg(String trigger, Function<NaraGuideScreen, Component> tooltipFn) {}
     private record LineData(FormattedCharSequence seq, int x, int y) {}
 
-    private static final int NARA_VARIANTS = 4;
+    // 隨機種子池：取 4 與 5 的公倍數 20，讓 research（%4）與 altar（%5）兩個彩蛋取模都均勻
+    private static final int NARA_VARIANT_POOL = 20;
 
     // bodyKey -> list of (trigger phrase, tooltip function)
     private static final Map<String, List<EasterEgg>> EASTER_EGGS = new HashMap<>();
@@ -144,15 +145,23 @@ public class NaraGuideScreen extends Screen {
                     .append(Component.translatable("guide.koniava.easter.research_rules")
                         .withStyle(st -> st.withItalic(true)))
                     .append(Component.literal("\n\n"))
-                    .append(Component.translatable("guide.koniava.easter.research_rules.nara." + s.naraVariant)
+                    .append(Component.translatable("guide.koniava.easter.research_rules.nara." + (s.naraVariant % 4))
                         .withStyle(st -> st.withItalic(true).withColor(0x888888)))),
             new EasterEgg("connection rules",
                 s -> Component.empty()
                     .append(Component.translatable("guide.koniava.easter.research_rules")
                         .withStyle(st -> st.withItalic(true)))
                     .append(Component.literal("\n\n"))
-                    .append(Component.translatable("guide.koniava.easter.research_rules.nara." + s.naraVariant)
+                    .append(Component.translatable("guide.koniava.easter.research_rules.nara." + (s.naraVariant % 4))
                         .withStyle(st -> st.withItalic(true).withColor(0x888888))))
+        ));
+        EASTER_EGGS.put("guide.koniava.altar.ritual.body", List.of(
+            new EasterEgg("避免儀式失敗",
+                s -> Component.translatable("guide.koniava.easter.altar.ritual_fail.nara." + (s.naraVariant % 5))
+                        .withStyle(st -> st.withItalic(true).withColor(0x888888))),
+            new EasterEgg("avoid failure",
+                s -> Component.translatable("guide.koniava.easter.altar.ritual_fail.nara." + (s.naraVariant % 5))
+                        .withStyle(st -> st.withItalic(true).withColor(0x888888)))
         ));
     }
 
@@ -165,7 +174,7 @@ public class NaraGuideScreen extends Screen {
     private int scrollOffset  = 0;  // pixels scrolled in content area
     private int totalContentH = 0;  // computed each frame
     private final List<LineData> renderedBodyLines = new ArrayList<>();
-    private final int naraVariant = new Random().nextInt(NARA_VARIANTS);
+    private final int naraVariant = new Random().nextInt(NARA_VARIANT_POOL);
 
     public NaraGuideScreen(@Nullable Screen parent) {
         super(Component.translatable("gui.koniava.nara_guide.title"));
