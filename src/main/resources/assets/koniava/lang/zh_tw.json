@@ -214,6 +214,8 @@
   "tooltip.koniava.armor_upgrade.effect.defense": "+%s 防甲值",
   "tooltip.koniava.upgrade.compatible_all_armor": "適用所有魔力盔甲",
   "key.koniava.dash": "魔力衝刺",
+  "key.koniava.cycle_skill": "切換法術技能",
+  "message.koniava.skill.switched": "技能：%s",
   "key.koniava.toggle_helmet": "切換頭盔效果",
   "key.koniava.toggle_chestplate": "切換胸甲效果",
   "key.koniava.toggle_leggings": "切換護腿效果",

@@ -22,6 +22,7 @@ import com.github.nalamodikk.common.item.wand.WandRodItem;
 import com.github.nalamodikk.common.event.HelmetNightVisionHandler;
 import com.github.nalamodikk.common.network.packet.server.armor.ToggleNightVisionPacket;
 import com.github.nalamodikk.common.network.packet.server.boots.DashPacket;
+import com.github.nalamodikk.common.network.packet.server.skill.SwitchSkillPacket;
 import net.minecraft.world.entity.EquipmentSlot;
 import com.github.nalamodikk.register.client.ModKeyMappings;
 import net.minecraft.client.Minecraft;
@@ -98,6 +99,18 @@ public class ClientTickHandler {
                             mc.setScreen(new UnifiedArmorUpgradeScreen(slot));
                             break;
                         }
+                    }
+                }
+            }
+        }
+
+        if (ModKeyMappings.CYCLE_SKILL.consumeClick()) {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.player != null && mc.screen == null) {
+                for (InteractionHand hand : InteractionHand.values()) {
+                    if (mc.player.getItemInHand(hand).getItem() instanceof WandRodItem) {
+                        SwitchSkillPacket.send();   // server validates spell core + >1 skills
+                        break;
                     }
                 }
             }

@@ -51,6 +51,13 @@ public final class ModKeyMappings {
         CATEGORY_MOD
     );
 
+    public static final KeyMapping CYCLE_SKILL = new KeyMapping(
+        "key.koniava.cycle_skill",
+        InputConstants.Type.KEYSYM,
+        GLFW.GLFW_KEY_X,
+        CATEGORY_MOD
+    );
+
     public static final KeyMapping TOGGLE_HELMET = new KeyMapping(
         "key.koniava.toggle_helmet",
         InputConstants.Type.KEYSYM,
@@ -88,6 +95,7 @@ public final class ModKeyMappings {
         event.register(OPEN_UPGRADE_GUI);
         event.register(NARA_SKIP);
         event.register(DASH);
+        event.register(CYCLE_SKILL);
         event.register(TOGGLE_HELMET);
         event.register(TOGGLE_CHESTPLATE);
         event.register(TOGGLE_LEGGINGS);
