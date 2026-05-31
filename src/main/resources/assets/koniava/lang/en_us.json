@@ -200,6 +200,8 @@
   "key.koniava.dash": "Mana Dash",
   "key.koniava.cycle_skill": "Cycle Spell Skill",
   "message.koniava.skill.switched": "Skill: %s",
+  "hud.koniava.skill.none": "No skill encoded",
+  "hud.koniava.skill.info": "%s/%s   %s mana",
   "screen.koniava.boots_upgrade": "Boots Customization",
   "item.koniava.mana_alloy_helmet": "Mana Alloy Helmet",
   "item.koniava.mana_alloy_chestplate": "Mana Alloy Chestplate",
