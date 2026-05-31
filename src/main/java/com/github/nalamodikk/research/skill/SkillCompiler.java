@@ -28,13 +28,30 @@ import java.util.function.Consumer;
  */
 public final class SkillCompiler {
 
+    /** Per-cast mana price building blocks (tuned later in balancing). */
+    private static final int MANA_BASE = 100;
+    private static final int MANA_PER_CARRIER = 80;
+    private static final int MANA_PER_EFFECT = 60;
+    private static final int MANA_PER_MODIFIER = 50;
+    private static final int MANA_PER_FUEL = 20;
+
     public static SkillEffect compile(Aspect carrier, List<Aspect> effects,
                                       List<Aspect> modifiers, Map<Aspect, Integer> fuel) {
-        Map<ResourceLocation, Integer> cost = new LinkedHashMap<>();
-        if (carrier != null) cost.merge(carrier.getId(), 1, Integer::sum);
-        for (Aspect e : effects)   cost.merge(e.getId(), 1, Integer::sum);
-        for (Aspect m : modifiers) cost.merge(m.getId(), 1, Integer::sum);
-        for (Map.Entry<Aspect, Integer> fe : fuel.entrySet()) cost.merge(fe.getKey().getId(), fe.getValue(), Integer::sum);
+        // Aspect gate: every aspect used must be OWNED (gate, not consumed). Owning
+        // one is enough, so each maps to 1 regardless of how it is used.
+        Map<ResourceLocation, Integer> gate = new LinkedHashMap<>();
+        if (carrier != null) gate.put(carrier.getId(), 1);
+        for (Aspect e : effects)   gate.put(e.getId(), 1);
+        for (Aspect m : modifiers) gate.put(m.getId(), 1);
+        for (Aspect a : fuel.keySet()) gate.put(a.getId(), 1);
+
+        int fuelTotalForMana = fuel.values().stream().mapToInt(Integer::intValue).sum();
+        int mana = MANA_BASE
+                + (carrier != null ? MANA_PER_CARRIER : 0)
+                + MANA_PER_EFFECT * effects.size()
+                + MANA_PER_MODIFIER * modifiers.size()
+                + MANA_PER_FUEL * fuelTotalForMana;
+        SkillCost cost = new SkillCost(Collections.unmodifiableMap(gate), mana);
 
         List<SkillEffectOp> ops = new ArrayList<>();
         for (Aspect e : effects) {
@@ -72,7 +89,7 @@ public final class SkillCompiler {
             // other carrier families (self / area / beam) come later
         };
 
-        return new CompiledSkill(Collections.unmodifiableMap(cost), action);
+        return new CompiledSkill(cost, action);
     }
 
     private static SkillEffectOp opFor(Aspect effect) {

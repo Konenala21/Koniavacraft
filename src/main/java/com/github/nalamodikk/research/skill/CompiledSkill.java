@@ -1,17 +1,15 @@
 package com.github.nalamodikk.research.skill;
 
-import net.minecraft.resources.ResourceLocation;
-
-import java.util.Map;
 import java.util.function.Consumer;
 
 /**
  * A {@link SkillEffect} produced by {@link SkillCompiler} from an aspect combination.
  *
- * The cost is the aspects the combination consumes; the action runs the compiled
- * delivery (carrier) + payloads (effects) + tweaks (modifiers).
+ * The cost is the aspect gate the combination requires plus its mana price; the
+ * action runs the compiled delivery (carrier) + payloads (effects) + tweaks
+ * (modifiers).
  */
-public record CompiledSkill(Map<ResourceLocation, Integer> cost,
+public record CompiledSkill(SkillCost cost,
                             Consumer<SkillContext> action) implements SkillEffect {
 
     @Override

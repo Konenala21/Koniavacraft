@@ -1,25 +1,21 @@
 package com.github.nalamodikk.common.network.packet.server.skill;
 
 import com.github.nalamodikk.KoniavacraftMod;
-import com.github.nalamodikk.research.aspect.Aspect;
-import com.github.nalamodikk.research.aspect.ModAspects;
-import com.github.nalamodikk.research.knowledge.PlayerKnowledge;
-import com.github.nalamodikk.research.knowledge.ResearchSavedData;
-import com.github.nalamodikk.research.skill.SkillContext;
+import com.github.nalamodikk.common.item.wand.WandRodItem;
+import com.github.nalamodikk.research.skill.SkillCasting;
 import com.github.nalamodikk.research.skill.SkillEffect;
 import com.github.nalamodikk.research.skill.SkillRegistry;
 import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
-
-import java.util.Map;
 
 /**
  * C2S: the player asks to cast the given skill.
@@ -45,33 +41,26 @@ public record CastSkillPacket(ResourceLocation skillId) implements CustomPacketP
     public static void handle(CastSkillPacket packet, IPayloadContext ctx) {
         ctx.enqueueWork(() -> {
             if (!(ctx.player() instanceof ServerPlayer player)) return;
-            if (!(player.level() instanceof ServerLevel level)) return;
+            if (!(player.level() instanceof ServerLevel)) return;
 
             SkillEffect skill = SkillRegistry.get(packet.skillId());
             if (skill == null) return;
 
-            ResearchSavedData data = ResearchSavedData.get(level);
-            PlayerKnowledge knowledge = data.getOrCreate(player.getUUID());
+            ItemStack wand = findCastingWand(player);
+            if (wand.isEmpty()) return;
 
-            // 1) check every aspect is affordable before spending anything
-            for (Map.Entry<ResourceLocation, Integer> entry : skill.cost().entrySet()) {
-                if (knowledge.getAspectCount(entry.getKey()) < entry.getValue()) {
-                    player.displayClientMessage(
-                            Component.translatable("message.koniava.skill.not_enough_aspects"), true);
-                    return;
-                }
-            }
-
-            // 2) consume
-            for (Map.Entry<ResourceLocation, Integer> entry : skill.cost().entrySet()) {
-                Aspect aspect = ModAspects.get(entry.getKey());
-                if (aspect != null) knowledge.discoverAspect(aspect, -entry.getValue());
-            }
-            data.setDirty();
-
-            // 3) run the effect
-            skill.execute(new SkillContext(level, player));
+            // Dual cost model: aspects gate, wand mana is consumed. See SkillCasting.
+            SkillCasting.tryCast(player, wand, skill);
         });
+    }
+
+    /** The wand the player is holding (main hand preferred) that can cast. */
+    private static ItemStack findCastingWand(ServerPlayer player) {
+        for (InteractionHand hand : InteractionHand.values()) {
+            ItemStack held = player.getItemInHand(hand);
+            if (held.getItem() instanceof WandRodItem) return held;
+        }
+        return ItemStack.EMPTY;
     }
 
     public static void registerTo(PayloadRegistrar registrar) {

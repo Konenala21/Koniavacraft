@@ -283,6 +283,7 @@
   "message.koniava.research.table_in_use": "此研究台正在被其他玩家使用。",
   "message.koniava.wand.no_core": "此魔杖尚未安裝核心插件。",
   "message.koniava.skill.not_enough_aspects": "本源不足，無法施放此技能。",
+  "message.koniava.skill.not_enough_mana": "魔杖魔力不足，無法施放此技能。",
   "entity.koniava.spell_projectile": "法術投射物",
   "item.koniava.speed_upgrade": "速度升級模組",
   "item.koniava.efficiency_upgrade": "效率升級模組",
