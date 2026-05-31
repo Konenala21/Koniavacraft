@@ -63,6 +63,7 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
     private int palettePage;
 
     private EditBox nameField;
+    private EditBox searchField;
 
     public SkillEncoderScreen(SkillEncoderMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
@@ -83,6 +84,13 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
                         Component.translatable("gui.koniava.skill_encoder.encode"), b -> onEncode())
                 .bounds(leftPos + 120, topPos + 40, 50, 20)
                 .build());
+
+        this.searchField = new EditBox(font, leftPos + 140, topPos + 78, 85, 14,
+                Component.translatable("gui.koniava.skill_encoder.search"));
+        this.searchField.setMaxLength(32);
+        this.searchField.setHint(Component.translatable("gui.koniava.skill_encoder.search"));
+        this.searchField.setResponder(s -> palettePage = 0);   // reset paging on new query
+        addRenderableWidget(this.searchField);
     }
 
     private void onEncode() {
@@ -129,6 +137,8 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
                 leftPos + 10, topPos + MODIFIER_Y + 5, 0x3A2F4A, false);
         g.drawString(font, Component.translatable("gui.koniava.skill_encoder.slot"),
                 leftPos + 10, topPos + SLOT_ROW_Y + 4, 0x3A2F4A, false);
+        g.drawString(font, Component.translatable("gui.koniava.skill_encoder.search"),
+                leftPos + 140, topPos + 67, 0x3A2F4A, false);
 
         renderRoleCells(g, mouseX, mouseY);
         renderTargetSlots(g, mouseX, mouseY);
@@ -291,13 +301,22 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
 
     // ── palette data ────────────────────────────────────────────────────────
 
-    private static List<Aspect> usableDiscovered() {
+    private List<Aspect> usableDiscovered() {
+        String query = searchField == null ? "" : searchField.getValue().trim().toLowerCase();
         List<Aspect> out = new ArrayList<>();
         for (Aspect a : ModAspects.all()) {
             if (!AspectRoles.isUsable(a)) continue;
-            if (a.isPrimary() || ClientResearchCache.hasDiscovered(a.getId())) out.add(a);
+            if (!(a.isPrimary() || ClientResearchCache.hasDiscovered(a.getId()))) continue;
+            if (!query.isEmpty() && !matches(a, query)) continue;
+            out.add(a);
         }
         return out;
+    }
+
+    /** Matches the search query against the aspect's display name and id path. */
+    private static boolean matches(Aspect a, String query) {
+        if (a.getId().getPath().toLowerCase().contains(query)) return true;
+        return a.getName().getString().toLowerCase().contains(query);
     }
 
     private List<Aspect> visiblePalette() {

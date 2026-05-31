@@ -286,6 +286,7 @@
   "message.koniava.skill.not_enough_mana": "魔杖魔力不足，無法施放此技能。",
   "block.koniava.skill_encoder": "技能核心編碼台",
   "gui.koniava.skill_encoder.name": "技能名稱",
+  "gui.koniava.skill_encoder.search": "搜尋",
   "gui.koniava.skill_encoder.encode": "編碼",
   "gui.koniava.skill_encoder.carrier": "載體",
   "gui.koniava.skill_encoder.effects": "效果",

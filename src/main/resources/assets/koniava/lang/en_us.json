@@ -259,6 +259,7 @@
   "message.koniava.skill.not_enough_mana": "Not enough mana in the wand to cast this skill.",
   "block.koniava.skill_encoder": "Skill Core Encoding Bench",
   "gui.koniava.skill_encoder.name": "Skill name",
+  "gui.koniava.skill_encoder.search": "Search",
   "gui.koniava.skill_encoder.encode": "Encode",
   "gui.koniava.skill_encoder.carrier": "Carrier",
   "gui.koniava.skill_encoder.effects": "Effects",
