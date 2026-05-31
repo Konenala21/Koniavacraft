@@ -323,10 +323,17 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        // While typing in a field, swallow keys (except ESC) so the inventory key
-        // ('E' etc.) does not close the screen mid-word.
-        if (keyCode != GLFW.GLFW_KEY_ESCAPE
-                && (nameField.isFocused() || searchField.isFocused())) {
+        boolean typing = nameField.isFocused() || searchField.isFocused();
+        // Enter commits the field (defocus); the value is already stored.
+        if (typing && (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER)) {
+            nameField.setFocused(false);
+            searchField.setFocused(false);
+            setFocused(null);
+            return true;
+        }
+        // While typing, swallow keys (except ESC) so the inventory key ('E' etc.)
+        // does not close the screen mid-word.
+        if (typing && keyCode != GLFW.GLFW_KEY_ESCAPE) {
             if (getFocused() != null) getFocused().keyPressed(keyCode, scanCode, modifiers);
             return true;
         }
