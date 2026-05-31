@@ -35,6 +35,9 @@ public final class BlockAspectResolver {
             }
         }
         if (aspects.isEmpty()) {
+            aspects = SemanticAspectMatcher.match(id);
+        }
+        if (aspects.isEmpty()) {
             aspects = AspectExpression.fallback(id, data.getGenomeSeed(), 2);
         }
         if (!aspects.isEmpty()) {

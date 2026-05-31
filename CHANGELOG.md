@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Developer Notes / 開發者備註
 
+- WIP (semantic aspect scanning): items/blocks that miss tag/keyword/recipe layers now get aspects from name semantics via a precomputed word-vector table. SemanticAspectMatcher loads /koniava_data/aspect_semantic/ (built offline by tools/aspect_embedding with a 226MB fastText model; only the ~12MB int8 table ships) into RAM once, then tokenizes the id, averages token vectors, and cosine-matches aspect anchors (top 1-2 above a confidence margin). Wired into BlockAspectResolver + RecipeInferenceEngine before the hash fallback. Handles OOV modded words via subword (osmium_ingot -> metal). Table absent (fresh checkout) = no-op. Unit-tested (no MC context needed).
+- WIP（本源語意掃描）：tag/keyword/配方都沒中的物品/方塊，改用名字語意 + 預算詞向量表掃本源。SemanticAspectMatcher 把 /koniava_data/aspect_semantic/（tools/aspect_embedding 用 226MB fastText 離線生，出貨只帶 ~12MB int8 表）載進 RAM 一次，tokenize id → 向量平均 → cosine 比對本源錨點（信心門檻取 top 1-2）。接進 BlockAspectResolver + RecipeInferenceEngine 的 hash fallback 前。OOV 模組詞靠 subword（osmium_ingot→metal）。表缺則 no-op。已單元測試（不需 MC 環境）。
+
 - WIP (skill resolve engine): skills are now compiled from aspect combinations, not hardcoded. SkillCompiler.compile(carrier, effects, modifiers, fuel) -> CompiledSkill (cost + action). SkillEffectOp (FIRE/FROST/POISON/WEAKEN) as on-hit payloads; SpellProjectileEntity carries ops + pierce. Demos fireball/frostbolt/fire_split are all compiled from aspect mixes (deleted hardcoded FireballEffect). Proves B: new combos = new skills, no new code.
 - WIP（技能 resolve 引擎）：技能改成從本源組合編譯，非寫死。SkillCompiler.compile(載體, 效果, 修飾, 料) → CompiledSkill。SkillEffectOp（火/冰/毒/弱）當命中酬載；SpellProjectileEntity 帶 ops + 穿透。fireball/frostbolt/fire_split 全是組合編譯（刪了寫死的 FireballEffect）。證明 B：換組合=換技能、不寫 code。
 
