@@ -1,6 +1,7 @@
 package com.github.nalamodikk.common.entity;
 
 import com.github.nalamodikk.register.ModEntities;
+import com.github.nalamodikk.research.skill.SkillEffectOp;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
@@ -18,13 +19,17 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 /**
  * Generic spell projectile fired by aspect skills.
  *
- * The entity itself is invisible (registered with NoopRenderer); all visuals
- * are server-spawned particles in {@link #tick()} (trail) and {@link #burst}
- * (impact). This is the canvas for the "flashy" pass: restyle the trail/burst
- * here without touching the skill plumbing.
+ * Invisible (NoopRenderer); visuals are server-spawned particles. Carries a base
+ * damage plus a list of {@link SkillEffectOp} status payloads applied on hit, and
+ * an optional pierce flag (from the BLADE modifier). Configured by
+ * {@code SkillCompiler}; this stays the flashy-visual canvas (tick/burst).
  */
 public class SpellProjectileEntity extends ThrowableProjectile {
 
@@ -32,7 +37,9 @@ public class SpellProjectileEntity extends ThrowableProjectile {
     private static final int MAX_LIFETIME = 40; // ~48 blocks
 
     private float damage = 6.0F;
-    private int fireSeconds = 4;
+    private boolean pierce = false;
+    private List<SkillEffectOp> ops = List.of();
+    private final Set<Integer> alreadyHit = new HashSet<>();
     private int lifetime = 0;
 
     public SpellProjectileEntity(EntityType<? extends SpellProjectileEntity> type, Level level) {
@@ -40,17 +47,19 @@ public class SpellProjectileEntity extends ThrowableProjectile {
         this.setNoGravity(true);
     }
 
-    /** Fire a spell projectile from the shooter's eyes along their look direction. */
-    public static SpellProjectileEntity shoot(Level level, Player shooter, float damage, int fireSeconds) {
+    /** Fire a spell projectile along {@code dir} from the shooter's eyes. */
+    public static SpellProjectileEntity shoot(Level level, Player shooter, Vec3 dir,
+                                              float damage, List<SkillEffectOp> ops, boolean pierce) {
         SpellProjectileEntity p = new SpellProjectileEntity(ModEntities.SPELL_PROJECTILE.get(), level);
         p.damage = damage;
-        p.fireSeconds = fireSeconds;
+        p.ops = List.copyOf(ops);
+        p.pierce = pierce;
         p.setOwner(shooter);
 
-        Vec3 look = shooter.getLookAngle();
-        Vec3 spawn = shooter.getEyePosition().add(look.scale(0.6));
+        Vec3 d = dir.lengthSqr() < 1.0E-6 ? shooter.getLookAngle() : dir.normalize();
+        Vec3 spawn = shooter.getEyePosition().add(d.scale(0.6));
         p.setPos(spawn.x, spawn.y, spawn.z);
-        p.setDeltaMovement(look.scale(SPEED));
+        p.setDeltaMovement(d.scale(SPEED));
         return p;
     }
 
@@ -59,7 +68,7 @@ public class SpellProjectileEntity extends ThrowableProjectile {
         // no synched data; visuals are particle-driven
     }
 
-    // ── Visuals (your flashy playground) ────────────────────────────────────
+    // ── Visuals (flashy playground) ─────────────────────────────────────────
 
     @Override
     public void tick() {
@@ -89,15 +98,19 @@ public class SpellProjectileEntity extends ThrowableProjectile {
         if (level().isClientSide) return;
         Entity target = result.getEntity();
         if (target == getOwner()) return;
+        if (pierce && !alreadyHit.add(target.getId())) return; // pierce: hit each entity once
 
         LivingEntity owner = getOwner() instanceof LivingEntity le ? le : null;
         DamageSource source = damageSources().mobProjectile(this, owner);
         target.invulnerableTime = 0;
         target.hurt(source, damage);
-        if (fireSeconds > 0) target.setRemainingFireTicks(fireSeconds * 20);
+
+        if (target instanceof LivingEntity living && level() instanceof ServerLevel sl) {
+            for (SkillEffectOp op : ops) op.apply(sl, living, damage);
+        }
 
         burst(result.getLocation());
-        discard();
+        if (!pierce) discard();
     }
 
     @Override
@@ -107,7 +120,7 @@ public class SpellProjectileEntity extends ThrowableProjectile {
         if (!state.getFluidState().isEmpty()) return;
         if (state.getCollisionShape(level(), result.getBlockPos()).isEmpty()) return;
         burst(result.getLocation());
-        discard();
+        discard(); // a wall stops even piercing shots
     }
 
     // ── Misc ──────────────────────────────────────────────────────────────

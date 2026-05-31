@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Developer Notes / 開發者備註
 
+- WIP (skill resolve engine): skills are now compiled from aspect combinations, not hardcoded. SkillCompiler.compile(carrier, effects, modifiers, fuel) -> CompiledSkill (cost + action). SkillEffectOp (FIRE/FROST/POISON/WEAKEN) as on-hit payloads; SpellProjectileEntity carries ops + pierce. Demos fireball/frostbolt/fire_split are all compiled from aspect mixes (deleted hardcoded FireballEffect). Proves B: new combos = new skills, no new code.
+- WIP（技能 resolve 引擎）：技能改成從本源組合編譯，非寫死。SkillCompiler.compile(載體, 效果, 修飾, 料) → CompiledSkill。SkillEffectOp（火/冰/毒/弱）當命中酬載；SpellProjectileEntity 帶 ops + 穿透。fireball/frostbolt/fire_split 全是組合編譯（刪了寫死的 FireballEffect）。證明 B：換組合=換技能、不寫 code。
+
 - WIP (aspect skill system foundation): generic skill execution layer + spell core trigger + C dictionary. New `research/skill/` package: SkillEffect (cost()+execute()), SkillContext, SkillRegistry, SkillRole (FUEL/CARRIER/EFFECT/MODIFIER/TRIGGER), AspectRoles (Aspect -> Set<SkillRole>, multi-role, isUsable/isHighTier). FireballEffect demo + SpellProjectileEntity (NoopRenderer, particle-driven). CastSkillPacket (C2S, server-authoritative aspect check/consume). New SPELL WandCoreBehavior + spell_core item; WandRodItem.use() delegates to IWandCore.coreUse(). SELECTED_SKILL data component. Not player-complete: casting path is transitional pending the Skill Core Encoding Bench + combination resolver. Compiles green.
 - WIP（本源技能系統地基）：通用技能執行層 + 法術核心觸發 + C 字典。新 `research/skill/` 套件：SkillEffect、SkillContext、SkillRegistry、SkillRole、AspectRoles（本源→角色，多角，isUsable/isHighTier）。FireballEffect 範例 + SpellProjectileEntity（NoopRenderer、粒子驅動）。CastSkillPacket（C2S，server 權威檢查/扣本源）。新增 SPELL 核心行為 + spell_core 物品；WandRodItem.use() 委派給 IWandCore.coreUse()。SELECTED_SKILL data component。尚未玩家可用：施放路徑是過渡，待技能核心編碼台 + 組合 resolver。編譯綠。
 
