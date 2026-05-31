@@ -54,8 +54,8 @@ The Mirror Core Shard reward from the Mirror boss is now given on every defeat, 
 Fixed two in-game guide pages that named the Grinder and Infuser inconsistently in Chinese; they now match the blocks' actual display names.
 修正指引中兩處中文機器名與實際顯示名不一致：改為「粉碎機」「注入機」（原誤寫「研磨機」「灌注機」）。
 
-Regenerated the Mirror boss victory voice line (zh and en) so it matches the current dialogue text.
-重新生成鏡面 boss 勝利語音（中英），對齊現在的台詞文本。
+Regenerated several Nara voice lines (Mirror boss victory/intro/taunt, research table, punishment, angry) so the audio matches the on-screen dialogue text.
+重新生成多條娜拉語音（鏡面 boss 勝利/進場/嘲諷、研究台、懲罰、生氣），讓配音對齊畫面字幕。
 
 ### Developer Notes / 開發者備註
 
