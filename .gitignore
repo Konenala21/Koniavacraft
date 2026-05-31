@@ -91,3 +91,6 @@ local.properties
 .claude/memory.jsonl
 /run2/
 /tools/
+
+# aspect embedding table (regenerate via tools/aspect_embedding, not committed yet)
+/src/main/resources/koniava_data/aspect_semantic/
