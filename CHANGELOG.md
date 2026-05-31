@@ -36,7 +36,25 @@ The two sound settings (Nara voice volume and boss BGM volume) are now grouped t
 Added a config toggle for floating damage numbers (render page). Turn it off if you prefer no damage numbers when dealing damage.
 新增浮動傷害數字的開關（在渲染分頁）。不想看到傷害數字可以關掉。
 
+The boss BGM and Nara voice volume sliders now also appear directly in the vanilla Sound options screen, right after the built-in volume sliders. Dragging the boss BGM slider takes effect in real time, even while the music is already playing.
+Boss BGM 與娜拉配音的音量條現在也直接出現在原版「音效」設定畫面，接在原版音量條後面。拖動 boss BGM 音量條會即時生效，連音樂正在播放時也行。
+
+Added a "Reload Sound" button to the top-right of the Sound options screen. If your audio cuts out (for example after Windows switches audio device), press it to restart the sound engine without quitting the game.
+在「音效」設定畫面右上角新增「重載聲音」按鈕。如果聲音斷掉（例如 Windows 切換音訊裝置後），按一下就能重啟音效引擎，不用重開遊戲。
+
+Filled in the in-game guide with the previously blank machine and weapon pages (solar mana collector, mana charger, mana deployer, mana plate press, upgrades, wand, sandbag cactus).
+補齊遊戲內指引中原本空白的機器與武器頁面（太陽能魔力收集器、魔力充能器、魔力部署器、魔力壓板機、升級、魔杖、沙包仙人掌）。
+
 ### Developer Notes / 開發者備註
+
+- Feature (in-game sound sliders + reload button): SoundOptionsScreenMixin injects BEFORE the vanilla Options.soundDevice() call in addOptions, pulling the OptionsList via OptionsSubScreenAccessor and adding two OptionInstance<Double> volume sliders (options.koniava.boss_music / nara_voice, UnitDouble, % label) through list.addSmall so they pair-render like vanilla source volumes. The "Reload Sound" button (gui.koniava.reload_sound) is added top-right via a new ScreenAccessor (@Mixin(Screen.class), @Invoker addRenderableWidget): the invoker must target Screen, not OptionsSubScreen, since the method is declared on Screen and @Invoker does not search superclasses. Button calls SoundManager.reload() (re-inits OpenAL only, no texture/model reload). Both mixins registered in koniava.mixins.json client array.
+- 功能（遊戲內音量條 + 重載按鈕）：SoundOptionsScreenMixin 在 addOptions 裡 vanilla Options.soundDevice() 呼叫 BEFORE 注入，透過 OptionsSubScreenAccessor 取 OptionsList，用 list.addSmall 加兩條 OptionInstance<Double> 音量條（options.koniava.boss_music / nara_voice，UnitDouble，% 標籤），跟 vanilla source volumes 同款兩兩配對排版。「重載聲音」按鈕（gui.koniava.reload_sound）走新的 ScreenAccessor（@Mixin(Screen.class)、@Invoker addRenderableWidget）加在右上：invoker 必須掛 Screen 不能掛 OptionsSubScreen，因為方法宣告在 Screen 上而 @Invoker 不搜父類。按鈕呼叫 SoundManager.reload()（只重建 OpenAL，不重載貼圖/模型）。兩個 mixin 都註冊在 koniava.mixins.json client 陣列。
+- Feature (live BGM volume): BossBgmPacket's nested BgmInstance now extends AbstractTickableSoundInstance (was SimpleSoundInstance.forUI, which baked volume at play time). tick() re-reads ModClientConfig.bossMusicVolume each tick so the slider applies in real time; <=0 calls stop() for instant mute. Kept SoundSource.MASTER + relative + Attenuation.NONE so the boss BGM still plays when the vanilla music slider is at 0 and stays at a fixed global volume. Client-only classes remain confined to the nested ClientHandler for sided-load safety.
+- 功能（即時 BGM 音量）：BossBgmPacket 的巢狀 BgmInstance 現在 extends AbstractTickableSoundInstance（原本 SimpleSoundInstance.forUI 在播放當下就把音量定死）。tick() 每 tick 重讀 ModClientConfig.bossMusicVolume 讓滑桿即時生效；<=0 呼叫 stop() 即時靜音。保留 SoundSource.MASTER + relative + Attenuation.NONE，讓 boss BGM 在 vanilla 音樂條歸 0 時仍會播、且維持全域固定音量。client-only 類別仍封在巢狀 ClientHandler 保 sided-load 安全。
+- Perf (BGM volume write guard): BgmInstance.tick() now only writes this.volume when the new config value differs from the current one (if (v != this.volume)), skipping a redundant field write every tick when the slider hasn't moved.
+- 性能（BGM 音量寫入守衛）：BgmInstance.tick() 現在只在新 config 值跟現值不同時才寫 this.volume（if (v != this.volume)），滑桿沒動時跳過每 tick 的多餘欄位寫入。
+- Content (guide pages): filled the previously blank NaraGuideScreen entries (mana chapter: solar collector / charger / deployer / plate press; weapons chapter: upgrade / wand / sandbag cactus) with parity-checked en_us + zh_tw lang keys.
+- 內容（指引頁）：補齊 NaraGuideScreen 原本空白的條目（魔力章：太陽能收集器 / 充能器 / 部署器 / 壓板機；武器章：升級 / 魔杖 / 沙包仙人掌），en_us + zh_tw lang 鍵已對齊核對。
 
 - Fix (Mana Plate Press unusable): ModCapabilities never registered MANA_PLATE_PRESS_BE, so neither the MANA cap nor the item handler was exposed; conduit network + neighbor pull saw no consumer. Added manaIO + itemHandlerIO for it (AbstractManaMachineEntityBlock already implements IConfigurableBlock, so the generic helpers apply, same as the grinder/infuser).
 - 修復（壓板機不可用）：ModCapabilities 從沒註冊 MANA_PLATE_PRESS_BE，MANA cap 與物品 handler 都沒暴露，導管網路 + 鄰居 pull 看不到消耗端。補上 manaIO + itemHandlerIO（AbstractManaMachineEntityBlock 已 implements IConfigurableBlock，泛型 helper 直接適用，跟粉碎機/注入機同寫法）。
