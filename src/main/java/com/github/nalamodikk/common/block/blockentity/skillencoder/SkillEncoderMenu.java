@@ -12,9 +12,9 @@ import net.neoforged.neoforge.items.SlotItemHandler;
 
 public class SkillEncoderMenu extends AbstractContainerMenu {
 
-    public static final int INV_X = 8;
-    public static final int CORE_SLOT_X = 184;
-    public static final int CORE_SLOT_Y = 14;
+    public static final int INV_X = 50;
+    public static final int CORE_SLOT_X = 207;
+    public static final int CORE_SLOT_Y = 11;
     private static final int INV_MAIN_Y = 171;
     private static final int INV_HOTBAR_Y = 229;
 

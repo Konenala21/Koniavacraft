@@ -40,7 +40,7 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
     private static final ResourceLocation HEX_CELL =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/research/hex_cell.png");
 
-    private static final int GUI_W = 200;
+    private static final int GUI_W = 233;   // panel spans x 0..232; scrap icon at 235+ stays hidden
     private static final int GUI_H = 256;
     private static final int TEX = 256;
     private static final int CELL = 18;
@@ -49,7 +49,9 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
     private static final int EFFECT_X = 64, EFFECT_Y = 58;
     private static final int MODIFIER_X = 64, MODIFIER_Y = 78;
     private static final int SLOT_ROW_X = 64, SLOT_ROW_Y = 98, SLOT_CELL = 16;
-    private static final int PALETTE_X = 8, PALETTE_Y = 122;
+    private static final int PALETTE_X = 50, PALETTE_Y = 122;
+    // core slot icon lives in the texture's scrap area (right of the visible GUI)
+    private static final int CORE_ICON_U = 235, CORE_ICON_V = 8, CORE_ICON_SRC = 17;
     private static final int PALETTE_COLS = 9, PALETTE_ROWS = 2, PALETTE_STEP = 18;
     private static final int PALETTE_PAGE = PALETTE_COLS * PALETTE_ROWS;
 
@@ -114,6 +116,10 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
     @Override
     protected void renderBg(GuiGraphics g, float partial, int mouseX, int mouseY) {
         g.blit(BACKGROUND, leftPos, topPos, 0, 0, GUI_W, GUI_H, TEX, TEX);
+
+        // core slot well: blit the scrap-area icon (17x17) scaled to an 18x18 cell
+        g.blit(BACKGROUND, leftPos + SkillEncoderMenu.CORE_SLOT_X, topPos + SkillEncoderMenu.CORE_SLOT_Y,
+                18, 18, (float) CORE_ICON_U, (float) CORE_ICON_V, CORE_ICON_SRC, CORE_ICON_SRC, TEX, TEX);
 
         g.drawString(font, Component.translatable("gui.koniava.skill_encoder.carrier"),
                 leftPos + 10, topPos + CARRIER_Y + 5, 0x3A2F4A, false);
