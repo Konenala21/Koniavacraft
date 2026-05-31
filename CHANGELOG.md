@@ -45,6 +45,9 @@ Added a "Reload Sound" button to the top-right of the Sound options screen. If y
 Filled in the in-game guide with the previously blank machine and weapon pages (solar mana collector, mana charger, mana deployer, mana plate press, upgrades, wand, sandbag cactus).
 補齊遊戲內指引中原本空白的機器與武器頁面（太陽能魔力收集器、魔力充能器、魔力部署器、魔力壓板機、升級、魔杖、沙包仙人掌）。
 
+Fixed outdated in-game guide text: the wand page no longer points to a nonexistent "resonator altar", and the altar instructions now use the modular wand (fitted with an Activation Core Plugin) instead of the removed Ritual Wand. Also clarified that a wand rod holds one core but can take multiple upgrades.
+修正遊戲內指引的過時文字：魔杖頁不再指向不存在的「諧振器祭壇」，祭壇說明改用模組化魔杖（裝啟動核心插件）取代已移除的儀式魔杖。並說明一個杖柄只能裝一個核心，但可裝多個升級。
+
 ### Developer Notes / 開發者備註
 
 - Feature (in-game sound sliders + reload button): SoundOptionsScreenMixin injects BEFORE the vanilla Options.soundDevice() call in addOptions, pulling the OptionsList via OptionsSubScreenAccessor and adding two OptionInstance<Double> volume sliders (options.koniava.boss_music / nara_voice, UnitDouble, % label) through list.addSmall so they pair-render like vanilla source volumes. The "Reload Sound" button (gui.koniava.reload_sound) is added top-right via a new ScreenAccessor (@Mixin(Screen.class), @Invoker addRenderableWidget): the invoker must target Screen, not OptionsSubScreen, since the method is declared on Screen and @Invoker does not search superclasses. Button calls SoundManager.reload() (re-inits OpenAL only, no texture/model reload). Both mixins registered in koniava.mixins.json client array.
