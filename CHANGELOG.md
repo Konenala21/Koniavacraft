@@ -54,6 +54,9 @@ The Mirror Core Shard reward from the Mirror boss is now given on every defeat, 
 Fixed two in-game guide pages that named the Grinder and Infuser inconsistently in Chinese; they now match the blocks' actual display names.
 修正指引中兩處中文機器名與實際顯示名不一致：改為「粉碎機」「注入機」（原誤寫「研磨機」「灌注機」）。
 
+Regenerated the Mirror boss victory voice line (zh and en) so it matches the current dialogue text.
+重新生成鏡面 boss 勝利語音（中英），對齊現在的台詞文本。
+
 ### Developer Notes / 開發者備註
 
 - Content (mirror core shard repeatable): PlayerCloneDeathSequence.spawnRewardChest no longer gates the Mirror Core Shard (slot 13) behind the includeShard/firstClear flag; the shard is placed every time the reward chest spawns. The includeShard parameter is kept (it still drives clear-state flow elsewhere), it just no longer gates the shard.
