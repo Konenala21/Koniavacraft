@@ -7,6 +7,7 @@ import com.github.nalamodikk.common.item.upgrade.EquipmentUpgradeData;
 import com.github.nalamodikk.common.item.wand.WandCoreData;
 import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
 import com.github.nalamodikk.common.utils.data.CodecsLibrary;
+import com.github.nalamodikk.research.skill.StoredSkill;
 import com.mojang.serialization.Codec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -22,6 +23,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.registries.RegisterEvent;
 
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 
 @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID)
@@ -143,6 +145,20 @@ public class ModDataComponents {
                                     ResourceLocation::toString))
                     .build();
 
+    /** Player-authored skills encoded onto a spell core (up to a small cap). */
+    public static final DataComponentType<List<StoredSkill>> STORED_SKILLS =
+            DataComponentType.<List<StoredSkill>>builder()
+                    .persistent(StoredSkill.CODEC.listOf())
+                    .networkSynchronized(StoredSkill.STREAM_CODEC.apply(ByteBufCodecs.list()))
+                    .build();
+
+    /** Which of the spell core's STORED_SKILLS is currently selected for casting. */
+    public static final DataComponentType<Integer> SELECTED_SKILL_INDEX =
+            DataComponentType.<Integer>builder()
+                    .persistent(Codec.INT)
+                    .networkSynchronized(ByteBufCodecs.VAR_INT)
+                    .build();
+
     public static final DataComponentType<WandCoreData> WAND_CORE_DATA =
             DataComponentType.<WandCoreData>builder()
                     .persistent(WandCoreData.CODEC)
@@ -198,6 +214,8 @@ public class ModDataComponents {
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "night_vision_active"), NIGHT_VISION_ACTIVE);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "night_vision_we_applied"), NIGHT_VISION_WE_APPLIED);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "selected_skill"), SELECTED_SKILL);
+            helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "stored_skills"), STORED_SKILLS);
+            helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "selected_skill_index"), SELECTED_SKILL_INDEX);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "wand_core_data"), WAND_CORE_DATA);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "equipment_upgrade_data"), EQUIPMENT_UPGRADE_DATA);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "turret_upgrade_data"), TURRET_UPGRADE_DATA);

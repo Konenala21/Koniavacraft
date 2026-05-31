@@ -4,6 +4,7 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.item.wand.WandRodItem;
 import com.github.nalamodikk.research.skill.SkillCasting;
 import com.github.nalamodikk.research.skill.SkillEffect;
+import com.github.nalamodikk.research.skill.SkillEncoding;
 import com.github.nalamodikk.research.skill.SkillRegistry;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -43,11 +44,14 @@ public record CastSkillPacket(ResourceLocation skillId) implements CustomPacketP
             if (!(ctx.player() instanceof ServerPlayer player)) return;
             if (!(player.level() instanceof ServerLevel)) return;
 
-            SkillEffect skill = SkillRegistry.get(packet.skillId());
-            if (skill == null) return;
-
             ItemStack wand = findCastingWand(player);
             if (wand.isEmpty()) return;
+
+            // Prefer the core's selected player-authored skill; fall back to the
+            // registry id the client sent (demo skills) when none is encoded.
+            SkillEffect skill = SkillEncoding.resolveCastSkill(wand);
+            if (skill == null) skill = SkillRegistry.get(packet.skillId());
+            if (skill == null) return;
 
             // Dual cost model: aspects gate, wand mana is consumed. See SkillCasting.
             SkillCasting.tryCast(player, wand, skill);
