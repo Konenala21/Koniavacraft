@@ -203,9 +203,9 @@ class PlayerCloneDeathSequence {
         VoidMirrorEvents.addModifiedBlock(chestPos.asLong());
         if (sl.getBlockEntity(chestPos) instanceof ChestBlockEntity chest) {
             chest.clearContent();
-            if (includeShard) {
-                chest.setItem(13, new ItemStack(ModItems.MIRROR_CORE_SHARD.get())); // 中央：紀念物（限首次）
-            }
+            // 鏡核碎片每次過關都給（原本 if (includeShard) 限首次，現解開）。
+            // includeShard / firstClear 參數保留：它仍服務過關標記等其他流程，不在此 gate 碎片。
+            chest.setItem(13, new ItemStack(ModItems.MIRROR_CORE_SHARD.get())); // 中央：紀念物（每次過關都給）
             chest.setItem(10, new ItemStack(ModItems.MANA_INGOT.get(), 4));
             chest.setItem(11, new ItemStack(ModItems.MANA_DUST.get(), 8));
             chest.setItem(15, new ItemStack(ModItems.CORRUPTED_MANA_DUST.get(), 4));

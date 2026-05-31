@@ -48,7 +48,16 @@ Filled in the in-game guide with the previously blank machine and weapon pages (
 Fixed outdated in-game guide text: the wand page no longer points to a nonexistent "resonator altar", and the altar instructions now use the modular wand (fitted with an Activation Core Plugin) instead of the removed Ritual Wand. Also clarified that a wand rod holds one core but can take multiple upgrades.
 修正遊戲內指引的過時文字：魔杖頁不再指向不存在的「諧振器祭壇」，祭壇說明改用模組化魔杖（裝啟動核心插件）取代已移除的儀式魔杖。並說明一個杖柄只能裝一個核心，但可裝多個升級。
 
+The Mirror Core Shard reward from the Mirror boss is now given on every defeat, not only the first clear.
+鏡面 boss 的鏡核碎片獎勵現在每次擊敗都會給予，不再只限首次過關。
+
+Fixed two in-game guide pages that named the Grinder and Infuser inconsistently in Chinese; they now match the blocks' actual display names.
+修正指引中兩處中文機器名與實際顯示名不一致：改為「粉碎機」「注入機」（原誤寫「研磨機」「灌注機」）。
+
 ### Developer Notes / 開發者備註
+
+- Content (mirror core shard repeatable): PlayerCloneDeathSequence.spawnRewardChest no longer gates the Mirror Core Shard (slot 13) behind the includeShard/firstClear flag; the shard is placed every time the reward chest spawns. The includeShard parameter is kept (it still drives clear-state flow elsewhere), it just no longer gates the shard.
+- 內容（鏡核碎片可重複）：PlayerCloneDeathSequence.spawnRewardChest 不再用 includeShard/firstClear 把鏡核碎片（slot 13）鎖在首次；獎勵箱每次生成都放碎片。includeShard 參數保留（仍服務過關狀態等其他流程），只是不再 gate 碎片。
 
 - Feature (in-game sound sliders + reload button): SoundOptionsScreenMixin injects BEFORE the vanilla Options.soundDevice() call in addOptions, pulling the OptionsList via OptionsSubScreenAccessor and adding two OptionInstance<Double> volume sliders (options.koniava.boss_music / nara_voice, UnitDouble, % label) through list.addSmall so they pair-render like vanilla source volumes. The "Reload Sound" button (gui.koniava.reload_sound) is added top-right via a new ScreenAccessor (@Mixin(Screen.class), @Invoker addRenderableWidget): the invoker must target Screen, not OptionsSubScreen, since the method is declared on Screen and @Invoker does not search superclasses. Button calls SoundManager.reload() (re-inits OpenAL only, no texture/model reload). Both mixins registered in koniava.mixins.json client array.
 - 功能（遊戲內音量條 + 重載按鈕）：SoundOptionsScreenMixin 在 addOptions 裡 vanilla Options.soundDevice() 呼叫 BEFORE 注入，透過 OptionsSubScreenAccessor 取 OptionsList，用 list.addSmall 加兩條 OptionInstance<Double> 音量條（options.koniava.boss_music / nara_voice，UnitDouble，% 標籤），跟 vanilla source volumes 同款兩兩配對排版。「重載聲音」按鈕（gui.koniava.reload_sound）走新的 ScreenAccessor（@Mixin(Screen.class)、@Invoker addRenderableWidget）加在右上：invoker 必須掛 Screen 不能掛 OptionsSubScreen，因為方法宣告在 Screen 上而 @Invoker 不搜父類。按鈕呼叫 SoundManager.reload()（只重建 OpenAL，不重載貼圖/模型）。兩個 mixin 都註冊在 koniava.mixins.json client 陣列。
