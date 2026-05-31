@@ -28,7 +28,7 @@ import java.util.List;
  * place it (the role dictionary rejects illegal placements), then Encode writes
  * the recipe onto the spell core in the slot.
  *
- * Layout coordinates are matched to assets/.../gui/skill_encoder.png: the upper
+ * Layout coordinates are matched to assets/.../gui/skill_encoder_gui.png: the upper
  * grey grid is the aspect palette, the lower grid is the player inventory, the
  * detached top-right cell is the core slot, and the role/target widgets sit in
  * the open area above the palette.
@@ -36,7 +36,7 @@ import java.util.List;
 public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu> {
 
     private static final ResourceLocation BACKGROUND =
-            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/skill_encoder.png");
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/skill_encoder_gui.png");
     private static final ResourceLocation HEX_CELL =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/research/hex_cell.png");
 
