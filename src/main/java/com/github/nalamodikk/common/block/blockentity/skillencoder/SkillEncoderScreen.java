@@ -27,21 +27,29 @@ import java.util.List;
  * manual role slots: pick an aspect, click a carrier/effect/modifier cell to
  * place it (the role dictionary rejects illegal placements), then Encode writes
  * the recipe onto the spell core in the slot.
+ *
+ * Layout coordinates are matched to assets/.../gui/skill_encoder.png: the upper
+ * grey grid is the aspect palette, the lower grid is the player inventory, the
+ * detached top-right cell is the core slot, and the role/target widgets sit in
+ * the open area above the palette.
  */
 public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu> {
 
+    private static final ResourceLocation BACKGROUND =
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/skill_encoder.png");
     private static final ResourceLocation HEX_CELL =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/research/hex_cell.png");
 
     private static final int GUI_W = 200;
     private static final int GUI_H = 256;
+    private static final int TEX = 256;
     private static final int CELL = 18;
 
-    private static final int CARRIER_X = 78, CARRIER_Y = 40;
-    private static final int EFFECT_X = 78, EFFECT_Y = 60;
-    private static final int MODIFIER_X = 78, MODIFIER_Y = 80;
-    private static final int SLOT_ROW_X = 78, SLOT_ROW_Y = 100, SLOT_CELL = 16;
-    private static final int PALETTE_X = 19, PALETTE_Y = 132;
+    private static final int CARRIER_X = 64, CARRIER_Y = 36;
+    private static final int EFFECT_X = 64, EFFECT_Y = 58;
+    private static final int MODIFIER_X = 64, MODIFIER_Y = 78;
+    private static final int SLOT_ROW_X = 64, SLOT_ROW_Y = 98, SLOT_CELL = 16;
+    private static final int PALETTE_X = 8, PALETTE_Y = 122;
     private static final int PALETTE_COLS = 9, PALETTE_ROWS = 2, PALETTE_STEP = 18;
     private static final int PALETTE_PAGE = PALETTE_COLS * PALETTE_ROWS;
 
@@ -63,7 +71,7 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
     @Override
     protected void init() {
         super.init();
-        this.nameField = new EditBox(font, leftPos + 44, topPos + 19, 108, 14,
+        this.nameField = new EditBox(font, leftPos + 8, topPos + 16, 150, 14,
                 Component.translatable("gui.koniava.skill_encoder.name"));
         this.nameField.setMaxLength(32);
         this.nameField.setHint(Component.translatable("gui.koniava.skill_encoder.name"));
@@ -71,7 +79,7 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
 
         addRenderableWidget(Button.builder(
                         Component.translatable("gui.koniava.skill_encoder.encode"), b -> onEncode())
-                .bounds(leftPos + 156, topPos + 38, 38, 40)
+                .bounds(leftPos + 120, topPos + 40, 50, 20)
                 .build());
     }
 
@@ -105,22 +113,16 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
 
     @Override
     protected void renderBg(GuiGraphics g, float partial, int mouseX, int mouseY) {
-        // flat placeholder panel (own art comes later)
-        g.fill(leftPos, topPos, leftPos + GUI_W, topPos + GUI_H, 0xFF2A2233);
-        g.fill(leftPos + 2, topPos + 2, leftPos + GUI_W - 2, topPos + GUI_H - 2, 0xFF3A2F4A);
-        slotFrame(g, leftPos + SkillEncoderMenu.CORE_SLOT_X, topPos + SkillEncoderMenu.CORE_SLOT_Y, CELL);
+        g.blit(BACKGROUND, leftPos, topPos, 0, 0, GUI_W, GUI_H, TEX, TEX);
 
-        g.drawString(font, this.title, leftPos + 8, topPos + 6, 0xE0D8F0, false);
         g.drawString(font, Component.translatable("gui.koniava.skill_encoder.carrier"),
-                leftPos + 19, topPos + CARRIER_Y + 5, 0xB8A8D0, false);
+                leftPos + 10, topPos + CARRIER_Y + 5, 0x3A2F4A, false);
         g.drawString(font, Component.translatable("gui.koniava.skill_encoder.effects"),
-                leftPos + 19, topPos + EFFECT_Y + 5, 0xB8A8D0, false);
+                leftPos + 10, topPos + EFFECT_Y + 5, 0x3A2F4A, false);
         g.drawString(font, Component.translatable("gui.koniava.skill_encoder.modifiers"),
-                leftPos + 19, topPos + MODIFIER_Y + 5, 0xB8A8D0, false);
+                leftPos + 10, topPos + MODIFIER_Y + 5, 0x3A2F4A, false);
         g.drawString(font, Component.translatable("gui.koniava.skill_encoder.slot"),
-                leftPos + 19, topPos + SLOT_ROW_Y + 4, 0xB8A8D0, false);
-        g.drawString(font, Component.translatable("gui.koniava.skill_encoder.aspects"),
-                leftPos + 19, topPos + PALETTE_Y - 10, 0xB8A8D0, false);
+                leftPos + 10, topPos + SLOT_ROW_Y + 4, 0x3A2F4A, false);
 
         renderRoleCells(g, mouseX, mouseY);
         renderTargetSlots(g, mouseX, mouseY);
@@ -128,20 +130,19 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
 
     @Override
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
-        // suppress the default inventory label drawing offset; titles drawn in renderBg
+        // titles drawn in renderBg; suppress default offset labels
     }
 
     private void renderRoleCells(GuiGraphics g, int mouseX, int mouseY) {
-        renderAspectCell(g, carrier, leftPos + CARRIER_X, topPos + CARRIER_Y, CELL, mouseX, mouseY);
+        renderAspectCell(g, carrier, leftPos + CARRIER_X, topPos + CARRIER_Y, CELL, mouseX, mouseY, true);
         for (int i = 0; i < effects.length; i++)
-            renderAspectCell(g, effects[i], leftPos + EFFECT_X + i * CELL, topPos + EFFECT_Y, CELL, mouseX, mouseY);
+            renderAspectCell(g, effects[i], leftPos + EFFECT_X + i * CELL, topPos + EFFECT_Y, CELL, mouseX, mouseY, true);
         for (int i = 0; i < modifiers.length; i++)
-            renderAspectCell(g, modifiers[i], leftPos + MODIFIER_X + i * CELL, topPos + MODIFIER_Y, CELL, mouseX, mouseY);
+            renderAspectCell(g, modifiers[i], leftPos + MODIFIER_X + i * CELL, topPos + MODIFIER_Y, CELL, mouseX, mouseY, true);
     }
 
     private void renderTargetSlots(GuiGraphics g, int mouseX, int mouseY) {
-        int stored = menu.getCore().isEmpty() ? 0
-                : SkillEncoding.getSkills(menu.getCore()).size();
+        int stored = menu.getCore().isEmpty() ? 0 : SkillEncoding.getSkills(menu.getCore()).size();
         for (int i = 0; i < SkillEncoding.MAX_SLOTS; i++) {
             int x = leftPos + SLOT_ROW_X + i * SLOT_CELL;
             int y = topPos + SLOT_ROW_Y;
@@ -159,22 +160,25 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
         for (int i = 0; i < aspects.size(); i++) {
             int x = leftPos + PALETTE_X + (i % PALETTE_COLS) * PALETTE_STEP;
             int y = topPos + PALETTE_Y + (i / PALETTE_COLS) * PALETTE_STEP;
-            renderAspectCell(g, aspects.get(i), x, y, 16, mouseX, mouseY);
+            // palette sits over the texture's slot wells: don't draw our own well
+            renderAspectCell(g, aspects.get(i), x, y, 16, mouseX, mouseY, false);
         }
         int pages = pageCount();
         if (pages > 1) {
             g.drawCenteredString(font,
                     Component.translatable("gui.koniava.page_indicator", palettePage + 1, pages),
                     leftPos + PALETTE_X + (PALETTE_COLS * PALETTE_STEP) / 2,
-                    topPos + PALETTE_Y + PALETTE_ROWS * PALETTE_STEP + 1, 0xAAAAAA);
+                    topPos + PALETTE_Y + PALETTE_ROWS * PALETTE_STEP + 1, 0x666666);
         }
     }
 
     private void renderAspectCell(GuiGraphics g, @Nullable Aspect aspect, int x, int y, int size,
-                                  int mouseX, int mouseY) {
+                                  int mouseX, int mouseY, boolean drawWell) {
         boolean hovered = mouseX >= x && mouseX < x + size && mouseY >= y && mouseY < y + size;
-        g.fill(x - 1, y - 1, x + size + 1, y + size + 1, 0xFF1B1B1B);
-        g.fill(x, y, x + size, y + size, 0xFF2B2B2B);
+        if (drawWell) {
+            g.fill(x - 1, y - 1, x + size + 1, y + size + 1, 0xFF1B1B1B);
+            g.fill(x, y, x + size, y + size, 0xFF2B2B2B);
+        }
         if (aspect != null) {
             int color = aspect.getColor();
             RenderSystem.setShaderColor(ch(color, 16), ch(color, 8), ch(color, 0), 1.0F);
@@ -193,12 +197,6 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
         Aspect a = paletteAspectAt(mouseX, mouseY);
         if (a == null) a = roleAspectAt(mouseX, mouseY);
         if (a != null) g.renderTooltip(font, a.getName(), mouseX, mouseY);
-    }
-
-    private void slotFrame(GuiGraphics g, int x, int y, int size) {
-        g.fill(x - 1, y - 1, x + size + 1, y + size + 1, 0xFF1B1B1B);
-        g.fill(x, y, x + size, y + size, 0xFF8B8B8B);
-        g.fill(x + 1, y + 1, x + size - 1, y + size - 1, 0xFF373737);
     }
 
     // ── input ─────────────────────────────────────────────────────────────────
