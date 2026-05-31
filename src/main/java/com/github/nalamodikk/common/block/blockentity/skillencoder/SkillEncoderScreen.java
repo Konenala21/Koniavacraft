@@ -125,8 +125,10 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
     protected void renderBg(GuiGraphics g, float partial, int mouseX, int mouseY) {
         g.blit(BACKGROUND, leftPos, topPos, 0, 0, GUI_W, GUI_H, TEX, TEX);
 
-        // core slot well: blit the scrap-area icon (17x17) scaled to an 18x18 cell
-        g.blit(BACKGROUND, leftPos + SkillEncoderMenu.CORE_SLOT_X, topPos + SkillEncoderMenu.CORE_SLOT_Y,
+        // core slot well: blit the scrap-area icon (17x17) scaled to an 18x18 cell.
+        // Offset -1,-1 so the vanilla 16x16 slot item + hover highlight sit centred
+        // inside the drawn 18x18 well (the slot's hover box starts at slot.x-1).
+        g.blit(BACKGROUND, leftPos + SkillEncoderMenu.CORE_SLOT_X - 1, topPos + SkillEncoderMenu.CORE_SLOT_Y - 1,
                 18, 18, (float) CORE_ICON_U, (float) CORE_ICON_V, CORE_ICON_SRC, CORE_ICON_SRC, TEX, TEX);
 
         g.drawString(font, Component.translatable("gui.koniava.skill_encoder.carrier"),
