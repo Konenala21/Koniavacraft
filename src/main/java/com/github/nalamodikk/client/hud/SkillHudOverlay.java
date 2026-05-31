@@ -43,7 +43,7 @@ public final class SkillHudOverlay {
 
         GuiGraphics g = event.getGuiGraphics();
         int cx = g.guiWidth() / 2;
-        int baseY = g.guiHeight() - 54;
+        int baseY = g.guiHeight() - 72;
 
         if (skills.isEmpty()) {
             drawCentered(g, mc, Component.translatable("hud.koniava.skill.none"), cx, baseY + 5, 0xFFAAAAAA);
