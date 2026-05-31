@@ -22,6 +22,7 @@ import com.github.nalamodikk.common.network.packet.server.armor.ToggleNightVisio
 import com.github.nalamodikk.common.network.packet.server.boots.BootsUpgradeSwapPacket;
 import com.github.nalamodikk.common.network.packet.server.boots.DashPacket;
 import com.github.nalamodikk.common.network.packet.server.wand.WandCoreSwapPacket;
+import com.github.nalamodikk.common.network.packet.server.skill.CastSkillPacket;
 import com.github.nalamodikk.common.network.packet.server.turret.TurretUpgradeSwapPacket;
 import com.github.nalamodikk.common.network.packet.server.deployer.SetDeployerIntervalPacket;
 import com.github.nalamodikk.common.network.packet.server.deployer.ToggleDeployerEnabledPacket;
@@ -94,6 +95,7 @@ public class ModNetworking {
         DamageNumberPacket.registerToClient(registrar);
         TrainingDummyStatsPacket.registerToClient(registrar);
         WandCoreSwapPacket.registerTo(registrar);
+        CastSkillPacket.registerTo(registrar);
         TurretUpgradeSwapPacket.registerTo(registrar);
         DashPacket.registerTo(registrar);
         BootsUpgradeSwapPacket.registerTo(registrar);

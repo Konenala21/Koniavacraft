@@ -27,7 +27,8 @@ public class ModColorHandlers {
                 ModItems.ACTIVATION_CORE.get(),
                 ModItems.IO_CORE.get(),
                 ModItems.ROTATION_CORE.get(),
-                ModItems.RITUAL_CORE.get()
+                ModItems.RITUAL_CORE.get(),
+                ModItems.SPELL_CORE.get()
         );
 
         // 升級物品：依 behavior 染色（Mk0-Mk3 全部）

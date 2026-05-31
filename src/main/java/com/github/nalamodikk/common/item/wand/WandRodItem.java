@@ -4,11 +4,15 @@ import com.github.nalamodikk.common.item.wand.core.IWandCore;
 import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeBehavior;
 import com.github.nalamodikk.register.ModDataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.entity.player.Player;
 
 import java.util.List;
 
@@ -43,6 +47,21 @@ public class WandRodItem extends Item {
 
         IWandCore core = data.getCore();
         return core.coreUseOn(ctx, stack);
+    }
+
+    /**
+     * Right-click in air delegates to the installed core's {@link IWandCore#coreUse}.
+     * Only a Spell Core casts; other cores (or no core) do nothing here.
+     * Block right-clicks still go through {@link #useOn}.
+     */
+    @Override
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
+        WandCoreData data = stack.getOrDefault(ModDataComponents.WAND_CORE_DATA, WandCoreData.empty());
+        if (!data.hasCore()) {
+            return InteractionResultHolder.pass(stack);
+        }
+        return data.getCore().coreUse(level, player, hand, stack);
     }
 
     @Override

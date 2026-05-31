@@ -15,6 +15,7 @@ import com.github.nalamodikk.client.renderer.entity.FloatingTurretProjectileRend
 import com.github.nalamodikk.client.renderer.entity.FloatingTurretRenderer;
 import com.github.nalamodikk.client.renderer.entity.SpaceCrackRenderer;
 import com.github.nalamodikk.client.renderer.entity.PlayerCloneRenderer;
+import net.minecraft.client.renderer.entity.NoopRenderer;
 import com.github.nalamodikk.client.renderer.entity.NaraPhantomRenderer;
 import com.github.nalamodikk.client.renderer.entity.TrainingDummyModel;
 import com.github.nalamodikk.client.renderer.entity.TrainingDummyRenderer;
@@ -109,6 +110,7 @@ public class KoniavacraftMod {
             modEventBus.addListener((EntityRenderersEvent.RegisterRenderers e) -> {
                     e.registerEntityRenderer(ModEntities.FLOATING_TURRET.get(), FloatingTurretRenderer::new);
                     e.registerEntityRenderer(ModEntities.FLOATING_TURRET_PROJECTILE.get(), FloatingTurretProjectileRenderer::new);
+                    e.registerEntityRenderer(ModEntities.SPELL_PROJECTILE.get(), NoopRenderer::new);
                     e.registerEntityRenderer(ModEntities.SPACE_CRACK.get(), SpaceCrackRenderer::new);
                     e.registerEntityRenderer(ModEntities.PLAYER_CLONE.get(), PlayerCloneRenderer::new);
                     e.registerEntityRenderer(ModEntities.NARA_PHANTOM.get(), NaraPhantomRenderer::new);

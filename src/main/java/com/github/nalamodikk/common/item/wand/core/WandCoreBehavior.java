@@ -7,7 +7,9 @@ import com.github.nalamodikk.common.item.wand.WandRodItem;
 import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeBehavior;
 import com.github.nalamodikk.common.coreapi.block.IConfigurableBlock;
 import com.github.nalamodikk.common.multiblock.api.IWandActivatable;
+import com.github.nalamodikk.common.network.packet.server.skill.CastSkillPacket;
 import com.github.nalamodikk.common.screen.block.shared.UniversalConfigMenu;
+import com.github.nalamodikk.research.skill.SkillRegistry;
 import com.github.nalamodikk.common.network.packet.client.BlockHighlightPacket;
 import com.github.nalamodikk.common.network.packet.server.manatool.ManaUpdatePacket;
 import com.github.nalamodikk.common.utils.capability.CapabilityUtils;
@@ -18,8 +20,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -319,6 +324,33 @@ public enum WandCoreBehavior {
 
         @Override
         public int getColor() { return 0xFFAA66FF; } // 紫
+    },
+
+    SPELL {
+        @Override public Component getDescription() { return Component.translatable("tooltip.koniava.core.spell.desc"); }
+
+        @Override
+        public InteractionResult useOn(UseOnContext ctx, ItemStack wand) {
+            // Spell core does nothing on blocks; casting happens on air right-click (use()).
+            return InteractionResult.PASS;
+        }
+
+        @Override
+        public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand, ItemStack wand) {
+            if (level.isClientSide) {
+                // Generic: cast whichever skill the wand has selected. Defaults to the
+                // demo fireball until a selection UI sets SELECTED_SKILL.
+                ResourceLocation skillId = wand.getOrDefault(ModDataComponents.SELECTED_SKILL, SkillRegistry.FIREBALL);
+                CastSkillPacket.send(skillId);
+            }
+            return InteractionResultHolder.success(wand);
+        }
+
+        @Override
+        public Component getDisplayName() { return Component.translatable("item.koniava.spell_core"); }
+
+        @Override
+        public int getColor() { return 0xFFEE7722; } // 橘
     };
 
     // ── 結構建造核心 helper methods ───────────────────────────────────────────
@@ -383,6 +415,11 @@ public enum WandCoreBehavior {
     // ── Abstract declarations ─────────────────────────────────────────────────
 
     public abstract InteractionResult useOn(UseOnContext ctx, ItemStack wand);
+
+    /** Right-click in air. Default: do nothing. The SPELL core overrides this to cast. */
+    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand, ItemStack wand) {
+        return InteractionResultHolder.pass(wand);
+    }
 
     public abstract Component getDisplayName();
 

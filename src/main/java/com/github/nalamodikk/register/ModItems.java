@@ -206,6 +206,8 @@ public class ModItems {
             ITEMS.register("ritual_core", () -> new WandCoreItem(WandCoreBehavior.RITUAL, new Item.Properties().stacksTo(1)));
     public static final DeferredItem<WandCoreItem> STRUCTURE_BUILD_CORE =
             ITEMS.register("structure_build_core", () -> new WandCoreItem(WandCoreBehavior.STRUCTURE_BUILD, new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<WandCoreItem> SPELL_CORE =
+            ITEMS.register("spell_core", () -> new WandCoreItem(WandCoreBehavior.SPELL, new Item.Properties().stacksTo(1)));
 
     public static final DeferredItem<WandUpgradeItem> WAND_UPGRADE_CAPACITY_MK0 =
             ITEMS.register("wand_upgrade_capacity_mk0", () -> new WandUpgradeItem(WandUpgradeBehavior.CAPACITY, 0, new Item.Properties().stacksTo(4)));

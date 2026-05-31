@@ -133,6 +133,16 @@ public class ModDataComponents {
                                     ResourceLocation::toString))
                     .build();
 
+    /** The skill a Spell Core wand will cast. Generic: any registered skill id. */
+    public static final DataComponentType<ResourceLocation> SELECTED_SKILL =
+            DataComponentType.<ResourceLocation>builder()
+                    .persistent(ResourceLocation.CODEC)
+                    .networkSynchronized(
+                            ByteBufCodecs.stringUtf8(255).map(
+                                    ResourceLocation::tryParse,
+                                    ResourceLocation::toString))
+                    .build();
+
     public static final DataComponentType<WandCoreData> WAND_CORE_DATA =
             DataComponentType.<WandCoreData>builder()
                     .persistent(WandCoreData.CODEC)
@@ -187,6 +197,7 @@ public class ModDataComponents {
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "aspect_hidden"), ASPECT_HIDDEN);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "night_vision_active"), NIGHT_VISION_ACTIVE);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "night_vision_we_applied"), NIGHT_VISION_WE_APPLIED);
+            helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "selected_skill"), SELECTED_SKILL);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "wand_core_data"), WAND_CORE_DATA);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "equipment_upgrade_data"), EQUIPMENT_UPGRADE_DATA);
             helper.register(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "turret_upgrade_data"), TURRET_UPGRADE_DATA);

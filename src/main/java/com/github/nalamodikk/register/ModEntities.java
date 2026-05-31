@@ -4,6 +4,7 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.entity.FloatingTurretEntity;
 import com.github.nalamodikk.common.entity.FloatingTurretProjectile;
 import com.github.nalamodikk.common.entity.SpaceCrackEntity;
+import com.github.nalamodikk.common.entity.SpellProjectileEntity;
 import com.github.nalamodikk.common.entity.PlayerCloneEntity;
 import com.github.nalamodikk.common.entity.NaraPhantomEntity;
 import com.github.nalamodikk.common.entity.TrainingDummyEntity;
@@ -42,6 +43,15 @@ public class ModEntities {
                             .clientTrackingRange(10)
                             .updateInterval(2)
                             .build(KoniavacraftMod.MOD_ID + ":floating_turret_projectile")
+            );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<SpellProjectileEntity>> SPELL_PROJECTILE =
+            ENTITY_TYPES.register("spell_projectile", () ->
+                    EntityType.Builder.<SpellProjectileEntity>of(SpellProjectileEntity::new, MobCategory.MISC)
+                            .sized(0.3F, 0.3F)
+                            .clientTrackingRange(10)
+                            .updateInterval(2)
+                            .build(KoniavacraftMod.MOD_ID + ":spell_projectile")
             );
 
     public static final DeferredHolder<EntityType<?>, EntityType<SpaceCrackEntity>> SPACE_CRACK =
