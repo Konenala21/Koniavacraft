@@ -8,6 +8,7 @@ import com.github.nalamodikk.research.client.ClientResearchCache;
 import com.github.nalamodikk.research.skill.AspectRoles;
 import com.github.nalamodikk.research.skill.SkillEncoding;
 import com.github.nalamodikk.research.skill.SkillRole;
+import com.github.nalamodikk.research.skill.StoredSkill;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -16,9 +17,11 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -64,6 +67,7 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
 
     private EditBox nameField;
     private EditBox searchField;
+    private ItemStack lastCore = ItemStack.EMPTY;
 
     public SkillEncoderScreen(SkillEncoderMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
@@ -91,6 +95,41 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
         this.searchField.setHint(Component.translatable("gui.koniava.skill_encoder.search"));
         this.searchField.setResponder(s -> palettePage = 0);   // reset paging on new query
         addRenderableWidget(this.searchField);
+    }
+
+    /** When the core in the slot changes (placed/removed/just encoded), reflect it. */
+    @Override
+    protected void containerTick() {
+        super.containerTick();
+        ItemStack core = menu.getCore();
+        if (!ItemStack.matches(core, lastCore)) {
+            lastCore = core.copy();
+            loadFromCore(targetSlot);
+        }
+    }
+
+    /** Load the stored skill at {@code slot} into the editor, or clear it if empty. */
+    private void loadFromCore(int slot) {
+        clearEditor();
+        ItemStack core = menu.getCore();
+        if (core.isEmpty()) return;
+        List<StoredSkill> skills = SkillEncoding.getSkills(core);
+        if (slot < 0 || slot >= skills.size()) return;
+
+        StoredSkill s = skills.get(slot);
+        carrier = ModAspects.get(s.carrier());
+        for (int i = 0; i < effects.length && i < s.effects().size(); i++)
+            effects[i] = ModAspects.get(s.effects().get(i));
+        for (int i = 0; i < modifiers.length && i < s.modifiers().size(); i++)
+            modifiers[i] = ModAspects.get(s.modifiers().get(i));
+        if (nameField != null) nameField.setValue(s.name());
+    }
+
+    private void clearEditor() {
+        carrier = null;
+        Arrays.fill(effects, null);
+        Arrays.fill(modifiers, null);
+        if (nameField != null) nameField.setValue("");
     }
 
     private void onEncode() {
@@ -293,6 +332,7 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
         for (int i = 0; i < SkillEncoding.MAX_SLOTS; i++) {
             if (inCell(mx, my, leftPos + SLOT_ROW_X + i * SLOT_CELL, topPos + SLOT_ROW_Y, SLOT_CELL)) {
                 targetSlot = i;
+                loadFromCore(i);   // show what is already encoded in this slot
                 return true;
             }
         }
