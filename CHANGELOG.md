@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.1.9-2] - 2026-05-31
+
 ### Player Changes / 玩家更新內容
 
 Fixed: the Mana Plate Press could not receive mana (or items) from conduits or adjacent blocks, so it never worked. Its capabilities were missing and are now registered like the other machines.
