@@ -106,7 +106,8 @@ public class SpellProjectileEntity extends ThrowableProjectile {
         target.hurt(source, damage);
 
         if (target instanceof LivingEntity living && level() instanceof ServerLevel sl) {
-            for (SkillEffectOp op : ops) op.apply(sl, living, damage);
+            Vec3 dir = getDeltaMovement().lengthSqr() < 1.0E-6 ? Vec3.ZERO : getDeltaMovement().normalize();
+            for (SkillEffectOp op : ops) op.apply(sl, living, owner, dir, damage);
         }
 
         burst(result.getLocation());

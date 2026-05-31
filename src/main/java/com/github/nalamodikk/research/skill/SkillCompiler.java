@@ -6,6 +6,8 @@ import com.github.nalamodikk.research.aspect.ModAspects;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.phys.Vec3;
@@ -58,9 +60,15 @@ public final class SkillCompiler {
             SkillEffectOp op = opFor(e);
             if (op != null && !ops.contains(op)) ops.add(op);
         }
+        // BINDING / GEN (艮) modifiers add a root payload on hit
+        if ((modifiers.contains(ModAspects.BINDING) || modifiers.contains(ModAspects.GEN))
+                && !ops.contains(SkillEffectOp.ROOT)) {
+            ops.add(SkillEffectOp.ROOT);
+        }
 
         int count = modifiers.contains(ModAspects.REFRACTION) ? 3 : 1;
         boolean pierce = modifiers.contains(ModAspects.BLADE);
+        boolean warding = modifiers.contains(ModAspects.WARDING);
         float power = 1.0F
                 + (modifiers.contains(ModAspects.FORTIFY) ? 0.5F : 0.0F)
                 + (modifiers.contains(ModAspects.QIAN) ? 1.0F : 0.0F);
@@ -76,6 +84,9 @@ public final class SkillCompiler {
         Consumer<SkillContext> action = ctx -> {
             ServerPlayer caster = ctx.caster();
             ServerLevel level = ctx.level();
+            if (warding) {
+                caster.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 200, 1));
+            }
             if (isProjectile) {
                 Vec3 look = caster.getLookAngle();
                 for (int i = 0; i < count; i++) {
@@ -100,6 +111,16 @@ public final class SkillCompiler {
         if (effect == ModAspects.FROST) return SkillEffectOp.FROST;
         if (effect == ModAspects.VENOM) return SkillEffectOp.POISON;
         if (effect == ModAspects.CORROSION || effect == ModAspects.FAMINE) return SkillEffectOp.WEAKEN;
+        if (effect == ModAspects.ZHEN || effect == ModAspects.ARC) return SkillEffectOp.LIGHTNING;
+        if (effect == ModAspects.STORM || effect == ModAspects.KAN || effect == ModAspects.DUI) return SkillEffectOp.KNOCKBACK;
+        if (effect == ModAspects.RADIANCE) return SkillEffectOp.BLIND;
+        if (effect == ModAspects.GROWTH) return SkillEffectOp.ROOT;
+        if (effect == ModAspects.VITAE) return SkillEffectOp.LIFESTEAL;
+        if (effect == ModAspects.DEATH || effect == ModAspects.UNDEAD || effect == ModAspects.TAINT
+                || effect == ModAspects.ELDRITCH || effect == ModAspects.SPIRITUS
+                || effect == ModAspects.VOID_ASPECT) {
+            return SkillEffectOp.WITHER;
+        }
         return null;
     }
 
