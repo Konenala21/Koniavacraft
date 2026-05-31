@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.List;
@@ -38,6 +39,8 @@ public class SpellProjectileEntity extends ThrowableProjectile {
 
     private float damage = 6.0F;
     private boolean pierce = false;
+    private boolean homing = false;
+    private int chainCount = 0;
     private List<SkillEffectOp> ops = List.of();
     private final Set<Integer> alreadyHit = new HashSet<>();
     private int lifetime = 0;
@@ -49,11 +52,14 @@ public class SpellProjectileEntity extends ThrowableProjectile {
 
     /** Fire a spell projectile along {@code dir} from the shooter's eyes. */
     public static SpellProjectileEntity shoot(Level level, Player shooter, Vec3 dir,
-                                              float damage, List<SkillEffectOp> ops, boolean pierce) {
+                                              float damage, List<SkillEffectOp> ops, boolean pierce,
+                                              boolean homing, int chainCount) {
         SpellProjectileEntity p = new SpellProjectileEntity(ModEntities.SPELL_PROJECTILE.get(), level);
         p.damage = damage;
         p.ops = List.copyOf(ops);
         p.pierce = pierce;
+        p.homing = homing;
+        p.chainCount = chainCount;
         p.setOwner(shooter);
 
         Vec3 d = dir.lengthSqr() < 1.0E-6 ? shooter.getLookAngle() : dir.normalize();
@@ -74,6 +80,8 @@ public class SpellProjectileEntity extends ThrowableProjectile {
     public void tick() {
         super.tick();
         if (level().isClientSide) return;
+
+        if (homing && level() instanceof ServerLevel) steerToward(findHomingTarget());
 
         if (level() instanceof ServerLevel sl) {
             Vec3 p = position();
@@ -108,10 +116,54 @@ public class SpellProjectileEntity extends ThrowableProjectile {
         if (target instanceof LivingEntity living && level() instanceof ServerLevel sl) {
             Vec3 dir = getDeltaMovement().lengthSqr() < 1.0E-6 ? Vec3.ZERO : getDeltaMovement().normalize();
             for (SkillEffectOp op : ops) op.apply(sl, living, owner, dir, damage);
+            if (chainCount > 0) chainFrom(living, owner, source, dir, sl);
         }
 
         burst(result.getLocation());
         if (!pierce) discard();
+    }
+
+    /** Arc to nearby enemies (ARC / PROPAGATION modifier), dealing reduced damage + ops. */
+    private void chainFrom(LivingEntity from, LivingEntity owner, DamageSource source, Vec3 dir, ServerLevel sl) {
+        List<LivingEntity> near = sl.getEntitiesOfClass(LivingEntity.class, from.getBoundingBox().inflate(5.0),
+                e -> e != from && e != getOwner() && e.isAlive() && !alreadyHit.contains(e.getId()));
+        int jumps = Math.min(chainCount, near.size());
+        for (int i = 0; i < jumps; i++) {
+            LivingEntity e = near.get(i);
+            alreadyHit.add(e.getId());
+            e.invulnerableTime = 0;
+            e.hurt(source, damage * 0.5F);
+            for (SkillEffectOp op : ops) op.apply(sl, e, owner, dir, damage * 0.5F);
+            Vec3 a = from.getEyePosition();
+            Vec3 b = e.getEyePosition();
+            for (int s = 0; s <= 6; s++) {
+                Vec3 m = a.lerp(b, s / 6.0);
+                sl.sendParticles(ParticleTypes.ELECTRIC_SPARK, m.x, m.y, m.z, 1, 0.0, 0.0, 0.0, 0.0);
+            }
+        }
+    }
+
+    @Nullable
+    private LivingEntity findHomingTarget() {
+        if (!(level() instanceof ServerLevel sl)) return null;
+        Vec3 vel = getDeltaMovement();
+        LivingEntity best = null;
+        double bestDist = Double.MAX_VALUE;
+        for (LivingEntity e : sl.getEntitiesOfClass(LivingEntity.class, getBoundingBox().inflate(12.0),
+                e -> e != getOwner() && e.isAlive())) {
+            Vec3 to = e.getEyePosition().subtract(position());
+            if (to.dot(vel) <= 0) continue;     // only steer toward things ahead
+            double d = to.lengthSqr();
+            if (d < bestDist) { bestDist = d; best = e; }
+        }
+        return best;
+    }
+
+    private void steerToward(@Nullable LivingEntity target) {
+        if (target == null) return;
+        Vec3 to = target.getEyePosition().subtract(position()).normalize();
+        Vec3 steered = getDeltaMovement().normalize().scale(0.82).add(to.scale(0.18)).normalize().scale(SPEED);
+        setDeltaMovement(steered);
     }
 
     @Override

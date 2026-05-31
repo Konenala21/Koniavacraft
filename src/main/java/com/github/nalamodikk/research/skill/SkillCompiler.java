@@ -69,6 +69,8 @@ public final class SkillCompiler {
         int count = modifiers.contains(ModAspects.REFRACTION) ? 3 : 1;
         boolean pierce = modifiers.contains(ModAspects.BLADE);
         boolean warding = modifiers.contains(ModAspects.WARDING);
+        boolean homing = modifiers.contains(ModAspects.ANIMA);
+        int chainCount = (modifiers.contains(ModAspects.ARC) || modifiers.contains(ModAspects.PROPAGATION)) ? 2 : 0;
         float power = 1.0F
                 + (modifiers.contains(ModAspects.FORTIFY) ? 0.5F : 0.0F)
                 + (modifiers.contains(ModAspects.QIAN) ? 1.0F : 0.0F);
@@ -80,6 +82,7 @@ public final class SkillCompiler {
                 || carrier == ModAspects.MOMENTUM
                 || carrier == ModAspects.MANA
                 || carrier == ModAspects.XUN;
+        boolean isDash = carrier == ModAspects.FLIGHT;
 
         Consumer<SkillContext> action = ctx -> {
             ServerPlayer caster = ctx.caster();
@@ -91,13 +94,20 @@ public final class SkillCompiler {
                 Vec3 look = caster.getLookAngle();
                 for (int i = 0; i < count; i++) {
                     Vec3 dir = count == 1 ? look : spread(look, i, count);
-                    level.addFreshEntity(
-                            SpellProjectileEntity.shoot(level, caster, dir, damage, finalOps, pierce));
+                    level.addFreshEntity(SpellProjectileEntity.shoot(
+                            level, caster, dir, damage, finalOps, pierce, homing, chainCount));
                 }
                 level.playSound(null, caster.blockPosition(),
                         SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 0.8F, 1.4F);
+            } else if (isDash) {
+                Vec3 look = caster.getLookAngle();
+                caster.setDeltaMovement(look.scale(1.6).add(0.0, 0.25, 0.0));
+                caster.hurtMarked = true; // sync the impulse to the client
+                caster.fallDistance = 0.0F;
+                level.playSound(null, caster.blockPosition(),
+                        SoundEvents.BREEZE_SHOOT, SoundSource.PLAYERS, 0.8F, 1.2F);
             }
-            // other carrier families (self / area / beam) come later
+            // beam (PIPELINE) and field (GRAVITY) carriers come later
         };
 
         return new CompiledSkill(cost, action);
