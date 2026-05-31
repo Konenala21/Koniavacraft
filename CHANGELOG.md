@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Developer Notes / 開發者備註
 
+- WIP (semantic scanning tuning): retuned the `arc` aspect anchor (dropped the polysemous "arc"/"lightning"/"bolt" words that collided with storm/energy, now electric-discharge specific: spark/voltage/electrode/discharge). Expanded the vocab table's DOMAIN_WORDS with more modded tokens (electrum/invar/signalum/enderium/certus/assembler/pulverizer/...) and Koniavacraft coined names (koniava/koneiava/nara/konia) so they stay in-vocab instead of oov-skip. Regenerated the 12MB table; matcher unit test still green.
+- WIP（語意掃描調校）：重調 `arc` 本源錨點（拿掉多義的 "arc"/"lightning"/"bolt"，它們跟 storm/energy 撞，改成放電專屬：spark/voltage/electrode/discharge）。詞庫 DOMAIN_WORDS 補了更多模組 token（electrum/invar/signalum/enderium/certus/assembler/pulverizer 等）+ Koniavacraft 自創名（koniava/koneiava/nara/konia），讓它們留在 vocab 內不被 oov-skip。重生 12MB 表；matcher 單元測試仍綠。
+
 - WIP (semantic aspect scanning): items/blocks that miss tag/keyword/recipe layers now get aspects from name semantics via a precomputed word-vector table. SemanticAspectMatcher loads /koniava_data/aspect_semantic/ (built offline by tools/aspect_embedding with a 226MB fastText model; only the ~12MB int8 table ships) into RAM once, then tokenizes the id, averages token vectors, and cosine-matches aspect anchors (top 1-2 above a confidence margin). Wired into BlockAspectResolver + RecipeInferenceEngine before the hash fallback. Handles OOV modded words via subword (osmium_ingot -> metal). Table absent (fresh checkout) = no-op. Unit-tested (no MC context needed).
 - WIP（本源語意掃描）：tag/keyword/配方都沒中的物品/方塊，改用名字語意 + 預算詞向量表掃本源。SemanticAspectMatcher 把 /koniava_data/aspect_semantic/（tools/aspect_embedding 用 226MB fastText 離線生，出貨只帶 ~12MB int8 表）載進 RAM 一次，tokenize id → 向量平均 → cosine 比對本源錨點（信心門檻取 top 1-2）。接進 BlockAspectResolver + RecipeInferenceEngine 的 hash fallback 前。OOV 模組詞靠 subword（osmium_ingot→metal）。表缺則 no-op。已單元測試（不需 MC 環境）。
 
