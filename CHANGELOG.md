@@ -6,8 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
-The Aspect Researcher villager is back, done right. Craft an Aspect Research Desk (bookshelf + mana crystal + amethyst) and an unemployed villager nearby becomes an Aspect Researcher who trades a Mirror Core Shard for Basic Aspect Essence. It uses its own dedicated block (not your research table), so it no longer causes the open stutter.
-本源研究員村民回來了，這次做對了。合成「本源研究桌」（書架 + 魔力水晶 + 紫水晶），附近的失業村民就會轉職成本源研究員，收鏡核碎片換基礎本源精華。它用自己專屬的方塊（不是你的研究台），所以不再造成開啟卡頓。
+The Aspect Researcher villager is back, done right. Craft an Aspect Trading Station (bookshelf + mana crystal + amethyst) and an unemployed villager nearby becomes an Aspect Researcher who trades a Mirror Core Shard for Basic Aspect Essence. It uses its own dedicated block (not your research table, and named so you won't confuse the two), so it no longer causes the open stutter.
+本源研究員村民回來了，這次做對了。合成「本源交易站」（書架 + 魔力水晶 + 紫水晶），附近的失業村民就會轉職成本源研究員，收鏡核碎片換基礎本源精華。它用自己專屬的方塊（不是你的研究台，名字也分開避免混淆），所以不再造成開啟卡頓。
 
 Hovering an aspect in the Skill Encoder now shows what it does in a skill (its role and effect), so you can read each aspect's behavior right where you build skills instead of guessing.
 在技能編碼台滑到本源現在會顯示它在技能裡做什麼（角色與效果），組技能的當下就能看懂每個本源的行為，不用再用猜的。
@@ -25,6 +25,9 @@ New material, the Aspect Codec Board, is the heart of the skill system, and gett
 新材料「本源編碼基板」是技能系統的核心，而且取得它要走過整條技術樹：先在魔力工作台組出「空白本源編碼基板」（研磨機的魔力基板＋電路鏈的精密電路板＋祭壇的魔力晶圓＋導線），再到祭壇用鏡中世界 boss 掉的鏡核碎片激活。技能編碼台現在也改成祭壇製作，法術核心則用激活後的基板，所以整條技能路線都會走過你前面蓋的機器。法術核心組出的技能傷害也大幅提高（基礎傷害更高、每個效果加成更多），組合越深的技能越強，配得上解鎖它的漫長路程。（基板貼圖待補。）
 
 ### Developer Notes / 開發者備註
+
+- Renamed the Aspect Researcher job block's display name to "Aspect Trading Station" (block id aspect_research_desk unchanged) so it no longer collides with the player's Research Table. Lang-only change, both locales.
+- 把本源研究員職業方塊的顯示名改成「本源交易站」（方塊 id aspect_research_desk 不變），避免跟玩家的「研究台」撞名。只動 lang，兩個語系都改。
 
 - WIP (revert research-table POI: fixes the open stutter + non-working profession): the custom Aspect Researcher profession bound its POI to the Research Table, but that block is a BaseEntityBlock (block entity + animated render), so making it a POI caused a hitch when opening the table and villagers wouldn't reliably claim it. Removed ModVillagers (POI + profession) entirely; the Mirror Core Shard -> Basic Aspect Essence trade now lives on the vanilla Librarian (level 3, knowledge theme, works out of the box). A proper custom researcher can be redone later on a dedicated simple (non-BE) job block.
 - WIP（移除研究台 POI：修開啟卡頓 + 村民不任職）：自訂「本源研究員」職業把 POI 綁在研究台,但研究台是 BaseEntityBlock（有 BlockEntity + 動畫渲染），當 POI 會在開啟時卡頓、村民也不易認領。整個移除 ModVillagers（POI+職業）；鏡核碎片→基礎本源精華的交易改掛 vanilla 圖書管理員（等級 3,知識主題,開箱即用）。要正式的本源研究員之後用專屬的簡單（非 BE）方塊另做。
