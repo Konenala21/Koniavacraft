@@ -111,17 +111,19 @@ public class ManaCraftingRecipeProvider {
                 .manaCost(3000)
                 .save(output, "precision_mana_circuit");
 
-        // 技能編碼台（把技能編寫進法術核心的工作站，電路主題）
+        // 技能編碼台（技能系統的工作站；中心用鏡核碎片＝打贏鏡中 boss 才做得出，純材料卡位不靠研究鎖）
         ManaCraftingRecipeBuilder.create(ModBlocks.SKILL_ENCODER.get(), 1)
                 .shaped(true)
-                .pattern("IPI")
-                .pattern("PCP")
+                .pattern("PHP")
+                .pattern("WMW")
                 .pattern("ISI")
-                .define('I', ModItems.MANA_INGOT.get())
                 .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
-                .define('C', ModItems.MANA_CRYSTAL.get())
+                .define('H', ModItems.HIGH_DENSITY_MANA_CORE.get())
+                .define('W', ModItems.MANA_WAFER.get())
+                .define('M', ModItems.MIRROR_CORE_SHARD.get())
+                .define('I', ModItems.MANA_INGOT.get())
                 .define('S', ModItems.MANA_SUBSTRATE.get())
-                .manaCost(2500)
+                .manaCost(5000)
                 .save(output, "skill_encoder");
 
         // 魔力充能台（前祭壇路徑：注魔台 + 研磨機材料）
@@ -259,17 +261,19 @@ public class ManaCraftingRecipeProvider {
                 .manaCost(1500)
                 .save(output, "ritual_core");
 
-        // 法術核心（技能系統的心臟：奧法 + 靈魄主題）
+        // 法術核心（技能系統的心臟；頂端鏡核碎片＝鏡中 boss 之後才做得出，奧法 + 鏡像主題）
         ManaCraftingRecipeBuilder.create(ModItems.SPELL_CORE.get(), 1)
                 .shaped(true)
-                .pattern(" A ")
+                .pattern("AMA")
                 .pattern("CBC")
-                .pattern(" R ")
+                .pattern("WRW")
                 .define('A', Items.AMETHYST_SHARD)
+                .define('M', ModItems.MIRROR_CORE_SHARD.get())
                 .define('C', ModItems.MANA_CRYSTAL.get())
                 .define('B', ModItems.BLANK_CORE.get())
+                .define('W', ModItems.MANA_WIRE.get())
                 .define('R', ModItems.REFINED_MANA_DUST.get())
-                .manaCost(2000)
+                .manaCost(3000)
                 .save(output, "spell_core");
 
         // 容量升級 Mk0
