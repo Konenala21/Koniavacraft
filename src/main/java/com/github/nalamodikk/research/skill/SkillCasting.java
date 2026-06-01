@@ -1,5 +1,7 @@
 package com.github.nalamodikk.research.skill;
 
+import com.github.nalamodikk.common.item.wand.WandCoreData;
+import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeBehavior;
 import com.github.nalamodikk.register.ModDataComponents;
 import com.github.nalamodikk.research.knowledge.PlayerKnowledge;
 import com.github.nalamodikk.research.knowledge.ResearchSavedData;
@@ -43,18 +45,27 @@ public final class SkillCasting {
             }
         }
 
-        // 2) mana: must afford, then consume from the wand
+        // 2) mana: apply the wand's Efficiency upgrades, then afford + consume.
+        int mana = effectiveMana(wand, cost.mana());
         int stored = wand.getOrDefault(ModDataComponents.MANA_STORED, 0);
-        if (stored < cost.mana()) {
+        if (stored < mana) {
             caster.displayClientMessage(
                     Component.translatable("message.koniava.skill.not_enough_mana"), true);
             return false;
         }
-        wand.set(ModDataComponents.MANA_STORED, stored - cost.mana());
+        wand.set(ModDataComponents.MANA_STORED, stored - mana);
 
         // 3) run
         skill.execute(new SkillContext(level, caster));
         return true;
+    }
+
+    /** Mana cost after the wand's Efficiency upgrades (each point is 1% off, floored at 40%). */
+    public static int effectiveMana(ItemStack wand, int baseMana) {
+        WandCoreData data = wand.getOrDefault(ModDataComponents.WAND_CORE_DATA, WandCoreData.empty());
+        int efficiency = data.sumUpgradeBonus(WandUpgradeBehavior.EFFICIENCY);
+        float mult = Math.max(0.4F, 1.0F - efficiency / 100.0F);
+        return Math.max(1, Math.round(baseMana * mult));
     }
 
     private SkillCasting() {}

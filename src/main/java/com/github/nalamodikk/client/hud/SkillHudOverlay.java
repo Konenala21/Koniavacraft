@@ -5,6 +5,7 @@ import com.github.nalamodikk.common.item.wand.WandCoreData;
 import com.github.nalamodikk.common.item.wand.WandRodItem;
 import com.github.nalamodikk.register.ModDataComponents;
 import com.github.nalamodikk.register.ModItems;
+import com.github.nalamodikk.research.skill.SkillCasting;
 import com.github.nalamodikk.research.skill.SkillEncoding;
 import com.github.nalamodikk.research.skill.StoredSkill;
 import net.minecraft.client.Minecraft;
@@ -53,7 +54,7 @@ public final class SkillHudOverlay {
         int idx = data.core().getOrDefault(ModDataComponents.SELECTED_SKILL_INDEX, 0);
         if (idx < 0 || idx >= skills.size()) idx = 0;
         StoredSkill skill = skills.get(idx);
-        int mana = skill.compile().cost().mana();
+        int mana = SkillCasting.effectiveMana(wand, skill.compile().cost().mana());
         String name = skill.name().isBlank()
                 ? Component.translatable("gui.koniava.skill_encoder.unnamed").getString()
                 : skill.name();
