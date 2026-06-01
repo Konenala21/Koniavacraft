@@ -148,10 +148,39 @@ public final class SkillCompiler {
                 castBeam(level, caster, dmg, finalOps);
             } else if (carrier == ModAspects.GRAVITY) {
                 castField(level, caster, dmg, finalOps);
+            } else if (carrier == ModAspects.BLADE) {
+                castSlash(level, caster, dmg, finalOps);
             }
         };
 
         return new CompiledSkill(cost, action);
+    }
+
+    /** BLADE carrier: a melee-range blade wave that slashes everything in a forward arc. */
+    private static void castSlash(ServerLevel level, ServerPlayer caster, float damage, List<SkillEffectOp> ops) {
+        Vec3 eye = caster.getEyePosition();
+        Vec3 look = caster.getLookAngle();
+        double range = 4.5;
+        double coneCos = 0.4; // ~132 degree arc in front
+        DamageSource src = caster.damageSources().playerAttack(caster);
+        for (Entity e : level.getEntities(caster, caster.getBoundingBox().inflate(range),
+                x -> x instanceof LivingEntity && x.isAlive())) {
+            Vec3 to = e.position().add(0, e.getBbHeight() * 0.5, 0).subtract(eye);
+            if (to.length() > range || to.normalize().dot(look) < coneCos) continue;
+            e.invulnerableTime = 0;
+            e.hurt(src, damage);
+            if (e instanceof LivingEntity le) for (SkillEffectOp op : ops) op.apply(level, le, caster, look, damage);
+        }
+        // sweep arc visual
+        Vec3 up = new Vec3(0, 1, 0);
+        Vec3 side = look.cross(up).normalize();
+        for (int i = 0; i <= 14; i++) {
+            double a = (i / 14.0 - 0.5) * Math.PI * 0.75;
+            Vec3 dir = look.scale(Math.cos(a)).add(side.scale(Math.sin(a))).normalize();
+            Vec3 p = eye.add(dir.scale(2.5));
+            level.sendParticles(ParticleTypes.SWEEP_ATTACK, p.x, p.y, p.z, 1, 0.0, 0.0, 0.0, 0.0);
+        }
+        level.playSound(null, caster.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1.0F, 1.1F);
     }
 
     /** ORDER: remove all harmful status effects from the caster. */

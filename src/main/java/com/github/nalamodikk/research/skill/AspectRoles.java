@@ -75,7 +75,7 @@ public final class AspectRoles {
         // ── Modifiers (alter) ────────────────────────────────────────────────
         put(ModAspects.REFRACTION, SkillRole.MODIFIER); // 分裂多發
         put(ModAspects.RESONANCE,  SkillRole.MODIFIER); // 回響/重複
-        put(ModAspects.BLADE,      SkillRole.MODIFIER); // 穿透
+        put(ModAspects.BLADE,      SkillRole.CARRIER, SkillRole.MODIFIER); // 載體=劍氣斬 / 修飾=穿透
         put(ModAspects.BINDING,    SkillRole.MODIFIER); // 定身
         put(ModAspects.GEN,        SkillRole.MODIFIER); // 艮 緩停/釘住
         put(ModAspects.WARDING,    SkillRole.MODIFIER); // 護盾
