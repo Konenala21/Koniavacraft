@@ -78,10 +78,12 @@ public enum SkillEffectOp {
             target.setTicksFrozen(Math.min(target.getTicksRequiredToFreeze() + 40, target.getTicksFrozen() + 140));
         }
     },
-    /** 生長: roots the target in place (also the binding/gen modifier payload). */
+    /** 生長: roots the target in place (also the binding/gen modifier payload).
+     *  Uses the custom ROOT effect (zeroes horizontal velocity each tick), so it
+     *  truly immobilizes even flying mobs, unlike vanilla slowness. */
     ROOT {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 5)); // near-immobile
+            target.addEffect(new MobEffectInstance(ModMobEffects.ROOT, 60, 0));
         }
     },
     /** 毒: a strong, lingering poison. */

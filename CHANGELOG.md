@@ -14,6 +14,9 @@ New material, the Aspect Codec Board, is the heart of the skill system, and gett
 
 ### Developer Notes / 開發者備註
 
+- WIP (skill root now truly immobilizes, incl. flying mobs): the skill ROOT op (growth effect + binding/gen modifiers) used vanilla Slowness amp5, which only lowers the ground movement-speed attribute and so does nothing to flying/custom-movement mobs (ender dragon, ghast, phantom, bee, wither, ...). It now uses the mod's custom ROOT effect (RootMobEffect zeroes horizontal velocity each tick, the same one the floating turret control bolt uses), so root actually holds everything. Plain slows (frost/arc/etc) still use vanilla slowness by design and remain ground-only.
+- WIP（技能定身現在真的定得住，含飛行怪）：技能 ROOT（孕育效果 + 束縛/艮修飾）原本用 vanilla 緩速 amp5，那只降地面移動速度屬性，對飛行/自訂移動的怪（終界龍/惡魂/夜魅/蜜蜂/凋零…）沒用。現在改用模組自訂的 ROOT 效果（RootMobEffect 每 tick 把水平速度歸零，跟浮游砲控制彈同一個），所以定身對所有東西都有效。一般緩速（冰寒/電弧等）照設計仍用 vanilla 緩速，維持只對地面怪。
+
 - WIP (custom status effects, real substance over vanilla): three mod-owned MobEffects replace bland vanilla uses. Bleed (BleedEffect) ticks armor-bypassing true damage each second and can actually kill (poison can't); bestia now applies it. Soulburn (SoulburnEffect) is a faster, heavier armor-bypassing DoT used by the soulfire reaction. Vulnerable is a mark: SkillStatusEffectHandler hooks LivingDamageEvent.Pre to amplify damage to a marked target (+20%, +10% per level), so sensus marks a target for a burst finisher (and feeds law's per-debuff scaling). Registered in ModMobEffects; lang en/zh_tw. Icons missing for now (like root, harmless, no HUD icon until drawn). Tests green.
 - WIP（自訂狀態效果，比 vanilla 有料）：三個模組自有 MobEffect 取代平淡的 vanilla 用法。流血（BleedEffect）每秒造成無視護甲的真實傷害、而且能真的打死目標（中毒不行），獸性改用它。靈焰（SoulburnEffect）是更快更重的無視護甲 DoT，煉獄火反應用它。易傷是標記：SkillStatusEffectHandler 掛 LivingDamageEvent.Pre，對被標記目標放大傷害（+20%、每層 +10%），所以感知標記目標後可用大招收尾（也餵律法的依層數加傷）。註冊在 ModMobEffects；lang en/zh_tw。圖示暫缺（跟 root 一樣無害，畫了才有 HUD 圖示）。測試綠。
 
