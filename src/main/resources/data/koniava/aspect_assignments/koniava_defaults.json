@@ -1,0 +1,5 @@
+{
+  "koniava:spell_core": ["koniava:arcana", "koniava:anima"],
+  "koniava:nara_watch": ["koniava:instrument", "koniava:mechanism"],
+  "koniava:mirror_core_shard": ["koniava:refraction", "koniava:crystal"]
+}

@@ -38,6 +38,13 @@ public class RecipeInferenceEngine {
         List<Aspect> cached = data.getItemMapping(id);
         if (cached != null) return cached;
 
+        // Datapack-assigned aspects win over everything else (explicit, deterministic).
+        List<Aspect> override = AspectOverrideLoader.get(id);
+        if (!override.isEmpty()) {
+            data.putItemMapping(id, override);
+            return override;
+        }
+
         // Start Inference
         List<Aspect> result = infer(item, level, data.getGenomeSeed(), 0, new HashSet<>());
 

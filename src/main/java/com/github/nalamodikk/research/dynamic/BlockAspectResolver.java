@@ -27,6 +27,13 @@ public final class BlockAspectResolver {
             return cached;
         }
 
+        // Datapack-assigned aspects win over everything else (explicit, deterministic).
+        List<Aspect> override = AspectOverrideLoader.get(id);
+        if (!override.isEmpty()) {
+            data.putBlockMapping(id, override);
+            return override;
+        }
+
         List<Aspect> aspects = inferFromState(state, id, data.getGenomeSeed());
         if (aspects.isEmpty()) {
             Item item = state.getBlock().asItem();
