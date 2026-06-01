@@ -252,27 +252,51 @@ public final class SkillCompiler {
         level.playSound(null, BlockPos.containing(center), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 0.5F, 1.4F);
     }
 
+    /**
+     * Maps an effect aspect to its OWN op: every aspect is distinct, so two
+     * different aspects never produce the same on-hit behavior. Aspects with no
+     * combat op (abstract/society) return null and contribute only cost + power.
+     */
     private static SkillEffectOp opFor(Aspect effect) {
-        if (effect == ModAspects.PHLOGISTON || effect == ModAspects.MAGMA || effect == ModAspects.LI
-                || effect == ModAspects.FURNACE || effect == ModAspects.VAPOR || effect == ModAspects.STEAM) {
-            return SkillEffectOp.FIRE;
-        }
-        if (effect == ModAspects.FROST) return SkillEffectOp.FROST;
-        if (effect == ModAspects.VENOM) return SkillEffectOp.POISON;
-        if (effect == ModAspects.CORROSION || effect == ModAspects.FAMINE) return SkillEffectOp.WEAKEN;
-        if (effect == ModAspects.ZHEN || effect == ModAspects.ARC) return SkillEffectOp.LIGHTNING;
-        if (effect == ModAspects.STORM || effect == ModAspects.KAN || effect == ModAspects.DUI) return SkillEffectOp.KNOCKBACK;
-        if (effect == ModAspects.RADIANCE) return SkillEffectOp.BLIND;
-        if (effect == ModAspects.GROWTH) return SkillEffectOp.ROOT;
-        if (effect == ModAspects.VITAE) return SkillEffectOp.LIFESTEAL;
-        if (effect == ModAspects.VITALITY || effect == ModAspects.MENDING
-                || effect == ModAspects.LIFEFLOW || effect == ModAspects.NOURISH) return SkillEffectOp.HEAL;
-        if (effect == ModAspects.CRYSTAL || effect == ModAspects.ENERGY || effect == ModAspects.ARCANA) return SkillEffectOp.SHARD;
-        if (effect == ModAspects.DEATH || effect == ModAspects.UNDEAD || effect == ModAspects.TAINT
-                || effect == ModAspects.ELDRITCH || effect == ModAspects.SPIRITUS
-                || effect == ModAspects.VOID_ASPECT) {
-            return SkillEffectOp.WITHER;
-        }
+        // Fire family (each burns differently)
+        if (effect == ModAspects.PHLOGISTON) return SkillEffectOp.PHLOGISTON;
+        if (effect == ModAspects.MAGMA)      return SkillEffectOp.MAGMA;
+        if (effect == ModAspects.LI)         return SkillEffectOp.LI;
+        if (effect == ModAspects.FURNACE)    return SkillEffectOp.FURNACE;
+        if (effect == ModAspects.VAPOR)      return SkillEffectOp.VAPOR;
+        if (effect == ModAspects.STEAM)      return SkillEffectOp.STEAM;
+        // Cold / nature
+        if (effect == ModAspects.FROST)      return SkillEffectOp.FROST;
+        if (effect == ModAspects.GROWTH)     return SkillEffectOp.ROOT;
+        if (effect == ModAspects.VENOM)      return SkillEffectOp.VENOM;
+        if (effect == ModAspects.CORROSION)  return SkillEffectOp.CORROSION;
+        if (effect == ModAspects.FAMINE)     return SkillEffectOp.FAMINE;
+        // Electric
+        if (effect == ModAspects.ZHEN)       return SkillEffectOp.ZHEN;
+        if (effect == ModAspects.ARC)        return SkillEffectOp.ARC;
+        // Force
+        if (effect == ModAspects.STORM)      return SkillEffectOp.STORM;
+        if (effect == ModAspects.KAN)        return SkillEffectOp.KAN;
+        if (effect == ModAspects.DUI)        return SkillEffectOp.DUI;
+        // Light
+        if (effect == ModAspects.RADIANCE)   return SkillEffectOp.RADIANCE;
+        // Dark / death family
+        if (effect == ModAspects.DEATH)      return SkillEffectOp.DEATH;
+        if (effect == ModAspects.UNDEAD)     return SkillEffectOp.UNDEAD;
+        if (effect == ModAspects.TAINT)      return SkillEffectOp.TAINT;
+        if (effect == ModAspects.ELDRITCH)   return SkillEffectOp.ELDRITCH;
+        if (effect == ModAspects.SPIRITUS)   return SkillEffectOp.SPIRITUS;
+        if (effect == ModAspects.VOID_ASPECT) return SkillEffectOp.VOID;
+        // Life family
+        if (effect == ModAspects.VITAE)      return SkillEffectOp.LIFESTEAL;
+        if (effect == ModAspects.VITALITY)   return SkillEffectOp.VITALITY;
+        if (effect == ModAspects.MENDING)    return SkillEffectOp.MENDING;
+        if (effect == ModAspects.LIFEFLOW)   return SkillEffectOp.LIFEFLOW;
+        if (effect == ModAspects.NOURISH)    return SkillEffectOp.NOURISH;
+        // Bonus damage family
+        if (effect == ModAspects.CRYSTAL)    return SkillEffectOp.CRYSTAL;
+        if (effect == ModAspects.ENERGY)     return SkillEffectOp.ENERGY;
+        if (effect == ModAspects.ARCANA)     return SkillEffectOp.ARCANA;
         return null;
     }
 
