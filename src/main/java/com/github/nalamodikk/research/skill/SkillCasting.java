@@ -32,6 +32,9 @@ public final class SkillCasting {
     public static boolean tryCast(ServerPlayer caster, ItemStack wand, SkillEffect skill) {
         if (!(caster.level() instanceof ServerLevel level)) return false;
 
+        // 0) cooldown: rate-limit so skills can't be spammed every tick
+        if (caster.getCooldowns().isOnCooldown(wand.getItem())) return false;
+
         SkillCost cost = skill.cost();
         ResearchSavedData data = ResearchSavedData.get(level);
         PlayerKnowledge knowledge = data.getOrCreate(caster.getUUID());
@@ -55,9 +58,15 @@ public final class SkillCasting {
         }
         wand.set(ModDataComponents.MANA_STORED, stored - mana);
 
-        // 3) run
+        // 3) run, then put the wand on a cooldown scaled by the skill's complexity
         skill.execute(new SkillContext(level, caster));
+        caster.getCooldowns().addCooldown(wand.getItem(), cooldownTicks(cost.mana()));
         return true;
+    }
+
+    /** Cooldown in ticks from a skill's base mana cost (heavier skills = longer). */
+    public static int cooldownTicks(int baseMana) {
+        return Math.max(10, Math.min(100, baseMana / 15)); // ~0.5s .. 5s
     }
 
     /** Mana cost after the wand's Efficiency upgrades (each point is 1% off, floored at 40%). */
