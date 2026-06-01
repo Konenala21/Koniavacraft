@@ -192,20 +192,20 @@ class PlayerCloneDeathSequence {
 
     void spawnRewardChest(ServerLevel sl, boolean includeShard) {
         BlockPos chestPos = new BlockPos(0, 64, -3);
-        // 用 UPDATE_SUPPRESS_DROPS (flag 32) 換掉舊箱子，避免 vanilla 替換時觸發 Containers.dropContents
-        // 把上次的獎勵噴一地。先 clearContent + 再用 setBlock 雙層保險。
-        if (sl.getBlockEntity(chestPos) instanceof ChestBlockEntity oldChest) {
-            oldChest.clearContent();
+        // 關鍵:若那格已經有寶箱(上次過關留下),就不要 setBlock 換掉它,直接在原箱清空 + 重設
+        // loot table。換方塊在 loot table 模式下時序上仍會把舊內容噴一地,不換就根本不會掉。
+        if (!(sl.getBlockEntity(chestPos) instanceof ChestBlockEntity)) {
+            sl.setBlock(chestPos, Blocks.CHEST.defaultBlockState(),
+                    Block.UPDATE_CLIENTS | Block.UPDATE_SUPPRESS_DROPS);
+            VoidMirrorEvents.addModifiedBlock(chestPos.asLong());
         }
-        sl.setBlock(chestPos, Blocks.CHEST.defaultBlockState(),
-                Block.UPDATE_CLIENTS | Block.UPDATE_SUPPRESS_DROPS);
-        VoidMirrorEvents.addModifiedBlock(chestPos.asLong());
         if (sl.getBlockEntity(chestPos) instanceof ChestBlockEntity chest) {
-            chest.clearContent();
+            // 清掉上次過關剩下的物品(只是清空,不會掉落),再重設 loot table。
             // 內容來自正規 chest loot table（保證鏡核碎片 + 隨機魔力材料），玩家開箱時才從表填，
-            // 每次過關重生寶箱都會重 roll。單一真實來源，JEI Boss 掉落分頁讀同一張表。
-            // includeShard / firstClear 參數保留：仍服務過關標記等其他流程。
+            // 每次過關都重 roll。includeShard / firstClear 參數保留:仍服務過關標記等其他流程。
+            chest.clearContent();
             chest.setLootTable(BossLootRegistry.MIRROR_BOSS.lootTable(), sl.getRandom().nextLong());
+            chest.setChanged();
         }
     }
 }
