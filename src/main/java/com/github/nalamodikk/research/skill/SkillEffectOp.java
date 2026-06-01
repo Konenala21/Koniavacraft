@@ -2,6 +2,7 @@ package com.github.nalamodikk.research.skill;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import com.github.nalamodikk.register.ModMobEffects;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -278,7 +279,7 @@ public enum SkillEffectOp {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.invulnerableTime = 0;
             target.hurt(caster != null ? level.damageSources().mobAttack(caster) : level.damageSources().magic(), 3.0F + power * 0.3F);
-            target.addEffect(new MobEffectInstance(MobEffects.POISON, 80, 2)); // bleed
+            target.addEffect(new MobEffectInstance(ModMobEffects.BLEED, 100, 1)); // 自訂流血
         }
     },
     /** 收割: a reaping sweep. Damages every living thing around the target (scythe AoE). */
@@ -296,6 +297,7 @@ public enum SkillEffectOp {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200, 0));
             target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 0));
+            target.addEffect(new MobEffectInstance(ModMobEffects.VULNERABLE, 120, 0)); // 自訂易傷:標記後受傷放大
         }
     },
     /** 認知: mind scramble. Nausea plus weakness as the target loses its grip. */
@@ -452,7 +454,7 @@ public enum SkillEffectOp {
             target.invulnerableTime = 0;
             target.hurt(level.damageSources().magic(), 5.0F + power * 0.4F);
             target.setRemainingFireTicks(80);
-            target.addEffect(new MobEffectInstance(MobEffects.WITHER, 60, 0));
+            target.addEffect(new MobEffectInstance(ModMobEffects.SOULBURN, 100, 1)); // 自訂靈焰
         }
     },
     /** 凍毒 (frost + venom): cold preserves the venom, deep poison and a hard chill. */

@@ -14,6 +14,9 @@ New material, the Aspect Codec Board, is the heart of the skill system, and gett
 
 ### Developer Notes / 開發者備註
 
+- WIP (custom status effects, real substance over vanilla): three mod-owned MobEffects replace bland vanilla uses. Bleed (BleedEffect) ticks armor-bypassing true damage each second and can actually kill (poison can't); bestia now applies it. Soulburn (SoulburnEffect) is a faster, heavier armor-bypassing DoT used by the soulfire reaction. Vulnerable is a mark: SkillStatusEffectHandler hooks LivingDamageEvent.Pre to amplify damage to a marked target (+20%, +10% per level), so sensus marks a target for a burst finisher (and feeds law's per-debuff scaling). Registered in ModMobEffects; lang en/zh_tw. Icons missing for now (like root, harmless, no HUD icon until drawn). Tests green.
+- WIP（自訂狀態效果，比 vanilla 有料）：三個模組自有 MobEffect 取代平淡的 vanilla 用法。流血（BleedEffect）每秒造成無視護甲的真實傷害、而且能真的打死目標（中毒不行），獸性改用它。靈焰（SoulburnEffect）是更快更重的無視護甲 DoT，煉獄火反應用它。易傷是標記：SkillStatusEffectHandler 掛 LivingDamageEvent.Pre，對被標記目標放大傷害（+20%、每層 +10%），所以感知標記目標後可用大招收尾（也餵律法的依層數加傷）。註冊在 ModMobEffects；lang en/zh_tw。圖示暫缺（跟 root 一樣無害，畫了才有 HUD 圖示）。測試綠。
+
 - WIP (three-aspect ultimate reactions): six top-tier reactions that need all three effect slots, stacking on top of the two-aspect reactions for a payoff combo. elemental storm (fire+frost+lightning, multi-element AoE burst), thermonuclear (fire+energy+lightning, the largest explosion), biohazard (venom+corrosion+fire, wide toxic inferno), holy nova (radiance+dark+energy, massive AoE burst), blight (growth+fire+venom, AoE root+fire+poison), maelstrom (storm+kan+dui, yanks foes up + damages). Same applyReactions table; 22 reactions total. Tests green.
 - WIP（三本源終極反應）：六個要用滿三個效果槽的頂級反應，疊在兩兩反應之上當收尾組合。元素風暴（火+霜+雷，多元素範圍爆發）、熱核（火+能量+雷，最大爆炸）、生化浩劫（毒+腐蝕+火，大範圍毒火地獄）、聖核爆（光+暗+能量，超大範圍爆發）、腐化（生長+火+毒，範圍定身+火+毒）、引力亂流（風暴+坎+兌，把敵人捲起來+傷害）。同一張 applyReactions 表；總共 22 反應。測試綠。
 
