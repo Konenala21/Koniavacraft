@@ -16,8 +16,12 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
 
+import net.minecraft.world.effect.MobEffectInstance;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -162,7 +166,15 @@ public class TrainingDummyEntity extends Mob {
         long now = level().getGameTime();
         int durationTicks = (int) (s.lastHitTick - s.startTick); // 結算用最後命中時間
         if (!ended) durationTicks = (int) (now - s.startTick);   // 進行中用當下
+
+        // 收集假人目前身上的效果,讓玩家看得到破甲/流血/易傷等技能反應。
+        List<TrainingDummyStatsPacket.EffectLine> effects = new ArrayList<>();
+        for (MobEffectInstance inst : getActiveEffects()) {
+            effects.add(new TrainingDummyStatsPacket.EffectLine(
+                    inst.getEffect().value().getDescriptionId(), inst.getAmplifier()));
+        }
+
         PacketDistributor.sendToPlayer(player,
-                new TrainingDummyStatsPacket(ended, s.totalDamage, s.hitCount, durationTicks));
+                new TrainingDummyStatsPacket(ended, s.totalDamage, s.hitCount, durationTicks, effects));
     }
 }

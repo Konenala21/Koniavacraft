@@ -27,6 +27,8 @@ public final class TrainingDummyHudOverlay {
     private static final int COLOR_VALUE = 0xFFFFFFFF;
     private static final int COLOR_DPS = 0xFFFFD24A;
 
+    private static final int COLOR_EFFECT = 0xFF8FD0FF;
+
     private static boolean active = false;      // 進行中
     private static boolean summary = false;     // 結算定格
     private static double totalDamage = 0;
@@ -34,6 +36,7 @@ public final class TrainingDummyHudOverlay {
     private static int serverDurationTicks = 0;
     private static long clientStartMs = 0;
     private static long summaryUntilMs = 0;
+    private static java.util.List<TrainingDummyStatsPacket.EffectLine> effects = java.util.List.of();
 
     private TrainingDummyHudOverlay() {}
 
@@ -42,6 +45,7 @@ public final class TrainingDummyHudOverlay {
         totalDamage = p.totalDamage();
         hitCount = p.hitCount();
         serverDurationTicks = p.durationTicks();
+        effects = p.effects();
         if (p.ended()) {
             active = false;
             summary = true;
@@ -67,17 +71,25 @@ public final class TrainingDummyHudOverlay {
         if (active) {
             double elapsedSec = (System.currentTimeMillis() - clientStartMs) / 1000.0;
             double dps = elapsedSec > 0.1 ? totalDamage / elapsedSec : 0;
+            java.util.List<Line> lines = new java.util.ArrayList<>();
+            lines.add(new Line(Component.translatable("koniava.hud.training_dummy.time",
+                    String.format("%.1f", elapsedSec)), COLOR_VALUE));
+            lines.add(new Line(Component.translatable("koniava.hud.training_dummy.damage",
+                    String.format("%.1f", totalDamage)), COLOR_VALUE));
+            lines.add(new Line(Component.translatable("koniava.hud.training_dummy.dps",
+                    String.format("%.1f", dps)), COLOR_DPS));
+            lines.add(new Line(Component.translatable("koniava.hud.training_dummy.hits", hitCount), COLOR_VALUE));
+            // 假人身上的效果(技能反應):破甲/流血/易傷/迷盲...
+            for (TrainingDummyStatsPacket.EffectLine e : effects) {
+                Component name = Component.translatable(e.descriptionId());
+                Component line = e.amplifier() > 0
+                        ? Component.translatable("koniava.hud.training_dummy.effect_lvl", name, e.amplifier() + 1)
+                        : name;
+                lines.add(new Line(line, COLOR_EFFECT));
+            }
             drawPanel(g, font, sw, baseY,
                     Component.translatable("koniava.hud.training_dummy.title"),
-                    new Line[]{
-                            new Line(Component.translatable("koniava.hud.training_dummy.time",
-                                    String.format("%.1f", elapsedSec)), COLOR_VALUE),
-                            new Line(Component.translatable("koniava.hud.training_dummy.damage",
-                                    String.format("%.1f", totalDamage)), COLOR_VALUE),
-                            new Line(Component.translatable("koniava.hud.training_dummy.dps",
-                                    String.format("%.1f", dps)), COLOR_DPS),
-                            new Line(Component.translatable("koniava.hud.training_dummy.hits", hitCount), COLOR_VALUE),
-                    });
+                    lines.toArray(new Line[0]));
         } else if (summary) {
             if (System.currentTimeMillis() >= summaryUntilMs) { summary = false; return; }
             double durSec = serverDurationTicks / 20.0;

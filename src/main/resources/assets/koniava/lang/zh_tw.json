@@ -32,6 +32,7 @@
   "koniava.hud.training_dummy.damage": "傷害：%s",
   "koniava.hud.training_dummy.dps": "每秒傷害：%s",
   "koniava.hud.training_dummy.hits": "命中：%s",
+  "koniava.hud.training_dummy.effect_lvl": "%s %s",
   "screen.koniava.turret_upgrade": "浮游砲自訂",
   "item.koniava.turret_upgrade_capacity": "浮游砲魔力容量",
   "item.koniava.turret_upgrade_capacity_mk0": "浮游砲魔力容量 Mk0",
