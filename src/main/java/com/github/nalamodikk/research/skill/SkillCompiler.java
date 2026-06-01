@@ -304,6 +304,18 @@ public final class SkillCompiler {
         if (effects.contains(ModAspects.VENOM) && effects.contains(ModAspects.CORROSION))
             addOnce(ops, SkillEffectOp.STRONG_ACID);                                                  // 強酸
         if (effects.contains(ModAspects.RADIANCE) && dark) addOnce(ops, SkillEffectOp.ANNIHILATION);  // 湮滅
+
+        // batch 2
+        if (dark && fire)                                  addOnce(ops, SkillEffectOp.SOULFIRE);      // 煉獄火
+        if (effects.contains(ModAspects.FROST) && effects.contains(ModAspects.VENOM))
+            addOnce(ops, SkillEffectOp.CRYO_VENOM);                                                   // 凍毒
+        if (lightning && effects.contains(ModAspects.ENERGY)) {                                       // 電漿
+            addOnce(ops, SkillEffectOp.OVERLOAD);
+            extraChain += 2;
+        }
+        if (effects.contains(ModAspects.RADIANCE) && fire) addOnce(ops, SkillEffectOp.SOLAR_FLARE);   // 閃焰
+        if (effects.contains(ModAspects.GROWTH) && water)  addOnce(ops, SkillEffectOp.OVERGROWTH);    // 蔓生
+        if (effects.contains(ModAspects.CRYSTAL) && force) addOnce(ops, SkillEffectOp.SHRAPNEL);      // 晶爆
         return extraChain;
     }
 

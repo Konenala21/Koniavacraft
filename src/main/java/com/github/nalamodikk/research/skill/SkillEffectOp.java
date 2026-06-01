@@ -443,6 +443,53 @@ public enum SkillEffectOp {
             target.invulnerableTime = 0;
             target.hurt(level.damageSources().magic(), 7.0F + power * 0.45F);
         }
+    },
+
+    // ── Reaction outputs, batch 2 ────────────────────────────────────────────
+    /** 煉獄火 (dark + fire): cursed flame, a burst plus burn plus a touch of wither. */
+    SOULFIRE {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.invulnerableTime = 0;
+            target.hurt(level.damageSources().magic(), 5.0F + power * 0.4F);
+            target.setRemainingFireTicks(80);
+            target.addEffect(new MobEffectInstance(MobEffects.WITHER, 60, 0));
+        }
+    },
+    /** 凍毒 (frost + venom): cold preserves the venom, deep poison and a hard chill. */
+    CRYO_VENOM {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.addEffect(new MobEffectInstance(MobEffects.POISON, 160, 2));
+            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 120, 3));
+        }
+    },
+    /** 閃焰 (radiance + fire): a solar flare, blinding fire to everything nearby. */
+    SOLAR_FLARE {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            AABB box = target.getBoundingBox().inflate(3.5);
+            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+                le.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0));
+                le.setRemainingFireTicks(70);
+            }
+        }
+    },
+    /** 蔓生 (growth + water): roots spread, rooting everything around the target. */
+    OVERGROWTH {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            AABB box = target.getBoundingBox().inflate(3.5);
+            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+                le.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 5));
+            }
+        }
+    },
+    /** 晶爆 (crystal + force): the crystal shatters into shrapnel, hitting all nearby. */
+    SHRAPNEL {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            AABB box = target.getBoundingBox().inflate(3.0);
+            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+                le.invulnerableTime = 0;
+                le.hurt(level.damageSources().magic(), 2.0F + power * 0.2F);
+            }
+        }
     };
 
     public abstract void apply(ServerLevel level, LivingEntity target,
