@@ -146,16 +146,18 @@ public enum SkillEffectOp {
             target.hurtMarked = true;
         }
     },
-    /** 坎 (abyss trigram): drags the target hard toward the caster. Uses a direct
-     *  velocity impulse (not knockback, which knockback-resistance would soften). */
+    /** 坎 (abyss trigram): yanks the target across the gap to the caster. The pull
+     *  scales with distance so a far target actually arrives, not just nudges. */
     KAN {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             Vec3 diff = caster != null ? caster.position().subtract(target.position()) : dir.scale(-1.0);
             if (diff.lengthSqr() < 1.0E-4) diff = dir.scale(-1.0);
+            double dist = diff.length();
             Vec3 toCaster = diff.normalize();
-            double strength = 1.2 + power * 0.05;
+            // far = stronger yank (covers the gap), capped so it isn't absurd
+            double strength = Math.min(3.0, 0.8 + dist * 0.35);
             target.setDeltaMovement(toCaster.x * strength,
-                    target.getDeltaMovement().y + 0.1, toCaster.z * strength);
+                    Math.max(target.getDeltaMovement().y, 0.0) + 0.25, toCaster.z * strength);
             target.hurtMarked = true;
         }
     },
@@ -204,6 +206,7 @@ public enum SkillEffectOp {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 120, 0));
             target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 140, 0));
+            target.addEffect(new MobEffectInstance(ModMobEffects.DAZE, 100, 0)); // 對怪:混亂=丟失目標
         }
     },
     /** 靈魂: a soul drag, wither plus slow plus a glow. */
@@ -323,6 +326,7 @@ public enum SkillEffectOp {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 160, 0));
             target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 100, 1));
+            target.addEffect(new MobEffectInstance(ModMobEffects.DAZE, 120, 0)); // 對怪:心智干擾=丟失目標
         }
     },
     /** 慾望: lure. Drags the target toward the caster and slows it (drawn in by desire). */
