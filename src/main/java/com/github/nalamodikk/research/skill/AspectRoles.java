@@ -88,6 +88,11 @@ public final class AspectRoles {
         put(ModAspects.ANIMA,      SkillRole.MODIFIER); // 靈魄 -> 追蹤/homing
         put(ModAspects.AURA,       SkillRole.MODIFIER); // 光暈 範圍增益
         put(ModAspects.ALCHEMY,    SkillRole.MODIFIER); // 煉化/轉化
+        put(ModAspects.CORPUS,     SkillRole.MODIFIER); // 軀體 -> 肉體強化(最大生命)
+        put(ModAspects.FAITH,      SkillRole.MODIFIER); // 信仰 -> 再生/撐住
+        put(ModAspects.ORDER,      SkillRole.MODIFIER); // 秩序 -> 淨化自身負面
+        put(ModAspects.INSTINCT,   SkillRole.MODIFIER); // 本能 -> 暴擊(隨機增傷)
+        put(ModAspects.WISDOM,     SkillRole.MODIFIER); // 智慧 -> 降魔力花費
 
         // ── Multi-role (slot decides) ────────────────────────────────────────
         put(ModAspects.GRAVITY, SkillRole.CARRIER, SkillRole.MODIFIER); // 範圍力場 / 拉緩

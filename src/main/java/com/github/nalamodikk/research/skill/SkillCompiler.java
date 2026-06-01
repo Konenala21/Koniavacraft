@@ -8,7 +8,10 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.core.Holder;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -59,6 +62,7 @@ public final class SkillCompiler {
                 + MANA_PER_EFFECT * effects.size()
                 + MANA_PER_MODIFIER * modifiers.size()
                 + MANA_PER_FUEL * fuelTotalForMana;
+        if (modifiers.contains(ModAspects.WISDOM)) mana = Math.round(mana * 0.8F); // 智慧:省魔力
         SkillCost cost = new SkillCost(Collections.unmodifiableMap(gate), mana);
 
         List<SkillEffectOp> ops = new ArrayList<>();
@@ -80,6 +84,10 @@ public final class SkillCompiler {
         boolean resist = modifiers.contains(ModAspects.KUN);
         boolean invis = modifiers.contains(ModAspects.SHADOW);
         boolean strength = modifiers.contains(ModAspects.AURA);
+        boolean corpus = modifiers.contains(ModAspects.CORPUS);
+        boolean faith = modifiers.contains(ModAspects.FAITH);
+        boolean order = modifiers.contains(ModAspects.ORDER);
+        boolean instinct = modifiers.contains(ModAspects.INSTINCT);
         boolean homing = modifiers.contains(ModAspects.ANIMA);
         int chainCount = (modifiers.contains(ModAspects.ARC) || modifiers.contains(ModAspects.PROPAGATION)) ? 2 : 0;
         float power = 1.0F
@@ -107,12 +115,20 @@ public final class SkillCompiler {
             if (resist)   caster.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 1));
             if (invis)    caster.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 200, 0));
             if (strength) caster.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 200, 0));
+            if (corpus)   caster.addEffect(new MobEffectInstance(MobEffects.HEALTH_BOOST, 600, 1)); // 肉體強化
+            if (faith)    caster.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 200, 1));  // 撐住
+            if (order)    cleanse(caster); // 淨化自身負面
+
+            // INSTINCT: a chance to crit this cast (rolled per cast, not baked into the cost)
+            float dmg = damage;
+            if (instinct && level.getRandom().nextFloat() < 0.25F) dmg *= 1.5F;
+
             if (isProjectile) {
                 Vec3 look = caster.getLookAngle();
                 for (int i = 0; i < count; i++) {
                     Vec3 dir = count == 1 ? look : spread(look, i, count);
                     level.addFreshEntity(SpellProjectileEntity.shoot(
-                            level, caster, dir, damage, finalOps, pierce, homing, chainCount));
+                            level, caster, dir, dmg, finalOps, pierce, homing, chainCount));
                 }
                 level.playSound(null, caster.blockPosition(),
                         SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 0.8F, 1.4F);
@@ -122,17 +138,26 @@ public final class SkillCompiler {
                 caster.hurtMarked = true; // sync the impulse to the client
                 caster.fallDistance = 0.0F;
                 // FLIGHT is the self carrier: effects land on the caster (heal/buff dash)
-                for (SkillEffectOp op : finalOps) op.apply(level, caster, caster, look, damage);
+                for (SkillEffectOp op : finalOps) op.apply(level, caster, caster, look, dmg);
                 level.playSound(null, caster.blockPosition(),
                         SoundEvents.BREEZE_SHOOT, SoundSource.PLAYERS, 0.8F, 1.2F);
             } else if (carrier == ModAspects.PIPELINE) {
-                castBeam(level, caster, damage, finalOps);
+                castBeam(level, caster, dmg, finalOps);
             } else if (carrier == ModAspects.GRAVITY) {
-                castField(level, caster, damage, finalOps);
+                castField(level, caster, dmg, finalOps);
             }
         };
 
         return new CompiledSkill(cost, action);
+    }
+
+    /** ORDER: remove all harmful status effects from the caster. */
+    private static void cleanse(LivingEntity entity) {
+        List<Holder<MobEffect>> harmful = entity.getActiveEffects().stream()
+                .map(MobEffectInstance::getEffect)
+                .filter(h -> h.value().getCategory() == MobEffectCategory.HARMFUL)
+                .toList();
+        harmful.forEach(entity::removeEffect);
     }
 
     /** PIPELINE carrier: an instant hitscan beam from the caster's eyes. */
