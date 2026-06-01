@@ -365,6 +365,84 @@ public enum SkillEffectOp {
             target.invulnerableTime = 0;
             target.hurt(level.damageSources().magic(), 4.0F + power * 0.4F);
         }
+    },
+
+    // ── Reaction outputs: emergent results when two reacting aspects combine ──
+    // These are produced by SkillCompiler's reaction table, never mapped from a
+    // single aspect. They are the "chemistry" payoff of combining aspects.
+    /** 熱裂 (fire + frost): rapid temperature shock, a heavy burst hit. */
+    THERMAL_SHOCK {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.invulnerableTime = 0;
+            target.hurt(level.damageSources().magic(), 6.0F + power * 0.4F);
+        }
+    },
+    /** 爆燃 (fire + energy): a larger fiery explosion that ignites the target. */
+    COMBUSTION {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            float radius = Math.min(8.0F, 3.0F + power * 0.07F);
+            level.explode(caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
+                    radius, Level.ExplosionInteraction.NONE);
+            target.setRemainingFireTicks(80);
+        }
+    },
+    /** 毒燃 (fire + venom): a burning toxic cloud, poison and fire on everything nearby. */
+    TOXIC_BURN {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            AABB box = target.getBoundingBox().inflate(3.0);
+            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+                le.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 1));
+                le.setRemainingFireTicks(60);
+            }
+        }
+    },
+    /** 碎冰 (frost + force): the chilled target is shattered for a heavy burst. */
+    SHATTER {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.invulnerableTime = 0;
+            target.hurt(level.damageSources().magic(), 5.0F + power * 0.35F);
+        }
+    },
+    /** 超載 (energy + crystal/arcana): an overcharged detonation, a much bigger blast. */
+    OVERLOAD {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            float radius = Math.min(9.0F, 4.0F + power * 0.08F);
+            level.explode(caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
+                    radius, Level.ExplosionInteraction.NONE);
+        }
+    },
+    /** 死亡虹吸 (death + lifesteal): the wither feeds the caster a large heal. */
+    DEATH_SIPHON {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            if (caster != null && caster.isAlive()) caster.heal(Math.max(2.0F, power * 0.6F));
+        }
+    },
+    /** 野火 (growth/root + fire): the binding ignites and spreads fire to everything around. */
+    WILDFIRE {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            AABB box = target.getBoundingBox().inflate(3.0);
+            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+                le.setRemainingFireTicks(100);
+                le.invulnerableTime = 0;
+                le.hurt(level.damageSources().magic(), 1.0F + power * 0.15F);
+            }
+        }
+    },
+    /** 強酸 (venom + corrosion): concentrated acid, armor-melt plus deep poison. */
+    STRONG_ACID {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.invulnerableTime = 0;
+            target.hurt(level.damageSources().magic(), 3.0F + power * 0.2F);
+            target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 140, 1));
+            target.addEffect(new MobEffectInstance(MobEffects.POISON, 120, 2));
+        }
+    },
+    /** 湮滅 (radiance + dark): light and dark collide, a massive burst of damage. */
+    ANNIHILATION {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.invulnerableTime = 0;
+            target.hurt(level.damageSources().magic(), 7.0F + power * 0.45F);
+        }
     };
 
     public abstract void apply(ServerLevel level, LivingEntity target,

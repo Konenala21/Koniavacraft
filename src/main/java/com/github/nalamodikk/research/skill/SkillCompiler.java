@@ -80,6 +80,8 @@ public final class SkillCompiler {
                 && !ops.contains(SkillEffectOp.ROOT)) {
             ops.add(SkillEffectOp.ROOT);
         }
+        // Aspect reactions (chemistry): reacting pairs append a special reaction op.
+        int reactionChain = applyReactions(effects, ops);
 
         int baseCount = modifiers.contains(ModAspects.REFRACTION) ? 3 : 1;
         if (modifiers.contains(ModAspects.RESONANCE)) baseCount += 1; // echo: one extra shot
@@ -97,7 +99,8 @@ public final class SkillCompiler {
         boolean humanity = modifiers.contains(ModAspects.HUMANITY);
         boolean instinct = modifiers.contains(ModAspects.INSTINCT);
         boolean homing = modifiers.contains(ModAspects.ANIMA);
-        int chainCount = (modifiers.contains(ModAspects.ARC) || modifiers.contains(ModAspects.PROPAGATION)) ? 2 : 0;
+        int chainCount = ((modifiers.contains(ModAspects.ARC) || modifiers.contains(ModAspects.PROPAGATION)) ? 2 : 0)
+                + reactionChain; // conduction reaction also chains
         float power = 1.0F
                 + (modifiers.contains(ModAspects.FORTIFY) ? 0.5F : 0.0F)
                 + (modifiers.contains(ModAspects.QIAN) ? 1.0F : 0.0F)
@@ -272,6 +275,50 @@ public final class SkillCompiler {
             for (SkillEffectOp op : ops) op.apply(level, le, caster, pull.normalize().scale(-1.0), damage * 0.6F);
         }
         level.playSound(null, BlockPos.containing(center), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 0.5F, 1.4F);
+    }
+
+    /**
+     * Aspect reactions (chemistry): when the effect set contains a reacting pair,
+     * append the emergent reaction op. Returns extra chain count (conduction).
+     * Reaction ops stack on top of each aspect's own effect, so the combination
+     * does something neither aspect does alone. More reactions can be added here.
+     */
+    private static int applyReactions(List<Aspect> effects, List<SkillEffectOp> ops) {
+        boolean fire  = effects.stream().anyMatch(SkillCompiler::isFire);
+        boolean dark  = effects.stream().anyMatch(SkillCompiler::isDark);
+        boolean force = effects.contains(ModAspects.STORM) || effects.contains(ModAspects.KAN) || effects.contains(ModAspects.DUI);
+        boolean water = effects.contains(ModAspects.KAN) || effects.contains(ModAspects.FROST) || effects.contains(ModAspects.STEAM);
+        boolean lightning = effects.contains(ModAspects.ZHEN) || effects.contains(ModAspects.ARC);
+        int extraChain = 0;
+
+        if (fire && effects.contains(ModAspects.FROST))   addOnce(ops, SkillEffectOp.THERMAL_SHOCK); // 熱裂
+        if (fire && effects.contains(ModAspects.ENERGY))  addOnce(ops, SkillEffectOp.COMBUSTION);     // 爆燃
+        if (fire && effects.contains(ModAspects.VENOM))   addOnce(ops, SkillEffectOp.TOXIC_BURN);     // 毒燃
+        if (effects.contains(ModAspects.FROST) && force)  addOnce(ops, SkillEffectOp.SHATTER);        // 碎冰
+        if (lightning && water)                           extraChain += 2;                            // 導電
+        if (effects.contains(ModAspects.ENERGY)
+                && (effects.contains(ModAspects.CRYSTAL) || effects.contains(ModAspects.ARCANA)))
+            addOnce(ops, SkillEffectOp.OVERLOAD);                                                     // 超載
+        if (dark && effects.contains(ModAspects.VITAE))   addOnce(ops, SkillEffectOp.DEATH_SIPHON);   // 死亡虹吸
+        if (fire && effects.contains(ModAspects.GROWTH))  addOnce(ops, SkillEffectOp.WILDFIRE);       // 野火
+        if (effects.contains(ModAspects.VENOM) && effects.contains(ModAspects.CORROSION))
+            addOnce(ops, SkillEffectOp.STRONG_ACID);                                                  // 強酸
+        if (effects.contains(ModAspects.RADIANCE) && dark) addOnce(ops, SkillEffectOp.ANNIHILATION);  // 湮滅
+        return extraChain;
+    }
+
+    private static void addOnce(List<SkillEffectOp> ops, SkillEffectOp op) {
+        if (!ops.contains(op)) ops.add(op);
+    }
+
+    private static boolean isFire(Aspect a) {
+        return a == ModAspects.PHLOGISTON || a == ModAspects.MAGMA || a == ModAspects.LI
+                || a == ModAspects.FURNACE || a == ModAspects.VAPOR || a == ModAspects.STEAM;
+    }
+
+    private static boolean isDark(Aspect a) {
+        return a == ModAspects.DEATH || a == ModAspects.UNDEAD || a == ModAspects.TAINT
+                || a == ModAspects.ELDRITCH || a == ModAspects.SPIRITUS || a == ModAspects.VOID_ASPECT;
     }
 
     /**
