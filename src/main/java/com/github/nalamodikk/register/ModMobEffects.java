@@ -3,6 +3,7 @@ package com.github.nalamodikk.register;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.effect.BleedEffect;
 import com.github.nalamodikk.common.effect.ChillEffect;
+import com.github.nalamodikk.common.effect.DazeEffect;
 import com.github.nalamodikk.common.effect.RootMobEffect;
 import com.github.nalamodikk.common.effect.SoulburnEffect;
 import net.minecraft.core.Holder;
@@ -53,6 +54,11 @@ public class ModMobEffects {
     public static final DeferredHolder<MobEffect, MobEffect> CHILL =
             MOB_EFFECTS.register("chill", () ->
                     new ChillEffect(MobEffectCategory.HARMFUL, 0x7FC8E0));
+
+    // 迷盲：每 tick 清掉怪的攻擊目標，讓致盲真的對怪有用（vanilla 失明對怪 AI 無效）
+    public static final DeferredHolder<MobEffect, MobEffect> DAZE =
+            MOB_EFFECTS.register("daze", () ->
+                    new DazeEffect(MobEffectCategory.HARMFUL, 0xE8E0B0));
 
     public static void register(IEventBus bus) {
         MOB_EFFECTS.register(bus);

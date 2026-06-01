@@ -38,7 +38,8 @@ public enum SkillEffectOp {
     MAGMA {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.setRemainingFireTicks(60);
-            target.setDeltaMovement(target.getDeltaMovement().add(0.0, 0.55, 0.0));
+            Vec3 mv = target.getDeltaMovement();
+            target.setDeltaMovement(mv.x, 0.9, mv.z); // strong eruption pop
             target.hurtMarked = true;
         }
     },
@@ -67,6 +68,7 @@ public enum SkillEffectOp {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.setRemainingFireTicks(40);
             target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 50, 0));
+            target.addEffect(new MobEffectInstance(ModMobEffects.DAZE, 50, 0)); // 真致盲:怪丟失目標
         }
     },
 
@@ -134,10 +136,14 @@ public enum SkillEffectOp {
     },
 
     // ── Force ───────────────────────────────────────────────────────────────
-    /** 風暴: a powerful blast that hurls the target away. */
+    /** 風暴: a powerful blast that hurls the target away. Direct velocity (not
+     *  knockback) so knockback-resistance can't soften it. */
     STORM {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            target.knockback(1.0 + power * 0.05, -dir.x, -dir.z); // away from caster
+            Vec3 away = dir.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : dir.normalize();
+            double s = 1.4 + power * 0.06;
+            target.setDeltaMovement(away.x * s, 0.42, away.z * s);
+            target.hurtMarked = true;
         }
     },
     /** 坎 (abyss trigram): drags the target hard toward the caster. Uses a direct
@@ -156,7 +162,8 @@ public enum SkillEffectOp {
     /** 兌 (lake trigram): launches the target straight up. */
     DUI {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            target.setDeltaMovement(target.getDeltaMovement().add(0.0, 0.6 + power * 0.02, 0.0));
+            Vec3 mv = target.getDeltaMovement();
+            target.setDeltaMovement(mv.x, 1.1 + power * 0.02, mv.z); // strong launch upward
             target.hurtMarked = true;
         }
     },
@@ -166,6 +173,7 @@ public enum SkillEffectOp {
     RADIANCE {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0));
+            target.addEffect(new MobEffectInstance(ModMobEffects.DAZE, 60, 0)); // 真致盲:怪丟失目標
             target.addEffect(new MobEffectInstance(MobEffects.GLOWING, 100, 0));
         }
     },
@@ -366,7 +374,7 @@ public enum SkillEffectOp {
                 case 0 -> target.addEffect(new MobEffectInstance(MobEffects.WITHER, 80, 1));
                 case 1 -> target.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 1));
                 case 2 -> target.addEffect(new MobEffectInstance(ModMobEffects.CHILL, 100, 3));
-                case 3 -> target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 80, 0));
+                case 3 -> target.addEffect(new MobEffectInstance(ModMobEffects.DAZE, 80, 0));
                 default -> target.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 50, 0));
             }
         }
@@ -480,6 +488,7 @@ public enum SkillEffectOp {
             AABB box = target.getBoundingBox().inflate(3.5);
             for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
                 le.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0));
+                le.addEffect(new MobEffectInstance(ModMobEffects.DAZE, 60, 0));
                 le.setRemainingFireTicks(70);
             }
         }
@@ -545,6 +554,7 @@ public enum SkillEffectOp {
                 le.invulnerableTime = 0;
                 le.hurt(level.damageSources().magic(), 6.0F + power * 0.4F);
                 le.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0));
+                le.addEffect(new MobEffectInstance(ModMobEffects.DAZE, 60, 0));
             }
         }
     },
