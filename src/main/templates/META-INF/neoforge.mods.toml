@@ -39,7 +39,7 @@ logoFile="${mod_logo}" #optional
 logoBlur=false  # 控制是否模糊縮放，但不影響實際大小
 
 # A text field displayed in the mod UI
-credits="Item and block art: 蕎麥麵 (bksesame), https://github.com/bksesame" #optional
+credits="Additional art: 蕎麥麵 (bksesame), https://github.com/bksesame" #optional
 
 # A text field displayed in the mod UI
 authors="${mod_authors}" #optional
