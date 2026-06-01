@@ -110,6 +110,11 @@ public class ModItems {
     public static final DeferredItem<Item> HIGH_DENSITY_MANA_CORE =
             ITEMS.register("high_density_mana_core", () -> new Item(new Item.Properties()));
 
+    // 本源編碼基板：技能系統的核心材料。把工業鏈產物（基板/電路/晶圓）+ 鏡核碎片組成，
+    // 編碼台與法術核心都吃它，讓前面的研磨/電路/祭壇工業都有用處。
+    public static final DeferredItem<Item> ASPECT_CODEC_BOARD =
+            ITEMS.register("aspect_codec_board", () -> new Item(new Item.Properties()));
+
     /***
      * 武器
      */

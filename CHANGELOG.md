@@ -6,7 +6,13 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
-New item and block art: mana materials (dusts, ingots, crystals, alloy, adhesive, wire, substrate, wafer), circuits, the mana eye, and the magic ores were redrawn with fresh textures contributed by 蕎麥麵 (bksesame). The Aspect Altar and the Mana Bloom flower also got new 3D models and textures (the flower is now a sculpted bloom instead of a flat cross).
+New material, the Aspect Codec Board, is the heart of the skill system: it is crafted from the outputs of the earlier industry (mana substrate from the grinder, precision circuit from the circuit chain, mana wafer from the altar) plus the Mirror Core Shard from the Mirror World boss. The Skill Encoder and the Spell Core are now built from this board, so the whole skill path runs through the machines you already built instead of sidestepping them. (Texture pending.)
+新材料「本源編碼基板」是技能系統的核心：用前面工業的產物（研磨機的魔力基板、電路鏈的精密電路板、祭壇的魔力晶圓）加上鏡中世界 boss 的鏡核碎片合成。技能編碼台與法術核心現在都用這片基板做，所以整條技能路線會走過你前面蓋的那些機器，而不是繞過它們。（貼圖待補。）
+
+### Developer Notes / 開發者備註
+
+- WIP (aspect codec board, foundation industry payoff): added the Aspect Codec Board item, the single skill-system material that routes through the existing tech tree (grinder -> substrate, circuit chain -> precision circuit, altar -> wafer, mirror boss -> shard, mana crafting table assembles the board). The skill encoder and spell core recipes now consume the board instead of the raw shard, so the shard appears in exactly one recipe (the board) as the single boss gate, and the earlier machines all gain purpose. Item auto-models via the ModItemModelProvider loop once the texture exists (skipped, with a warn, until then). Lang en/zh_tw added. Datagen: run runData.
+- WIP（本源編碼基板，地基工業的用處）：新增本源編碼基板物品，作為技能系統唯一的材料，串起既有技術樹（研磨機→基板、電路鏈→精密電路板、祭壇→晶圓、鏡中 boss→碎片，魔力工作台組成基板）。技能編碼台與法術核心配方改吃這片基板而非生碎片，所以碎片只出現在一個配方（基板）當單一 boss 閘門，前面的機器全都有了用處。物品模型由 ModItemModelProvider 迴圈自動產（貼圖存在前會跳過並警告）。補 lang en/zh_tw。Datagen：跑 runData。 mana materials (dusts, ingots, crystals, alloy, adhesive, wire, substrate, wafer), circuits, the mana eye, and the magic ores were redrawn with fresh textures contributed by 蕎麥麵 (bksesame). The Aspect Altar and the Mana Bloom flower also got new 3D models and textures (the flower is now a sculpted bloom instead of a flat cross).
 更新多個物品與方塊貼圖：魔力材料（各種粉、錠、水晶、合金、黏膠、導線、基板、晶片）、電路板、魔力之眼、魔法礦，由貢獻者 蕎麥麵 (bksesame) 繪製。本源祭壇與魔力花也換上新的 3D 模型與貼圖（魔力花從平面十字改成立體花朵）。
 
 ### Developer Notes / 開發者備註

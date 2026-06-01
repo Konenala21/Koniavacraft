@@ -137,6 +137,8 @@
   "item.koniava.mana_barrel": "Mana Barrel",
   "item.koniava.precision_mana_circuit": "Precision Mana Circuit",
   "item.koniava.high_density_mana_core": "High-Density Mana Core",
+  "item.koniava.aspect_codec_board": "Aspect Codec Board",
+  "item.koniava.aspect_codec_board.tooltip": "A mirror-crystal board that aspects are written onto as code. The medium of every skill.",
   "item.koniava.aspect_token": "Aspect Token",
   "//2": "=== MODULES ===",
   "item.koniava.module.koniava.mana_storage": "Mana Storage Module",
