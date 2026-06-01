@@ -6,6 +6,9 @@ import com.github.nalamodikk.research.aspect.Aspect;
 import com.github.nalamodikk.research.aspect.ModAspects;
 import com.github.nalamodikk.research.knowledge.PlayerKnowledge;
 import net.minecraft.resources.ResourceLocation;
+
+import java.util.HashMap;
+import java.util.Map;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
@@ -53,6 +56,30 @@ public final class SkillEncoding {
 
     private static boolean owns(PlayerKnowledge knowledge, ResourceLocation aspectId) {
         return knowledge.getAspectCount(aspectId) > 0;
+    }
+
+    /** How many of each aspect a skill consumes when encoded (1 per use, summed over roles). */
+    public static Map<ResourceLocation, Integer> aspectCost(StoredSkill skill) {
+        Map<ResourceLocation, Integer> cost = new HashMap<>();
+        cost.merge(skill.carrier(), 1, Integer::sum);
+        for (ResourceLocation id : skill.effects())   cost.merge(id, 1, Integer::sum);
+        for (ResourceLocation id : skill.modifiers()) cost.merge(id, 1, Integer::sum);
+        return cost;
+    }
+
+    /** True if the player has enough of every aspect to encode (accounts for repeats). */
+    public static boolean canAfford(PlayerKnowledge knowledge, StoredSkill skill) {
+        for (Map.Entry<ResourceLocation, Integer> e : aspectCost(skill).entrySet()) {
+            if (knowledge.getAspectCount(e.getKey()) < e.getValue()) return false;
+        }
+        return true;
+    }
+
+    /** Consume the aspects the skill uses. Encoding spends aspects; casting only spends mana. */
+    public static void consumeAspects(PlayerKnowledge knowledge, StoredSkill skill) {
+        for (Map.Entry<ResourceLocation, Integer> e : aspectCost(skill).entrySet()) {
+            knowledge.setAspectAmount(e.getKey(), knowledge.getAspectCount(e.getKey()) - e.getValue());
+        }
     }
 
     // ── core read / write ───────────────────────────────────────────────────

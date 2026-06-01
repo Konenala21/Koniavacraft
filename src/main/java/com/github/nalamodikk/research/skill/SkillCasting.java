@@ -4,23 +4,18 @@ import com.github.nalamodikk.common.item.wand.WandCoreData;
 import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeBehavior;
 import com.github.nalamodikk.common.network.packet.client.skill.SkillCooldownPacket;
 import com.github.nalamodikk.register.ModDataComponents;
-import com.github.nalamodikk.research.knowledge.PlayerKnowledge;
-import com.github.nalamodikk.research.knowledge.ResearchSavedData;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 
-import java.util.Map;
-
 /**
- * Shared server-side cast path for the dual cost model.
+ * Shared server-side cast path.
  *
- * Aspects are a gate: the caster must own each one ({@link PlayerKnowledge}) but
- * nothing is consumed. Mana is the consumable: it is deducted from the casting
- * wand's {@link ModDataComponents#MANA_STORED} buffer. Only when both checks pass
- * does the skill run. Used by both the registry demos and (later) core-stored skills.
+ * Aspects are spent earlier, when the skill is encoded onto the core (see
+ * {@code SkillEncoding.consumeAspects}). Casting a baked skill therefore costs
+ * only mana: it is deducted from the casting wand's
+ * {@link ModDataComponents#MANA_STORED} buffer. Used by core-stored skills.
  */
 public final class SkillCasting {
 
@@ -28,7 +23,7 @@ public final class SkillCasting {
      * Attempts to cast {@code skill} using {@code wand} as the mana source.
      *
      * @return true if the skill was cast (mana spent + effect run), false if the
-     *         aspect gate or mana check failed (a client message is shown).
+     *         cooldown or mana check failed (a client message is shown).
      */
     public static boolean tryCast(ServerPlayer caster, ItemStack wand, SkillEffect skill, int slot) {
         if (!(caster.level() instanceof ServerLevel level)) return false;
@@ -38,19 +33,10 @@ public final class SkillCasting {
         if (!SkillCooldowns.ready(caster, slot, level.getGameTime())) return false;
 
         SkillCost cost = skill.cost();
-        ResearchSavedData data = ResearchSavedData.get(level);
-        PlayerKnowledge knowledge = data.getOrCreate(caster.getUUID());
 
-        // 1) aspect gate: must own each, never consumed
-        for (Map.Entry<ResourceLocation, Integer> entry : cost.aspectGate().entrySet()) {
-            if (knowledge.getAspectCount(entry.getKey()) < entry.getValue()) {
-                caster.displayClientMessage(
-                        Component.translatable("message.koniava.skill.not_enough_aspects"), true);
-                return false;
-            }
-        }
-
-        // 2) mana: apply the wand's Efficiency upgrades, then afford + consume.
+        // Aspects were already spent when the skill was encoded onto the core, so
+        // casting a baked skill no longer needs them: it only costs mana.
+        // 1) mana: apply the wand's Efficiency upgrades, then afford + consume.
         int mana = effectiveMana(wand, cost.mana());
         int stored = wand.getOrDefault(ModDataComponents.MANA_STORED, 0);
         if (stored < mana) {

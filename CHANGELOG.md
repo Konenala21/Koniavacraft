@@ -14,6 +14,9 @@ New material, the Aspect Codec Board, is the heart of the skill system, and gett
 
 ### Developer Notes / 開發者備註
 
+- WIP (aspects are now spent to author skills): aspect counts finally have a sink. Encoding a skill at the bench now consumes the aspects it uses (1 per use, summed over carrier/effects/modifiers), instead of only checking ownership. SkillEncoding gained aspectCost/canAfford/consumeAspects; EncodeSkillPacket verifies, writes, consumes, marks dirty and syncs the watch counts via AspectSyncPacket. As a consequence, casting a baked skill no longer needs the aspects (already spent), so SkillCasting dropped the cast-time aspect gate and now costs mana only. Model: aspects = material to make a skill (one-time), mana = fuel to cast it. Tests green.
+- WIP（本源現在會被花掉來做技能）：本源數量終於有消耗去處。在編碼台組裝技能現在會消耗用到的本源（每用一次扣 1，載體/效果/修飾加總），不再只是檢查擁有。SkillEncoding 新增 aspectCost/canAfford/consumeAspects；EncodeSkillPacket 驗證足夠→寫入→消耗→setDirty→用 AspectSyncPacket 同步手錶數量。連帶地，施放已烤好的技能不再需要本源（編碼時就花掉了），所以 SkillCasting 拿掉施放時的本源 gate，改成只吃魔力。模型：本源＝做技能的素材（一次性），魔力＝施放的燃料。測試綠。
+
 - WIP (custom Chill slow that bites flying mobs): added a Chill effect (ChillEffect) that scales an entity's horizontal velocity each tick instead of only lowering the ground move-speed attribute, so it actually slows flying/custom-movement mobs (ghast, phantom, ender dragon, wither, ...) that ignore vanilla Slowness. Strength by amplifier (x0.6 down to x0.15), vertical velocity untouched. All skill slow ops (frost, arc, vapor, spiritus, desire, sensus, cryo-venom, elemental storm) now use Chill; the heavier near-immobile ops (law, overgrowth, blight) now use the true ROOT effect so their lockdown also holds flying mobs. Lang en/zh_tw. Tests green.
 - WIP（自訂冰緩，連飛行怪都拖得慢）：新增冰緩效果（ChillEffect），每 tick 縮放實體水平速度，而不是只降地面移動速度屬性，所以對無視 vanilla 緩速的飛行/自訂移動怪（惡魂/夜魅/終界龍/凋零…）也真的有效。強度依層數（×0.6 到 ×0.15），不動垂直速度。所有技能緩速 op（冰寒/電弧/蒸騰/靈魂/慾望/感知/凍毒/元素風暴）改用冰緩；較重的近定身 op（法則/蔓生/腐化）改用真正的 ROOT 效果，連飛行怪都鎖得住。lang en/zh_tw。測試綠。
 
