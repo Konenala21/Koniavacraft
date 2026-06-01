@@ -17,6 +17,9 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -200,11 +203,14 @@ class PlayerCloneDeathSequence {
             VoidMirrorEvents.addModifiedBlock(chestPos.asLong());
         }
         if (sl.getBlockEntity(chestPos) instanceof ChestBlockEntity chest) {
-            // 清掉上次過關剩下的物品(只是清空,不會掉落),再重設 loot table。
-            // 內容來自正規 chest loot table（保證鏡核碎片 + 隨機魔力材料），玩家開箱時才從表填，
-            // 每次過關都重 roll。includeShard / firstClear 參數保留:仍服務過關標記等其他流程。
+            // 先清掉上次過關剩下的物品(只是清空,不會掉落),並清掉任何待填的 loot table,
+            // 再「當場」roll 一次 loot table 直接填進去。不用懶填(setLootTable),所以開箱絕對
+            // 只有這次的內容,不會有上一場殘留。內容定義 + JEI 仍是同一張 chests/mirror_boss_reward。
             chest.clearContent();
-            chest.setLootTable(BossLootRegistry.MIRROR_BOSS.lootTable(), sl.getRandom().nextLong());
+            chest.setLootTable(null);
+            LootTable table = sl.getServer().reloadableRegistries().getLootTable(BossLootRegistry.MIRROR_BOSS.lootTable());
+            LootParams params = new LootParams.Builder(sl).create(LootContextParamSets.EMPTY);
+            table.fill(chest, params, sl.getRandom().nextLong());
             chest.setChanged();
         }
     }

@@ -17,6 +17,9 @@ New material, the Aspect Codec Board, is the heart of the skill system, and gett
 
 ### Developer Notes / 開發者備註
 
+- WIP (boss reward chest: no leftover loot on open): the reward chest used a lazy loot table (setLootTable, rolled on open), which could leave the previous clear's items in the chest. spawnRewardChest now clears the chest, clears any pending loot table, and rolls the loot table immediately into the chest (LootTable.fill) so opening it always shows only this clear's reward, with zero carry-over. Same table id, so JEI is unchanged.
+- WIP（boss 獎勵寶箱：開箱不再有殘留）：獎勵寶箱原本用懶填 loot table（setLootTable，開箱才 roll），可能把上一場的物品留在箱子裡。spawnRewardChest 現在清空寶箱、清掉待填的 loot table，並當場把 loot table roll 進去（LootTable.fill），所以開箱永遠只有這一場的獎勵、零殘留。表 id 不變，JEI 照舊。
+
 - WIP (boss-resistant skill CC + modifiers work on beam/slash/field): two balance/coverage fixes. (1) Skill control effects (root, daze, chill) now go through TurretControlHelper.applySkillControl, which shares the floating turret's boss control-resistance (control_resistant tag halves the duration) and supports amplifiers, so skills can no longer perma-lock a boss. All 20 root/daze/chill applications were routed through it. (2) The multi-shot modifiers (refraction/resonance/automation) now repeat the beam, slash and field carriers (count times), and chain (arc/propagation/conduction) now jumps from the carrier's hits to nearby foes via a shared chainOps helper, so those modifiers do something on non-projectile carriers instead of being ignored.
 - WIP（技能控制吃 boss 抗性 + 修飾對光束/劍氣/力場生效）：兩個平衡/覆蓋修正。(1) 技能控制效果（定身/迷盲/冰緩）改走 TurretControlHelper.applySkillControl，跟浮游砲共用 boss 控制抗性（control_resistant tag 時間打折）並支援等級，所以技能不能再對 boss 無限鎖。20 處 root/daze/chill 全部改走它。(2) 連發修飾（折射/共鳴/自動）現在會讓光束/劍氣/力場載體多打幾道（count 次），連鎖（電弧/繁衍/導電）用共用 chainOps helper 從命中目標跳到附近敵人，所以這些修飾在非投射載體上不再是沒效果。
 
