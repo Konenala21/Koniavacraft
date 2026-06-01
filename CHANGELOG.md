@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+A renewable aspect source, so collecting aspects no longer dead-ends once you have scanned everything. Cleric villagers (level 3) now trade a Mirror Core Shard for Basic Aspect Essence, and right-clicking the essence grants 5 of each of the six base aspects (water, fire, wood, metal, earth, wu). Since the Mirror World boss is repeatable, you can farm shards, trade for essence, and top up aspects to keep authoring skills (and feed the synthesis bench for higher aspects).
+新增可重複取得的本源來源，掃完世界後收集本源不再是死路。神職村民（等級 3）現在收鏡核碎片換「基礎本源精華」，右鍵精華可獲得六大基礎本源（水火木金土烏）各 5 點。鏡中世界 boss 可重複挑戰，所以你能 farm 鏡核碎片、換精華、補本源來持續組裝技能（再餵本源合成台合出更高階本源）。
+
 Aspects now react with each other like chemistry: putting two reacting aspects in the same skill triggers a special reaction on top of their normal effects. Fire + frost = thermal shock (heavy burst), fire + energy = combustion (bigger fiery blast), fire + venom = a burning toxic cloud, frost + a force aspect = shatter, lightning + water = conduction (extra chaining), energy + crystal/arcana = overload (huge blast), death + lifesteal = death siphon (big self-heal), growth + fire = wildfire (spreading flames), venom + corrosion = strong acid, radiance + dark = annihilation, dark + fire = soulfire, frost + venom = cryo-venom, lightning + energy = plasma, radiance + fire = solar flare, growth + water = overgrowth, crystal + force = shrapnel. 16 reactions and counting.
 本源現在會像化學一樣彼此反應：在同一個技能裡放入會反應的兩個本源，就會在它們本來的效果之上觸發特殊反應。火+霜=熱裂（大筆爆發）、火+能量=爆燃（更大火焰爆炸）、火+毒=燃燒毒雲、霜+力量類=碎冰、雷+水=導電（額外連鎖）、能量+水晶/奧法=超載（巨大爆炸）、死+吸血=死亡虹吸（大量回血）、生長+火=野火（火焰擴散）、毒+腐蝕=強酸、光輝+黑暗=湮滅。之後會加更多反應。
 
@@ -13,6 +16,9 @@ New material, the Aspect Codec Board, is the heart of the skill system, and gett
 新材料「本源編碼基板」是技能系統的核心，而且取得它要走過整條技術樹：先在魔力工作台組出「空白本源編碼基板」（研磨機的魔力基板＋電路鏈的精密電路板＋祭壇的魔力晶圓＋導線），再到祭壇用鏡中世界 boss 掉的鏡核碎片激活。技能編碼台現在也改成祭壇製作，法術核心則用激活後的基板，所以整條技能路線都會走過你前面蓋的機器。法術核心組出的技能傷害也大幅提高（基礎傷害更高、每個效果加成更多），組合越深的技能越強，配得上解鎖它的漫長路程。（基板貼圖待補。）
 
 ### Developer Notes / 開發者備註
+
+- WIP (renewable aspect source: essence item + cleric trade): scanning is one-time, but encoding skills now consumes aspects, so added a faucet. New AspectEssenceItem (use() grants a configured aspect set + amount, consumes one, syncs the watch via AspectSyncPacket); registered BASIC_ASPECT_ESSENCE granting the six base aspects x5. New ModVillagerTrades (@EventBusSubscriber on VillagerTradesEvent) adds a Cleric level-3 listing: Mirror Core Shard -> Basic Aspect Essence. Lang en/zh_tw; item auto-models once its texture exists.
+- WIP（可再生本源來源：精華物品 + 神職交易）：掃描一次性，但組裝技能現在會消耗本源，所以加了水龍頭。新增 AspectEssenceItem（use() 給設定好的一組本源各 N 點、消耗一個、用 AspectSyncPacket 同步手錶）；註冊 BASIC_ASPECT_ESSENCE 給六大基礎本源各 5。新增 ModVillagerTrades（掛 VillagerTradesEvent）給神職村民等級 3 一個交易：鏡核碎片→基礎本源精華。lang en/zh_tw；貼圖存在後物品模型自動產。
 
 - WIP (aspects are now spent to author skills): aspect counts finally have a sink. Encoding a skill at the bench now consumes the aspects it uses (1 per use, summed over carrier/effects/modifiers), instead of only checking ownership. SkillEncoding gained aspectCost/canAfford/consumeAspects; EncodeSkillPacket verifies, writes, consumes, marks dirty and syncs the watch counts via AspectSyncPacket. As a consequence, casting a baked skill no longer needs the aspects (already spent), so SkillCasting dropped the cast-time aspect gate and now costs mana only. Model: aspects = material to make a skill (one-time), mana = fuel to cast it. Tests green.
 - WIP（本源現在會被花掉來做技能）：本源數量終於有消耗去處。在編碼台組裝技能現在會消耗用到的本源（每用一次扣 1，載體/效果/修飾加總），不再只是檢查擁有。SkillEncoding 新增 aspectCost/canAfford/consumeAspects；EncodeSkillPacket 驗證足夠→寫入→消耗→setDirty→用 AspectSyncPacket 同步手錶數量。連帶地，施放已烤好的技能不再需要本源（編碼時就花掉了），所以 SkillCasting 拿掉施放時的本源 gate，改成只吃魔力。模型：本源＝做技能的素材（一次性），魔力＝施放的燃料。測試綠。

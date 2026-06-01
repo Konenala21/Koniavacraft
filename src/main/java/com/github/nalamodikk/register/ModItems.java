@@ -3,6 +3,8 @@ package com.github.nalamodikk.register;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.item.NaraWatchItem;
 import com.github.nalamodikk.common.item.TrainingDummyItem;
+import com.github.nalamodikk.common.item.AspectEssenceItem;
+import com.github.nalamodikk.research.aspect.ModAspects;
 import com.github.nalamodikk.common.item.UpgradeItem;
 import com.github.nalamodikk.common.item.research.AspectTokenItem;
 import com.github.nalamodikk.common.item.research.CompletedResearchItem;
@@ -64,6 +66,13 @@ public class ModItems {
     // 訓練假人放置物：右鍵生成一隻測傷害用的假人
     public static final DeferredItem<Item> TRAINING_DUMMY = ITEMS.register("training_dummy",
             () -> new TrainingDummyItem(new Item.Properties().stacksTo(16)));
+
+    // 基礎本源精華：右鍵消耗 1 個，給六大基礎本源各 5 點。掃描一次性，技能組裝會消耗本源，
+    // 這是 renewable 來源（用鏡核碎片跟村民交易換，再用本源合成台合出高階本源）。
+    public static final DeferredItem<Item> BASIC_ASPECT_ESSENCE = ITEMS.register("basic_aspect_essence",
+            () -> new AspectEssenceItem(new Item.Properties(), 5,
+                    ModAspects.WATER, ModAspects.FIRE, ModAspects.WOOD,
+                    ModAspects.METAL, ModAspects.EARTH, ModAspects.WU));
     public static final DeferredItem<Item> RAW_MANA_DUST = ITEMS.register("raw_mana_dust", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> CONDENSED_MANA_DUST = ITEMS.register("condensed_mana_dust", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> MANA_CRYSTAL_FRAGMENT = ITEMS.register("mana_crystal_fragment", () -> new Item(new Item.Properties()));
