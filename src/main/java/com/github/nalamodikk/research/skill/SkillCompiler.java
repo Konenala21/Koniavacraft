@@ -57,8 +57,9 @@ public final class SkillCompiler {
         for (Aspect a : fuel.keySet()) gate.put(a.getId(), 1);
 
         int fuelTotalForMana = fuel.values().stream().mapToInt(Integer::intValue).sum();
+        int carrierMana = carrier == ModAspects.MANA ? 50 : (carrier != null ? MANA_PER_CARRIER : 0); // 魔力:便宜基礎彈
         int rawMana = MANA_BASE
-                + (carrier != null ? MANA_PER_CARRIER : 0)
+                + carrierMana
                 + MANA_PER_EFFECT * effects.size()
                 + MANA_PER_MODIFIER * modifiers.size()
                 + MANA_PER_FUEL * fuelTotalForMana;
@@ -102,7 +103,8 @@ public final class SkillCompiler {
                 + (modifiers.contains(ModAspects.ENERGY) ? 0.5F : 0.0F)
                 + (modifiers.contains(ModAspects.ARCANA) ? 0.5F : 0.0F);
         int fuelTotal = fuel.values().stream().mapToInt(Integer::intValue).sum();
-        float damage = (4.0F + 2.0F * effects.size() + fuelTotal) * power;
+        float carrierDmgMult = carrier == ModAspects.MANA ? 0.85F : 1.0F; // 魔力較弱(換便宜)
+        float damage = (4.0F + 2.0F * effects.size() + fuelTotal) * power * carrierDmgMult;
 
         List<SkillEffectOp> finalOps = List.copyOf(ops);
         boolean isProjectile = carrier == null
@@ -110,6 +112,11 @@ public final class SkillCompiler {
                 || carrier == ModAspects.MANA
                 || carrier == ModAspects.XUN;
         boolean isDash = carrier == ModAspects.FLIGHT;
+
+        // per-carrier projectile feel: 巽=快+遠+輕推, 動力=衝擊擊退, 魔力=基礎無推
+        final double projSpeed = carrier == ModAspects.XUN ? 1.7 : 1.2;
+        final int projLife = carrier == ModAspects.XUN ? 70 : 40;
+        final float projKnock = carrier == ModAspects.MANA ? 0.0F : (carrier == ModAspects.XUN ? 0.25F : 0.5F);
 
         Consumer<SkillContext> action = ctx -> {
             ServerPlayer caster = ctx.caster();
@@ -131,7 +138,8 @@ public final class SkillCompiler {
                 for (int i = 0; i < count; i++) {
                     Vec3 dir = count == 1 ? look : spread(look, i, count);
                     level.addFreshEntity(SpellProjectileEntity.shoot(
-                            level, caster, dir, dmg, finalOps, pierce, homing, chainCount));
+                            level, caster, dir, dmg, finalOps, pierce, homing, chainCount,
+                            projSpeed, projLife, projKnock));
                 }
                 level.playSound(null, caster.blockPosition(),
                         SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 0.8F, 1.4F);

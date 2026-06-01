@@ -41,6 +41,9 @@ public class SpellProjectileEntity extends ThrowableProjectile {
     private boolean pierce = false;
     private boolean homing = false;
     private int chainCount = 0;
+    private double speed = SPEED;
+    private int maxLifetime = MAX_LIFETIME;
+    private float knockback = 0.0F;
     private List<SkillEffectOp> ops = List.of();
     private final Set<Integer> alreadyHit = new HashSet<>();
     private int lifetime = 0;
@@ -53,19 +56,23 @@ public class SpellProjectileEntity extends ThrowableProjectile {
     /** Fire a spell projectile along {@code dir} from the shooter's eyes. */
     public static SpellProjectileEntity shoot(Level level, Player shooter, Vec3 dir,
                                               float damage, List<SkillEffectOp> ops, boolean pierce,
-                                              boolean homing, int chainCount) {
+                                              boolean homing, int chainCount,
+                                              double speed, int maxLifetime, float knockback) {
         SpellProjectileEntity p = new SpellProjectileEntity(ModEntities.SPELL_PROJECTILE.get(), level);
         p.damage = damage;
         p.ops = List.copyOf(ops);
         p.pierce = pierce;
         p.homing = homing;
         p.chainCount = chainCount;
+        p.speed = speed;
+        p.maxLifetime = maxLifetime;
+        p.knockback = knockback;
         p.setOwner(shooter);
 
         Vec3 d = dir.lengthSqr() < 1.0E-6 ? shooter.getLookAngle() : dir.normalize();
         Vec3 spawn = shooter.getEyePosition().add(d.scale(0.6));
         p.setPos(spawn.x, spawn.y, spawn.z);
-        p.setDeltaMovement(d.scale(SPEED));
+        p.setDeltaMovement(d.scale(speed));
         return p;
     }
 
@@ -89,7 +96,7 @@ public class SpellProjectileEntity extends ThrowableProjectile {
             sl.sendParticles(ParticleTypes.SMALL_FLAME, p.x, p.y, p.z, 2, 0.05, 0.05, 0.05, 0.0);
         }
 
-        if (++lifetime > MAX_LIFETIME) discard();
+        if (++lifetime > maxLifetime) discard();
     }
 
     private void burst(Vec3 pos) {
@@ -116,6 +123,7 @@ public class SpellProjectileEntity extends ThrowableProjectile {
         if (target instanceof LivingEntity living && level() instanceof ServerLevel sl) {
             Vec3 dir = getDeltaMovement().lengthSqr() < 1.0E-6 ? Vec3.ZERO : getDeltaMovement().normalize();
             for (SkillEffectOp op : ops) op.apply(sl, living, owner, dir, damage);
+            if (knockback > 0.0F) living.knockback(knockback, -dir.x, -dir.z); // carrier impact (momentum/wind)
             if (chainCount > 0) chainFrom(living, owner, source, dir, sl);
         }
 
@@ -162,7 +170,7 @@ public class SpellProjectileEntity extends ThrowableProjectile {
     private void steerToward(@Nullable LivingEntity target) {
         if (target == null) return;
         Vec3 to = target.getEyePosition().subtract(position()).normalize();
-        Vec3 steered = getDeltaMovement().normalize().scale(0.82).add(to.scale(0.18)).normalize().scale(SPEED);
+        Vec3 steered = getDeltaMovement().normalize().scale(0.82).add(to.scale(0.18)).normalize().scale(speed);
         setDeltaMovement(steered);
     }
 
