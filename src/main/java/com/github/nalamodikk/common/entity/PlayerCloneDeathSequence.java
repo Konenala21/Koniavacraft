@@ -1,14 +1,10 @@
 package com.github.nalamodikk.common.entity;
 
-import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.event.VoidMirrorEvents;
+import com.github.nalamodikk.common.loot.BossLootRegistry;
 import com.github.nalamodikk.common.network.packet.client.BossBgmPacket;
 import com.github.nalamodikk.register.ModEntities;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -42,11 +38,6 @@ import javax.annotation.Nullable;
 class PlayerCloneDeathSequence {
 
     private final PlayerCloneEntity clone;
-
-    /** Mirror World boss reward chest loot table. Datagen: ModChestLootTableProvider. JEI reads the same id. */
-    public static final ResourceKey<LootTable> MIRROR_BOSS_REWARD = ResourceKey.create(
-            Registries.LOOT_TABLE,
-            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "chests/mirror_boss_reward"));
 
     PlayerCloneDeathSequence(PlayerCloneEntity clone) {
         this.clone = clone;
@@ -214,7 +205,7 @@ class PlayerCloneDeathSequence {
             // 內容來自正規 chest loot table（保證鏡核碎片 + 隨機魔力材料），玩家開箱時才從表填，
             // 每次過關重生寶箱都會重 roll。單一真實來源，JEI Boss 掉落分頁讀同一張表。
             // includeShard / firstClear 參數保留：仍服務過關標記等其他流程。
-            chest.setLootTable(MIRROR_BOSS_REWARD, sl.getRandom().nextLong());
+            chest.setLootTable(BossLootRegistry.MIRROR_BOSS.lootTable(), sl.getRandom().nextLong());
         }
     }
 }
