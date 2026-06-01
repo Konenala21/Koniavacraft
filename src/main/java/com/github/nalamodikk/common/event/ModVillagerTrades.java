@@ -2,9 +2,9 @@ package com.github.nalamodikk.common.event;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.register.ModItems;
+import com.github.nalamodikk.register.ModVillagers;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerTrades;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.trading.ItemCost;
@@ -12,8 +12,10 @@ import net.minecraft.world.item.trading.MerchantOffer;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.village.VillagerTradesEvent;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -27,11 +29,17 @@ public class ModVillagerTrades {
 
     @SubscribeEvent
     public static void onVillagerTrades(VillagerTradesEvent event) {
-        if (event.getType() == VillagerProfession.CLERIC) {
-            List<VillagerTrades.ItemListing> tier3 = event.getTrades().get(3);
-            if (tier3 != null) {
-                tier3.add(new ShardForEssence());
+        if (event.getType() != ModVillagers.ASPECT_RESEARCHER.get()) return;
+        // 自訂職業沒有 vanilla 預設交易,各等級的 list 可能不存在,要自己建。
+        // 本源研究員從等級 1 起就收鏡核碎片換精華(這是他的本業)。
+        Int2ObjectMap<List<VillagerTrades.ItemListing>> trades = event.getTrades();
+        for (int level = 1; level <= 2; level++) {
+            List<VillagerTrades.ItemListing> tier = trades.get(level);
+            if (tier == null) {
+                tier = new ArrayList<>();
+                trades.put(level, tier);
             }
+            tier.add(new ShardForEssence());
         }
     }
 
