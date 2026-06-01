@@ -94,3 +94,5 @@ local.properties
 
 # aspect embedding table (regenerate via tools/aspect_embedding, not committed yet)
 /src/main/resources/koniava_data/aspect_semantic/
+
+.playwright-mcp/
