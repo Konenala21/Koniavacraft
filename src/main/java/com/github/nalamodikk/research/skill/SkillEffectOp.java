@@ -2,12 +2,14 @@ package com.github.nalamodikk.research.skill;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
@@ -259,6 +261,73 @@ public enum SkillEffectOp {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.invulnerableTime = 0;
             target.hurt(level.damageSources().magic(), 3.0F + power * 0.25F);
+        }
+    },
+
+    // ── Abstract aspects: imaginative effects, several with combo synergy ─────
+    /** 挖掘: armor shred. Armor-bypassing damage plus mining fatigue (can't dig or swing well). */
+    EXCAVATION {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.invulnerableTime = 0;
+            target.hurt(level.damageSources().magic(), 2.0F + power * 0.3F); // magic bypasses armor
+            target.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, 120, 2));
+        }
+    },
+    /** 獸性: a savage maul. Heavy physical bonus hit plus a deep bleeding poison. */
+    BESTIA {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.invulnerableTime = 0;
+            target.hurt(caster != null ? level.damageSources().mobAttack(caster) : level.damageSources().magic(), 3.0F + power * 0.3F);
+            target.addEffect(new MobEffectInstance(MobEffects.POISON, 80, 2)); // bleed
+        }
+    },
+    /** 收割: a reaping sweep. Damages every living thing around the target (scythe AoE). */
+    HARVEST {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            AABB box = target.getBoundingBox().inflate(3.5);
+            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+                le.invulnerableTime = 0;
+                le.hurt(level.damageSources().magic(), 2.0F + power * 0.25F);
+            }
+        }
+    },
+    /** 感知: expose. Long glow that reveals through walls, plus a tracking slow. */
+    SENSUS {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200, 0));
+            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 0));
+        }
+    },
+    /** 認知: mind scramble. Nausea plus weakness as the target loses its grip. */
+    COGNITION {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 160, 0));
+            target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 100, 1));
+        }
+    },
+    /** 慾望: lure. Drags the target toward the caster and slows it (drawn in by desire). */
+    DESIRE {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            if (caster != null) {
+                Vec3 pull = caster.position().subtract(target.position());
+                if (pull.lengthSqr() > 0.01) {
+                    target.setDeltaMovement(target.getDeltaMovement().add(pull.normalize().scale(0.6)));
+                    target.hurtMarked = true;
+                }
+            }
+            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 1));
+        }
+    },
+    /** 法則: judgment. Roots the target and the strike lands harder the more debuffs it
+     *  already carries, so it executes a target you have stacked status effects onto. */
+    LAW {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            long debuffs = target.getActiveEffects().stream()
+                    .filter(e -> e.getEffect().value().getCategory() == MobEffectCategory.HARMFUL)
+                    .count();
+            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 4));
+            target.invulnerableTime = 0;
+            target.hurt(level.damageSources().magic(), 2.0F + debuffs * 2.0F + power * 0.2F);
         }
     };
 

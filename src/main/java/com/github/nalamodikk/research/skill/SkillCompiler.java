@@ -83,6 +83,7 @@ public final class SkillCompiler {
 
         int baseCount = modifiers.contains(ModAspects.REFRACTION) ? 3 : 1;
         if (modifiers.contains(ModAspects.RESONANCE)) baseCount += 1; // echo: one extra shot
+        if (modifiers.contains(ModAspects.AUTOMATION)) baseCount += 1; // automated repeater: extra shot
         final int count = baseCount;
         boolean pierce = modifiers.contains(ModAspects.BLADE);
         boolean warding = modifiers.contains(ModAspects.WARDING);
@@ -311,6 +312,14 @@ public final class SkillCompiler {
         if (effect == ModAspects.CRYSTAL)    return SkillEffectOp.CRYSTAL;
         if (effect == ModAspects.ENERGY)     return SkillEffectOp.ENERGY;
         if (effect == ModAspects.ARCANA)     return SkillEffectOp.ARCANA;
+        // Abstract aspects, imaginative effects
+        if (effect == ModAspects.EXCAVATION) return SkillEffectOp.EXCAVATION;
+        if (effect == ModAspects.BESTIA)     return SkillEffectOp.BESTIA;
+        if (effect == ModAspects.HARVEST)    return SkillEffectOp.HARVEST;
+        if (effect == ModAspects.SENSUS)     return SkillEffectOp.SENSUS;
+        if (effect == ModAspects.COGNITION)  return SkillEffectOp.COGNITION;
+        if (effect == ModAspects.DESIRE)     return SkillEffectOp.DESIRE;
+        if (effect == ModAspects.LAW)        return SkillEffectOp.LAW;
         return null;
     }
 

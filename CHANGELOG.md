@@ -11,6 +11,9 @@ New material, the Aspect Codec Board, is the heart of the skill system, and gett
 
 ### Developer Notes / 開發者備註
 
+- WIP (abstract aspects get imaginative effects): the 8 aspects that had no skill role at all are now usable, each with a creative effect. EXCAVATION shreds armor (armor-bypassing hit + mining fatigue); BESTIA is a savage maul + bleed; HARVEST is a scythe AoE that hits everything around the target; SENSUS exposes (long see-through-walls glow + slow); COGNITION scrambles the mind (nausea + weakness); DESIRE lures the target toward you and slows it; LAW passes judgment, rooting the target and hitting harder the more debuffs it already carries (a finisher you set up with other effects); AUTOMATION is a modifier that adds an extra shot (automated repeater). Roles + opFor + a couple of imports; tests green.
+- WIP（抽象本源給有創意的效果）：原本完全沒技能角色的 8 個本源現在都能用，各有腦洞效果。挖掘＝破甲（無視護甲的傷害+挖掘疲勞）；獸性＝兇猛撕咬+流血；收割＝鐮刀範圍橫掃打到目標周圍所有東西；感知＝曝光（長時間穿牆發光+緩速）；認知＝心智干擾（暈眩+虛弱）；慾望＝把目標拉向你並緩速；法則＝制裁，定身目標、目標身上負面層數越多打得越重（拿來收尾、配合其他效果疊層）；自動化＝修飾，多射一發（自動連射）。角色+opFor+幾個 import；測試綠。
+
 - WIP (energy = explosion, scales to a nuke): the ENERGY effect aspect is now a no-grief detonation (entity damage + knockback, no block breaking) whose radius scales with power. So energy turns any carrier into its explosive variant, and amplifiers turn a grenade into a nuke: machine + energy = grenade launcher, machine + energy + qian (power x2) = a bigger blast, machine + energy + refraction = a 3-shell cluster, momentum + energy = an exploding orb. One op, a whole row of variants. Tests green.
 - WIP（能量＝爆炸，疊到核彈）：能量效果本源現在是無破壞爆炸（對實體傷害+擊退、不炸地形），半徑隨 power 放大。所以能量讓任何載體變成爆裂版，增幅本源把榴彈變核彈：機械+能量=榴彈砲、機械+能量+乾（power×2）=更大爆炸、機械+能量+折射=三連集束彈、動力+能量=會爆的法球。一個 op 開一整排變種。測試綠。
 

@@ -72,8 +72,17 @@ public final class AspectRoles {
         put(ModAspects.STORM,      SkillRole.EFFECT);  // 風暴範圍
         put(ModAspects.RADIANCE,   SkillRole.EFFECT);  // 光輝 -> 閃光彈/致盲
         put(ModAspects.CRYSTAL,    SkillRole.EFFECT);  // 晶刺傷
+        // 抽象本源效果（腦洞）
+        put(ModAspects.EXCAVATION, SkillRole.EFFECT);  // 挖掘 -> 破甲 + 挖掘疲勞
+        put(ModAspects.BESTIA,     SkillRole.EFFECT);  // 獸性 -> 撕咬 + 流血
+        put(ModAspects.HARVEST,    SkillRole.EFFECT);  // 收割 -> 範圍橫掃
+        put(ModAspects.SENSUS,     SkillRole.EFFECT);  // 感知 -> 標記發光 + 緩速
+        put(ModAspects.COGNITION,  SkillRole.EFFECT);  // 認知 -> 心智干擾(暈+弱)
+        put(ModAspects.DESIRE,     SkillRole.EFFECT);  // 慾望 -> 牽引拉近 + 緩速
+        put(ModAspects.LAW,        SkillRole.EFFECT);  // 法則 -> 制裁(定身 + 依負面層數加傷)
 
         // ── Modifiers (alter) ────────────────────────────────────────────────
+        put(ModAspects.AUTOMATION, SkillRole.MODIFIER); // 自動化 -> 自動連射(+1 發)
         put(ModAspects.REFRACTION, SkillRole.MODIFIER); // 分裂多發
         put(ModAspects.RESONANCE,  SkillRole.MODIFIER); // 回響/重複
         put(ModAspects.BLADE,      SkillRole.CARRIER, SkillRole.MODIFIER); // 載體=劍氣斬 / 修飾=穿透
