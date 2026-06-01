@@ -123,10 +123,11 @@ public enum SkillEffectOp {
             target.hurt(level.damageSources().lightningBolt(), 2.0F + power * 0.25F);
         }
     },
-    /** 電弧: a quick electric shock that briefly stuns. */
+    /** 電弧: a quick electric shock that briefly stuns. Uses ROOT so it actually
+     *  locks the target down for a moment (reads as a stun), even on flying mobs. */
     ARC {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            target.addEffect(new MobEffectInstance(ModMobEffects.CHILL, 25, 3));
+            target.addEffect(new MobEffectInstance(ModMobEffects.ROOT, 15, 0));
             target.invulnerableTime = 0;
             target.hurt(level.damageSources().lightningBolt(), 1.0F + power * 0.15F);
         }
@@ -139,10 +140,17 @@ public enum SkillEffectOp {
             target.knockback(1.0 + power * 0.05, -dir.x, -dir.z); // away from caster
         }
     },
-    /** 坎 (abyss trigram): drags the target back toward the caster. */
+    /** 坎 (abyss trigram): drags the target hard toward the caster. Uses a direct
+     *  velocity impulse (not knockback, which knockback-resistance would soften). */
     KAN {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            target.knockback(0.6 + power * 0.04, dir.x, dir.z); // toward caster (reversed)
+            Vec3 diff = caster != null ? caster.position().subtract(target.position()) : dir.scale(-1.0);
+            if (diff.lengthSqr() < 1.0E-4) diff = dir.scale(-1.0);
+            Vec3 toCaster = diff.normalize();
+            double strength = 1.2 + power * 0.05;
+            target.setDeltaMovement(toCaster.x * strength,
+                    target.getDeltaMovement().y + 0.1, toCaster.z * strength);
+            target.hurtMarked = true;
         }
     },
     /** 兌 (lake trigram): launches the target straight up. */
