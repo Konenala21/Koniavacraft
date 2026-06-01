@@ -1,10 +1,14 @@
 package com.github.nalamodikk.common.entity;
 
+import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.event.VoidMirrorEvents;
 import com.github.nalamodikk.common.network.packet.client.BossBgmPacket;
 import com.github.nalamodikk.register.ModEntities;
-import com.github.nalamodikk.register.ModItems;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -14,7 +18,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
@@ -39,6 +42,11 @@ import javax.annotation.Nullable;
 class PlayerCloneDeathSequence {
 
     private final PlayerCloneEntity clone;
+
+    /** Mirror World boss reward chest loot table. Datagen: ModChestLootTableProvider. JEI reads the same id. */
+    public static final ResourceKey<LootTable> MIRROR_BOSS_REWARD = ResourceKey.create(
+            Registries.LOOT_TABLE,
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "chests/mirror_boss_reward"));
 
     PlayerCloneDeathSequence(PlayerCloneEntity clone) {
         this.clone = clone;
@@ -203,13 +211,10 @@ class PlayerCloneDeathSequence {
         VoidMirrorEvents.addModifiedBlock(chestPos.asLong());
         if (sl.getBlockEntity(chestPos) instanceof ChestBlockEntity chest) {
             chest.clearContent();
-            // 鏡核碎片每次過關都給（原本 if (includeShard) 限首次，現解開）。
-            // includeShard / firstClear 參數保留：它仍服務過關標記等其他流程，不在此 gate 碎片。
-            chest.setItem(13, new ItemStack(ModItems.MIRROR_CORE_SHARD.get())); // 中央：紀念物（每次過關都給）
-            chest.setItem(10, new ItemStack(ModItems.MANA_INGOT.get(), 4));
-            chest.setItem(11, new ItemStack(ModItems.MANA_DUST.get(), 8));
-            chest.setItem(15, new ItemStack(ModItems.CORRUPTED_MANA_DUST.get(), 4));
-            chest.setItem(16, new ItemStack(ModItems.MANA_INGOT.get(), 2));
+            // 內容來自正規 chest loot table（保證鏡核碎片 + 隨機魔力材料），玩家開箱時才從表填，
+            // 每次過關重生寶箱都會重 roll。單一真實來源，JEI Boss 掉落分頁讀同一張表。
+            // includeShard / firstClear 參數保留：仍服務過關標記等其他流程。
+            chest.setLootTable(MIRROR_BOSS_REWARD, sl.getRandom().nextLong());
         }
     }
 }

@@ -11,6 +11,9 @@ New item and block art: mana materials (dusts, ingots, crystals, alloy, adhesive
 
 ### Developer Notes / 開發者備註
 
+- WIP (mirror boss reward = real loot table): the Mirror World boss reward chest was hand-filled with five hardcoded setItem calls. It now uses a proper chest loot table (chests/mirror_boss_reward: guaranteed Mirror Core Shard + a rolled pool of mana ingot/dust/corrupted dust/crystal) applied via setLootTable, so the chest fills from the table on open and re-rolls each clear (the open-the-chest reward moment is preserved). Single source of truth, JER/JEI-readable; sets up the upcoming "Boss Drops" JEI page. Datagen: run runData to emit the loot JSON.
+- WIP（鏡中 boss 獎勵改成正規 loot table）：鏡中世界 boss 的獎勵寶箱原本用五行寫死的 setItem 填。現在改用正規 chest loot table（chests/mirror_boss_reward：保證鏡核碎片 + 隨機池魔力錠/粉/汙穢粉/水晶），透過 setLootTable 套用，所以寶箱在開啟時才從表填、每次過關重 roll（保留開箱領獎的體驗）。單一真實來源、JER/JEI 可讀；為接下來的「Boss 掉落」JEI 分頁鋪路。Datagen：跑 runData 生 loot JSON。
+
 - WIP (skill system recipes, mirror-boss material gate): the two skill-system pieces are now obtainable, gated by material rather than research (matching the design: only the early tutorial researches hard-lock; later ones only guide). Both the Skill Encoder block and the Spell Core item now require the Mirror Core Shard, the Mirror World boss drop that was previously unused by any recipe, so the whole skill system naturally opens only after that boss (its "本源核心" spine placement). Encoder = precision circuit + high-density core + wafer + shard + substrate; Spell Core = amethyst + shard + crystal + blank core + wire + refined dust. Mana crafting table recipes (datagen): run runData to emit the JSON.
 - WIP（技能系統配方，鏡中 boss 材料卡位）：技能系統的兩個關鍵物現在做得出來，用材料卡位而非研究鎖（照設計：只有前期教學研究硬鎖，後續研究只給指引不鎖）。技能編碼台方塊與法術核心物品現在都要鏡核碎片，那是鏡中世界 boss 的掉落物、先前沒被任何配方用到，所以整套技能系統天然只在打贏那隻 boss 之後才開（對應它「本源核心」脊椎的定位）。編碼台＝精密電路板+高密度核+晶圓+鏡核碎片+基板；法術核心＝紫水晶+鏡核碎片+魔力水晶+空白核心+導線+精煉粉。魔力工作台配方（datagen）：跑 runData 才生 JSON。
 
