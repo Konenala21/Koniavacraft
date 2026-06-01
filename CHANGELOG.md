@@ -17,6 +17,9 @@ New material, the Aspect Codec Board, is the heart of the skill system, and gett
 
 ### Developer Notes / 開發者備註
 
+- WIP (revert research-table POI: fixes the open stutter + non-working profession): the custom Aspect Researcher profession bound its POI to the Research Table, but that block is a BaseEntityBlock (block entity + animated render), so making it a POI caused a hitch when opening the table and villagers wouldn't reliably claim it. Removed ModVillagers (POI + profession) entirely; the Mirror Core Shard -> Basic Aspect Essence trade now lives on the vanilla Librarian (level 3, knowledge theme, works out of the box). A proper custom researcher can be redone later on a dedicated simple (non-BE) job block.
+- WIP（移除研究台 POI：修開啟卡頓 + 村民不任職）：自訂「本源研究員」職業把 POI 綁在研究台,但研究台是 BaseEntityBlock（有 BlockEntity + 動畫渲染），當 POI 會在開啟時卡頓、村民也不易認領。整個移除 ModVillagers（POI+職業）；鏡核碎片→基礎本源精華的交易改掛 vanilla 圖書管理員（等級 3,知識主題,開箱即用）。要正式的本源研究員之後用專屬的簡單（非 BE）方塊另做。
+
 - WIP (boss reward chest: no leftover loot on open): the reward chest used a lazy loot table (setLootTable, rolled on open), which could leave the previous clear's items in the chest. spawnRewardChest now clears the chest, clears any pending loot table, and rolls the loot table immediately into the chest (LootTable.fill) so opening it always shows only this clear's reward, with zero carry-over. Same table id, so JEI is unchanged.
 - WIP（boss 獎勵寶箱：開箱不再有殘留）：獎勵寶箱原本用懶填 loot table（setLootTable，開箱才 roll），可能把上一場的物品留在箱子裡。spawnRewardChest 現在清空寶箱、清掉待填的 loot table，並當場把 loot table roll 進去（LootTable.fill），所以開箱永遠只有這一場的獎勵、零殘留。表 id 不變，JEI 照舊。
 

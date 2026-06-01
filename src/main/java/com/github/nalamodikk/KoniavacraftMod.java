@@ -25,7 +25,6 @@ import com.github.nalamodikk.dimension.BoundedFlatChunkGenerator;
 import com.github.nalamodikk.dimension.ModDimensions;
 import com.github.nalamodikk.register.ModEntities;
 import com.github.nalamodikk.register.ModMobEffects;
-import com.github.nalamodikk.register.ModVillagers;
 import com.github.nalamodikk.register.ModSounds;
 import com.github.nalamodikk.common.config.ModClientConfig;
 import com.github.nalamodikk.common.config.ModCommonConfig;
@@ -100,7 +99,6 @@ public class KoniavacraftMod {
         ModEntities.register(modEventBus);
         ModArmorMaterials.register(modEventBus);
         ModMobEffects.register(modEventBus);
-        ModVillagers.register(modEventBus);
         ModSounds.register(modEventBus);
         ModParticles.register(modEventBus);
         ModChunkGenerators.register(modEventBus);
