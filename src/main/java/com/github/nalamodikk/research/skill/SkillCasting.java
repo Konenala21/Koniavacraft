@@ -61,7 +61,7 @@ public final class SkillCasting {
 
         // 3) run, then cool down BOTH wand types so swapping hands can't bypass it
         skill.execute(new SkillContext(level, caster));
-        int cd = cooldownTicks(cost.mana());
+        int cd = effectiveCooldown(wand, cost.mana());
         caster.getCooldowns().addCooldown(ModItems.WAND_ROD.get(), cd);
         caster.getCooldowns().addCooldown(ModItems.WAND_ROD_ADVANCED.get(), cd);
         return true;
@@ -70,6 +70,13 @@ public final class SkillCasting {
     /** Cooldown in ticks from a skill's base mana cost (heavier skills = longer). */
     public static int cooldownTicks(int baseMana) {
         return Math.max(10, Math.min(100, baseMana / 15)); // ~0.5s .. 5s
+    }
+
+    /** Cooldown after the wand's Cooldown upgrades (each point is one tick off, floored at 5). */
+    public static int effectiveCooldown(ItemStack wand, int baseMana) {
+        WandCoreData data = wand.getOrDefault(ModDataComponents.WAND_CORE_DATA, WandCoreData.empty());
+        int reduce = data.sumUpgradeBonus(WandUpgradeBehavior.COOLDOWN);
+        return Math.max(5, cooldownTicks(baseMana) - reduce);
     }
 
     /** Mana cost after the wand's Efficiency upgrades (each point is 1% off, floored at 40%). */
