@@ -3,6 +3,7 @@ package com.github.nalamodikk.research.skill;
 import com.github.nalamodikk.common.item.wand.WandCoreData;
 import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeBehavior;
 import com.github.nalamodikk.register.ModDataComponents;
+import com.github.nalamodikk.register.ModItems;
 import com.github.nalamodikk.research.knowledge.PlayerKnowledge;
 import com.github.nalamodikk.research.knowledge.ResearchSavedData;
 import net.minecraft.network.chat.Component;
@@ -58,9 +59,11 @@ public final class SkillCasting {
         }
         wand.set(ModDataComponents.MANA_STORED, stored - mana);
 
-        // 3) run, then put the wand on a cooldown scaled by the skill's complexity
+        // 3) run, then cool down BOTH wand types so swapping hands can't bypass it
         skill.execute(new SkillContext(level, caster));
-        caster.getCooldowns().addCooldown(wand.getItem(), cooldownTicks(cost.mana()));
+        int cd = cooldownTicks(cost.mana());
+        caster.getCooldowns().addCooldown(ModItems.WAND_ROD.get(), cd);
+        caster.getCooldowns().addCooldown(ModItems.WAND_ROD_ADVANCED.get(), cd);
         return true;
     }
 
