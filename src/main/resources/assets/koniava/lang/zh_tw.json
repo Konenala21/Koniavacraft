@@ -307,6 +307,7 @@
   "message.koniava.encode.not_owned": "你還沒擁有全部這些本源。",
   "message.koniava.encode.incomplete": "技能需要一個載體與至少一個效果。",
   "message.koniava.encode.wrong_role": "這個本源不能放進這個槽。",
+  "message.koniava.encode.pick_slot": "先點上面的載體/效果/修飾槽，再點本源放進去。",
   "message.koniava.encode.success": "已編碼：%s",
   "entity.koniava.spell_projectile": "法術投射物",
   "item.koniava.speed_upgrade": "速度升級模組",

@@ -67,7 +67,8 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
     private final Aspect[] effects = new Aspect[3];
     private final Aspect[] modifiers = new Aspect[2];
     @Nullable private Aspect carrier;
-    @Nullable private Aspect selected;
+    @Nullable private SkillRole activeRole; // which role slot is selected; palette filters to it
+    private int activeIndex;                // which effect/modifier slot (0 for carrier)
     @Nullable private Item iconItem;     // custom HUD icon; null = auto-generated
     private int targetSlot;
     private int palettePage;
@@ -138,6 +139,7 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
         Arrays.fill(effects, null);
         Arrays.fill(modifiers, null);
         iconItem = null;
+        activeRole = null; // deselect any slot -> palette shows all again
         if (nameField != null) nameField.setValue("");
     }
 
@@ -228,6 +230,14 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
             renderAspectCell(g, effects[i], leftPos + EFFECT_X + i * CELL, topPos + EFFECT_Y, CELL, mouseX, mouseY, true, 0);
         for (int i = 0; i < modifiers.length; i++)
             renderAspectCell(g, modifiers[i], leftPos + MODIFIER_X + i * CELL, topPos + MODIFIER_Y, CELL, mouseX, mouseY, true, 0);
+
+        // highlight the active slot so it is clear which one the palette is filtering for
+        if (activeRole == SkillRole.CARRIER)
+            g.renderOutline(leftPos + CARRIER_X - 1, topPos + CARRIER_Y - 1, CELL + 2, CELL + 2, 0xFFEE7722);
+        else if (activeRole == SkillRole.EFFECT)
+            g.renderOutline(leftPos + EFFECT_X + activeIndex * CELL - 1, topPos + EFFECT_Y - 1, CELL + 2, CELL + 2, 0xFFEE7722);
+        else if (activeRole == SkillRole.MODIFIER)
+            g.renderOutline(leftPos + MODIFIER_X + activeIndex * CELL - 1, topPos + MODIFIER_Y - 1, CELL + 2, CELL + 2, 0xFFEE7722);
     }
 
     private void renderTargetSlots(GuiGraphics g, int mouseX, int mouseY) {
@@ -282,9 +292,6 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
             String label = aspect.getId().getPath().substring(0, 1).toUpperCase();
             g.drawString(font, label, x + size / 3, y + size / 3, 0xFFFFFF, true);
             if (count > 0) drawCount(g, x, y, size, count);
-        }
-        if (aspect != null && aspect == selected) {
-            g.renderOutline(x - 1, y - 1, size + 2, size + 2, 0xFFEE7722);
         }
         if (hovered) g.fill(x, y, x + size, y + size, 0x44FFFFFF);
     }
@@ -348,45 +355,71 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
             iconItem = carried.isEmpty() ? null : carried.getItem();
             return true;
         }
+        // palette click fills the active slot (the palette is already filtered to its role)
         Aspect clickedPalette = paletteAspectAt((int) mx, (int) my);
         if (clickedPalette != null) {
-            selected = (selected == clickedPalette) ? null : clickedPalette;
+            fillActiveSlot(clickedPalette);
             return true;
         }
-        if (handleRoleClick((int) mx, (int) my)) return true;
+        if (handleRoleClick((int) mx, (int) my, button)) return true;
         if (handleTargetSlotClick((int) mx, (int) my)) return true;
         return super.mouseClicked(mx, my, button);
     }
 
-    private boolean handleRoleClick(int mx, int my) {
+    /** Left-click selects a role slot (palette filters to it); right-click clears it. */
+    private boolean handleRoleClick(int mx, int my, int button) {
         if (inCell(mx, my, leftPos + CARRIER_X, topPos + CARRIER_Y, CELL)) {
-            carrier = place(carrier, SkillRole.CARRIER);
+            if (button == 1) carrier = null; else selectRoleSlot(SkillRole.CARRIER, 0);
             return true;
         }
         for (int i = 0; i < effects.length; i++) {
             if (inCell(mx, my, leftPos + EFFECT_X + i * CELL, topPos + EFFECT_Y, CELL)) {
-                effects[i] = place(effects[i], SkillRole.EFFECT);
+                if (button == 1) effects[i] = null; else selectRoleSlot(SkillRole.EFFECT, i);
                 return true;
             }
         }
         for (int i = 0; i < modifiers.length; i++) {
             if (inCell(mx, my, leftPos + MODIFIER_X + i * CELL, topPos + MODIFIER_Y, CELL)) {
-                modifiers[i] = place(modifiers[i], SkillRole.MODIFIER);
+                if (button == 1) modifiers[i] = null; else selectRoleSlot(SkillRole.MODIFIER, i);
                 return true;
             }
         }
         return false;
     }
 
-    /** Place the selected aspect into a role cell if legal; clear it if no selection. */
-    @Nullable
-    private Aspect place(@Nullable Aspect current, SkillRole role) {
-        if (selected == null) return null; // clicking with nothing selected clears the cell
-        if (!AspectRoles.hasRole(selected, role)) {
-            status(Component.translatable("message.koniava.encode.wrong_role"));
-            return current;
+    /** Select a role slot (toggle off if it was already active); the palette filters to its role. */
+    private void selectRoleSlot(SkillRole role, int index) {
+        if (activeRole == role && activeIndex == index) {
+            activeRole = null;
+        } else {
+            activeRole = role;
+            activeIndex = index;
         }
-        return selected;
+        palettePage = 0;
+    }
+
+    /** Put the clicked aspect into the active slot; nothing happens until a slot is selected. */
+    private void fillActiveSlot(Aspect aspect) {
+        if (activeRole == null) {
+            status(Component.translatable("message.koniava.encode.pick_slot"));
+            return;
+        }
+        if (activeRole == SkillRole.CARRIER) {
+            carrier = aspect;
+        } else if (activeRole == SkillRole.EFFECT) {
+            effects[activeIndex] = aspect;
+            advanceWithin(effects);
+        } else if (activeRole == SkillRole.MODIFIER) {
+            modifiers[activeIndex] = aspect;
+            advanceWithin(modifiers);
+        }
+    }
+
+    /** After filling, move the active slot to the next empty one of the same role (flow). */
+    private void advanceWithin(Aspect[] slots) {
+        for (int i = activeIndex + 1; i < slots.length; i++) {
+            if (slots[i] == null) { activeIndex = i; return; }
+        }
     }
 
     private boolean handleTargetSlotClick(int mx, int my) {
@@ -417,6 +450,8 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
         List<Aspect> out = new ArrayList<>();
         for (Aspect a : ModAspects.all()) {
             if (!AspectRoles.isUsable(a)) continue;
+            // a role slot is selected -> only show aspects that fit that slot
+            if (activeRole != null && !AspectRoles.hasRole(a, activeRole)) continue;
             if (!(a.isPrimary() || ClientResearchCache.hasDiscovered(a.getId()))) continue;
             if (!query.isEmpty() && !matches(a, query)) continue;
             out.add(a);
