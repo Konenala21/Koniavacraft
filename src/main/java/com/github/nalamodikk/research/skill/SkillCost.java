@@ -13,11 +13,13 @@ import java.util.Map;
  *       consume them. Map value is the minimum amount you must own (usually 1).</li>
  *   <li>{@code mana}: the per-cast CONSUMABLE, deducted from the casting wand's
  *       internal mana buffer.</li>
+ *   <li>{@code cooldown}: the skill's base cooldown in ticks (before the wand's
+ *       Cooldown upgrades), so a skill's pace is part of its identity.</li>
  * </ul>
  */
-public record SkillCost(Map<ResourceLocation, Integer> aspectGate, int mana) {
+public record SkillCost(Map<ResourceLocation, Integer> aspectGate, int mana, int cooldown) {
 
-    public static SkillCost of(Map<ResourceLocation, Integer> aspectGate, int mana) {
-        return new SkillCost(Map.copyOf(aspectGate), mana);
+    public static SkillCost of(Map<ResourceLocation, Integer> aspectGate, int mana, int cooldown) {
+        return new SkillCost(Map.copyOf(aspectGate), mana, cooldown);
     }
 }

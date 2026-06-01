@@ -63,22 +63,17 @@ public final class SkillCasting {
         // 3) run, then start this slot's cooldown + a short global gap, and tell the
         // client (for the HUD). Per-slot CD means other slots stay castable.
         skill.execute(new SkillContext(level, caster));
-        int cd = effectiveCooldown(wand, cost.mana());
+        int cd = effectiveCooldown(wand, cost.cooldown());
         SkillCooldowns.start(caster, slot, level.getGameTime(), cd);
         SkillCooldownPacket.send(caster, slot, cd, SkillCooldowns.GLOBAL_COOLDOWN);
         return true;
     }
 
-    /** Cooldown in ticks from a skill's base mana cost (heavier skills = longer). */
-    public static int cooldownTicks(int baseMana) {
-        return Math.max(10, Math.min(100, baseMana / 15)); // ~0.5s .. 5s
-    }
-
-    /** Cooldown after the wand's Cooldown upgrades (each point is one tick off, floored at 5). */
-    public static int effectiveCooldown(ItemStack wand, int baseMana) {
+    /** The skill's base cooldown after the wand's Cooldown upgrades (one tick off each, floored at 5). */
+    public static int effectiveCooldown(ItemStack wand, int baseCooldown) {
         WandCoreData data = wand.getOrDefault(ModDataComponents.WAND_CORE_DATA, WandCoreData.empty());
         int reduce = data.sumUpgradeBonus(WandUpgradeBehavior.COOLDOWN);
-        return Math.max(5, cooldownTicks(baseMana) - reduce);
+        return Math.max(5, baseCooldown - reduce);
     }
 
     /** Mana cost after the wand's Efficiency upgrades (each point is 1% off, floored at 40%). */

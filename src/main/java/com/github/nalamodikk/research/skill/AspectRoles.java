@@ -93,6 +93,7 @@ public final class AspectRoles {
         put(ModAspects.ORDER,      SkillRole.MODIFIER); // 秩序 -> 淨化自身負面
         put(ModAspects.INSTINCT,   SkillRole.MODIFIER); // 本能 -> 暴擊(隨機增傷)
         put(ModAspects.WISDOM,     SkillRole.MODIFIER); // 智慧 -> 降魔力花費
+        put(ModAspects.GEAR,       SkillRole.MODIFIER); // 齒輪 -> 縮短冷卻(加速)
 
         // ── Multi-role (slot decides) ────────────────────────────────────────
         put(ModAspects.GRAVITY, SkillRole.CARRIER, SkillRole.MODIFIER); // 範圍力場 / 拉緩

@@ -57,13 +57,16 @@ public final class SkillCompiler {
         for (Aspect a : fuel.keySet()) gate.put(a.getId(), 1);
 
         int fuelTotalForMana = fuel.values().stream().mapToInt(Integer::intValue).sum();
-        int mana = MANA_BASE
+        int rawMana = MANA_BASE
                 + (carrier != null ? MANA_PER_CARRIER : 0)
                 + MANA_PER_EFFECT * effects.size()
                 + MANA_PER_MODIFIER * modifiers.size()
                 + MANA_PER_FUEL * fuelTotalForMana;
-        if (modifiers.contains(ModAspects.WISDOM)) mana = Math.round(mana * 0.8F); // 智慧:省魔力
-        SkillCost cost = new SkillCost(Collections.unmodifiableMap(gate), mana);
+        // cooldown follows complexity (from the undiscounted cost); GEAR speeds it up.
+        int cooldown = Math.max(10, Math.min(100, rawMana / 15));
+        if (modifiers.contains(ModAspects.GEAR)) cooldown = Math.max(5, Math.round(cooldown * 0.65F));
+        int mana = modifiers.contains(ModAspects.WISDOM) ? Math.round(rawMana * 0.8F) : rawMana; // 智慧:省魔力
+        SkillCost cost = new SkillCost(Collections.unmodifiableMap(gate), mana, cooldown);
 
         List<SkillEffectOp> ops = new ArrayList<>();
         for (Aspect e : effects) {
