@@ -490,6 +490,76 @@ public enum SkillEffectOp {
                 le.hurt(level.damageSources().magic(), 2.0F + power * 0.2F);
             }
         }
+    },
+
+    // ── Three-aspect ultimate reactions (use all three effect slots) ─────────
+    /** 元素風暴 (fire + frost + lightning): a heavy multi-element AoE burst. */
+    ELEMENTAL_STORM {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            AABB box = target.getBoundingBox().inflate(4.0);
+            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+                le.invulnerableTime = 0;
+                le.hurt(level.damageSources().magic(), 4.0F + power * 0.3F);
+                le.setRemainingFireTicks(40);
+                le.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 2));
+            }
+        }
+    },
+    /** 熱核 (fire + energy + lightning): a thermonuclear blast, the biggest explosion. */
+    THERMONUCLEAR {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            float radius = Math.min(10.0F, 5.0F + power * 0.09F);
+            level.explode(caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
+                    radius, Level.ExplosionInteraction.NONE);
+            target.setRemainingFireTicks(120);
+        }
+    },
+    /** 生化浩劫 (venom + corrosion + fire): a wide toxic inferno cloud. */
+    BIOHAZARD {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            AABB box = target.getBoundingBox().inflate(4.0);
+            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+                le.addEffect(new MobEffectInstance(MobEffects.POISON, 160, 2));
+                le.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 140, 1));
+                le.setRemainingFireTicks(60);
+            }
+        }
+    },
+    /** 聖核爆 (radiance + dark + energy): a holy nova, a massive burst to all nearby. */
+    HOLY_NOVA {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            AABB box = target.getBoundingBox().inflate(4.0);
+            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+                le.invulnerableTime = 0;
+                le.hurt(level.damageSources().magic(), 6.0F + power * 0.4F);
+                le.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0));
+            }
+        }
+    },
+    /** 腐化 (growth + fire + venom): blight, rooting fire-poison over an area. */
+    BLIGHT {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            AABB box = target.getBoundingBox().inflate(3.5);
+            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+                le.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 5));
+                le.addEffect(new MobEffectInstance(MobEffects.POISON, 120, 1));
+                le.setRemainingFireTicks(80);
+            }
+        }
+    },
+    /** 引力亂流 (storm + kan + dui): a maelstrom that yanks nearby foes upward and hurts. */
+    MAELSTROM {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            Vec3 center = target.position();
+            AABB box = target.getBoundingBox().inflate(4.0);
+            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+                Vec3 pull = center.subtract(le.position());
+                le.setDeltaMovement(le.getDeltaMovement().add(pull.x * 0.15, 0.5, pull.z * 0.15));
+                le.hurtMarked = true;
+                le.invulnerableTime = 0;
+                le.hurt(level.damageSources().magic(), 3.0F + power * 0.25F);
+            }
+        }
     };
 
     public abstract void apply(ServerLevel level, LivingEntity target,

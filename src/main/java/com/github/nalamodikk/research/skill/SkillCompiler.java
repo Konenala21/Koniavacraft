@@ -316,6 +316,20 @@ public final class SkillCompiler {
         if (effects.contains(ModAspects.RADIANCE) && fire) addOnce(ops, SkillEffectOp.SOLAR_FLARE);   // 閃焰
         if (effects.contains(ModAspects.GROWTH) && water)  addOnce(ops, SkillEffectOp.OVERGROWTH);    // 蔓生
         if (effects.contains(ModAspects.CRYSTAL) && force) addOnce(ops, SkillEffectOp.SHRAPNEL);      // 晶爆
+
+        // ── 三本源終極反應(用滿 3 個效果槽,疊在兩兩反應之上)──
+        if (fire && effects.contains(ModAspects.FROST) && lightning)
+            addOnce(ops, SkillEffectOp.ELEMENTAL_STORM);                                              // 元素風暴
+        if (fire && effects.contains(ModAspects.ENERGY) && lightning)
+            addOnce(ops, SkillEffectOp.THERMONUCLEAR);                                                // 熱核
+        if (effects.contains(ModAspects.VENOM) && effects.contains(ModAspects.CORROSION) && fire)
+            addOnce(ops, SkillEffectOp.BIOHAZARD);                                                    // 生化浩劫
+        if (effects.contains(ModAspects.RADIANCE) && dark && effects.contains(ModAspects.ENERGY))
+            addOnce(ops, SkillEffectOp.HOLY_NOVA);                                                    // 聖核爆
+        if (effects.contains(ModAspects.GROWTH) && fire && effects.contains(ModAspects.VENOM))
+            addOnce(ops, SkillEffectOp.BLIGHT);                                                       // 腐化
+        if (effects.contains(ModAspects.STORM) && effects.contains(ModAspects.KAN) && effects.contains(ModAspects.DUI))
+            addOnce(ops, SkillEffectOp.MAELSTROM);                                                    // 引力亂流
         return extraChain;
     }
 

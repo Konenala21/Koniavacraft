@@ -14,6 +14,9 @@ New material, the Aspect Codec Board, is the heart of the skill system, and gett
 
 ### Developer Notes / 開發者備註
 
+- WIP (three-aspect ultimate reactions): six top-tier reactions that need all three effect slots, stacking on top of the two-aspect reactions for a payoff combo. elemental storm (fire+frost+lightning, multi-element AoE burst), thermonuclear (fire+energy+lightning, the largest explosion), biohazard (venom+corrosion+fire, wide toxic inferno), holy nova (radiance+dark+energy, massive AoE burst), blight (growth+fire+venom, AoE root+fire+poison), maelstrom (storm+kan+dui, yanks foes up + damages). Same applyReactions table; 22 reactions total. Tests green.
+- WIP（三本源終極反應）：六個要用滿三個效果槽的頂級反應，疊在兩兩反應之上當收尾組合。元素風暴（火+霜+雷，多元素範圍爆發）、熱核（火+能量+雷，最大爆炸）、生化浩劫（毒+腐蝕+火，大範圍毒火地獄）、聖核爆（光+暗+能量，超大範圍爆發）、腐化（生長+火+毒，範圍定身+火+毒）、引力亂流（風暴+坎+兌，把敵人捲起來+傷害）。同一張 applyReactions 表；總共 22 反應。測試綠。
+
 - WIP (aspect reaction system, chemistry v1): SkillCompiler.applyReactions scans the skill's effect set for reacting pairs and appends an emergent reaction op (on top of each aspect's own op), so a combination does something neither aspect does alone. Ten starter reactions: thermal shock (fire+frost), combustion (fire+energy), toxic burn (fire+venom), shatter (frost+force), conduction (lightning+water, adds chaining), overload (energy+crystal/arcana), death siphon (dark+lifesteal), wildfire (growth+fire), strong acid (venom+corrosion), annihilation (radiance+dark). New reaction-only ops in SkillEffectOp (never mapped from a single aspect). Single-skill-internal for now (no cross-skill element state); the table is the single place to add more. Tests green.
 - WIP（本源反應系統，化學 v1）：SkillCompiler.applyReactions 掃技能的效果集合找會反應的對，疊加一個湧現的反應 op（在各本源自己的 op 之上），所以組合會做出單一本源做不到的事。十個起手反應：熱裂（火+霜）、爆燃（火+能量）、毒燃（火+毒）、碎冰（霜+力量）、導電（雷+水，加連鎖）、超載（能量+水晶/奧法）、死亡虹吸（黑暗+吸血）、野火（生長+火）、強酸（毒+腐蝕）、湮滅（光輝+黑暗）。SkillEffectOp 加了只給反應用的 op（不由單一本源映射）。目前是單技能內反應（沒有跨技能元素狀態）；要加更多反應就改那張表一處。測試綠。
 
