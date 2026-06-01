@@ -6,8 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
-New item and block art: mana materials (dusts, ingots, crystals, alloy, adhesive, wire, substrate, wafer), circuits, the mana eye, and the magic ores were redrawn with fresh textures contributed by 蕎麥麵 (bksesame).
-更新多個物品與方塊貼圖：魔力材料（各種粉、錠、水晶、合金、黏膠、導線、基板、晶片）、電路板、魔力之眼、魔法礦，由貢獻者 蕎麥麵 (bksesame) 繪製。
+New item and block art: mana materials (dusts, ingots, crystals, alloy, adhesive, wire, substrate, wafer), circuits, the mana eye, and the magic ores were redrawn with fresh textures contributed by 蕎麥麵 (bksesame). The Aspect Altar and the Mana Bloom flower also got new 3D models and textures (the flower is now a sculpted bloom instead of a flat cross).
+更新多個物品與方塊貼圖：魔力材料（各種粉、錠、水晶、合金、黏膠、導線、基板、晶片）、電路板、魔力之眼、魔法礦，由貢獻者 蕎麥麵 (bksesame) 繪製。本源祭壇與魔力花也換上新的 3D 模型與貼圖（魔力花從平面十字改成立體花朵）。
 
 ### Developer Notes / 開發者備註
 

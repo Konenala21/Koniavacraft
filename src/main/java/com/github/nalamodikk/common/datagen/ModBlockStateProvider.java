@@ -44,7 +44,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         // 🌱 草方塊 (使用通用生成器)
         createGrassBlock(ModBlocks.MANA_GRASS_BLOCK, "mana_grass_block", "mana_soil");
-        saplingBlock(ModBlocks.MANA_BLOOM);
+        // 魔力花改用合作人的 3D 自訂模型 (block/mana_bloom 手寫),不再生十字模型
+        ModelFile manaBloomModel = new ModelFile.UncheckedModelFile(modLoc("block/mana_bloom"));
+        simpleBlock(ModBlocks.MANA_BLOOM.get(), manaBloomModel);
+        simpleBlockItem(ModBlocks.MANA_BLOOM.get(), manaBloomModel);
 
         // 🔗 三種等級的導管變種
         createBasicConduitModel();
