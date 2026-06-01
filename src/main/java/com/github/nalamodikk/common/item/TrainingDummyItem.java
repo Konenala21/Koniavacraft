@@ -34,6 +34,11 @@ public class TrainingDummyItem extends Item {
         Player player = context.getPlayer();
         float yaw = player != null ? player.getYRot() + 180.0F : 0.0F; // 面向放置者
         dummy.moveTo(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5, yaw, 0.0F);
+        // moveTo 只設 yRot；Mob 渲染看的是身體/頭旋轉，要一起設(含前一幀值)才真的面向玩家，像盔甲架。
+        dummy.yBodyRot = yaw;
+        dummy.yBodyRotO = yaw;
+        dummy.setYHeadRot(yaw);
+        dummy.yHeadRotO = yaw;
         serverLevel.addFreshEntity(dummy);
 
         context.getItemInHand().shrink(1);
