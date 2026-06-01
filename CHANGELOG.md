@@ -14,6 +14,9 @@ New material, the Aspect Codec Board, is the heart of the skill system, and gett
 
 ### Developer Notes / 開發者備註
 
+- WIP (custom Chill slow that bites flying mobs): added a Chill effect (ChillEffect) that scales an entity's horizontal velocity each tick instead of only lowering the ground move-speed attribute, so it actually slows flying/custom-movement mobs (ghast, phantom, ender dragon, wither, ...) that ignore vanilla Slowness. Strength by amplifier (x0.6 down to x0.15), vertical velocity untouched. All skill slow ops (frost, arc, vapor, spiritus, desire, sensus, cryo-venom, elemental storm) now use Chill; the heavier near-immobile ops (law, overgrowth, blight) now use the true ROOT effect so their lockdown also holds flying mobs. Lang en/zh_tw. Tests green.
+- WIP（自訂冰緩，連飛行怪都拖得慢）：新增冰緩效果（ChillEffect），每 tick 縮放實體水平速度，而不是只降地面移動速度屬性，所以對無視 vanilla 緩速的飛行/自訂移動怪（惡魂/夜魅/終界龍/凋零…）也真的有效。強度依層數（×0.6 到 ×0.15），不動垂直速度。所有技能緩速 op（冰寒/電弧/蒸騰/靈魂/慾望/感知/凍毒/元素風暴）改用冰緩；較重的近定身 op（法則/蔓生/腐化）改用真正的 ROOT 效果，連飛行怪都鎖得住。lang en/zh_tw。測試綠。
+
 - WIP (skill root now truly immobilizes, incl. flying mobs): the skill ROOT op (growth effect + binding/gen modifiers) used vanilla Slowness amp5, which only lowers the ground movement-speed attribute and so does nothing to flying/custom-movement mobs (ender dragon, ghast, phantom, bee, wither, ...). It now uses the mod's custom ROOT effect (RootMobEffect zeroes horizontal velocity each tick, the same one the floating turret control bolt uses), so root actually holds everything. Plain slows (frost/arc/etc) still use vanilla slowness by design and remain ground-only.
 - WIP（技能定身現在真的定得住，含飛行怪）：技能 ROOT（孕育效果 + 束縛/艮修飾）原本用 vanilla 緩速 amp5，那只降地面移動速度屬性，對飛行/自訂移動的怪（終界龍/惡魂/夜魅/蜜蜂/凋零…）沒用。現在改用模組自訂的 ROOT 效果（RootMobEffect 每 tick 把水平速度歸零，跟浮游砲控制彈同一個），所以定身對所有東西都有效。一般緩速（冰寒/電弧等）照設計仍用 vanilla 緩速，維持只對地面怪。
 

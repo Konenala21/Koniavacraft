@@ -171,6 +171,7 @@
   "effect.koniava.bleed": "Bleeding",
   "effect.koniava.soulburn": "Soulburn",
   "effect.koniava.vulnerable": "Vulnerable",
+  "effect.koniava.chill": "Chilled",
   "item.koniava.mana_sprint_boots_base": "Mana Sprint Boots Base",
   "item.koniava.mana_sprint_boots": "Mana Sprint Boots",
   "tooltip.koniava.mana_sprint_boots.mana": "Mana: %s / %s",

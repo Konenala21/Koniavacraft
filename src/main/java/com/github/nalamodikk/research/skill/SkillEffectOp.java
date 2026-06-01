@@ -59,7 +59,7 @@ public enum SkillEffectOp {
     VAPOR {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.setRemainingFireTicks(50);
-            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 0));
+            target.addEffect(new MobEffectInstance(ModMobEffects.CHILL, 80, 0));
         }
     },
     /** 蒸汽: a scalding cloud that burns and blinds. */
@@ -74,7 +74,7 @@ public enum SkillEffectOp {
     /** 霜: deep chill, slows and freezes. */
     FROST {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 2));
+            target.addEffect(new MobEffectInstance(ModMobEffects.CHILL, 80, 2));
             target.setTicksFrozen(Math.min(target.getTicksRequiredToFreeze() + 40, target.getTicksFrozen() + 140));
         }
     },
@@ -126,7 +126,7 @@ public enum SkillEffectOp {
     /** 電弧: a quick electric shock that briefly stuns. */
     ARC {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 25, 3));
+            target.addEffect(new MobEffectInstance(ModMobEffects.CHILL, 25, 3));
             target.invulnerableTime = 0;
             target.hurt(level.damageSources().lightningBolt(), 1.0F + power * 0.15F);
         }
@@ -194,7 +194,7 @@ public enum SkillEffectOp {
     SPIRITUS {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.addEffect(new MobEffectInstance(MobEffects.WITHER, 40, 0));
-            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 1));
+            target.addEffect(new MobEffectInstance(ModMobEffects.CHILL, 60, 1));
             target.addEffect(new MobEffectInstance(MobEffects.GLOWING, 80, 0));
         }
     },
@@ -298,7 +298,7 @@ public enum SkillEffectOp {
     SENSUS {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200, 0));
-            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 0));
+            target.addEffect(new MobEffectInstance(ModMobEffects.CHILL, 60, 0));
             target.addEffect(new MobEffectInstance(ModMobEffects.VULNERABLE, 120, 0)); // 自訂易傷:標記後受傷放大
         }
     },
@@ -319,7 +319,7 @@ public enum SkillEffectOp {
                     target.hurtMarked = true;
                 }
             }
-            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 1));
+            target.addEffect(new MobEffectInstance(ModMobEffects.CHILL, 60, 1));
         }
     },
     /** 法則: judgment. Roots the target and the strike lands harder the more debuffs it
@@ -329,7 +329,7 @@ public enum SkillEffectOp {
             long debuffs = target.getActiveEffects().stream()
                     .filter(e -> e.getEffect().value().getCategory() == MobEffectCategory.HARMFUL)
                     .count();
-            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 4));
+            target.addEffect(new MobEffectInstance(ModMobEffects.ROOT, 80, 0));
             target.invulnerableTime = 0;
             target.hurt(level.damageSources().magic(), 2.0F + debuffs * 2.0F + power * 0.2F);
         }
@@ -357,7 +357,7 @@ public enum SkillEffectOp {
             switch (level.getRandom().nextInt(5)) {
                 case 0 -> target.addEffect(new MobEffectInstance(MobEffects.WITHER, 80, 1));
                 case 1 -> target.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 1));
-                case 2 -> target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 3));
+                case 2 -> target.addEffect(new MobEffectInstance(ModMobEffects.CHILL, 100, 3));
                 case 3 -> target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 80, 0));
                 default -> target.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 50, 0));
             }
@@ -463,7 +463,7 @@ public enum SkillEffectOp {
     CRYO_VENOM {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.addEffect(new MobEffectInstance(MobEffects.POISON, 160, 2));
-            target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 120, 3));
+            target.addEffect(new MobEffectInstance(ModMobEffects.CHILL, 120, 3));
         }
     },
     /** 閃焰 (radiance + fire): a solar flare, blinding fire to everything nearby. */
@@ -481,7 +481,7 @@ public enum SkillEffectOp {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             AABB box = target.getBoundingBox().inflate(3.5);
             for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
-                le.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 5));
+                le.addEffect(new MobEffectInstance(ModMobEffects.ROOT, 80, 0));
             }
         }
     },
@@ -505,7 +505,7 @@ public enum SkillEffectOp {
                 le.invulnerableTime = 0;
                 le.hurt(level.damageSources().magic(), 4.0F + power * 0.3F);
                 le.setRemainingFireTicks(40);
-                le.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 2));
+                le.addEffect(new MobEffectInstance(ModMobEffects.CHILL, 80, 2));
             }
         }
     },
@@ -545,7 +545,7 @@ public enum SkillEffectOp {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             AABB box = target.getBoundingBox().inflate(3.5);
             for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
-                le.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 5));
+                le.addEffect(new MobEffectInstance(ModMobEffects.ROOT, 80, 0));
                 le.addEffect(new MobEffectInstance(MobEffects.POISON, 120, 1));
                 le.setRemainingFireTicks(80);
             }

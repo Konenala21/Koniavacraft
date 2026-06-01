@@ -2,6 +2,7 @@ package com.github.nalamodikk.register;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.effect.BleedEffect;
+import com.github.nalamodikk.common.effect.ChillEffect;
 import com.github.nalamodikk.common.effect.RootMobEffect;
 import com.github.nalamodikk.common.effect.SoulburnEffect;
 import net.minecraft.core.Holder;
@@ -47,6 +48,11 @@ public class ModMobEffects {
     public static final DeferredHolder<MobEffect, MobEffect> VULNERABLE =
             MOB_EFFECTS.register("vulnerable", () ->
                     new MobEffect(MobEffectCategory.HARMFUL, 0xE0A030) {});
+
+    // 冰緩：縮放實際速度的緩速，連飛行怪都拖得慢（vanilla 緩速做不到）
+    public static final DeferredHolder<MobEffect, MobEffect> CHILL =
+            MOB_EFFECTS.register("chill", () ->
+                    new ChillEffect(MobEffectCategory.HARMFUL, 0x7FC8E0));
 
     public static void register(IEventBus bus) {
         MOB_EFFECTS.register(bus);
