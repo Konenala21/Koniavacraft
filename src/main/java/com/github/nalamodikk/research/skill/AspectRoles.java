@@ -103,6 +103,16 @@ public final class AspectRoles {
         putHighTier(ModAspects.TAINT,        SkillRole.EFFECT); // 污染
         putHighTier(ModAspects.ELDRITCH,     SkillRole.EFFECT); // 異界
         putHighTier(ModAspects.SPIRITUS,     SkillRole.EFFECT); // 靈魂
+
+        // ── Non-combat / special / system (categorised, NOT skill-usable) ────
+        // These are tagged so they are explicitly "not a combat piece", per design:
+        // they belong to research / worldview / Nara / economy, not the skill palette.
+        put(ModAspects.CIVILIZATION, SkillRole.NON_COMBAT); // 文明 -> 研究/世界觀
+        put(ModAspects.COMMERCE,     SkillRole.NON_COMBAT); // 商貿 -> 經濟系統
+        put(ModAspects.LANGUAGE,     SkillRole.NON_COMBAT); // 語言 -> 符文/指南書/娜拉
+        put(ModAspects.HUMANITY,     SkillRole.NON_COMBAT); // 人性 -> 核心敘事/娜拉
+        put(ModAspects.PRIMORDIAL,   SkillRole.SPECIAL);    // 原初 -> 晚期萬用替身/變異
+        put(ModAspects.WEALTH,       SkillRole.SYSTEM);     // 財富 -> 消耗物品換威力
     }
 
     // ── API ──────────────────────────────────────────────────────────────────
@@ -115,9 +125,17 @@ public final class AspectRoles {
         return rolesOf(aspect).contains(role);
     }
 
-    /** True if the aspect can take part in a skill at all (abstract aspects can't). */
+    /**
+     * True if the aspect can actually be placed into a skill: it must hold a
+     * combat role (carrier / effect / modifier). FUEL-only primaries and the
+     * NON_COMBAT / SPECIAL / SYSTEM aspects are tagged but not skill-usable, so
+     * they never appear in the encoder palette.
+     */
     public static boolean isUsable(Aspect aspect) {
-        return ROLES.containsKey(aspect);
+        Set<SkillRole> roles = rolesOf(aspect);
+        return roles.contains(SkillRole.CARRIER)
+                || roles.contains(SkillRole.EFFECT)
+                || roles.contains(SkillRole.MODIFIER);
     }
 
     /** True for late/advanced aspects whose unlock gating is still being decided. */

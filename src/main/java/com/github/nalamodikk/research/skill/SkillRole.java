@@ -18,5 +18,11 @@ public enum SkillRole {
     /** Alters carrier or effect: pierce, split, root, amplify. 0..N per skill. */
     MODIFIER,
     /** When it fires: on-hit, on-timer, chain. Reserved, late-tier. */
-    TRIGGER
+    TRIGGER,
+    /** Not a combat skill piece: belongs to research / worldview / Nara (e.g. humanity, language). */
+    NON_COMBAT,
+    /** Late high-tier special mechanic, not an ordinary skill piece (e.g. primordial). */
+    SPECIAL,
+    /** System / economy aspect whose cost is resources, not mana (e.g. wealth). */
+    SYSTEM
 }
