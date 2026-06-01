@@ -42,4 +42,16 @@ public final class TurretControlHelper {
         target.addEffect(new MobEffectInstance(effect, dur, 0, false, true, true));
         return true;
     }
+
+    /**
+     * 技能控制效果:跟控制彈共用 boss 抗性(時間打折,不免疫),但允許刷新/帶等級
+     * (技能可連續施放,不做「同種不疊加」)。給技能的定身/迷盲/冰緩用。
+     */
+    public static void applySkillControl(LivingEntity target, Holder<MobEffect> effect, int durationTicks, int amplifier) {
+        int dur = durationTicks;
+        if (isResistant(target)) {
+            dur = Math.max(1, Math.round(durationTicks * (1f - BOSS_RESISTANCE)));
+        }
+        target.addEffect(new MobEffectInstance(effect, dur, amplifier, false, true, true));
+    }
 }

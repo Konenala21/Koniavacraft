@@ -165,15 +165,16 @@ public final class SkillCompiler {
                 caster.hurtMarked = true; // sync the impulse to the client
                 caster.fallDistance = 0.0F;
                 // FLIGHT is the self carrier: effects land on the caster (heal/buff dash)
-                for (SkillEffectOp op : finalOps) op.apply(level, caster, caster, look, dmg);
+                for (SkillEffectOp op : finalOps) op.applyTo(level, caster, caster, look, dmg);
                 level.playSound(null, caster.blockPosition(),
                         SoundEvents.BREEZE_SHOOT, SoundSource.PLAYERS, 0.8F, 1.2F);
             } else if (carrier == ModAspects.PIPELINE) {
-                castBeam(level, caster, dmg, finalOps);
+                // count(折射/共鳴/自動)= 多打幾道; chainCount(連鎖/導電)= 命中後連鎖到附近
+                for (int i = 0; i < count; i++) castBeam(level, caster, dmg, finalOps, chainCount);
             } else if (carrier == ModAspects.GRAVITY) {
-                castField(level, caster, dmg, finalOps);
+                for (int i = 0; i < count; i++) castField(level, caster, dmg, finalOps, chainCount);
             } else if (carrier == ModAspects.BLADE) {
-                castSlash(level, caster, dmg, finalOps);
+                for (int i = 0; i < count; i++) castSlash(level, caster, dmg, finalOps, chainCount);
             } else if (carrier == ModAspects.MACHINE) {
                 // 機械載體：發射浮游砲子彈，帶技能傷害 + 命中效果 ops。
                 // 機械+火=火砲彈、機械+霜=冰砲彈、機械+凋零=腐蝕砲彈，效果本源決定砲彈變種。
@@ -193,20 +194,25 @@ public final class SkillCompiler {
     }
 
     /** BLADE carrier: a melee-range blade wave that slashes everything in a forward arc. */
-    private static void castSlash(ServerLevel level, ServerPlayer caster, float damage, List<SkillEffectOp> ops) {
+    private static void castSlash(ServerLevel level, ServerPlayer caster, float damage, List<SkillEffectOp> ops, int chainCount) {
         Vec3 eye = caster.getEyePosition();
         Vec3 look = caster.getLookAngle();
         double range = 4.5;
         double coneCos = 0.4; // ~132 degree arc in front
         DamageSource src = caster.damageSources().playerAttack(caster);
+        java.util.Set<LivingEntity> hit = new java.util.HashSet<>();
         for (Entity e : level.getEntities(caster, caster.getBoundingBox().inflate(range),
                 x -> x instanceof LivingEntity && x.isAlive())) {
             Vec3 to = e.position().add(0, e.getBbHeight() * 0.5, 0).subtract(eye);
             if (to.length() > range || to.normalize().dot(look) < coneCos) continue;
             e.invulnerableTime = 0;
             e.hurt(src, damage);
-            if (e instanceof LivingEntity le) for (SkillEffectOp op : ops) op.apply(level, le, caster, look, damage);
+            if (e instanceof LivingEntity le) {
+                hit.add(le);
+                for (SkillEffectOp op : ops) op.applyTo(level, le, caster, look, damage);
+            }
         }
+        chainOps(level, caster, hit, ops, damage, chainCount);
         // sweep arc visual
         Vec3 up = new Vec3(0, 1, 0);
         Vec3 side = look.cross(up).normalize();
@@ -229,7 +235,7 @@ public final class SkillCompiler {
     }
 
     /** PIPELINE carrier: an instant hitscan beam from the caster's eyes. */
-    private static void castBeam(ServerLevel level, ServerPlayer caster, float damage, List<SkillEffectOp> ops) {
+    private static void castBeam(ServerLevel level, ServerPlayer caster, float damage, List<SkillEffectOp> ops, int chainCount) {
         Vec3 start = caster.getEyePosition();
         Vec3 look = caster.getLookAngle();
         double range = 16.0;
@@ -240,6 +246,7 @@ public final class SkillCompiler {
         }
         DamageSource src = caster.damageSources().indirectMagic(caster, caster);
         AABB box = new AABB(start, end).inflate(1.5);
+        java.util.Set<LivingEntity> hit = new java.util.HashSet<>();
         for (Entity e : level.getEntities(caster, box, x -> x instanceof LivingEntity && x.isAlive())) {
             Vec3 c = e.position().add(0.0, e.getBbHeight() * 0.5, 0.0);
             double t = c.subtract(start).dot(look);
@@ -247,13 +254,41 @@ public final class SkillCompiler {
             if (start.add(look.scale(t)).distanceTo(c) > 1.3) continue;
             e.invulnerableTime = 0;
             e.hurt(src, damage);
-            if (e instanceof LivingEntity le) for (SkillEffectOp op : ops) op.apply(level, le, caster, look, damage);
+            if (e instanceof LivingEntity le) {
+                hit.add(le);
+                for (SkillEffectOp op : ops) op.applyTo(level, le, caster, look, damage);
+            }
         }
+        chainOps(level, caster, hit, ops, damage, chainCount);
         level.playSound(null, caster.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 0.6F, 1.6F);
     }
 
+    /** Chain reaction / arc: from each already-hit target, jump to nearby foes, up to chainCount. */
+    private static void chainOps(ServerLevel level, ServerPlayer caster, java.util.Set<LivingEntity> hit,
+                                 List<SkillEffectOp> ops, float damage, int chainCount) {
+        if (chainCount <= 0 || hit.isEmpty()) return;
+        DamageSource src = caster.damageSources().indirectMagic(caster, caster);
+        int chained = 0;
+        for (LivingEntity from : new java.util.ArrayList<>(hit)) {
+            if (chained >= chainCount) break;
+            AABB box = from.getBoundingBox().inflate(5.0);
+            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box,
+                    e -> e != caster && e.isAlive() && !hit.contains(e))) {
+                le.invulnerableTime = 0;
+                le.hurt(src, damage * 0.5F);
+                Vec3 d = le.position().subtract(from.position());
+                Vec3 dir = d.lengthSqr() > 1.0E-4 ? d.normalize() : new Vec3(0, 0, 1);
+                for (SkillEffectOp op : ops) op.applyTo(level, le, caster, dir, damage * 0.5F);
+                level.sendParticles(ParticleTypes.ELECTRIC_SPARK,
+                        le.getX(), le.getY() + le.getBbHeight() * 0.5, le.getZ(), 6, 0.2, 0.2, 0.2, 0.02);
+                hit.add(le);
+                if (++chained >= chainCount) break;
+            }
+        }
+    }
+
     /** GRAVITY carrier: a singularity a few blocks ahead that pulls + damages. */
-    private static void castField(ServerLevel level, ServerPlayer caster, float damage, List<SkillEffectOp> ops) {
+    private static void castField(ServerLevel level, ServerPlayer caster, float damage, List<SkillEffectOp> ops, int chainCount) {
         Vec3 center = caster.getEyePosition().add(caster.getLookAngle().scale(6.0));
         double radius = 4.0;
         for (int i = 0; i < 40; i++) {
@@ -265,6 +300,7 @@ public final class SkillCompiler {
         }
         DamageSource src = caster.damageSources().indirectMagic(caster, caster);
         AABB box = new AABB(center.subtract(radius, radius, radius), center.add(radius, radius, radius));
+        java.util.Set<LivingEntity> hit = new java.util.HashSet<>();
         for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
             Vec3 pull = center.subtract(le.position());
             if (pull.lengthSqr() > radius * radius) continue;
@@ -272,8 +308,10 @@ public final class SkillCompiler {
             le.hurtMarked = true;
             le.invulnerableTime = 0;
             le.hurt(src, damage * 0.6F);
-            for (SkillEffectOp op : ops) op.apply(level, le, caster, pull.normalize().scale(-1.0), damage * 0.6F);
+            hit.add(le);
+            for (SkillEffectOp op : ops) op.applyTo(level, le, caster, pull.normalize().scale(-1.0), damage * 0.6F);
         }
+        chainOps(level, caster, hit, ops, damage * 0.6F, chainCount);
         level.playSound(null, BlockPos.containing(center), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 0.5F, 1.4F);
     }
 

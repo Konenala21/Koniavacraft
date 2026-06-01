@@ -2,6 +2,7 @@ package com.github.nalamodikk.research.skill;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import com.github.nalamodikk.common.entity.control.TurretControlHelper;
 import com.github.nalamodikk.register.ModMobEffects;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -60,7 +61,7 @@ public enum SkillEffectOp {
     VAPOR {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.setRemainingFireTicks(50);
-            target.addEffect(new MobEffectInstance(ModMobEffects.CHILL, 80, 0));
+            TurretControlHelper.applySkillControl(target, ModMobEffects.CHILL, 80, 0);
         }
     },
     /** 蒸汽: a scalding cloud that burns and blinds. */
@@ -68,7 +69,7 @@ public enum SkillEffectOp {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.setRemainingFireTicks(40);
             target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 50, 0));
-            target.addEffect(new MobEffectInstance(ModMobEffects.DAZE, 50, 0)); // 真致盲:怪丟失目標
+            TurretControlHelper.applySkillControl(target, ModMobEffects.DAZE, 50, 0); // 真致盲:怪丟失目標
         }
     },
 
@@ -76,7 +77,7 @@ public enum SkillEffectOp {
     /** 霜: deep chill, slows and freezes. */
     FROST {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            target.addEffect(new MobEffectInstance(ModMobEffects.CHILL, 80, 2));
+            TurretControlHelper.applySkillControl(target, ModMobEffects.CHILL, 80, 2);
             target.setTicksFrozen(Math.min(target.getTicksRequiredToFreeze() + 40, target.getTicksFrozen() + 140));
         }
     },
@@ -85,7 +86,7 @@ public enum SkillEffectOp {
      *  truly immobilizes even flying mobs, unlike vanilla slowness. */
     ROOT {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            target.addEffect(new MobEffectInstance(ModMobEffects.ROOT, 60, 0));
+            TurretControlHelper.applySkillControl(target, ModMobEffects.ROOT, 60, 0);
         }
     },
     /** 毒: a strong, lingering poison. */
@@ -129,7 +130,7 @@ public enum SkillEffectOp {
      *  locks the target down for a moment (reads as a stun), even on flying mobs. */
     ARC {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            target.addEffect(new MobEffectInstance(ModMobEffects.ROOT, 15, 0));
+            TurretControlHelper.applySkillControl(target, ModMobEffects.ROOT, 15, 0);
             target.invulnerableTime = 0;
             target.hurt(level.damageSources().lightningBolt(), 1.0F + power * 0.15F);
         }
@@ -175,7 +176,7 @@ public enum SkillEffectOp {
     RADIANCE {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0));
-            target.addEffect(new MobEffectInstance(ModMobEffects.DAZE, 60, 0)); // 真致盲:怪丟失目標
+            TurretControlHelper.applySkillControl(target, ModMobEffects.DAZE, 60, 0); // 真致盲:怪丟失目標
             target.addEffect(new MobEffectInstance(MobEffects.GLOWING, 100, 0));
         }
     },
@@ -206,14 +207,14 @@ public enum SkillEffectOp {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 120, 0));
             target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 140, 0));
-            target.addEffect(new MobEffectInstance(ModMobEffects.DAZE, 100, 0)); // 對怪:混亂=丟失目標
+            TurretControlHelper.applySkillControl(target, ModMobEffects.DAZE, 100, 0); // 對怪:混亂=丟失目標
         }
     },
     /** 靈魂: a soul drag, wither plus slow plus a glow. */
     SPIRITUS {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.addEffect(new MobEffectInstance(MobEffects.WITHER, 40, 0));
-            target.addEffect(new MobEffectInstance(ModMobEffects.CHILL, 60, 1));
+            TurretControlHelper.applySkillControl(target, ModMobEffects.CHILL, 60, 1);
             target.addEffect(new MobEffectInstance(MobEffects.GLOWING, 80, 0));
         }
     },
@@ -317,7 +318,7 @@ public enum SkillEffectOp {
     SENSUS {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.addEffect(new MobEffectInstance(MobEffects.GLOWING, 200, 0));
-            target.addEffect(new MobEffectInstance(ModMobEffects.CHILL, 60, 0));
+            TurretControlHelper.applySkillControl(target, ModMobEffects.CHILL, 60, 0);
             target.addEffect(new MobEffectInstance(ModMobEffects.VULNERABLE, 120, 0)); // 自訂易傷:標記後受傷放大
         }
     },
@@ -326,7 +327,7 @@ public enum SkillEffectOp {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 160, 0));
             target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 100, 1));
-            target.addEffect(new MobEffectInstance(ModMobEffects.DAZE, 120, 0)); // 對怪:心智干擾=丟失目標
+            TurretControlHelper.applySkillControl(target, ModMobEffects.DAZE, 120, 0); // 對怪:心智干擾=丟失目標
         }
     },
     /** 慾望: lure. Drags the target toward the caster and slows it (drawn in by desire). */
@@ -339,7 +340,7 @@ public enum SkillEffectOp {
                     target.hurtMarked = true;
                 }
             }
-            target.addEffect(new MobEffectInstance(ModMobEffects.CHILL, 60, 1));
+            TurretControlHelper.applySkillControl(target, ModMobEffects.CHILL, 60, 1);
         }
     },
     /** 法則: judgment. Roots the target and the strike lands harder the more debuffs it
@@ -349,7 +350,7 @@ public enum SkillEffectOp {
             long debuffs = target.getActiveEffects().stream()
                     .filter(e -> e.getEffect().value().getCategory() == MobEffectCategory.HARMFUL)
                     .count();
-            target.addEffect(new MobEffectInstance(ModMobEffects.ROOT, 80, 0));
+            TurretControlHelper.applySkillControl(target, ModMobEffects.ROOT, 80, 0);
             target.invulnerableTime = 0;
             target.hurt(level.damageSources().magic(), 2.0F + debuffs * 2.0F + power * 0.2F);
         }
@@ -377,8 +378,8 @@ public enum SkillEffectOp {
             switch (level.getRandom().nextInt(5)) {
                 case 0 -> target.addEffect(new MobEffectInstance(MobEffects.WITHER, 80, 1));
                 case 1 -> target.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 1));
-                case 2 -> target.addEffect(new MobEffectInstance(ModMobEffects.CHILL, 100, 3));
-                case 3 -> target.addEffect(new MobEffectInstance(ModMobEffects.DAZE, 80, 0));
+                case 2 -> TurretControlHelper.applySkillControl(target, ModMobEffects.CHILL, 100, 3);
+                case 3 -> TurretControlHelper.applySkillControl(target, ModMobEffects.DAZE, 80, 0);
                 default -> target.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 50, 0));
             }
         }
@@ -483,7 +484,7 @@ public enum SkillEffectOp {
     CRYO_VENOM {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.addEffect(new MobEffectInstance(MobEffects.POISON, 160, 2));
-            target.addEffect(new MobEffectInstance(ModMobEffects.CHILL, 120, 3));
+            TurretControlHelper.applySkillControl(target, ModMobEffects.CHILL, 120, 3);
         }
     },
     /** 閃焰 (radiance + fire): a solar flare, blinding fire to everything nearby. */
@@ -492,7 +493,7 @@ public enum SkillEffectOp {
             AABB box = target.getBoundingBox().inflate(3.5);
             for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
                 le.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0));
-                le.addEffect(new MobEffectInstance(ModMobEffects.DAZE, 60, 0));
+                TurretControlHelper.applySkillControl(le, ModMobEffects.DAZE, 60, 0);
                 le.setRemainingFireTicks(70);
             }
         }
@@ -502,7 +503,7 @@ public enum SkillEffectOp {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             AABB box = target.getBoundingBox().inflate(3.5);
             for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
-                le.addEffect(new MobEffectInstance(ModMobEffects.ROOT, 80, 0));
+                TurretControlHelper.applySkillControl(le, ModMobEffects.ROOT, 80, 0);
             }
         }
     },
@@ -526,7 +527,7 @@ public enum SkillEffectOp {
                 le.invulnerableTime = 0;
                 le.hurt(level.damageSources().magic(), 4.0F + power * 0.3F);
                 le.setRemainingFireTicks(40);
-                le.addEffect(new MobEffectInstance(ModMobEffects.CHILL, 80, 2));
+                TurretControlHelper.applySkillControl(le, ModMobEffects.CHILL, 80, 2);
             }
         }
     },
@@ -558,7 +559,7 @@ public enum SkillEffectOp {
                 le.invulnerableTime = 0;
                 le.hurt(level.damageSources().magic(), 6.0F + power * 0.4F);
                 le.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0));
-                le.addEffect(new MobEffectInstance(ModMobEffects.DAZE, 60, 0));
+                TurretControlHelper.applySkillControl(le, ModMobEffects.DAZE, 60, 0);
             }
         }
     },
@@ -567,7 +568,7 @@ public enum SkillEffectOp {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             AABB box = target.getBoundingBox().inflate(3.5);
             for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
-                le.addEffect(new MobEffectInstance(ModMobEffects.ROOT, 80, 0));
+                TurretControlHelper.applySkillControl(le, ModMobEffects.ROOT, 80, 0);
                 le.addEffect(new MobEffectInstance(MobEffects.POISON, 120, 1));
                 le.setRemainingFireTicks(80);
             }
