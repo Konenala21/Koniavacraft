@@ -111,6 +111,19 @@ public class ManaCraftingRecipeProvider {
                 .manaCost(3000)
                 .save(output, "precision_mana_circuit");
 
+        // 技能編碼台（把技能編寫進法術核心的工作站，電路主題）
+        ManaCraftingRecipeBuilder.create(ModBlocks.SKILL_ENCODER.get(), 1)
+                .shaped(true)
+                .pattern("IPI")
+                .pattern("PCP")
+                .pattern("ISI")
+                .define('I', ModItems.MANA_INGOT.get())
+                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
+                .define('C', ModItems.MANA_CRYSTAL.get())
+                .define('S', ModItems.MANA_SUBSTRATE.get())
+                .manaCost(2500)
+                .save(output, "skill_encoder");
+
         // 魔力充能台（前祭壇路徑：注魔台 + 研磨機材料）
         ManaCraftingRecipeBuilder.create(ModBlocks.MANA_CHARGER.get(), 1)
                 .shaped(true)
@@ -245,6 +258,19 @@ public class ManaCraftingRecipeProvider {
                 .define('N', Items.BLAZE_ROD)
                 .manaCost(1500)
                 .save(output, "ritual_core");
+
+        // 法術核心（技能系統的心臟：奧法 + 靈魄主題）
+        ManaCraftingRecipeBuilder.create(ModItems.SPELL_CORE.get(), 1)
+                .shaped(true)
+                .pattern(" A ")
+                .pattern("CBC")
+                .pattern(" R ")
+                .define('A', Items.AMETHYST_SHARD)
+                .define('C', ModItems.MANA_CRYSTAL.get())
+                .define('B', ModItems.BLANK_CORE.get())
+                .define('R', ModItems.REFINED_MANA_DUST.get())
+                .manaCost(2000)
+                .save(output, "spell_core");
 
         // 容量升級 Mk0
         ManaCraftingRecipeBuilder.create(ModItems.WAND_UPGRADE_CAPACITY_MK0.get(), 1)
