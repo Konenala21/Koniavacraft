@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+The Aspect Researcher villager is back, done right. Craft an Aspect Research Desk (bookshelf + mana crystal + amethyst) and an unemployed villager nearby becomes an Aspect Researcher who trades a Mirror Core Shard for Basic Aspect Essence. It uses its own dedicated block (not your research table), so it no longer causes the open stutter.
+本源研究員村民回來了，這次做對了。合成「本源研究桌」（書架 + 魔力水晶 + 紫水晶），附近的失業村民就會轉職成本源研究員，收鏡核碎片換基礎本源精華。它用自己專屬的方塊（不是你的研究台），所以不再造成開啟卡頓。
+
 Hovering an aspect in the Skill Encoder now shows what it does in a skill (its role and effect), so you can read each aspect's behavior right where you build skills instead of guessing.
 在技能編碼台滑到本源現在會顯示它在技能裡做什麼（角色與效果），組技能的當下就能看懂每個本源的行為，不用再用猜的。
 

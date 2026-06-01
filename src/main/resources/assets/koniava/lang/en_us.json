@@ -361,6 +361,7 @@
   "block.koniava.deepslate_magic_ore": "Deepslate Magic Ore",
   "block.koniava.mana_generator": "Mana Generator",
   "block.koniava.research_table": "Research Table",
+  "block.koniava.aspect_research_desk": "Aspect Research Desk",
   "research.koniava.locked": "You need to complete '%s' first.",
   "research.koniava.locked_gui": "Machine Locked",
   "gui.koniava.skip_confirm.title": "Skipping cutscenes will miss the full experience",

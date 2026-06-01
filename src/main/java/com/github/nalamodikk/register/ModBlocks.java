@@ -46,6 +46,10 @@ public class ModBlocks {
     public static final DeferredBlock<Block> MANA_BLOCK =
             registerBlock("mana_block", () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)));
 
+    // 本源研究桌:本源研究員村民的職業方塊(純方塊、無 BlockEntity,跟玩家用的研究台分開,避免 POI 卡頓)
+    public static final DeferredBlock<Block> ASPECT_RESEARCH_DESK =
+            registerBlock("aspect_research_desk", () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.LECTERN)));
+
     public static final DeferredBlock<Block> MANA_CRAFTING_TABLE_BLOCK =
             registerBlock("mana_crafting_table", () -> new ManaCraftingTableBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.BIRCH_WOOD)));
 

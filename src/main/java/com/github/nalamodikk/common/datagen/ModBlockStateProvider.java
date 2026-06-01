@@ -33,6 +33,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         // 🏗️ 基礎方塊 (六面相同材質)
         blockWithItem(ModBlocks.MANA_BLOCK);
+        blockWithItem(ModBlocks.ASPECT_RESEARCH_DESK);
         blockWithItem(ModBlocks.MAGIC_ORE);
         blockWithItem(ModBlocks.DEEPSLATE_MAGIC_ORE);
         blockWithItem(ModBlocks.MANA_SOIL);

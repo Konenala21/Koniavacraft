@@ -68,6 +68,16 @@ public class ModRecipeProvider extends RecipeProvider {
                 .pattern("   ")
                 .unlockedBy("has_mana_dust", has(ModItems.MANA_DUST.get()))
                 .save(output);
+
+        // 📖 本源研究桌(本源研究員村民的職業方塊):書架 + 魔力水晶 + 紫水晶
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.ASPECT_RESEARCH_DESK.get())
+                .define('B', Items.BOOKSHELF)
+                .define('C', ModItems.MANA_CRYSTAL.get())
+                .define('A', Items.AMETHYST_SHARD)
+                .pattern("ACA")
+                .pattern("BBB")
+                .unlockedBy("has_mana_crystal", has(ModItems.MANA_CRYSTAL.get()))
+                .save(output);
     }
 
     // === 🏭 機器配方 ===
