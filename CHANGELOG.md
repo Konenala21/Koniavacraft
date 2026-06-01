@@ -6,8 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
-New material, the Aspect Codec Board, is the heart of the skill system: it is crafted from the outputs of the earlier industry (mana substrate from the grinder, precision circuit from the circuit chain, mana wafer from the altar) plus the Mirror Core Shard from the Mirror World boss. The Skill Encoder and the Spell Core are now built from this board, so the whole skill path runs through the machines you already built instead of sidestepping them. (Texture pending.)
-新材料「本源編碼基板」是技能系統的核心：用前面工業的產物（研磨機的魔力基板、電路鏈的精密電路板、祭壇的魔力晶圓）加上鏡中世界 boss 的鏡核碎片合成。技能編碼台與法術核心現在都用這片基板做，所以整條技能路線會走過你前面蓋的那些機器，而不是繞過它們。（貼圖待補。）
+New material, the Aspect Codec Board, is the heart of the skill system, and getting it walks the whole tech tree: assemble a Blank Aspect Codec Board at the mana crafting table (grinder substrate + circuit-chain precision circuit + altar wafer + wire), then activate it at the altar with a Mirror Core Shard from the Mirror World boss. The Skill Encoder is now an altar build too, and the Spell Core uses the activated board, so the entire skill path runs through the machines you already built. Skills cast from the spell core also hit much harder now (higher base damage and a bigger bonus per effect), so a deeply combined skill is worth the long road to unlock it. (Board textures pending.)
+新材料「本源編碼基板」是技能系統的核心，而且取得它要走過整條技術樹：先在魔力工作台組出「空白本源編碼基板」（研磨機的魔力基板＋電路鏈的精密電路板＋祭壇的魔力晶圓＋導線），再到祭壇用鏡中世界 boss 掉的鏡核碎片激活。技能編碼台現在也改成祭壇製作，法術核心則用激活後的基板，所以整條技能路線都會走過你前面蓋的機器。法術核心組出的技能傷害也大幅提高（基礎傷害更高、每個效果加成更多），組合越深的技能越強，配得上解鎖它的漫長路程。（基板貼圖待補。）
 
 ### Developer Notes / 開發者備註
 

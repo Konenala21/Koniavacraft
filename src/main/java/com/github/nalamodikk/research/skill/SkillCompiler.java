@@ -105,7 +105,9 @@ public final class SkillCompiler {
                 + (instinct ? 0.2F : 0.0F); // 本能:永遠小增傷 + 下面還有暴擊機率
         int fuelTotal = fuel.values().stream().mapToInt(Integer::intValue).sum();
         float carrierDmgMult = carrier == ModAspects.MANA ? 0.85F : 1.0F; // 魔力較弱(換便宜)
-        float damage = (4.0F + 2.0F * effects.size() + fuelTotal) * power * carrierDmgMult;
+        // 技能是 boss 後、走完整條工業鏈才解鎖的本源核心脊椎，威力要配得上投資。
+        // 基礎高 + 每效果重加成 → 組合越多本源越強，獎勵深度組合（對應「可組合的要變強」）。
+        float damage = (6.0F + 4.0F * effects.size() + 2.0F * fuelTotal) * power * carrierDmgMult;
 
         List<SkillEffectOp> finalOps = List.copyOf(ops);
         boolean isProjectile = carrier == null

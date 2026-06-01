@@ -22,6 +22,7 @@ public class AltarRecipeProvider {
         registerCircuitMaterials(output);
         registerConduits(output);
         registerKnowledgeItems(output);
+        registerSkillSystem(output);
         // 魔力水晶（催化：精煉魔力粉，底座：魔力碎片×4）
         save(output, "mana_crystal_ritual",
                 Ingredient.of(ModItems.REFINED_MANA_DUST.get()),
@@ -208,6 +209,39 @@ public class AltarRecipeProvider {
                 ),
                 new ItemStack(ModBlocks.ELITE_ARCANE_CONDUIT.get(), 8),
                 40000, 400, 3
+        );
+    }
+
+    private static void registerSkillSystem(RecipeOutput output) {
+        // 本源編碼基板激活（T2 祭壇）：空白基板（催化）+ 鏡核碎片儀式 → 可編碼的本源編碼基板。
+        // 鏡像本質在祭壇被綁進基板；鏡核碎片只在這一步出現，是整套技能系統的單一 boss 閘門。
+        save(output, "aspect_codec_board",
+                Ingredient.of(ModItems.ASPECT_CODEC_BOARD_BASE.get()),
+                List.of(
+                        Ingredient.of(ModItems.MIRROR_CORE_SHARD.get()),
+                        Ingredient.of(ModItems.MANA_CRYSTAL.get()),
+                        Ingredient.of(ModItems.MANA_CRYSTAL.get()),
+                        Ingredient.of(ModItems.REFINED_MANA_DUST.get())
+                ),
+                new ItemStack(ModItems.ASPECT_CODEC_BOARD.get()),
+                12000, 200, 2
+        );
+
+        // 本源編碼台（T3 祭壇）：技能系統的工作站，吃激活後的本源編碼基板組成。
+        save(output, "skill_encoder",
+                Ingredient.of(ModItems.HIGH_DENSITY_MANA_CORE.get()),
+                List.of(
+                        Ingredient.of(ModItems.ASPECT_CODEC_BOARD.get()),
+                        Ingredient.of(ModItems.ASPECT_CODEC_BOARD.get()),
+                        Ingredient.of(ModItems.PRECISION_MANA_CIRCUIT.get()),
+                        Ingredient.of(ModItems.PRECISION_MANA_CIRCUIT.get()),
+                        Ingredient.of(ModItems.MANA_WAFER.get()),
+                        Ingredient.of(ModItems.MANA_CRYSTAL.get()),
+                        Ingredient.of(ModItems.MANA_INGOT.get()),
+                        Ingredient.of(ModItems.MANA_SUBSTRATE.get())
+                ),
+                new ItemStack(ModBlocks.SKILL_ENCODER.get()),
+                50000, 400, 3
         );
     }
 

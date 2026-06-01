@@ -111,34 +111,21 @@ public class ManaCraftingRecipeProvider {
                 .manaCost(3000)
                 .save(output, "precision_mana_circuit");
 
-        // 本源編碼基板（技能系統核心材料）：串起工業鏈 = 研磨機(基板) + 電路鏈(電路板) + 祭壇(晶圓) + boss(鏡核碎片)。
-        // 鏡核碎片只出現在這一個配方，是整套技能系統的單一閘門點；編碼台與法術核心都吃這片基板。
-        ManaCraftingRecipeBuilder.create(ModItems.ASPECT_CODEC_BOARD.get(), 1)
+        // 空白本源編碼基板（硬體組裝）：串起工業鏈 = 研磨機(基板/導線) + 電路鏈(精密電路板) + 祭壇(晶圓)。
+        // 這步只組硬體、不含鏡核碎片；要到祭壇用碎片激活才成可編碼的本源編碼基板（見 AltarRecipeProvider）。
+        ManaCraftingRecipeBuilder.create(ModItems.ASPECT_CODEC_BOARD_BASE.get(), 1)
                 .shaped(true)
                 .pattern(" P ")
-                .pattern("SMS")
+                .pattern("SXS")
                 .pattern(" W ")
                 .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
                 .define('S', ModItems.MANA_SUBSTRATE.get())
-                .define('M', ModItems.MIRROR_CORE_SHARD.get())
+                .define('X', ModItems.MANA_WIRE.get())
                 .define('W', ModItems.MANA_WAFER.get())
                 .manaCost(1500)
-                .save(output, "aspect_codec_board");
+                .save(output, "aspect_codec_board_base");
 
-        // 技能編碼台（技能系統的工作站；吃本源編碼基板＝整條工業鏈 + 鏡中 boss 才做得出，純材料卡位不靠研究鎖）
-        ManaCraftingRecipeBuilder.create(ModBlocks.SKILL_ENCODER.get(), 1)
-                .shaped(true)
-                .pattern("PHP")
-                .pattern("WBW")
-                .pattern("ISI")
-                .define('P', ModItems.PRECISION_MANA_CIRCUIT.get())
-                .define('H', ModItems.HIGH_DENSITY_MANA_CORE.get())
-                .define('W', ModItems.MANA_WAFER.get())
-                .define('B', ModItems.ASPECT_CODEC_BOARD.get())
-                .define('I', ModItems.MANA_INGOT.get())
-                .define('S', ModItems.MANA_SUBSTRATE.get())
-                .manaCost(5000)
-                .save(output, "skill_encoder");
+        // 注意：技能編碼台（本源編碼台）改由祭壇激活製作，見 AltarRecipeProvider.registerSkillSystem。
 
         // 魔力充能台（前祭壇路徑：注魔台 + 研磨機材料）
         ManaCraftingRecipeBuilder.create(ModBlocks.MANA_CHARGER.get(), 1)

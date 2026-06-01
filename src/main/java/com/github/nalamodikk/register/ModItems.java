@@ -110,7 +110,11 @@ public class ModItems {
     public static final DeferredItem<Item> HIGH_DENSITY_MANA_CORE =
             ITEMS.register("high_density_mana_core", () -> new Item(new Item.Properties()));
 
-    // 本源編碼基板：技能系統的核心材料。把工業鏈產物（基板/電路/晶圓）+ 鏡核碎片組成，
+    // 空白本源編碼基板：工作台組出的硬體（基板/電路/晶圓/導線），還沒被祭壇激活，本身不可編碼。
+    public static final DeferredItem<Item> ASPECT_CODEC_BOARD_BASE =
+            ITEMS.register("aspect_codec_board_base", () -> new Item(new Item.Properties()));
+
+    // 本源編碼基板：技能系統的核心材料。空白基板在祭壇用鏡核碎片儀式激活而成。
     // 編碼台與法術核心都吃它，讓前面的研磨/電路/祭壇工業都有用處。
     public static final DeferredItem<Item> ASPECT_CODEC_BOARD =
             ITEMS.register("aspect_codec_board", () -> new Item(new Item.Properties()));

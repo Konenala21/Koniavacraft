@@ -105,6 +105,8 @@
   "item.koniava.mana_barrel": "魔力砲管",
   "item.koniava.precision_mana_circuit": "精密魔力迴路",
   "item.koniava.high_density_mana_core": "高密度魔力核",
+  "item.koniava.aspect_codec_board_base": "空白本源編碼基板",
+  "item.koniava.aspect_codec_board_base.tooltip": "組裝好的基板硬體，還沒激活。要在祭壇用鏡核碎片綁進去才能用。",
   "item.koniava.aspect_codec_board": "本源編碼基板",
   "item.koniava.aspect_codec_board.tooltip": "把本源以代碼寫上去的鏡晶載板，每一個技能的媒介。",
   "block.koniava.cracked_mana_bricks": "裂縫魔力磚",
