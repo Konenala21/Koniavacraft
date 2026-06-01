@@ -4,6 +4,7 @@ import com.github.nalamodikk.common.entity.FloatingTurretProjectile;
 import com.github.nalamodikk.common.entity.SpellProjectileEntity;
 import com.github.nalamodikk.research.aspect.Aspect;
 import com.github.nalamodikk.research.aspect.ModAspects;
+import com.github.nalamodikk.research.skill.reaction.ReactionEngine;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
@@ -325,68 +326,20 @@ public final class SkillCompiler {
      * Reaction ops stack on top of each aspect's own effect, so the combination
      * does something neither aspect does alone. More reactions can be added here.
      */
+    /**
+     * Runs the chemistry reaction engine over the effect aspects and appends the
+     * resulting reaction ops (in cascade order) to {@code ops}. Returns the extra
+     * chain jumps the reactions add. The actual trait table, rules and cascade
+     * (products feeding back) live in {@link ReactionEngine}.
+     */
     private static int applyReactions(List<Aspect> effects, List<SkillEffectOp> ops) {
-        boolean fire  = effects.stream().anyMatch(SkillCompiler::isFire);
-        boolean dark  = effects.stream().anyMatch(SkillCompiler::isDark);
-        boolean force = effects.contains(ModAspects.STORM) || effects.contains(ModAspects.KAN) || effects.contains(ModAspects.DUI);
-        boolean water = effects.contains(ModAspects.KAN) || effects.contains(ModAspects.FROST) || effects.contains(ModAspects.STEAM);
-        boolean lightning = effects.contains(ModAspects.ZHEN) || effects.contains(ModAspects.ARC);
-        int extraChain = 0;
-
-        if (fire && effects.contains(ModAspects.FROST))   addOnce(ops, SkillEffectOp.THERMAL_SHOCK); // 熱裂
-        if (fire && effects.contains(ModAspects.ENERGY))  addOnce(ops, SkillEffectOp.COMBUSTION);     // 爆燃
-        if (fire && effects.contains(ModAspects.VENOM))   addOnce(ops, SkillEffectOp.TOXIC_BURN);     // 毒燃
-        if (effects.contains(ModAspects.FROST) && force)  addOnce(ops, SkillEffectOp.SHATTER);        // 碎冰
-        if (lightning && water)                           extraChain += 2;                            // 導電
-        if (effects.contains(ModAspects.ENERGY)
-                && (effects.contains(ModAspects.CRYSTAL) || effects.contains(ModAspects.ARCANA)))
-            addOnce(ops, SkillEffectOp.OVERLOAD);                                                     // 超載
-        if (dark && effects.contains(ModAspects.VITAE))   addOnce(ops, SkillEffectOp.DEATH_SIPHON);   // 死亡虹吸
-        if (fire && effects.contains(ModAspects.GROWTH))  addOnce(ops, SkillEffectOp.WILDFIRE);       // 野火
-        if (effects.contains(ModAspects.VENOM) && effects.contains(ModAspects.CORROSION))
-            addOnce(ops, SkillEffectOp.STRONG_ACID);                                                  // 強酸
-        if (effects.contains(ModAspects.RADIANCE) && dark) addOnce(ops, SkillEffectOp.ANNIHILATION);  // 湮滅
-
-        // batch 2
-        if (dark && fire)                                  addOnce(ops, SkillEffectOp.SOULFIRE);      // 煉獄火
-        if (effects.contains(ModAspects.FROST) && effects.contains(ModAspects.VENOM))
-            addOnce(ops, SkillEffectOp.CRYO_VENOM);                                                   // 凍毒
-        if (lightning && effects.contains(ModAspects.ENERGY)) {                                       // 電漿
-            addOnce(ops, SkillEffectOp.OVERLOAD);
-            extraChain += 2;
-        }
-        if (effects.contains(ModAspects.RADIANCE) && fire) addOnce(ops, SkillEffectOp.SOLAR_FLARE);   // 閃焰
-        if (effects.contains(ModAspects.GROWTH) && water)  addOnce(ops, SkillEffectOp.OVERGROWTH);    // 蔓生
-        if (effects.contains(ModAspects.CRYSTAL) && force) addOnce(ops, SkillEffectOp.SHRAPNEL);      // 晶爆
-
-        // ── 三本源終極反應(用滿 3 個效果槽,疊在兩兩反應之上)──
-        if (fire && effects.contains(ModAspects.FROST) && lightning)
-            addOnce(ops, SkillEffectOp.ELEMENTAL_STORM);                                              // 元素風暴
-        if (fire && effects.contains(ModAspects.ENERGY) && lightning)
-            addOnce(ops, SkillEffectOp.THERMONUCLEAR);                                                // 熱核
-        if (effects.contains(ModAspects.VENOM) && effects.contains(ModAspects.CORROSION) && fire)
-            addOnce(ops, SkillEffectOp.BIOHAZARD);                                                    // 生化浩劫
-        if (effects.contains(ModAspects.RADIANCE) && dark && effects.contains(ModAspects.ENERGY))
-            addOnce(ops, SkillEffectOp.HOLY_NOVA);                                                    // 聖核爆
-        if (effects.contains(ModAspects.GROWTH) && fire && effects.contains(ModAspects.VENOM))
-            addOnce(ops, SkillEffectOp.BLIGHT);                                                       // 腐化
-        if (effects.contains(ModAspects.STORM) && effects.contains(ModAspects.KAN) && effects.contains(ModAspects.DUI))
-            addOnce(ops, SkillEffectOp.MAELSTROM);                                                    // 引力亂流
-        return extraChain;
+        ReactionEngine.Result result = ReactionEngine.run(effects);
+        for (SkillEffectOp op : result.ops()) addOnce(ops, op);
+        return result.chain();
     }
 
     private static void addOnce(List<SkillEffectOp> ops, SkillEffectOp op) {
         if (!ops.contains(op)) ops.add(op);
-    }
-
-    private static boolean isFire(Aspect a) {
-        return a == ModAspects.PHLOGISTON || a == ModAspects.MAGMA || a == ModAspects.LI
-                || a == ModAspects.FURNACE || a == ModAspects.VAPOR || a == ModAspects.STEAM;
-    }
-
-    private static boolean isDark(Aspect a) {
-        return a == ModAspects.DEATH || a == ModAspects.UNDEAD || a == ModAspects.TAINT
-                || a == ModAspects.ELDRITCH || a == ModAspects.SPIRITUS || a == ModAspects.VOID_ASPECT;
     }
 
     /**

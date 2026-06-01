@@ -8,6 +8,7 @@ import com.github.nalamodikk.research.skill.reaction.ReactionInfo;
 import com.github.nalamodikk.register.ModItems;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
+import mezz.jei.api.gui.builder.ITooltipBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.ingredient.IRecipeSlotsView;
 import mezz.jei.api.helpers.IGuiHelper;
@@ -15,8 +16,10 @@ import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
@@ -80,13 +83,31 @@ public class ReactionCategory implements IRecipeCategory<ReactionInfo> {
         }
         // 反應名稱(亮色) + 說明(換行)
         Component name = Component.translatable(recipe.nameKey());
-        g.drawString(font, name, TEXT_X, 4, 0xFFE6C84A, false);
+        g.drawString(font, name, TEXT_X, 4, 0xFF7A4A00, false);
         int y = 4 + font.lineHeight + 3;
         int wrap = WIDTH - TEXT_X - 2;
         for (FormattedText line : font.getSplitter().splitLines(
                 Component.translatable(recipe.descKey()), wrap, net.minecraft.network.chat.Style.EMPTY)) {
-            g.drawString(font, line.getString(), TEXT_X, y, 0xFFB0B0B0, false);
+            g.drawString(font, line.getString(), TEXT_X, y, 0xFF3A3A3A, false);
             y += font.lineHeight + 1;
+        }
+    }
+
+    @Override
+    public void getTooltip(@NotNull ITooltipBuilder tooltip, @NotNull ReactionInfo recipe,
+                           @NotNull IRecipeSlotsView slots, double mouseX, double mouseY) {
+        List<Aspect> inputs = recipe.inputs();
+        for (int i = 0; i < inputs.size(); i++) {
+            int x = 4 + i * (CELL + 2);
+            if (mouseX >= x && mouseX < x + CELL && mouseY >= CELL_Y && mouseY < CELL_Y + CELL) {
+                Aspect a = inputs.get(i);
+                tooltip.add(a.getName().copy().withStyle(ChatFormatting.AQUA));
+                String skillKey = "aspect." + a.getId().getNamespace() + "." + a.getId().getPath() + ".skill";
+                if (I18n.exists(skillKey)) {
+                    tooltip.add(Component.translatable(skillKey).withStyle(ChatFormatting.GRAY));
+                }
+                return;
+            }
         }
     }
 
