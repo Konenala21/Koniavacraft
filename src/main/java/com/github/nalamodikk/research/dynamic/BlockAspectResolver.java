@@ -35,9 +35,8 @@ public final class BlockAspectResolver {
             }
         }
         if (aspects.isEmpty()) {
-            // Semantic candidate pool + world-seed pick: sensible aspects, varied per world.
-            List<Aspect> pool = SemanticAspectMatcher.candidates(id, 5);
-            aspects = AspectExpression.seededPick(id, pool, data.getGenomeSeed(), 2);
+            // Semantic pool + world-seed dealing (guaranteed carriers + seeded pick).
+            aspects = SemanticDealer.resolve(id, data.getGenomeSeed(), 2);
         }
         if (aspects.isEmpty()) {
             aspects = AspectExpression.fallback(id, data.getGenomeSeed(), 2);

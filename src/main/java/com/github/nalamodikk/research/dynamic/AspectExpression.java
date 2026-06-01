@@ -99,7 +99,8 @@ public final class AspectExpression {
         return aspects.stream().limit(maxAspects).toList();
     }
 
-    private static long score(ResourceLocation id, Aspect aspect, long genomeSeed) {
+    /** Deterministic per (id, aspect, world seed) hash, used for seeded ordering. */
+    public static long score(ResourceLocation id, Aspect aspect, long genomeSeed) {
         long value = genomeSeed;
         value ^= id.toString().hashCode() * 0x9E3779B97F4A7C15L;
         value ^= aspect.getId().toString().hashCode() * 0xBF58476D1CE4E5B9L;
