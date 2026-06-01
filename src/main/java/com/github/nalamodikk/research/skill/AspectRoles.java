@@ -121,14 +121,13 @@ public final class AspectRoles {
         putHighTier(ModAspects.SPIRITUS,     SkillRole.EFFECT); // 靈魂
 
         // ── Non-combat / special / system (categorised, NOT skill-usable) ────
-        // These are tagged so they are explicitly "not a combat piece", per design:
-        // they belong to research / worldview / Nara / economy, not the skill palette.
-        put(ModAspects.CIVILIZATION, SkillRole.NON_COMBAT); // 文明 -> 研究/世界觀
-        put(ModAspects.COMMERCE,     SkillRole.NON_COMBAT); // 商貿 -> 經濟系統
-        put(ModAspects.LANGUAGE,     SkillRole.NON_COMBAT); // 語言 -> 符文/指南書/娜拉
-        put(ModAspects.HUMANITY,     SkillRole.NON_COMBAT); // 人性 -> 核心敘事/娜拉
-        put(ModAspects.PRIMORDIAL,   SkillRole.SPECIAL);    // 原初 -> 晚期萬用替身/變異
-        put(ModAspects.WEALTH,       SkillRole.SYSTEM);     // 財富 -> 消耗物品換威力
+        // 社會/特殊本源也各自獨立成戰鬥變種（用戶要每個本源都能用），同時保留世界觀意義。
+        put(ModAspects.CIVILIZATION, SkillRole.MODIFIER);   // 文明 -> 堡壘(抗性 II 自我)
+        put(ModAspects.HUMANITY,     SkillRole.MODIFIER);   // 人性 -> 決意(大吸收+速度自我)
+        put(ModAspects.COMMERCE,     SkillRole.EFFECT);     // 商貿 -> 掠奪(傷害+自己得護盾)
+        put(ModAspects.LANGUAGE,     SkillRole.EFFECT);     // 語言 -> 詛咒之言(虛弱 II+挖掘疲勞)
+        put(ModAspects.PRIMORDIAL,   SkillRole.EFFECT);     // 原初 -> 突變(每次隨機 debuff)
+        put(ModAspects.WEALTH,       SkillRole.EFFECT);     // 財富 -> 點金一擊(最大單發加傷)
     }
 
     // ── API ──────────────────────────────────────────────────────────────────

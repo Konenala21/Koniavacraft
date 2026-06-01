@@ -93,6 +93,8 @@ public final class SkillCompiler {
         boolean corpus = modifiers.contains(ModAspects.CORPUS);
         boolean faith = modifiers.contains(ModAspects.FAITH);
         boolean order = modifiers.contains(ModAspects.ORDER);
+        boolean civilization = modifiers.contains(ModAspects.CIVILIZATION);
+        boolean humanity = modifiers.contains(ModAspects.HUMANITY);
         boolean instinct = modifiers.contains(ModAspects.INSTINCT);
         boolean homing = modifiers.contains(ModAspects.ANIMA);
         int chainCount = (modifiers.contains(ModAspects.ARC) || modifiers.contains(ModAspects.PROPAGATION)) ? 2 : 0;
@@ -134,6 +136,11 @@ public final class SkillCompiler {
             if (corpus)   caster.addEffect(new MobEffectInstance(MobEffects.HEALTH_BOOST, 600, 1)); // 肉體強化
             if (faith)    caster.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 200, 1));  // 撐住
             if (order)    cleanse(caster); // 淨化自身負面
+            if (civilization) caster.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 1)); // 堡壘:抗性 II
+            if (humanity) { // 決意:大吸收 + 速度
+                caster.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 200, 3));
+                caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 200, 0));
+            }
 
             // INSTINCT: a chance to crit this cast (rolled per cast, not baked into the cost)
             float dmg = damage;
@@ -320,6 +327,11 @@ public final class SkillCompiler {
         if (effect == ModAspects.COGNITION)  return SkillEffectOp.COGNITION;
         if (effect == ModAspects.DESIRE)     return SkillEffectOp.DESIRE;
         if (effect == ModAspects.LAW)        return SkillEffectOp.LAW;
+        // Society / special aspects, each its own variant
+        if (effect == ModAspects.COMMERCE)   return SkillEffectOp.COMMERCE;
+        if (effect == ModAspects.LANGUAGE)   return SkillEffectOp.LANGUAGE;
+        if (effect == ModAspects.PRIMORDIAL) return SkillEffectOp.PRIMORDIAL;
+        if (effect == ModAspects.WEALTH)     return SkillEffectOp.WEALTH;
         return null;
     }
 

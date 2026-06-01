@@ -11,6 +11,9 @@ New material, the Aspect Codec Board, is the heart of the skill system, and gett
 
 ### Developer Notes / 開發者備註
 
+- WIP (every aspect now has a distinct combat variant): the last society/special aspects, previously non-combat, each got their own variant so all 80 aspects are usable in skills. Modifiers (self): civilization is a bulwark (Resistance II), humanity is resolve (big absorption + speed). Effects: commerce plunders (damage + a profit absorption shield for the caster), language is a word of weakness (weakness II + mining fatigue), primordial mutates (a different random debuff each cast), wealth is a Midas strike (the heaviest flat bonus hit). No two aspects share behavior now. Tests green.
+- WIP（每個本源現在都有獨立戰鬥變種）：最後的社會/特殊本源（原本非戰鬥）也各自獨立成變種，所以全部 80 個本源都能用在技能裡。修飾（自我）：文明是堡壘（抗性 II）、人性是決意（大吸收+速度）。效果：商貿掠奪（傷害+給施法者護盾）、語言是詛咒之言（虛弱 II+挖掘疲勞）、原初突變（每次隨機一種 debuff）、財富點金一擊（最重單發加傷）。現在沒有任何兩個本源行為相同。測試綠。
+
 - WIP (abstract aspects get imaginative effects): the 8 aspects that had no skill role at all are now usable, each with a creative effect. EXCAVATION shreds armor (armor-bypassing hit + mining fatigue); BESTIA is a savage maul + bleed; HARVEST is a scythe AoE that hits everything around the target; SENSUS exposes (long see-through-walls glow + slow); COGNITION scrambles the mind (nausea + weakness); DESIRE lures the target toward you and slows it; LAW passes judgment, rooting the target and hitting harder the more debuffs it already carries (a finisher you set up with other effects); AUTOMATION is a modifier that adds an extra shot (automated repeater). Roles + opFor + a couple of imports; tests green.
 - WIP（抽象本源給有創意的效果）：原本完全沒技能角色的 8 個本源現在都能用，各有腦洞效果。挖掘＝破甲（無視護甲的傷害+挖掘疲勞）；獸性＝兇猛撕咬+流血；收割＝鐮刀範圍橫掃打到目標周圍所有東西；感知＝曝光（長時間穿牆發光+緩速）；認知＝心智干擾（暈眩+虛弱）；慾望＝把目標拉向你並緩速；法則＝制裁，定身目標、目標身上負面層數越多打得越重（拿來收尾、配合其他效果疊層）；自動化＝修飾，多射一發（自動連射）。角色+opFor+幾個 import；測試綠。
 

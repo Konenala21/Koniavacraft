@@ -329,6 +329,42 @@ public enum SkillEffectOp {
             target.invulnerableTime = 0;
             target.hurt(level.damageSources().magic(), 2.0F + debuffs * 2.0F + power * 0.2F);
         }
+    },
+    /** 商貿: plunder. Bonus damage that also nets the caster a profit shield (absorption). */
+    COMMERCE {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.invulnerableTime = 0;
+            target.hurt(level.damageSources().magic(), 1.5F + power * 0.15F);
+            if (caster != null && caster.isAlive()) {
+                caster.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 120, 0));
+            }
+        }
+    },
+    /** 語言: a word of weakness. A binding curse: weakness plus mining fatigue, no damage. */
+    LANGUAGE {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 120, 1));
+            target.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, 120, 1));
+        }
+    },
+    /** 原初: mutation. A different random debuff every cast, chaotic and unpredictable. */
+    PRIMORDIAL {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            switch (level.getRandom().nextInt(5)) {
+                case 0 -> target.addEffect(new MobEffectInstance(MobEffects.WITHER, 80, 1));
+                case 1 -> target.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 1));
+                case 2 -> target.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 3));
+                case 3 -> target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 80, 0));
+                default -> target.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 50, 0));
+            }
+        }
+    },
+    /** 財富: a Midas strike. The single heaviest flat bonus hit, raw greed. */
+    WEALTH {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.invulnerableTime = 0;
+            target.hurt(level.damageSources().magic(), 4.0F + power * 0.4F);
+        }
     };
 
     public abstract void apply(ServerLevel level, LivingEntity target,
