@@ -97,11 +97,12 @@ public final class SkillCompiler {
         float power = 1.0F
                 + (modifiers.contains(ModAspects.FORTIFY) ? 0.5F : 0.0F)
                 + (modifiers.contains(ModAspects.QIAN) ? 1.0F : 0.0F)
-                + (modifiers.contains(ModAspects.MECHANISM) ? 0.3F : 0.0F)
-                + (modifiers.contains(ModAspects.INSTRUMENT) ? 0.3F : 0.0F)
-                + (modifiers.contains(ModAspects.ALCHEMY) ? 0.4F : 0.0F)
-                + (modifiers.contains(ModAspects.ENERGY) ? 0.5F : 0.0F)
-                + (modifiers.contains(ModAspects.ARCANA) ? 0.5F : 0.0F);
+                + (modifiers.contains(ModAspects.MECHANISM) ? 0.4F : 0.0F)
+                + (modifiers.contains(ModAspects.INSTRUMENT) ? 0.4F : 0.0F)
+                + (modifiers.contains(ModAspects.ALCHEMY) ? 0.5F : 0.0F)
+                + (modifiers.contains(ModAspects.ENERGY) ? 0.6F : 0.0F)
+                + (modifiers.contains(ModAspects.ARCANA) ? 0.6F : 0.0F)
+                + (instinct ? 0.2F : 0.0F); // 本能:永遠小增傷 + 下面還有暴擊機率
         int fuelTotal = fuel.values().stream().mapToInt(Integer::intValue).sum();
         float carrierDmgMult = carrier == ModAspects.MANA ? 0.85F : 1.0F; // 魔力較弱(換便宜)
         float damage = (4.0F + 2.0F * effects.size() + fuelTotal) * power * carrierDmgMult;
