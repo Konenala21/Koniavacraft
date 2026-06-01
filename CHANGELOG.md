@@ -11,6 +11,9 @@ New material, the Aspect Codec Board, is the heart of the skill system, and gett
 
 ### Developer Notes / 開發者備註
 
+- WIP (energy = explosion, scales to a nuke): the ENERGY effect aspect is now a no-grief detonation (entity damage + knockback, no block breaking) whose radius scales with power. So energy turns any carrier into its explosive variant, and amplifiers turn a grenade into a nuke: machine + energy = grenade launcher, machine + energy + qian (power x2) = a bigger blast, machine + energy + refraction = a 3-shell cluster, momentum + energy = an exploding orb. One op, a whole row of variants. Tests green.
+- WIP（能量＝爆炸，疊到核彈）：能量效果本源現在是無破壞爆炸（對實體傷害+擊退、不炸地形），半徑隨 power 放大。所以能量讓任何載體變成爆裂版，增幅本源把榴彈變核彈：機械+能量=榴彈砲、機械+能量+乾（power×2）=更大爆炸、機械+能量+折射=三連集束彈、動力+能量=會爆的法球。一個 op 開一整排變種。測試綠。
+
 - WIP (MACHINE carrier fires floating-turret bolts): the MACHINE aspect (previously roleless) is now a CARRIER that fires the boss weapon's FloatingTurretProjectile, carrying the skill's damage and effect ops. So the carrier x effect matrix produces variants: machine + fire = a burning turret bolt, machine + frost = an ice bolt, machine + wither = a decay bolt, etc. FloatingTurretProjectile gained an optional skill payload (setSkillPayload: custom damage + ops applied on hit); empty by default so the normal turret is unchanged. MACHINE carrier damage x1.1. Tests green; needs runClient to feel it.
 - WIP（機械載體發射浮游砲子彈）：MACHINE 本源（原本沒角色）現在是 CARRIER，發射 boss 武器的 FloatingTurretProjectile，帶技能傷害 + 效果 ops。所以「載體 × 效果」矩陣會產生變種：機械+火=燃燒砲彈、機械+霜=冰砲彈、機械+凋零=腐蝕砲彈…。FloatingTurretProjectile 加了選用技能酬載（setSkillPayload：自訂傷害 + 命中套 ops），預設空所以一般浮游砲行為不變。機械載體傷害 ×1.1。測試綠；要 runClient 體驗。
 

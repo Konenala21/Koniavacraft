@@ -7,6 +7,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.LightningBolt;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
@@ -243,12 +244,14 @@ public enum SkillEffectOp {
             target.hurt(level.damageSources().magic(), 2.0F + power * 0.2F);
         }
     },
-    /** 能量: an energized burst, bonus damage plus a glow mark. */
+    /** 能量: an energetic detonation. A no-grief explosion (entity damage + knockback,
+     *  no block breaking) whose radius scales with power, so stacking amplifiers turns
+     *  a grenade into a nuke. Any carrier + energy becomes its explosive variant. */
     ENERGY {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            target.invulnerableTime = 0;
-            target.hurt(level.damageSources().magic(), 2.0F + power * 0.2F);
-            target.addEffect(new MobEffectInstance(MobEffects.GLOWING, 60, 0));
+            float radius = Math.min(7.0F, 2.0F + power * 0.06F);
+            level.explode(caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
+                    radius, Level.ExplosionInteraction.NONE);
         }
     },
     /** 奧法: a heavier arcane detonation. */
