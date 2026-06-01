@@ -3,8 +3,12 @@ package com.github.nalamodikk.common.entity;
 import com.github.nalamodikk.common.network.packet.client.turret.TurretHitPacket;
 import com.github.nalamodikk.register.ModDamageTypes;
 import com.github.nalamodikk.register.ModEntities;
+import com.github.nalamodikk.research.skill.SkillEffectOp;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.world.entity.LivingEntity;
+
+import java.util.List;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -48,6 +52,17 @@ public class FloatingTurretProjectile extends ThrowableProjectile {
     @org.jetbrains.annotations.Nullable
     private net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> controlEffect = null;
     private int controlDuration = 0;
+
+    // 技能酬載：MACHINE 載體用。玩家用本源組合射出的浮游砲子彈，帶自訂傷害 + 命中效果 ops。
+    // 預設空 / 0，所以一般浮游砲行為完全不變。
+    private List<SkillEffectOp> skillOps = List.of();
+    private float skillDamage = 0.0F;
+
+    public FloatingTurretProjectile setSkillPayload(float damage, List<SkillEffectOp> ops) {
+        this.skillDamage = damage;
+        this.skillOps = ops;
+        return this;
+    }
 
     public FloatingTurretProjectile(EntityType<? extends FloatingTurretProjectile> type, Level level) {
         super(type, level);
@@ -171,15 +186,23 @@ public class FloatingTurretProjectile extends ThrowableProjectile {
         }
 
         float ratio = getChargeRatio();
-        float dmg = ratio > 0
-                ? CHARGED_DAMAGE_MIN + (CHARGED_DAMAGE_MAX - CHARGED_DAMAGE_MIN) * ratio
-                : DAMAGE;
+        float dmg = skillDamage > 0 // 技能彈用自訂傷害；否則原生普通/蓄力傷害
+                ? skillDamage
+                : (ratio > 0
+                    ? CHARGED_DAMAGE_MIN + (CHARGED_DAMAGE_MAX - CHARGED_DAMAGE_MIN) * ratio
+                    : DAMAGE);
         DamageSource source = new DamageSource(
                 level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE)
                         .getHolderOrThrow(ModDamageTypes.FLOATING_TURRET),
                 this, getOwner());
         target.invulnerableTime = 0; // bypass hurt cooldown so dual-wield hits both register
         target.hurt(source, dmg);
+        // 技能 ops：把組合本源的命中效果套在目標上（一般浮游砲 skillOps 為空，不影響）
+        if (!skillOps.isEmpty() && target instanceof LivingEntity living && level() instanceof ServerLevel sl) {
+            Vec3 d = getDeltaMovement().lengthSqr() > 1.0E-4 ? getDeltaMovement().normalize() : new Vec3(0, 0, 1);
+            LivingEntity casterLE = getOwner() instanceof LivingEntity le ? le : null;
+            for (SkillEffectOp op : skillOps) op.apply(sl, living, casterLE, d, dmg);
+        }
         showHitEffect(result.getLocation());
         explodeIfCharged(result.getLocation());
         this.discard();

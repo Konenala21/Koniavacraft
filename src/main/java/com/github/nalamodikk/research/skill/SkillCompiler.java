@@ -1,5 +1,6 @@
 package com.github.nalamodikk.research.skill;
 
+import com.github.nalamodikk.common.entity.FloatingTurretProjectile;
 import com.github.nalamodikk.common.entity.SpellProjectileEntity;
 import com.github.nalamodikk.research.aspect.Aspect;
 import com.github.nalamodikk.research.aspect.ModAspects;
@@ -104,7 +105,8 @@ public final class SkillCompiler {
                 + (modifiers.contains(ModAspects.ARCANA) ? 0.6F : 0.0F)
                 + (instinct ? 0.2F : 0.0F); // 本能:永遠小增傷 + 下面還有暴擊機率
         int fuelTotal = fuel.values().stream().mapToInt(Integer::intValue).sum();
-        float carrierDmgMult = carrier == ModAspects.MANA ? 0.85F : 1.0F; // 魔力較弱(換便宜)
+        float carrierDmgMult = carrier == ModAspects.MANA ? 0.85F
+                : (carrier == ModAspects.MACHINE ? 1.1F : 1.0F); // 魔力較弱(換便宜)；機械砲彈略強
         // 技能是 boss 後、走完整條工業鏈才解鎖的本源核心脊椎，威力要配得上投資。
         // 基礎高 + 每效果重加成 → 組合越多本源越強，獎勵深度組合（對應「可組合的要變強」）。
         float damage = (6.0F + 4.0F * effects.size() + 2.0F * fuelTotal) * power * carrierDmgMult;
@@ -161,6 +163,18 @@ public final class SkillCompiler {
                 castField(level, caster, dmg, finalOps);
             } else if (carrier == ModAspects.BLADE) {
                 castSlash(level, caster, dmg, finalOps);
+            } else if (carrier == ModAspects.MACHINE) {
+                // 機械載體：發射浮游砲子彈，帶技能傷害 + 命中效果 ops。
+                // 機械+火=火砲彈、機械+霜=冰砲彈、機械+凋零=腐蝕砲彈，效果本源決定砲彈變種。
+                Vec3 look = caster.getLookAngle();
+                Vec3 spawnPos = caster.getEyePosition().add(look.scale(0.6));
+                for (int i = 0; i < count; i++) {
+                    FloatingTurretProjectile bolt = FloatingTurretProjectile.shoot(level, caster, spawnPos);
+                    bolt.setSkillPayload(dmg, finalOps);
+                    level.addFreshEntity(bolt);
+                }
+                level.playSound(null, caster.blockPosition(),
+                        SoundEvents.DISPENSER_LAUNCH, SoundSource.PLAYERS, 0.9F, 1.0F);
             }
         };
 

@@ -47,6 +47,7 @@ public final class AspectRoles {
         put(ModAspects.XUN,      SkillRole.CARRIER);   // 風 -> gust projectile
         put(ModAspects.MANA,     SkillRole.CARRIER);   // 魔力流 -> basic orb
         put(ModAspects.PIPELINE, SkillRole.CARRIER);   // 管道 -> channelled beam
+        put(ModAspects.MACHINE,  SkillRole.CARRIER);   // 機械 -> 發射浮游砲子彈
 
         // ── Effects (payload) ────────────────────────────────────────────────
         put(ModAspects.PHLOGISTON, SkillRole.EFFECT);  // 燃燒/點燃
