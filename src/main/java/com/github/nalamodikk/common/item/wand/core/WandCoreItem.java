@@ -1,5 +1,8 @@
 package com.github.nalamodikk.common.item.wand.core;
 
+import com.github.nalamodikk.register.ModDataComponents;
+import com.github.nalamodikk.research.skill.SkillEncoding;
+import com.github.nalamodikk.research.skill.StoredSkill;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
@@ -53,5 +56,31 @@ public class WandCoreItem extends Item implements IWandCore {
                         .withStyle(ChatFormatting.YELLOW));
         lines.add(Component.translatable("tooltip.koniava.upgrade.compatible", compatible)
                 .withStyle(ChatFormatting.GRAY));
+
+        appendEncodedSkills(stack, lines);
+    }
+
+    /** Spell cores list the skills encoded onto them, highlighting the selected one. */
+    private void appendEncodedSkills(ItemStack stack, List<Component> lines) {
+        if (behavior != WandCoreBehavior.SPELL) return;
+
+        List<StoredSkill> skills = SkillEncoding.getSkills(stack);
+        if (skills.isEmpty()) {
+            lines.add(Component.translatable("tooltip.koniava.spell_core.empty")
+                    .withStyle(ChatFormatting.DARK_GRAY));
+            return;
+        }
+
+        int selected = stack.getOrDefault(ModDataComponents.SELECTED_SKILL_INDEX, 0);
+        lines.add(Component.translatable("tooltip.koniava.spell_core.skills")
+                .withStyle(ChatFormatting.GRAY));
+        for (int i = 0; i < skills.size(); i++) {
+            String name = skills.get(i).name().isBlank()
+                    ? Component.translatable("gui.koniava.skill_encoder.unnamed").getString()
+                    : skills.get(i).name();
+            boolean isSelected = i == selected;
+            lines.add(Component.literal((isSelected ? " ▶ " : "    ") + name)
+                    .withStyle(isSelected ? ChatFormatting.GOLD : ChatFormatting.DARK_GRAY));
+        }
     }
 }

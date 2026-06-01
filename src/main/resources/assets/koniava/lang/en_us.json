@@ -273,6 +273,8 @@
   "gui.koniava.skill_encoder.slot": "Slot",
   "gui.koniava.skill_encoder.aspects": "Your aspects",
   "gui.koniava.skill_encoder.unnamed": "Unnamed Skill",
+  "tooltip.koniava.spell_core.skills": "Encoded skills:",
+  "tooltip.koniava.spell_core.empty": "No skills encoded yet",
   "message.koniava.encode.no_core": "Place a spell core in the bench first.",
   "message.koniava.encode.invalid_recipe": "Invalid combination: check the carrier, effects, and modifiers.",
   "message.koniava.encode.not_owned": "You do not own all of these aspects yet.",

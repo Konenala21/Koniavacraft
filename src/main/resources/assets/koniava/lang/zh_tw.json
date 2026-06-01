@@ -300,6 +300,8 @@
   "gui.koniava.skill_encoder.slot": "格位",
   "gui.koniava.skill_encoder.aspects": "你的本源",
   "gui.koniava.skill_encoder.unnamed": "未命名技能",
+  "tooltip.koniava.spell_core.skills": "已編碼技能：",
+  "tooltip.koniava.spell_core.empty": "尚未編碼技能",
   "message.koniava.encode.no_core": "請先在編碼台放入一個法術核心。",
   "message.koniava.encode.invalid_recipe": "組合無效：檢查載體、效果與修飾。",
   "message.koniava.encode.not_owned": "你還沒擁有全部這些本源。",
