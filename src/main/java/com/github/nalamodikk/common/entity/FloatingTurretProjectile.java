@@ -201,7 +201,7 @@ public class FloatingTurretProjectile extends ThrowableProjectile {
         if (!skillOps.isEmpty() && target instanceof LivingEntity living && level() instanceof ServerLevel sl) {
             Vec3 d = getDeltaMovement().lengthSqr() > 1.0E-4 ? getDeltaMovement().normalize() : new Vec3(0, 0, 1);
             LivingEntity casterLE = getOwner() instanceof LivingEntity le ? le : null;
-            for (SkillEffectOp op : skillOps) op.apply(sl, living, casterLE, d, dmg);
+            for (SkillEffectOp op : skillOps) op.applyTo(sl, living, casterLE, d, dmg);
         }
         showHitEffect(result.getLocation());
         explodeIfCharged(result.getLocation());

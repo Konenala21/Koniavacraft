@@ -54,6 +54,22 @@ public class TrainingDummyEntity extends Mob {
 
     private final Map<UUID, Session> sessions = new HashMap<>();
 
+    // 最近觸發在假人身上的反應(翻譯鍵 → 到期 gametick),讓 HUD 顯示「發生了什麼反應」。
+    private static final long REACTION_TTL = 60L; // 3 秒
+    private final Map<String, Long> recentReactions = new HashMap<>();
+
+    /** 由 SkillEffectOp.applyTo 呼叫:命中假人的反應記下來,並立刻推一次更新給進行中的玩家。 */
+    public void recordReaction(String translationKey) {
+        recentReactions.put(translationKey, level().getGameTime() + REACTION_TTL);
+        if (level() instanceof ServerLevel sl) {
+            for (Map.Entry<UUID, Session> entry : sessions.entrySet()) {
+                if (sl.getPlayerByUUID(entry.getKey()) instanceof ServerPlayer p) {
+                    sendStats(p, entry.getValue(), false);
+                }
+            }
+        }
+    }
+
     public TrainingDummyEntity(EntityType<? extends TrainingDummyEntity> type, Level level) {
         super(type, level);
         this.setPersistenceRequired();
@@ -167,11 +183,16 @@ public class TrainingDummyEntity extends Mob {
         int durationTicks = (int) (s.lastHitTick - s.startTick); // 結算用最後命中時間
         if (!ended) durationTicks = (int) (now - s.startTick);   // 進行中用當下
 
-        // 收集假人目前身上的效果,讓玩家看得到破甲/流血/易傷等技能反應。
+        // 收集假人目前身上的效果(破甲/流血/易傷…)+ 最近觸發的反應(熱裂/爆燃…),一起給 HUD 顯示。
         List<TrainingDummyStatsPacket.EffectLine> effects = new ArrayList<>();
         for (MobEffectInstance inst : getActiveEffects()) {
             effects.add(new TrainingDummyStatsPacket.EffectLine(
                     inst.getEffect().value().getDescriptionId(), inst.getAmplifier()));
+        }
+        long nowTick = level().getGameTime();
+        recentReactions.values().removeIf(expiry -> expiry < nowTick);
+        for (String reactionKey : recentReactions.keySet()) {
+            effects.add(new TrainingDummyStatsPacket.EffectLine(reactionKey, 0));
         }
 
         PacketDistributor.sendToPlayer(player,

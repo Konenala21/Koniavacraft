@@ -590,4 +590,33 @@ public enum SkillEffectOp {
 
     public abstract void apply(ServerLevel level, LivingEntity target,
                                @Nullable LivingEntity caster, Vec3 dir, float power);
+
+    /** The emergent reaction ops (never mapped from a single aspect). */
+    private static final java.util.EnumSet<SkillEffectOp> REACTIONS = java.util.EnumSet.of(
+            THERMAL_SHOCK, COMBUSTION, TOXIC_BURN, SHATTER, OVERLOAD, DEATH_SIPHON, WILDFIRE,
+            STRONG_ACID, ANNIHILATION, SOULFIRE, CRYO_VENOM, SOLAR_FLARE, OVERGROWTH, SHRAPNEL,
+            ELEMENTAL_STORM, THERMONUCLEAR, BIOHAZARD, HOLY_NOVA, BLIGHT, MAELSTROM);
+
+    public boolean isReaction() {
+        return REACTIONS.contains(this);
+    }
+
+    /** Translation key for this op's player-facing name (used by reaction feedback). */
+    public String translationKey() {
+        return "skillop.koniava." + name().toLowerCase(java.util.Locale.ROOT);
+    }
+
+    /**
+     * Apply this op and, if it lands on a training dummy and is a reaction, log it on
+     * the dummy so the HUD can show the player which reactions fired. Carriers should
+     * call this instead of {@link #apply} so reaction feedback is captured centrally.
+     */
+    public void applyTo(ServerLevel level, LivingEntity target,
+                        @Nullable LivingEntity caster, Vec3 dir, float power) {
+        apply(level, target, caster, dir, power);
+        if (isReaction()
+                && target instanceof com.github.nalamodikk.common.entity.TrainingDummyEntity dummy) {
+            dummy.recordReaction(translationKey());
+        }
+    }
 }

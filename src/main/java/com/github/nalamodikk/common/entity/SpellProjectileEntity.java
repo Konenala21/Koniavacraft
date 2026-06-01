@@ -122,7 +122,7 @@ public class SpellProjectileEntity extends ThrowableProjectile {
 
         if (target instanceof LivingEntity living && level() instanceof ServerLevel sl) {
             Vec3 dir = getDeltaMovement().lengthSqr() < 1.0E-6 ? Vec3.ZERO : getDeltaMovement().normalize();
-            for (SkillEffectOp op : ops) op.apply(sl, living, owner, dir, damage);
+            for (SkillEffectOp op : ops) op.applyTo(sl, living, owner, dir, damage);
             if (knockback > 0.0F) living.knockback(knockback, -dir.x, -dir.z); // carrier impact (momentum/wind)
             if (chainCount > 0) chainFrom(living, owner, source, dir, sl);
         }
@@ -141,7 +141,7 @@ public class SpellProjectileEntity extends ThrowableProjectile {
             alreadyHit.add(e.getId());
             e.invulnerableTime = 0;
             e.hurt(source, damage * 0.5F);
-            for (SkillEffectOp op : ops) op.apply(sl, e, owner, dir, damage * 0.5F);
+            for (SkillEffectOp op : ops) op.applyTo(sl, e, owner, dir, damage * 0.5F);
             Vec3 a = from.getEyePosition();
             Vec3 b = e.getEyePosition();
             for (int s = 0; s <= 6; s++) {
