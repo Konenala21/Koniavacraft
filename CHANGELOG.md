@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Hovering an aspect in the Skill Encoder now shows what it does in a skill (its role and effect), so you can read each aspect's behavior right where you build skills instead of guessing.
+在技能編碼台滑到本源現在會顯示它在技能裡做什麼（角色與效果），組技能的當下就能看懂每個本源的行為，不用再用猜的。
+
 Aspect reactions now have a JEI page. Open JEI and look up "Aspect Reactions" (or right-click a spell core) to see every chemistry combo: which aspects react and what happens, all 22 of them, so reactions are no longer hidden knowledge.
 本源反應現在有 JEI 分頁了。打開 JEI 查「本源反應」（或右鍵法術核心）就能看到全部 22 個化學組合：哪些本源會反應、會發生什麼，反應不再是隱藏知識。
 

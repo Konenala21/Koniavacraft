@@ -11,7 +11,9 @@ import com.github.nalamodikk.research.skill.SkillEncoding;
 import com.github.nalamodikk.research.skill.SkillRole;
 import com.github.nalamodikk.research.skill.StoredSkill;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -316,7 +318,14 @@ public class SkillEncoderScreen extends AbstractContainerScreen<SkillEncoderMenu
         Aspect a = paletteAspectAt(mouseX, mouseY);
         if (a == null) a = roleAspectAt(mouseX, mouseY);
         if (a != null) {
-            g.renderTooltip(font, a.getName(), mouseX, mouseY);
+            List<Component> lines = new ArrayList<>();
+            lines.add(a.getName().copy().withStyle(ChatFormatting.AQUA));
+            // 技能說明:有 lang aspect.<ns>.<path>.skill 就顯示(這個本源在技能裡做什麼)
+            String key = "aspect." + a.getId().getNamespace() + "." + a.getId().getPath() + ".skill";
+            if (I18n.exists(key)) {
+                lines.add(Component.translatable(key).withStyle(ChatFormatting.GRAY));
+            }
+            g.renderComponentTooltip(font, lines, mouseX, mouseY);
             return true;
         }
         if (inCell(mouseX, mouseY, leftPos + ICON_X, topPos + ICON_Y, ICON_SIZE)) {
