@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Aspect reactions now have a JEI page. Open JEI and look up "Aspect Reactions" (or right-click a spell core) to see every chemistry combo: which aspects react and what happens, all 22 of them, so reactions are no longer hidden knowledge.
+本源反應現在有 JEI 分頁了。打開 JEI 查「本源反應」（或右鍵法術核心）就能看到全部 22 個化學組合：哪些本源會反應、會發生什麼，反應不再是隱藏知識。
+
 A renewable aspect source, so collecting aspects no longer dead-ends once you have scanned everything. Cleric villagers (level 3) now trade a Mirror Core Shard for Basic Aspect Essence, and right-clicking the essence grants 5 of each of the six base aspects (water, fire, wood, metal, earth, wu). Since the Mirror World boss is repeatable, you can farm shards, trade for essence, and top up aspects to keep authoring skills (and feed the synthesis bench for higher aspects).
 新增可重複取得的本源來源，掃完世界後收集本源不再是死路。神職村民（等級 3）現在收鏡核碎片換「基礎本源精華」，右鍵精華可獲得六大基礎本源（水火木金土烏）各 5 點。鏡中世界 boss 可重複挑戰，所以你能 farm 鏡核碎片、換精華、補本源來持續組裝技能（再餵本源合成台合出更高階本源）。
 
