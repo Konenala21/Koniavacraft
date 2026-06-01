@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Player Changes / 玩家更新內容
+
+New item and block art: mana materials (dusts, ingots, crystals, alloy, adhesive, wire, substrate, wafer), circuits, the mana eye, and the magic ores were redrawn with fresh textures contributed by 蕎麥麵 (bksesame).
+更新多個物品與方塊貼圖：魔力材料（各種粉、錠、水晶、合金、黏膠、導線、基板、晶片）、電路板、魔力之眼、魔法礦，由貢獻者 蕎麥麵 (bksesame) 繪製。
+
 ### Developer Notes / 開發者備註
 
 - WIP (skill combat content): made most of the AspectRoles dictionary actually do something instead of just costing mana. New on-hit ops: LIGHTNING (zhen/arc), KNOCKBACK (storm/kan/dui), BLIND (radiance), WITHER (death/undead/taint/eldritch/spiritus/void), ROOT (growth, and the binding/gen modifiers), LIFESTEAL (vitae). New modifier behaviors: ANIMA homing, ARC/PROPAGATION chain-to-2, WARDING absorption-on-cast (plus the existing refraction/blade/fortify/qian). New carriers beyond projectiles: FLIGHT dashes the caster, PIPELINE fires an instant hitscan beam, GRAVITY drops a pulling singularity. SkillEffectOp.apply now gets the caster + impact direction. Still no-op (deferred): the heal-family effects (vitality/mending/lifeflow/nourish, which would heal enemies) and some amplify modifiers.
