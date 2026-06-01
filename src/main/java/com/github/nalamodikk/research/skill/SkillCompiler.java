@@ -118,6 +118,10 @@ public final class SkillCompiler {
         float damage = (6.0F + 4.0F * effects.size() + 2.0F * fuelTotal) * power * carrierDmgMult;
 
         List<SkillEffectOp> finalOps = List.copyOf(ops);
+        // 支援型技能:含補血效果 → 載體不造成基礎傷害,免得幫隊友補血卻一發把人打死。
+        // (補血是補命中對象,配投射可以射隊友補血;血氣是吸血、不算支援。)
+        boolean support = ops.contains(SkillEffectOp.VITALITY) || ops.contains(SkillEffectOp.MENDING)
+                || ops.contains(SkillEffectOp.LIFEFLOW) || ops.contains(SkillEffectOp.NOURISH);
         boolean isProjectile = carrier == null
                 || carrier == ModAspects.MOMENTUM
                 || carrier == ModAspects.MANA
@@ -145,9 +149,9 @@ public final class SkillCompiler {
                 caster.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 200, 0));
             }
 
-            // INSTINCT: a chance to crit this cast (rolled per cast, not baked into the cost)
-            float dmg = damage;
-            if (instinct && level.getRandom().nextFloat() < 0.25F) dmg *= 1.5F;
+            // 支援技能不造成傷害(只補血/上狀態);否則 INSTINCT 有機率本次暴擊
+            float dmg = support ? 0.0F : damage;
+            if (!support && instinct && level.getRandom().nextFloat() < 0.25F) dmg *= 1.5F;
 
             if (isProjectile) {
                 Vec3 look = caster.getLookAngle();
