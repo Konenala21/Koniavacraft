@@ -237,27 +237,28 @@ public enum SkillEffectOp {
     /** 生命: an instant heal (on the FLIGHT self-cast, that is the caster). */
     VITALITY {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            target.heal(4.0F + power * 0.25F);
+            target.heal(8.0F + power * 0.5F); // 瞬補:一大口
         }
     },
     /** 修補: steady regeneration over time. */
     MENDING {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            target.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 100, 1));
+            target.heal(4.0F + power * 0.3F); // 即時補一口
+            target.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 140, 2)); // 再生 III,持續強回
         }
     },
     /** 生命流: a small heal plus an absorption shield. */
     LIFEFLOW {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            target.heal(2.0F + power * 0.15F);
-            target.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 200, 0));
+            target.heal(5.0F + power * 0.35F);
+            target.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 300, 1)); // 補 + 吸收 II 護盾
         }
     },
     /** 滋養: nourishing regeneration and saturation. */
     NOURISH {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            target.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 80, 0));
-            target.addEffect(new MobEffectInstance(MobEffects.SATURATION, 1, 0));
+            target.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 120, 1)); // 再生 II
+            target.addEffect(new MobEffectInstance(MobEffects.SATURATION, 2, 0));
         }
     },
 
