@@ -7,7 +7,6 @@ import com.github.nalamodikk.register.ModDataComponents;
 import com.github.nalamodikk.research.skill.SkillCasting;
 import com.github.nalamodikk.research.skill.SkillEffect;
 import com.github.nalamodikk.research.skill.SkillEncoding;
-import com.github.nalamodikk.research.skill.SkillRegistry;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -23,9 +22,9 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 /**
  * C2S: the player asks to cast the given skill.
  *
- * The server resolves the skill from {@link SkillRegistry}, checks and consumes
- * the player's aspects ({@link PlayerKnowledge}), then runs the effect. All
- * authority is server-side; the client only requests.
+ * The server resolves the selected skill encoded on the held wand's spell core,
+ * applies the dual cost model (aspect gate + wand mana), then runs the effect.
+ * All authority is server-side; the client only requests.
  */
 public record CastSkillPacket(ResourceLocation skillId) implements CustomPacketPayload {
 
@@ -49,10 +48,10 @@ public record CastSkillPacket(ResourceLocation skillId) implements CustomPacketP
             ItemStack wand = findCastingWand(player);
             if (wand.isEmpty()) return;
 
-            // Prefer the core's selected player-authored skill; fall back to the
-            // registry id the client sent (demo skills) when none is encoded.
+            // Only the core's selected player-authored skill can be cast. A core
+            // with no encoded skill (or no core) does nothing: the encoding bench
+            // is the sole source of skills, gating play through it by design.
             SkillEffect skill = SkillEncoding.resolveCastSkill(wand);
-            if (skill == null) skill = SkillRegistry.get(packet.skillId());
             if (skill == null) return;
 
             // Which core slot is selected (for per-slot cooldown); 0 for demo fallback.
