@@ -2,8 +2,8 @@ package com.github.nalamodikk.research.skill;
 
 import com.github.nalamodikk.common.item.wand.WandCoreData;
 import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeBehavior;
+import com.github.nalamodikk.common.network.packet.client.skill.SkillCooldownPacket;
 import com.github.nalamodikk.register.ModDataComponents;
-import com.github.nalamodikk.register.ModItems;
 import com.github.nalamodikk.research.knowledge.PlayerKnowledge;
 import com.github.nalamodikk.research.knowledge.ResearchSavedData;
 import net.minecraft.network.chat.Component;
@@ -30,11 +30,12 @@ public final class SkillCasting {
      * @return true if the skill was cast (mana spent + effect run), false if the
      *         aspect gate or mana check failed (a client message is shown).
      */
-    public static boolean tryCast(ServerPlayer caster, ItemStack wand, SkillEffect skill) {
+    public static boolean tryCast(ServerPlayer caster, ItemStack wand, SkillEffect skill, int slot) {
         if (!(caster.level() instanceof ServerLevel level)) return false;
 
-        // 0) cooldown: rate-limit so skills can't be spammed every tick
-        if (caster.getCooldowns().isOnCooldown(wand.getItem())) return false;
+        // 0) cooldown: this skill slot (and a short global gap) must be ready, so the
+        // player rotates skills instead of spamming one. See SkillCooldowns.
+        if (!SkillCooldowns.ready(caster, slot, level.getGameTime())) return false;
 
         SkillCost cost = skill.cost();
         ResearchSavedData data = ResearchSavedData.get(level);
@@ -59,11 +60,12 @@ public final class SkillCasting {
         }
         wand.set(ModDataComponents.MANA_STORED, stored - mana);
 
-        // 3) run, then cool down BOTH wand types so swapping hands can't bypass it
+        // 3) run, then start this slot's cooldown + a short global gap, and tell the
+        // client (for the HUD). Per-slot CD means other slots stay castable.
         skill.execute(new SkillContext(level, caster));
         int cd = effectiveCooldown(wand, cost.mana());
-        caster.getCooldowns().addCooldown(ModItems.WAND_ROD.get(), cd);
-        caster.getCooldowns().addCooldown(ModItems.WAND_ROD_ADVANCED.get(), cd);
+        SkillCooldowns.start(caster, slot, level.getGameTime(), cd);
+        SkillCooldownPacket.send(caster, slot, cd, SkillCooldowns.GLOBAL_COOLDOWN);
         return true;
     }
 

@@ -337,9 +337,8 @@ public enum WandCoreBehavior {
 
         @Override
         public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand, ItemStack wand) {
-            if (player.getCooldowns().isOnCooldown(wand.getItem())) {
-                return InteractionResultHolder.fail(wand); // still cooling down: no cast, no swing
-            }
+            // Per-skill cooldown is enforced server-side (SkillCooldowns); the client
+            // just requests and the server rejects casts that are still cooling down.
             if (level.isClientSide) {
                 // Generic: cast whichever skill the wand has selected. Defaults to the
                 // demo fireball until a selection UI sets SELECTED_SKILL.

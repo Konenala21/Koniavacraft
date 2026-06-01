@@ -1,7 +1,9 @@
 package com.github.nalamodikk.common.network.packet.server.skill;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.item.wand.WandCoreData;
 import com.github.nalamodikk.common.item.wand.WandRodItem;
+import com.github.nalamodikk.register.ModDataComponents;
 import com.github.nalamodikk.research.skill.SkillCasting;
 import com.github.nalamodikk.research.skill.SkillEffect;
 import com.github.nalamodikk.research.skill.SkillEncoding;
@@ -53,8 +55,12 @@ public record CastSkillPacket(ResourceLocation skillId) implements CustomPacketP
             if (skill == null) skill = SkillRegistry.get(packet.skillId());
             if (skill == null) return;
 
+            // Which core slot is selected (for per-slot cooldown); 0 for demo fallback.
+            WandCoreData data = wand.getOrDefault(ModDataComponents.WAND_CORE_DATA, WandCoreData.empty());
+            int slot = data.hasCore() ? data.core().getOrDefault(ModDataComponents.SELECTED_SKILL_INDEX, 0) : 0;
+
             // Dual cost model: aspects gate, wand mana is consumed. See SkillCasting.
-            SkillCasting.tryCast(player, wand, skill);
+            SkillCasting.tryCast(player, wand, skill, slot);
         });
     }
 

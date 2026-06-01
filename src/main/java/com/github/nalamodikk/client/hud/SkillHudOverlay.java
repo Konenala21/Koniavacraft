@@ -64,6 +64,15 @@ public final class SkillHudOverlay {
         drawCentered(g, mc, Component.literal(name), cx, baseY, ACCENT);
         drawCentered(g, mc, Component.translatable("hud.koniava.skill.info", idx + 1, skills.size(), mana),
                 cx, baseY + 10, 0xFFCCCCCC);
+
+        // cooldown bar (depletes as the selected slot recovers)
+        if (ClientSkillCooldowns.remaining(idx) > 0) {
+            int barW = 60;
+            int bx = cx - barW / 2, by = baseY + 21;
+            g.fill(bx - 1, by - 1, bx + barW + 1, by + 4, 0x80000000);
+            int fill = (int) (barW * ClientSkillCooldowns.fraction(idx));
+            g.fill(bx, by, bx + fill, by + 3, ACCENT);
+        }
     }
 
     private static void drawCentered(GuiGraphics g, Minecraft mc, Component text, int cx, int y, int color) {
