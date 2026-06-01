@@ -41,9 +41,11 @@ public class RecipeInferenceEngine {
         // Start Inference
         List<Aspect> result = infer(item, level, data.getGenomeSeed(), 0, new HashSet<>());
 
-        // Semantic name match before the generic fallback
+        // Semantic candidate pool + world-seed pick before the generic fallback:
+        // plausible aspects from the name, but which one varies per world.
         if (result.isEmpty()) {
-            result = SemanticAspectMatcher.match(id);
+            List<Aspect> pool = SemanticAspectMatcher.candidates(id, 5);
+            result = AspectExpression.seededPick(id, pool, data.getGenomeSeed(), 2);
         }
 
         // If result is empty, check Base Registry again as a safety fallback

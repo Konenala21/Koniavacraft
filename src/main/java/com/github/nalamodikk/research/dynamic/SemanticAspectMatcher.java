@@ -47,11 +47,35 @@ public final class SemanticAspectMatcher {
     private static Aspect[] aspects;        // aspectN
     private static float[][] aspectVecs;    // aspectN * dim, normalized
 
-    /** Top 1-2 aspects for this id by name semantics, or empty if unknown/unavailable. */
-    public static List<Aspect> match(ResourceLocation id) {
+    /**
+     * The top {@code topN} semantically-plausible aspects for this id (ranked by
+     * cosine, above the confidence floor). This is the candidate POOL: the world
+     * seed later picks from it (see AspectExpression), so every world stays
+     * sensible but varies which plausible aspect an item carries.
+     */
+    public static List<Aspect> candidates(ResourceLocation id, int topN) {
         ensureLoaded();
         if (!available) return List.of();
+        float[] q = queryVector(id);
+        if (q == null) return List.of();
 
+        // (aspect index, score) for everything above the floor, sorted desc.
+        List<int[]> ranked = new ArrayList<>();
+        float[] scores = new float[aspects.length];
+        for (int a = 0; a < aspects.length; a++) {
+            if (aspects[a] == null) continue;
+            float s = dot(q, aspectVecs[a]);
+            if (s >= FLOOR) { ranked.add(new int[]{a}); scores[a] = s; }
+        }
+        ranked.sort((x, y) -> Float.compare(scores[y[0]], scores[x[0]]));
+
+        List<Aspect> out = new ArrayList<>(Math.min(topN, ranked.size()));
+        for (int i = 0; i < ranked.size() && out.size() < topN; i++) out.add(aspects[ranked.get(i)[0]]);
+        return out;
+    }
+
+    /** Tokenize + average + normalize an id into a query vector, or null if no in-vocab tokens. */
+    private static float[] queryVector(ResourceLocation id) {
         float[] q = new float[dim];
         int n = 0;
         for (String token : tokenize(id)) {
@@ -61,7 +85,16 @@ public final class SemanticAspectMatcher {
             for (int d = 0; d < dim; d++) q[d] += vocabData[base + d] * scale;
             n++;
         }
-        if (n == 0 || !normalize(q)) return List.of();
+        return (n == 0 || !normalize(q)) ? null : q;
+    }
+
+    /** Top 1-2 aspects for this id by name semantics, or empty if unknown/unavailable. */
+    public static List<Aspect> match(ResourceLocation id) {
+        ensureLoaded();
+        if (!available) return List.of();
+
+        float[] q = queryVector(id);
+        if (q == null) return List.of();
 
         int best = -1, second = -1;
         float bestScore = -2f, secondScore = -2f;

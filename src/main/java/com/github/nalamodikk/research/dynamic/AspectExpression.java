@@ -58,6 +58,20 @@ public final class AspectExpression {
         return ordered.stream().limit(Math.min(count, maxAspects)).toList();
     }
 
+    /**
+     * Deal {@code maxAspects} from a semantic candidate pool using the world seed:
+     * the pool (from the word-vector matcher) is all semantically plausible, and the
+     * seed re-ranks it so every world keeps sensible aspects but varies which one an
+     * item carries. Always returns up to maxAspects when the pool is non-empty.
+     */
+    public static List<Aspect> seededPick(ResourceLocation id, List<Aspect> pool, long genomeSeed, int maxAspects) {
+        if (pool.isEmpty() || maxAspects <= 0) return List.of();
+        return pool.stream()
+                .sorted(Comparator.comparingLong(aspect -> -score(id, aspect, genomeSeed)))
+                .limit(maxAspects)
+                .toList();
+    }
+
     public static void addUnique(List<Aspect> aspects, Aspect aspect) {
         if (!aspects.contains(aspect)) {
             aspects.add(aspect);

@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -37,5 +38,22 @@ class SemanticAspectMatcherTest {
         Assumptions.assumeFalse(match("minecraft:ice").isEmpty(), "semantic table not present, skipping");
         // gibberish with no in-vocab tokens should yield no semantic guess
         assertTrue(match("koniava:zzqxv").isEmpty(), "gibberish -> empty");
+    }
+
+    @Test
+    void seededPickStaysWithinTheSemanticPool() {
+        ResourceLocation id = ResourceLocation.parse("minecraft:diamond_sword");
+        List<Aspect> pool = SemanticAspectMatcher.candidates(id, 5);
+        Assumptions.assumeFalse(pool.isEmpty(), "semantic table not present, skipping");
+
+        assertTrue(pool.contains(ModAspects.BLADE), "blade is a plausible candidate for a sword");
+
+        // different seeds may reorder, but the pick never invents anything outside the pool
+        List<Aspect> a = AspectExpression.seededPick(id, pool, 111L, 2);
+        List<Aspect> b = AspectExpression.seededPick(id, pool, 222L, 2);
+        assertTrue(a.size() <= 2 && b.size() <= 2, "picks at most 2");
+        assertTrue(pool.containsAll(a) && pool.containsAll(b), "picks stay within the semantic pool");
+        // deterministic for a given seed (reproducible per world)
+        assertEquals(a, AspectExpression.seededPick(id, pool, 111L, 2), "same seed -> same pick");
     }
 }
