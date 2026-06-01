@@ -231,7 +231,7 @@ public enum SkillEffectOp {
     /** 血氣: drains the target's life to the caster. */
     LIFESTEAL {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            if (caster != null && caster.isAlive()) caster.heal(Math.max(1.0F, power * 0.3F));
+            if (caster != null && caster.isAlive()) caster.heal(Math.max(1.0F, power * 0.4F)); // 吸血:傷害的 40%
         }
     },
     /** 生命: an instant heal (on the FLIGHT self-cast, that is the caster). */
