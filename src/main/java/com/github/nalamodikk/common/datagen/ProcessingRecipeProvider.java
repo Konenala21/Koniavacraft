@@ -28,18 +28,6 @@ public class ProcessingRecipeProvider {
      */
     public static void generate(RecipeOutput output) {
         // ============================================
-        // 🌊 清洗機配方（Washer Recipes）
-        // ============================================
-
-        // 礫石 → 沙粒
-        createProcessingRecipe(output, "washer/gravel_wash", "washer")
-                .input(Items.GRAVEL)
-                .output(Items.SAND, 1)
-                .manaCost(45)
-                .processingTime(80)
-                .save();
-
-        // ============================================
         // ✨ 富集機配方（Enricher Recipes）
         // ============================================
 
