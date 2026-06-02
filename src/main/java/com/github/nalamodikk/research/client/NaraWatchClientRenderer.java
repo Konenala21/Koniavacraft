@@ -40,8 +40,8 @@ public final class NaraWatchClientRenderer {
     private static final float WATCH_MODEL_X_ROT = 45.0F;
     private static final float WATCH_MODEL_Y_ROT = 181.0F;
     private static final float WATCH_MODEL_Z_ROT = 0.0F;
-    private static final float WATCH_MODEL_X = 0.04F;   // 往右(+X)
-    private static final float WATCH_MODEL_Y = -0.13F;  // 往下(-Y)
+    private static final float WATCH_MODEL_X = 0F;   // 往右(+X)
+    private static final float WATCH_MODEL_Y = -0.25F;  // 往下(-Y)
     private static final float WATCH_MODEL_Z = 0.45F;
 
     @SubscribeEvent

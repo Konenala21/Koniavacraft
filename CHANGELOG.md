@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Fixed Nara watch model position on the wrist (shifted down and centered).
+修正娜拉手錶在手腕上的位置（向下移並置中）。
+
 Six new skill carriers (ways to deliver a skill), bringing the total to 14. Nova (兌) bursts around you, hitting and lightly knocking back everything nearby, great for a melee/self-reaction build. Shockwave (坤) is a wide expanding ring with lighter damage but a strong outward shove, for crowd control. Earthwave (艮) sends a wave forward along the ground in a cone and pops grounded foes up. Lob (坎) throws an arcing grenade that falls under gravity and triggers on impact, good for hitting over cover. Meteor (離) drops a strike from the sky onto where you are aiming. Orbital (靈魄) summons spirit orbs that circle you for a while and pulse your skill's effect onto nearby enemies (more multishot = more orbs). Put the matching aspect in the carrier slot in the encoder to use them.
 新增五種技能載體（把技能送出去的方式），總數來到 13 種。環爆（兌）以你為中心爆發，打到並輕微擊退周圍所有敵人，適合近戰／自我反應流。衝擊波環（坤）是大範圍擴散環，傷害較低但有強力外推，適合控場。震波（艮）沿地面往前扇形推出一道波並把地面上的敵人掀起。拋物榴彈（坎）丟出受重力的拋物線手雷，落地觸發，適合越過掩體打。天降（離）對你瞄準的位置從天空砸下一擊。軌道靈球（靈魄）召喚繞著你轉一陣子的靈球，週期性把技能效果脈衝到附近敵人（多重發射＝更多顆）。在編碼台把對應本源放進載體槽就能用。
 
