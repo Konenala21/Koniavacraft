@@ -57,10 +57,12 @@ public class FloatingTurretProjectile extends ThrowableProjectile {
     // 預設空 / 0，所以一般浮游砲行為完全不變。
     private List<SkillEffectOp> skillOps = List.of();
     private float skillDamage = 0.0F;
+    private boolean skillPayload = false; // 是否為技能彈(支援技能傷害=0 也算,不能退回原生傷害)
 
     public FloatingTurretProjectile setSkillPayload(float damage, List<SkillEffectOp> ops) {
         this.skillDamage = damage;
         this.skillOps = ops;
+        this.skillPayload = true;
         return this;
     }
 
@@ -186,7 +188,7 @@ public class FloatingTurretProjectile extends ThrowableProjectile {
         }
 
         float ratio = getChargeRatio();
-        float dmg = skillDamage > 0 // 技能彈用自訂傷害；否則原生普通/蓄力傷害
+        float dmg = skillPayload // 技能彈用自訂傷害(含支援技能的 0 傷);否則原生普通/蓄力傷害
                 ? skillDamage
                 : (ratio > 0
                     ? CHARGED_DAMAGE_MIN + (CHARGED_DAMAGE_MAX - CHARGED_DAMAGE_MIN) * ratio

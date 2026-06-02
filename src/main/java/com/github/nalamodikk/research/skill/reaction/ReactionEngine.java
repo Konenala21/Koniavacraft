@@ -121,6 +121,8 @@ public final class ReactionEngine {
             ReactionRule.of(opName(SkillEffectOp.SHATTER), desc("shatter"), SkillEffectOp.SHATTER, COLD, FORCE),
             ReactionRule.chaining("reaction.koniava.conduction", desc("conduction"), NONE, 2, ELECTRIC, WATER),
             ReactionRule.of(opName(SkillEffectOp.OVERLOAD), desc("overload"), SkillEffectOp.OVERLOAD, ARCANE, METAL),
+            // 兩個奧能源(能量/奧術/晶化任兩個)也超載 — 保住舊的「能量+奧術」組合,別只靠晶化的金屬性質
+            ReactionRule.of(opName(SkillEffectOp.OVERLOAD), desc("overload"), SkillEffectOp.OVERLOAD, ARCANE, ARCANE),
             ReactionRule.of(opName(SkillEffectOp.DEATH_SIPHON), desc("death_siphon"), SkillEffectOp.DEATH_SIPHON, DARK, LIFE),
             ReactionRule.producing(opName(SkillEffectOp.WILDFIRE), desc("wildfire"), SkillEffectOp.WILDFIRE, ASH, HEAT, ORGANIC),
             ReactionRule.producing(opName(SkillEffectOp.STRONG_ACID), desc("strong_acid"), SkillEffectOp.STRONG_ACID, ACID_CLOUD, TOXIC, ACID),

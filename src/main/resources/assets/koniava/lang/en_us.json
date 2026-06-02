@@ -466,6 +466,7 @@
   "message.koniava.encode.no_core": "Place a spell core in the bench first.",
   "message.koniava.encode.invalid_recipe": "Invalid combination: check the carrier, effects, and modifiers.",
   "message.koniava.encode.not_owned": "You do not own all of these aspects yet.",
+  "message.koniava.encode.not_enough": "Not enough aspects to encode this skill (encoding consumes them; an aspect used in two slots costs double).",
   "message.koniava.encode.incomplete": "A skill needs a carrier and at least one effect.",
   "message.koniava.encode.wrong_role": "That aspect cannot go in this slot.",
   "message.koniava.encode.pick_slot": "Select a carrier/effect/modifier slot first, then pick an aspect.",

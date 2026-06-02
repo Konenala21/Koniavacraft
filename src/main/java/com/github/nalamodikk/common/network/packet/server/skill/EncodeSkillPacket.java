@@ -80,7 +80,7 @@ public record EncodeSkillPacket(String name, ResourceLocation carrier,
             // (casting later only spends mana). Verify enough, write, then consume + sync.
             if (!SkillEncoding.canAfford(knowledge, skill)) {
                 player.displayClientMessage(
-                        Component.translatable("message.koniava.encode.not_owned"), true);
+                        Component.translatable("message.koniava.encode.not_enough"), true);
                 return;
             }
 

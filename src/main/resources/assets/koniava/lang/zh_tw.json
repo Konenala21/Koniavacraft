@@ -493,6 +493,7 @@
   "message.koniava.encode.no_core": "請先在編碼台放入一個法術核心。",
   "message.koniava.encode.invalid_recipe": "組合無效：檢查載體、效果與修飾。",
   "message.koniava.encode.not_owned": "你還沒擁有全部這些本源。",
+  "message.koniava.encode.not_enough": "本源數量不足以編碼這個技能(編碼會消耗本源;同一本源用在兩個槽位算兩份)。",
   "message.koniava.encode.incomplete": "技能需要一個載體與至少一個效果。",
   "message.koniava.encode.wrong_role": "這個本源不能放進這個槽。",
   "message.koniava.encode.pick_slot": "先點上面的載體/效果/修飾槽，再點本源放進去。",
