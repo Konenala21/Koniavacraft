@@ -1,9 +1,11 @@
 package com.github.nalamodikk.common.entity;
 
+import com.mojang.logging.LogUtils;
 import net.minecraft.world.entity.AreaEffectCloud;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
+import org.slf4j.Logger;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -20,6 +22,7 @@ import java.util.Map;
  */
 public class ReactionCloud extends AreaEffectCloud {
 
+    private static final Logger LOGGER = LogUtils.getLogger();
     private static Field VICTIMS;
 
     private boolean ownerSkipInjected = false;
@@ -47,8 +50,12 @@ public class ReactionCloud extends AreaEffectCloud {
             }
             ((Map<Entity, Integer>) VICTIMS.get(this)).put(owner, Integer.MAX_VALUE); // 永不到期 -> 永遠跳過 owner
             ownerSkipInjected = true;
-        } catch (Exception ignored) {
-            ownerSkipInjected = true; // 反射失敗就退回 vanilla 行為,別每 tick 重試
+        } catch (Exception e) {
+            // 反射失敗(例如未來 mapping 改名 victims):退回 vanilla 行為(owner 會被自己的雲影響)。
+            // 出一次 warn,免得這種自傷回歸只能靠實機才發現。
+            LOGGER.warn("ReactionCloud owner-skip failed (AreaEffectCloud.victims reflection); "
+                    + "owner will be affected by their own hazard clouds", e);
+            ownerSkipInjected = true; // 別每 tick 重試
         }
     }
 }

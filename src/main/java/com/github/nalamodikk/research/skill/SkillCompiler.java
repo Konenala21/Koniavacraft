@@ -311,7 +311,7 @@ public final class SkillCompiler {
                 le.invulnerableTime = 0;
                 le.hurt(src, damage * 0.5F);
                 Vec3 d = le.position().subtract(from.position());
-                Vec3 dir = d.lengthSqr() > 1.0E-4 ? d.normalize() : new Vec3(0, 0, 1);
+                Vec3 dir = SkillTargeting.safeDir(d);
                 for (SkillEffectOp op : ops) op.applyTo(level, le, caster, dir, damage * 0.5F);
                 CarrierFx.chainSpark(level, le); // 視覺:連鎖火花
                 hit.add(le);
@@ -352,7 +352,7 @@ public final class SkillCompiler {
         for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
             Vec3 away = le.position().subtract(center);
             if (away.lengthSqr() > radius * radius) continue;
-            Vec3 dir = away.lengthSqr() > 1.0E-4 ? away.normalize() : new Vec3(0, 0, 1);
+            Vec3 dir = SkillTargeting.safeDir(away);
             le.invulnerableTime = 0;
             le.hurt(src, damage);
             le.setDeltaMovement(le.getDeltaMovement().add(dir.x * 0.5, 0.25, dir.z * 0.5));
@@ -375,7 +375,7 @@ public final class SkillCompiler {
         for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
             Vec3 away = le.position().subtract(center);
             if (away.lengthSqr() > radius * radius) continue;
-            Vec3 dir = away.lengthSqr() > 1.0E-4 ? away.normalize() : new Vec3(0, 0, 1);
+            Vec3 dir = SkillTargeting.safeDir(away);
             le.invulnerableTime = 0;
             le.hurt(src, damage * 0.7F);
             le.setDeltaMovement(dir.x * 1.3, 0.4, dir.z * 1.3); // 強力外推
@@ -393,7 +393,7 @@ public final class SkillCompiler {
         Vec3 origin = caster.position();
         Vec3 look = caster.getLookAngle();
         Vec3 flat = new Vec3(look.x, 0, look.z);
-        flat = flat.lengthSqr() > 1.0E-4 ? flat.normalize() : new Vec3(0, 0, 1);
+        flat = SkillTargeting.safeDir(flat);
         double range = 8.0;
         double coneCos = 0.55;
         DamageSource src = caster.damageSources().indirectMagic(caster, caster);

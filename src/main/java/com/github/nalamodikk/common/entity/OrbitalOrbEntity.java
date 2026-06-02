@@ -2,6 +2,7 @@ package com.github.nalamodikk.common.entity;
 
 import com.github.nalamodikk.register.ModEntities;
 import com.github.nalamodikk.research.skill.SkillEffectOp;
+import com.github.nalamodikk.research.skill.SkillTargeting;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -79,14 +80,16 @@ public class OrbitalOrbEntity extends Entity {
         setPos(x, c.y, z);
 
         if (level() instanceof ServerLevel sl) {
-            sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, x, c.y, z, 2, 0.04, 0.04, 0.04, 0.0);
-            sl.sendParticles(ParticleTypes.END_ROD, x, c.y, z, 1, 0.02, 0.02, 0.02, 0.0);
+            if (life % 2 == 0) { // 每 2 tick 噴一次粒子就夠順,省一半封包
+                sl.sendParticles(ParticleTypes.SOUL_FIRE_FLAME, x, c.y, z, 2, 0.04, 0.04, 0.04, 0.0);
+                sl.sendParticles(ParticleTypes.END_ROD, x, c.y, z, 1, 0.02, 0.02, 0.02, 0.0);
+            }
 
             if (life % PULSE_INTERVAL == 0) {
                 AABB box = new AABB(x - 2.0, c.y - 2.0, z - 2.0, x + 2.0, c.y + 2.0, z + 2.0);
                 for (LivingEntity le : sl.getEntitiesOfClass(LivingEntity.class, box, e -> e != owner && e.isAlive())) {
                     Vec3 diff = le.position().subtract(position());
-                    Vec3 dir = diff.lengthSqr() > 1.0E-4 ? diff.normalize() : new Vec3(0, 0, 1);
+                    Vec3 dir = SkillTargeting.safeDir(diff);
                     le.invulnerableTime = 0;
                     le.hurt(damageSources().indirectMagic(this, owner), damage);
                     for (SkillEffectOp op : ops) op.applyTo(sl, le, owner, dir, damage);
