@@ -3,6 +3,7 @@ package com.github.nalamodikk.register;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.entity.FloatingTurretEntity;
 import com.github.nalamodikk.common.entity.FloatingTurretProjectile;
+import com.github.nalamodikk.common.entity.OrbitalOrbEntity;
 import com.github.nalamodikk.common.entity.SpaceCrackEntity;
 import com.github.nalamodikk.common.entity.SpellProjectileEntity;
 import com.github.nalamodikk.common.entity.PlayerCloneEntity;
@@ -52,6 +53,15 @@ public class ModEntities {
                             .clientTrackingRange(10)
                             .updateInterval(2)
                             .build(KoniavacraftMod.MOD_ID + ":spell_projectile")
+            );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<OrbitalOrbEntity>> ORBITAL_ORB =
+            ENTITY_TYPES.register("orbital_orb", () ->
+                    EntityType.Builder.<OrbitalOrbEntity>of(OrbitalOrbEntity::new, MobCategory.MISC)
+                            .sized(0.4F, 0.4F)
+                            .clientTrackingRange(10)
+                            .updateInterval(2)
+                            .build(KoniavacraftMod.MOD_ID + ":orbital_orb")
             );
 
     public static final DeferredHolder<EntityType<?>, EntityType<SpaceCrackEntity>> SPACE_CRACK =

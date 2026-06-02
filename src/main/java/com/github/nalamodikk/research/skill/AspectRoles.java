@@ -95,7 +95,7 @@ public final class AspectRoles {
         put(ModAspects.QIAN,       SkillRole.MODIFIER); // 乾 大幅增威
         put(ModAspects.MECHANISM,  SkillRole.MODIFIER); // 精準/命中
         put(ModAspects.INSTRUMENT, SkillRole.MODIFIER); // 器具 精準
-        put(ModAspects.ANIMA,      SkillRole.MODIFIER); // 靈魄 -> 追蹤/homing
+        put(ModAspects.ANIMA,      SkillRole.MODIFIER, SkillRole.CARRIER); // 靈魄 -> 追蹤/homing / 載體=軌道靈球 Orbital
         put(ModAspects.AURA,       SkillRole.MODIFIER); // 光暈 範圍增益
         put(ModAspects.ALCHEMY,    SkillRole.MODIFIER); // 煉化/轉化
         put(ModAspects.CORPUS,     SkillRole.MODIFIER); // 軀體 -> 肉體強化(最大生命)

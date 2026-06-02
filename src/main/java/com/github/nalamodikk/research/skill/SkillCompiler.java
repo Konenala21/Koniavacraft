@@ -1,6 +1,7 @@
 package com.github.nalamodikk.research.skill;
 
 import com.github.nalamodikk.common.entity.FloatingTurretProjectile;
+import com.github.nalamodikk.common.entity.OrbitalOrbEntity;
 import com.github.nalamodikk.common.entity.SpellProjectileEntity;
 import com.github.nalamodikk.research.aspect.Aspect;
 import com.github.nalamodikk.research.aspect.ModAspects;
@@ -212,6 +213,13 @@ public final class SkillCompiler {
                     level.addFreshEntity(p);
                 }
                 level.playSound(null, caster.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 0.9F, 0.7F);
+            } else if (carrier == ModAspects.ANIMA) {
+                // 靈魄 ORBITAL:召數顆繞著施放者轉的靈球,持續脈衝效果(count 多 = 更多顆)
+                int orbs = count + 1;
+                for (int i = 0; i < orbs; i++) {
+                    OrbitalOrbEntity.spawn(level, caster, dmg, finalOps, (Math.PI * 2 * i) / orbs, 200);
+                }
+                level.playSound(null, caster.blockPosition(), SoundEvents.AMETHYST_BLOCK_CHIME, SoundSource.PLAYERS, 0.9F, 1.2F);
             } else if (carrier == ModAspects.MACHINE) {
                 // 機械載體：發射浮游砲子彈，帶技能傷害 + 命中效果 ops。
                 // 機械+火=火砲彈、機械+霜=冰砲彈、機械+凋零=腐蝕砲彈，效果本源決定砲彈變種。

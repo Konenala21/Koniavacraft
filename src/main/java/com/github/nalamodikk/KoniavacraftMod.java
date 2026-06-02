@@ -117,6 +117,7 @@ public class KoniavacraftMod {
                     e.registerEntityRenderer(ModEntities.FLOATING_TURRET.get(), FloatingTurretRenderer::new);
                     e.registerEntityRenderer(ModEntities.FLOATING_TURRET_PROJECTILE.get(), FloatingTurretProjectileRenderer::new);
                     e.registerEntityRenderer(ModEntities.SPELL_PROJECTILE.get(), NoopRenderer::new);
+                    e.registerEntityRenderer(ModEntities.ORBITAL_ORB.get(), NoopRenderer::new);
                     e.registerEntityRenderer(ModEntities.SPACE_CRACK.get(), SpaceCrackRenderer::new);
                     e.registerEntityRenderer(ModEntities.PLAYER_CLONE.get(), PlayerCloneRenderer::new);
                     e.registerEntityRenderer(ModEntities.NARA_PHANTOM.get(), NaraPhantomRenderer::new);
