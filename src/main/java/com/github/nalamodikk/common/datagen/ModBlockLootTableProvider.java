@@ -105,6 +105,7 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         dropSelf(ModBlocks.MANA_PLATE_PRESS.get());
         dropSelf(ModBlocks.SKILL_ENCODER.get());
         dropSelf(ModBlocks.RESEARCH_TABLE.get());
+        dropSelf(ModBlocks.ASPECT_RESEARCH_DESK.get()); // 本源交易站(村民職業方塊)
         dropSelf(ModBlocks.MANA_DEPLOYER.get());
         dropSelf(ModBlocks.ASPECT_ALTAR.get());
         dropSelf(ModBlocks.ASPECT_PEDESTAL.get());
