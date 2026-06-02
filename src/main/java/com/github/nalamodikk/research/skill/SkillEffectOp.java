@@ -2,12 +2,14 @@ package com.github.nalamodikk.research.skill;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import com.github.nalamodikk.common.entity.ReactionCloud;
 import com.github.nalamodikk.common.entity.control.TurretControlHelper;
 import com.github.nalamodikk.research.skill.reaction.ReactionFx;
 import com.github.nalamodikk.register.ModMobEffects;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -586,6 +588,7 @@ public enum SkillEffectOp {
                 le.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 140, 1));
                 le.setRemainingFireTicks(60);
             }
+            lingerCloud(level, target, caster, new MobEffectInstance(MobEffects.POISON, 80, 1), 4.0F, 160); // 留毒火地形
         }
     },
     /** 聖核爆 (radiance + dark + energy): a holy nova, a massive burst to all nearby. */
@@ -763,6 +766,7 @@ public enum SkillEffectOp {
                 le.addEffect(new MobEffectInstance(MobEffects.POISON, 160, 2));
                 le.addEffect(new MobEffectInstance(MobEffects.WITHER, 100, 1));
             }
+            lingerCloud(level, target, caster, new MobEffectInstance(MobEffects.POISON, 80, 1), 3.0F, 140); // 留病雲
         }
     },
     /** 腐生 (dark + organic): rotting bloom, wither spreading over an area. */
@@ -885,6 +889,7 @@ public enum SkillEffectOp {
                 le.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 80, 0));
                 TurretControlHelper.applySkillControl(le, ModMobEffects.DAZE, 80, 0);
             }
+            lingerCloud(level, target, caster, new MobEffectInstance(MobEffects.BLINDNESS, 60, 0), 4.0F, 120); // 留灰雲
         }
     },
 
@@ -952,6 +957,7 @@ public enum SkillEffectOp {
             for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
                 le.addEffect(new MobEffectInstance(MobEffects.POISON, 120, 0));
             }
+            lingerCloud(level, target, caster, new MobEffectInstance(MobEffects.POISON, 60, 0), 3.0F, 120); // 留污水池
         }
     },
     /** 稀釋酸 (water + acid): a washing acid splash, weakness over an area. */
@@ -1292,5 +1298,19 @@ public enum SkillEffectOp {
             Vec3 pull = c.subtract(item.position());
             if (pull.lengthSqr() > 0.04) item.setDeltaMovement(pull.normalize().scale(0.5));
         }
+    }
+
+    /** 在 at 留一團 owner-免疫的危險雲(瘟疫/灰燼/污水的地形效果)。施放者站進去不會被影響。 */
+    private static void lingerCloud(ServerLevel level, LivingEntity at, @Nullable LivingEntity caster,
+                                    MobEffectInstance effect, float radius, int duration) {
+        ReactionCloud cloud = new ReactionCloud(level, at.getX(), at.getY(), at.getZ());
+        cloud.setRadius(radius);
+        cloud.setDuration(duration);
+        cloud.setRadiusOnUse(-0.1F);
+        cloud.setWaitTime(5);
+        cloud.setParticle(ParticleTypes.SNEEZE);
+        if (caster != null) cloud.setOwner(caster); // ReactionCloud 會跳過 owner
+        cloud.addEffect(effect);
+        level.addFreshEntity(cloud);
     }
 }
