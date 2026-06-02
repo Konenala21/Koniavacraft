@@ -65,6 +65,12 @@ public class ResearchTableScreen extends AbstractContainerScreen<ResearchTableMe
         beginButton.active = menu.isReadyToResearch();
     }
 
+    /** 用便宜的暗色覆蓋取代 vanilla 開介面的 blur post-effect(每次開都會 hitch),跟其他自訂介面一致。 */
+    @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        graphics.fill(0, 0, width, height, 0x55000000);
+    }
+
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
         RenderSystem.setShaderColor(GUI_TINT_R, GUI_TINT_G, GUI_TINT_B, 1.0F);
