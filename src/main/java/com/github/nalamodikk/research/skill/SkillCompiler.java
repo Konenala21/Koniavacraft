@@ -186,6 +186,32 @@ public final class SkillCompiler {
                 for (int i = 0; i < count; i++) castShockwave(level, caster, dmg, finalOps, chainCount);
             } else if (carrier == ModAspects.GEN) {
                 for (int i = 0; i < count; i++) castEarthwave(level, caster, dmg, finalOps, chainCount);
+            } else if (carrier == ModAspects.KAN) {
+                // 坎 LOB:拋物線手雷,受重力,落地/命中觸發 ops
+                Vec3 lookL = caster.getLookAngle();
+                for (int i = 0; i < count; i++) {
+                    Vec3 dir = count == 1 ? lookL : spread(lookL, i, count);
+                    SpellProjectileEntity p = SpellProjectileEntity.shoot(level, caster, dir, dmg, finalOps,
+                            pierce, homing, chainCount, projSpeed, projLife, projKnock);
+                    p.setNoGravity(false);
+                    p.setDeltaMovement(dir.scale(projSpeed * 0.6).add(0.0, 0.45, 0.0)); // 上拋弧線
+                    level.addFreshEntity(p);
+                }
+                level.playSound(null, caster.blockPosition(), SoundEvents.SNOWBALL_THROW, SoundSource.PLAYERS, 0.9F, 0.8F);
+            } else if (carrier == ModAspects.LI) {
+                // 離 METEOR:在瞄準點上空生成,向下砸
+                Vec3 lookM = caster.getLookAngle();
+                Vec3 aim = caster.getEyePosition().add(lookM.scale(10.0));
+                for (int i = 0; i < count; i++) {
+                    double ox = (i - (count - 1) / 2.0) * 1.6;
+                    SpellProjectileEntity p = SpellProjectileEntity.shoot(level, caster, new Vec3(0, -1, 0), dmg, finalOps,
+                            pierce, homing, chainCount, projSpeed, projLife, projKnock);
+                    p.setPos(aim.x + ox, aim.y + 14.0, aim.z);
+                    p.setNoGravity(false);
+                    p.setDeltaMovement(0.0, -projSpeed * 1.2, 0.0);
+                    level.addFreshEntity(p);
+                }
+                level.playSound(null, caster.blockPosition(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 0.9F, 0.7F);
             } else if (carrier == ModAspects.MACHINE) {
                 // 機械載體：發射浮游砲子彈，帶技能傷害 + 命中效果 ops。
                 // 機械+火=火砲彈、機械+霜=冰砲彈、機械+凋零=腐蝕砲彈，效果本源決定砲彈變種。

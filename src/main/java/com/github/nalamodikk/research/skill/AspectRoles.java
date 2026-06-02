@@ -52,7 +52,7 @@ public final class AspectRoles {
         // ── Effects (payload) ────────────────────────────────────────────────
         put(ModAspects.PHLOGISTON, SkillRole.EFFECT);  // 燃燒/點燃
         put(ModAspects.MAGMA,      SkillRole.EFFECT);  // 岩漿灼燒
-        put(ModAspects.LI,         SkillRole.EFFECT);  // 離 火傷
+        put(ModAspects.LI,         SkillRole.EFFECT, SkillRole.CARRIER);  // 離 火傷 / 載體=天降 Meteor
         put(ModAspects.VAPOR,      SkillRole.EFFECT);  // 蒸汽範圍
         put(ModAspects.STEAM,      SkillRole.EFFECT);  // 蒸汽
         put(ModAspects.FURNACE,    SkillRole.EFFECT);  // 爐火灼燒
@@ -66,7 +66,7 @@ public final class AspectRoles {
         put(ModAspects.LIFEFLOW,   SkillRole.EFFECT);  // 補血/再生
         put(ModAspects.NOURISH,    SkillRole.EFFECT);  // 再生
         put(ModAspects.VITAE,      SkillRole.EFFECT);  // 血氣 -> 吸血
-        put(ModAspects.KAN,        SkillRole.EFFECT);  // 坎 水傷
+        put(ModAspects.KAN,        SkillRole.EFFECT, SkillRole.CARRIER);  // 坎 水傷 / 載體=拋物榴彈 Lob
         put(ModAspects.DUI,        SkillRole.EFFECT, SkillRole.CARRIER);  // 兌 水 / 載體=環爆 Nova
         put(ModAspects.GROWTH,     SkillRole.EFFECT);  // 藤蔓纏繞
         put(ModAspects.STORM,      SkillRole.EFFECT);  // 風暴範圍
