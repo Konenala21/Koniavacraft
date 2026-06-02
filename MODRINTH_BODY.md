@@ -124,3 +124,9 @@ No corporate roadmap. No forced release schedule. Just experimenting, learning, 
 Licensed under LGPL-3.0.
 
 Bug reports and feedback are always welcome.
+
+## Credits
+
+**Art contributions**
+
+- **Bksesame** — Nara watch 3D model and texture, training dummy (cactus) model, texture, and animations

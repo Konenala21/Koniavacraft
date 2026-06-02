@@ -139,11 +139,8 @@ public class AspectSynthesisJEIPlugin implements IModPlugin {
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
         registration.addRecipeClickArea(AspectSynthesisScreen.class, 108, 8, 28, 20,
                 AspectSynthesisRecipeCategory.RECIPE_TYPE);
-        // Skill Encoder 右側空白區 → 本源合成分頁
-        registration.addRecipeClickArea(SkillEncoderScreen.class, 172, 36, 55, 36,
-                AspectSynthesisRecipeCategory.RECIPE_TYPE);
-        // Skill Encoder 右側空白區下半 → 本源反應分頁
-        registration.addRecipeClickArea(SkillEncoderScreen.class, 172, 74, 55, 20,
+        // Skill Encoder 右側空白區 → 本源反應分頁
+        registration.addRecipeClickArea(SkillEncoderScreen.class, 172, 36, 55, 58,
                 ReactionCategory.RECIPE_TYPE);
     }
 }
