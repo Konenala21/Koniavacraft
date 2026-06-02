@@ -66,7 +66,6 @@ public final class TrainingDummyHudOverlay {
         Font font = mc.font;
         int sw = mc.getWindow().getGuiScaledWidth();
         int sh = mc.getWindow().getGuiScaledHeight();
-        int baseY = sh * 3 / 5;
 
         if (active) {
             double elapsedSec = (System.currentTimeMillis() - clientStartMs) / 1000.0;
@@ -87,14 +86,14 @@ public final class TrainingDummyHudOverlay {
                         : name;
                 lines.add(new Line(line, COLOR_EFFECT));
             }
-            drawPanel(g, font, sw, baseY,
+            drawPanel(g, font, sw, sh,
                     Component.translatable("koniava.hud.training_dummy.title"),
                     lines.toArray(new Line[0]));
         } else if (summary) {
             if (System.currentTimeMillis() >= summaryUntilMs) { summary = false; return; }
             double durSec = serverDurationTicks / 20.0;
             double dps = durSec > 0.1 ? totalDamage / durSec : 0;
-            drawPanel(g, font, sw, baseY,
+            drawPanel(g, font, sw, sh,
                     Component.translatable("koniava.hud.training_dummy.summary_title"),
                     new Line[]{
                             new Line(Component.translatable("koniava.hud.training_dummy.damage",
@@ -109,24 +108,30 @@ public final class TrainingDummyHudOverlay {
 
     private record Line(Component text, int color) {}
 
-    private static void drawPanel(GuiGraphics g, Font font, int sw, int baseY, Component title, Line[] lines) {
+    // 熱鍵欄 + 血條 + 底部 UI 的安全間距（像素）
+    private static final int HOTBAR_CLEARANCE = 60;
+
+    private static void drawPanel(GuiGraphics g, Font font, int sw, int sh, Component title, Line[] lines) {
         int lineH = font.lineHeight + 2;
-        int titleW = font.width(title);
-        int maxW = titleW;
+        int maxW = font.width(title);
         for (Line l : lines) maxW = Math.max(maxW, font.width(l.text()));
         int pad = 4;
         int panelW = maxW + pad * 2;
         int panelH = lineH * (lines.length + 1) + pad * 2;
-        int panelX = (sw - panelW) / 2;
 
-        g.fill(panelX, baseY - pad, panelX + panelW, baseY - pad + panelH, PANEL_BG);
+        // X：畫面寬度的 1/6，小視窗等比例縮放，大視窗也不會跑太遠
+        int panelX = sw / 6;
+        // Y：從底部往上推，確保不蓋到熱鍵欄
+        int panelTop = sh - HOTBAR_CLEARANCE - panelH;
+        int textX = panelX + pad;
 
-        int y = baseY;
-        g.drawString(font, title, (sw - titleW) / 2, y, COLOR_TITLE, false);
+        g.fill(panelX, panelTop, panelX + panelW, panelTop + panelH, PANEL_BG);
+
+        int y = panelTop + pad;
+        g.drawString(font, title, textX, y, COLOR_TITLE, false);
         y += lineH;
         for (Line l : lines) {
-            int w = font.width(l.text());
-            g.drawString(font, l.text(), (sw - w) / 2, y, l.color(), false);
+            g.drawString(font, l.text(), textX, y, l.color(), false);
             y += lineH;
         }
     }
