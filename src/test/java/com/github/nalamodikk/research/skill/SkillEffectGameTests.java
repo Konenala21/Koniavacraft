@@ -10,6 +10,7 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.AreaEffectCloud;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.monster.Zombie;
@@ -207,6 +208,49 @@ public class SkillEffectGameTests {
                     helper.fail("explosion damage rose with distance: " + dists[i] + "m took more than " + dists[i - 1] + "m");
                     return;
                 }
+            }
+            helper.succeed();
+        });
+    }
+
+    /**
+     * Flight self-blast self-damage measurement: a Flight cast puts the effect on the caster
+     * (target == caster), so the explosion's source-exclusion would spare them; safeExplode instead
+     * deals explicit self-damage = radius * SELF_BLAST_DAMAGE_PER_RADIUS (a different path from the
+     * AoE falloff). Measures the actual self-damage at a few power levels and logs the table. Each
+     * cast uses a fresh isolated mock player (removed before the next) so no cast's blast contaminates
+     * another's reading. Asserts the self-blast hurts and scales up with power.
+     */
+    @GameTest(template = "empty", templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 40)
+    public static void flightSelfBlastDamageByPower(GameTestHelper helper) {
+        helper.runAtTickTime(2, () -> {
+            var level = helper.getLevel();
+            float[] powers = {10.0F, 18.0F, 36.0F, 57.0F};
+            float[] selfDmg = new float[powers.length];
+            StringBuilder table = new StringBuilder("[SelfBlastDmg] ENERGY flight self-cast (radius * 2.0): ");
+            for (int i = 0; i < powers.length; i++) {
+                Player caster = helper.makeMockPlayer(GameType.SURVIVAL);
+                caster.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1000.0);
+                Vec3 pos = helper.absoluteVec(new Vec3(5, 2, 5));
+                caster.setPos(pos.x, pos.y, pos.z);
+                caster.setHealth(1000.0F);
+                level.addFreshEntity(caster);
+                float before = caster.getHealth();
+                SkillEffectOp.ENERGY.apply(level, caster, caster, new Vec3(1, 0, 0), powers[i]); // target == caster
+                selfDmg[i] = before - caster.getHealth();
+                float radius = Math.min(8.0F, 2.0F + powers[i] * 0.09F);
+                table.append(String.format("power=%.0f(r=%.2f)=%.1f  ", powers[i], radius, selfDmg[i]));
+                caster.remove(Entity.RemovalReason.DISCARDED);
+            }
+            LOGGER.warn(table.toString());
+
+            if (selfDmg[0] <= 0.0F) {
+                helper.fail("Flight self-blast dealt no self-damage");
+                return;
+            }
+            if (selfDmg[powers.length - 1] <= selfDmg[0]) {
+                helper.fail("Flight self-blast self-damage did not scale up with power");
+                return;
             }
             helper.succeed();
         });
