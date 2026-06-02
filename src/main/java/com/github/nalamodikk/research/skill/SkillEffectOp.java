@@ -3,13 +3,17 @@ package com.github.nalamodikk.research.skill;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import com.github.nalamodikk.common.entity.control.TurretControlHelper;
+import com.github.nalamodikk.research.skill.reaction.ReactionFx;
 import com.github.nalamodikk.register.ModMobEffects;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.world.entity.AreaEffectCloud;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.LightningBolt;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -550,6 +554,7 @@ public enum SkillEffectOp {
                 le.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 140, 1));
                 le.setRemainingFireTicks(60);
             }
+            lingerCloud(level, target, new MobEffectInstance(MobEffects.POISON, 80, 1), 4.0F, 160); // 留毒火地形
         }
     },
     /** 聖核爆 (radiance + dark + energy): a holy nova, a massive burst to all nearby. */
@@ -633,6 +638,7 @@ public enum SkillEffectOp {
                 le.setDeltaMovement(le.getDeltaMovement().add(pull.x * 0.25, 0.1, pull.z * 0.25));
                 le.hurtMarked = true;
             }
+            vacuumItems(level, target, 4.5); // 奇點:把掉落物也吸進來
             level.explode(caster, center.x, center.y + target.getBbHeight() * 0.5, center.z,
                     Math.min(7.0F, 3.0F + power * 0.06F), Level.ExplosionInteraction.NONE);
         }
@@ -661,6 +667,7 @@ public enum SkillEffectOp {
                     le.hurtMarked = true;
                 }
             }
+            vacuumItems(level, target, 4.5); // 磁力:也吸金屬掉落物
         }
     },
     /** 怨雷 (electric + dark): spiteful lightning, a soul-burning shock (then chains). */
@@ -714,6 +721,7 @@ public enum SkillEffectOp {
                 le.addEffect(new MobEffectInstance(MobEffects.POISON, 160, 2));
                 le.addEffect(new MobEffectInstance(MobEffects.WITHER, 100, 1));
             }
+            lingerCloud(level, target, new MobEffectInstance(MobEffects.POISON, 80, 1), 3.0F, 140); // 留病雲
         }
     },
     /** 腐生 (dark + organic): rotting bloom, wither spreading over an area. */
@@ -827,6 +835,7 @@ public enum SkillEffectOp {
                 le.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 80, 0));
                 TurretControlHelper.applySkillControl(le, ModMobEffects.DAZE, 80, 0);
             }
+            lingerCloud(level, target, new MobEffectInstance(MobEffects.BLINDNESS, 60, 0), 4.0F, 120); // 留灰雲
         }
     },
 
@@ -859,6 +868,7 @@ public enum SkillEffectOp {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             TurretControlHelper.applySkillControl(target, ModMobEffects.CHILL, 140, 4);
             target.setTicksFrozen(target.getTicksRequiredToFreeze() + 160);
+            TurretControlHelper.applySkillControl(target, ModMobEffects.ROOT, 40, 0); // 凍住:短暫完全不能動
         }
     },
     /** 冰蝕 (cold + acid): frost-brittle armor, chill plus vulnerability. */
@@ -890,6 +900,7 @@ public enum SkillEffectOp {
             for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
                 le.addEffect(new MobEffectInstance(MobEffects.POISON, 120, 0));
             }
+            lingerCloud(level, target, new MobEffectInstance(MobEffects.POISON, 60, 0), 3.0F, 120); // 留污水池
         }
     },
     /** 稀釋酸 (water + acid): a washing acid splash, weakness over an area. */
@@ -1191,9 +1202,34 @@ public enum SkillEffectOp {
     public void applyTo(ServerLevel level, LivingEntity target,
                         @Nullable LivingEntity caster, Vec3 dir, float power) {
         apply(level, target, caster, dir, power);
-        if (isReaction()
-                && target instanceof com.github.nalamodikk.common.entity.TrainingDummyEntity dummy) {
-            dummy.recordReaction(translationKey());
+        if (isReaction()) {
+            ReactionFx.spawn(level, target, this); // 每個反應的專屬粒子簽名
+            if (target instanceof com.github.nalamodikk.common.entity.TrainingDummyEntity dummy) {
+                dummy.recordReaction(translationKey());
+            }
+        }
+    }
+
+    // ── Tier C 共用機制 ──
+    /** 留一團持續 AreaEffectCloud 在地上(雲類反應的「危險地形」)。 */
+    private static void lingerCloud(ServerLevel level, LivingEntity at, MobEffectInstance effect,
+                                    float radius, int duration) {
+        AreaEffectCloud cloud = new AreaEffectCloud(level, at.getX(), at.getY(), at.getZ());
+        cloud.setRadius(radius);
+        cloud.setDuration(duration);
+        cloud.setRadiusOnUse(-0.1F);
+        cloud.setWaitTime(5);
+        cloud.setParticle(ParticleTypes.SNEEZE);
+        cloud.addEffect(effect);
+        level.addFreshEntity(cloud);
+    }
+
+    /** 把附近掉落物吸向中心(奇點機制)。 */
+    private static void vacuumItems(ServerLevel level, LivingEntity center, double radius) {
+        Vec3 c = center.position();
+        for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, center.getBoundingBox().inflate(radius))) {
+            Vec3 pull = c.subtract(item.position());
+            if (pull.lengthSqr() > 0.04) item.setDeltaMovement(pull.normalize().scale(0.5));
         }
     }
 }
