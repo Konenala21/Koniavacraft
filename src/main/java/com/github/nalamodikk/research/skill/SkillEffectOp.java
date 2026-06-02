@@ -282,7 +282,7 @@ public enum SkillEffectOp {
      *  a grenade into a nuke. Any carrier + energy becomes its explosive variant. */
     ENERGY {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            float radius = Math.min(7.0F, 2.0F + power * 0.06F);
+            float radius = Math.min(8.0F, 2.0F + power * 0.09F);
             safeExplode(level, caster, target, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
         }
     },
@@ -424,7 +424,7 @@ public enum SkillEffectOp {
                 target.invulnerableTime = 0;
                 target.hurt(level.damageSources().magic(), 4.0F + power * 0.4F); // 引爆毒氣
             }
-            float radius = Math.min(8.0F, 3.0F + power * 0.07F);
+            float radius = Math.min(9.0F, 3.0F + power * 0.105F);
             safeExplode(level, caster, target, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
             target.setRemainingFireTicks(80);
         }
@@ -460,7 +460,7 @@ public enum SkillEffectOp {
                 target.invulnerableTime = 0;
                 target.hurt(level.damageSources().magic(), 4.0F + power * 0.3F);
             }
-            float radius = Math.min(9.0F, 4.0F + power * 0.08F);
+            float radius = Math.min(10.0F, 4.0F + power * 0.12F);
             safeExplode(level, caster, target, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
         }
     },
@@ -570,7 +570,7 @@ public enum SkillEffectOp {
     /** 熱核 (fire + energy + lightning): a thermonuclear blast, the biggest explosion. */
     THERMONUCLEAR {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            float radius = Math.min(10.0F, 5.0F + power * 0.09F);
+            float radius = Math.min(11.0F, 5.0F + power * 0.135F);
             safeExplode(level, caster, target, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
             target.setRemainingFireTicks(120);
         }
@@ -656,7 +656,7 @@ public enum SkillEffectOp {
                 target.invulnerableTime = 0;
                 target.hurt(level.damageSources().magic(), 3.0F + power * 0.25F);
             }
-            float radius = Math.min(7.0F, 3.0F + power * 0.06F);
+            float radius = Math.min(8.0F, 3.0F + power * 0.09F);
             safeExplode(level, caster, target, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
             Vec3 away = safeDir(dir);
             target.setDeltaMovement(away.x * 1.6, 0.6, away.z * 1.6);
@@ -749,7 +749,7 @@ public enum SkillEffectOp {
                 target.invulnerableTime = 0;
                 target.hurt(level.damageSources().magic(), 4.0F + power * 0.35F); // 聖光剋不死
             }
-            float radius = Math.min(8.0F, 3.5F + power * 0.07F);
+            float radius = Math.min(9.0F, 3.5F + power * 0.105F);
             safeExplode(level, caster, target, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
             target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0));
         }
@@ -778,7 +778,7 @@ public enum SkillEffectOp {
     /** 虛能爆 (dark + arcane): a void surge, a heavy dark detonation plus wither. */
     VOID_SURGE {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            float radius = Math.min(8.0F, 3.5F + power * 0.07F);
+            float radius = Math.min(9.0F, 3.5F + power * 0.105F);
             safeExplode(level, caster, target, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
             target.addEffect(new MobEffectInstance(MobEffects.WITHER, 100, 1));
         }
@@ -873,7 +873,7 @@ public enum SkillEffectOp {
     /** 氫爆 (volatile + heat): the dissolved-metal gas ignites, an explosion. */
     HYDROGEN_BLAST {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            float radius = Math.min(9.0F, 4.0F + power * 0.08F);
+            float radius = Math.min(10.0F, 4.0F + power * 0.12F);
             safeExplode(level, caster, target, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
         }
     },
