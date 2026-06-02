@@ -7,6 +7,9 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
@@ -39,6 +42,10 @@ public class TrainingDummyEntity extends Mob {
     private static final float DUMMY_MAX_HEALTH = 1_000_000.0F;
     // 10 秒沒再打就退出戰鬥狀態
     public static final int SESSION_TIMEOUT_TICKS = 200;
+
+    // hit 動畫計時器（ticks）：被打時設為 7（≈0.33s），每 tick -1，同步給 client 驅動動畫
+    private static final EntityDataAccessor<Integer> HIT_ANIM_TICKS =
+            SynchedEntityData.defineId(TrainingDummyEntity.class, EntityDataSerializers.INT);
 
     private static final class Session {
         double totalDamage = 0;
@@ -74,6 +81,16 @@ public class TrainingDummyEntity extends Mob {
         super(type, level);
         this.setPersistenceRequired();
         this.setNoAi(true);
+    }
+
+    @Override
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(HIT_ANIM_TICKS, 0);
+    }
+
+    public int getHitAnimTime() {
+        return this.entityData.get(HIT_ANIM_TICKS);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -140,12 +157,15 @@ public class TrainingDummyEntity extends Mob {
         s.totalDamage += finalDamage;
         s.hitCount++;
         s.lastHitTick = now;
+        this.entityData.set(HIT_ANIM_TICKS, 7); // 觸發 hit 動畫（≈0.33s）
         sendStats(player, s, false);
     }
 
     @Override
     public void tick() {
         super.tick();
+        int hitTicks = this.entityData.get(HIT_ANIM_TICKS);
+        if (hitTicks > 0) this.entityData.set(HIT_ANIM_TICKS, hitTicks - 1);
         if (!(level() instanceof ServerLevel serverLevel)) return;
         if (sessions.isEmpty()) return;
 

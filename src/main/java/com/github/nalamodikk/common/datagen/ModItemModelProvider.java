@@ -60,9 +60,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         // 研究系統物品：借用 vanilla 貼圖
         withExistingParent(ModItems.RESEARCH_NOTE.getId().getPath(),
                 ResourceLocation.withDefaultNamespace("item/paper"));
-        // 娜拉全息手錶：貼圖未完成前借用 vanilla compass
-        withExistingParent(ModItems.NARA_WATCH.getId().getPath(),
-                ResourceLocation.withDefaultNamespace("item/compass"));
         // 訓練假人放置物：使用自訂貼圖
         withExistingParent(ModItems.TRAINING_DUMMY.getId().getPath(),
                 ResourceLocation.parse("item/generated"))
