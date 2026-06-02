@@ -42,6 +42,7 @@ import com.github.nalamodikk.client.renderer.armor.ManaShieldEffectRenderer;
 import com.github.nalamodikk.client.renderer.turret.TurretHitEffectManager;
 import com.github.nalamodikk.client.renderer.turret.TurretHitEffectRenderer;
 import com.github.nalamodikk.client.renderer.ManaStrikeShaderRenderer;
+import com.github.nalamodikk.client.renderer.ShockwaveRenderer;
 import com.github.nalamodikk.client.renderer.OrbitalTestShaderRenderer;
 import com.github.nalamodikk.research.client.ClientResearchCache;
 import com.github.nalamodikk.narasystem.nara.hud.NaraFirstLoginFlow;
@@ -227,6 +228,7 @@ public class ClientTickHandler {
         AltarExplosionRenderer.release();
         AltarCameraController.reset();
         ManaStrikeShaderRenderer.release();
+        ShockwaveRenderer.release();
         OrbitalTestShaderRenderer.release();
         FourierCurveRenderer.release();
         MagicCircleRenderer.release();

@@ -6,5 +6,5 @@ package com.github.nalamodikk.research.skill.fx;
  * 加新 shader 載體就在這加一項。
  */
 public enum CarrierFxType {
-    SHOCKWAVE // 坤:衝擊波環 -> ManaStrikeShaderRenderer 的擴散環
+    SHOCKWAVE // 坤:衝擊波環 -> 專屬 ShockwaveRenderer(獨立,不共用 ManaStrike)
 }

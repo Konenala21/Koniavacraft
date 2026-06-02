@@ -2,29 +2,7 @@ package com.github.nalamodikk;
 
 import com.github.nalamodikk.biome.BiomeTerrainRegistration;
 import com.github.nalamodikk.common.particle.FormationEffectManager;
-import com.github.nalamodikk.client.particle.ClientInteractiveFormationManager;
-import com.github.nalamodikk.client.renderer.ManaStrikeShaderRenderer;
-import com.github.nalamodikk.client.renderer.altar.AltarShockwaveRenderer;
-import com.github.nalamodikk.client.renderer.altar.AltarMagicCircleRenderer;
-import com.github.nalamodikk.client.renderer.altar.AltarT6ClimaxRenderer;
-import com.github.nalamodikk.client.renderer.altar.AltarT45OrbRenderer;
-import com.github.nalamodikk.client.renderer.altar.AltarExplosionRenderer;
-import com.github.nalamodikk.client.renderer.altar.AltarFadeRenderer;
-import com.github.nalamodikk.client.renderer.entity.FloatingTurretModel;
-import com.github.nalamodikk.client.renderer.entity.FloatingTurretProjectileRenderer;
-import com.github.nalamodikk.client.renderer.entity.FloatingTurretRenderer;
-import com.github.nalamodikk.client.renderer.entity.SpaceCrackRenderer;
-import com.github.nalamodikk.client.renderer.entity.PlayerCloneRenderer;
-import net.minecraft.client.renderer.entity.NoopRenderer;
-import net.minecraft.client.renderer.entity.player.PlayerRenderer;
-import net.minecraft.client.resources.PlayerSkin;
-import com.github.nalamodikk.client.renderer.armor.ManaAlloyArmorLayer;
-import com.github.nalamodikk.client.renderer.armor.ManaAlloyArmorModel;
-import com.github.nalamodikk.client.renderer.entity.NaraPhantomRenderer;
-import com.github.nalamodikk.client.renderer.entity.TrainingDummyModel;
-import com.github.nalamodikk.client.renderer.entity.TrainingDummyRenderer;
-import com.github.nalamodikk.client.renderer.item.FloatingTurretBEWLR;
-import com.github.nalamodikk.client.renderer.turret.TurretHitEffectRenderer;
+import com.github.nalamodikk.client.event.ClientModBusSetup;
 import com.github.nalamodikk.dimension.BoundedFlatChunkGenerator;
 import com.github.nalamodikk.dimension.ModDimensions;
 import com.github.nalamodikk.register.ModEntities;
@@ -36,10 +14,8 @@ import com.github.nalamodikk.common.config.ModCommonConfig;
 import com.github.nalamodikk.register.*;
 import com.github.nalamodikk.register.ModStructurePieceTypes;
 import com.github.nalamodikk.register.ModStructureTypes;
-import com.github.nalamodikk.register.client.ModKeyMappings;
 import com.mojang.logging.LogUtils;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -49,9 +25,6 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLLoader;
-import net.neoforged.neoforge.client.event.EntityRenderersEvent;
-import net.neoforged.neoforge.client.event.ModelEvent;
-import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
@@ -109,46 +82,9 @@ public class KoniavacraftMod {
         ModParticles.register(modEventBus);
         ModChunkGenerators.register(modEventBus);
         if (FMLEnvironment.dist == Dist.CLIENT) {
-            NeoForge.EVENT_BUS.register(ClientInteractiveFormationManager.class);
-            modEventBus.addListener(ModParticles::registerProviders);
-            modEventBus.addListener(ModKeyMappings::onRegisterKeyMappings);
-            modEventBus.addListener(com.github.nalamodikk.register.client.ModColorHandlers::onRegisterItemColors);
-            modEventBus.addListener((EntityRenderersEvent.RegisterRenderers e) -> {
-                    e.registerEntityRenderer(ModEntities.FLOATING_TURRET.get(), FloatingTurretRenderer::new);
-                    e.registerEntityRenderer(ModEntities.FLOATING_TURRET_PROJECTILE.get(), FloatingTurretProjectileRenderer::new);
-                    e.registerEntityRenderer(ModEntities.SPELL_PROJECTILE.get(), NoopRenderer::new);
-                    e.registerEntityRenderer(ModEntities.ORBITAL_ORB.get(), NoopRenderer::new);
-                    e.registerEntityRenderer(ModEntities.SPACE_CRACK.get(), SpaceCrackRenderer::new);
-                    e.registerEntityRenderer(ModEntities.PLAYER_CLONE.get(), PlayerCloneRenderer::new);
-                    e.registerEntityRenderer(ModEntities.NARA_PHANTOM.get(), NaraPhantomRenderer::new);
-                    e.registerEntityRenderer(ModEntities.TRAINING_DUMMY.get(), TrainingDummyRenderer::new);
-            });
-            modEventBus.addListener((EntityRenderersEvent.RegisterLayerDefinitions e) -> {
-                    e.registerLayerDefinition(FloatingTurretModel.LAYER_LOCATION, FloatingTurretModel::createBodyLayer);
-                    e.registerLayerDefinition(TrainingDummyModel.LAYER_LOCATION, TrainingDummyModel::createBodyLayer);
-                    e.registerLayerDefinition(ManaAlloyArmorModel.LAYER, ManaAlloyArmorModel::createLayer);
-            });
-            modEventBus.addListener((EntityRenderersEvent.AddLayers e) -> {
-                    for (PlayerSkin.Model skin : e.getSkins()) {
-                        if (e.getSkin(skin) instanceof PlayerRenderer pr) {
-                            pr.addLayer(new ManaAlloyArmorLayer<>(pr, e.getEntityModels()));
-                        }
-                    }
-            });
-            modEventBus.addListener((ModelEvent.RegisterAdditional e) ->
-                    e.register(FloatingTurretBEWLR.GEO_MODEL_LOCATION));
-            modEventBus.addListener((RegisterClientReloadListenersEvent e) ->
-                    e.registerReloadListener((ResourceManagerReloadListener) rm -> {
-                        ManaStrikeShaderRenderer.reload();
-                        AltarShockwaveRenderer.reload();
-                        AltarMagicCircleRenderer.reload();
-                        AltarT6ClimaxRenderer.reload();
-                        AltarT45OrbRenderer.reload();
-                        AltarFadeRenderer.reload();
-                        AltarExplosionRenderer.reload();
-                        TurretHitEffectRenderer.reload();
-                    }));
-            // ClientEffectEvents is auto-registered by @EventBusSubscriber; no manual register needed.
+            // 所有 client 端 mod-bus 註冊抽到 ClientModBusSetup(client-only 類別)。
+            // 不可內聯在這:主類別含 client 型別位元組會讓 dedicated server 載入時 crash。見該類 javadoc。
+            ClientModBusSetup.init(modEventBus);
         }
         // Register ourselves for server and other game events we are interested in.
         // Note that this is necessary if and only if we want *this* class (ExampleMod)

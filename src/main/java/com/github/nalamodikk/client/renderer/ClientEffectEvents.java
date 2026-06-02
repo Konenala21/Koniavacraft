@@ -40,6 +40,7 @@ public final class ClientEffectEvents {
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {
         ManaStrikeShaderRenderer.onRenderLevel(event);
+        ShockwaveRenderer.onRenderLevel(event);
         OrbitalTestShaderRenderer.onRenderLevel(event);
         FourierCurveRenderer.onRenderLevel(event);
         MagicCircleRenderer.onRenderLevel(event);

@@ -18,7 +18,7 @@ public final class CarrierFxClient {
         if (typeId < 0 || typeId >= CarrierFxType.values().length) return;
         long tick = mc.level.getGameTime();
         switch (CarrierFxType.values()[typeId]) {
-            case SHOCKWAVE -> ManaStrikeShaderRenderer.spawnEffect(pos, tick); // 內建擴散環當衝擊波
+            case SHOCKWAVE -> ShockwaveRenderer.spawn(pos, tick);
         }
     }
 }
