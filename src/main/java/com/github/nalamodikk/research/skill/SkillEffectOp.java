@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
  * A concrete on-hit payload produced by an effect aspect during skill compilation.
  *
  * Each effect aspect ({@link SkillRole#EFFECT}) maps to its OWN op (see
- * {@link SkillCompiler#opFor}); no two aspects share behavior, so combining
+ * {@code SkillCompiler.opFor}); no two aspects share behavior, so combining
  * different aspects always plays differently. The carrier applies the ops where
  * it lands. Base damage is the carrier's; ops are the "extra" status payloads.
  *
@@ -413,9 +413,15 @@ public enum SkillEffectOp {
             target.hurt(level.damageSources().magic(), 6.0F + power * 0.4F + bonus);
         }
     },
-    /** 爆燃 (fire + energy): a larger fiery explosion that ignites the target. */
+    /** 爆燃 (fire + energy): a larger fiery explosion that ignites the target. A poisoned
+     *  target's toxin ignites for a bonus hit (the poison is consumed). */
     COMBUSTION {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            if (target.hasEffect(MobEffects.POISON)) {
+                target.removeEffect(MobEffects.POISON);
+                target.invulnerableTime = 0;
+                target.hurt(level.damageSources().magic(), 4.0F + power * 0.4F); // 引爆毒氣
+            }
             float radius = Math.min(8.0F, 3.0F + power * 0.07F);
             level.explode(caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
                     radius, Level.ExplosionInteraction.NONE);
@@ -480,20 +486,26 @@ public enum SkillEffectOp {
             target.addEffect(new MobEffectInstance(MobEffects.POISON, 120, 2));
         }
     },
-    /** 湮滅 (radiance + dark): light and dark collide, a massive burst of damage. */
+    /** 湮滅 (radiance + dark): light and dark collide, a massive burst that grows with
+     *  every harmful effect already on the target (it annihilates the afflicted). */
     ANNIHILATION {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            long debuffs = target.getActiveEffects().stream()
+                    .filter(e -> e.getEffect().value().getCategory() == MobEffectCategory.HARMFUL)
+                    .count();
             target.invulnerableTime = 0;
-            target.hurt(level.damageSources().magic(), 7.0F + power * 0.45F);
+            target.hurt(level.damageSources().magic(), 7.0F + power * 0.45F + debuffs * 1.5F);
         }
     },
 
     // ── Reaction outputs, batch 2 ────────────────────────────────────────────
-    /** 煉獄火 (dark + fire): cursed flame, a burst plus burn plus a touch of wither. */
+    /** 煉獄火 (dark + fire): cursed flame, a burst plus burn plus a touch of wither.
+     *  The cursed flame feeds on a withering target for extra damage. */
     SOULFIRE {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            float bonus = target.hasEffect(MobEffects.WITHER) ? 4.0F + power * 0.35F : 0.0F;
             target.invulnerableTime = 0;
-            target.hurt(level.damageSources().magic(), 5.0F + power * 0.4F);
+            target.hurt(level.damageSources().magic(), 5.0F + power * 0.4F + bonus);
             target.setRemainingFireTicks(80);
             target.addEffect(new MobEffectInstance(ModMobEffects.SOULBURN, 100, 1)); // 自訂靈焰
         }
@@ -525,13 +537,15 @@ public enum SkillEffectOp {
             }
         }
     },
-    /** 晶爆 (crystal + force): the crystal shatters into shrapnel, hitting all nearby. */
+    /** 晶爆 (crystal + force): the crystal shatters into shrapnel, hitting all nearby.
+     *  Shards dig into bleeding targets for extra damage. */
     SHRAPNEL {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             AABB box = target.getBoundingBox().inflate(3.0);
             for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+                float bonus = le.hasEffect(ModMobEffects.BLEED) ? 2.0F + power * 0.2F : 0.0F;
                 le.invulnerableTime = 0;
-                le.hurt(level.damageSources().magic(), 2.0F + power * 0.2F);
+                le.hurt(level.damageSources().magic(), 2.0F + power * 0.2F + bonus);
             }
         }
     },
@@ -683,12 +697,14 @@ public enum SkillEffectOp {
             vacuumItems(level, target, 4.5); // 磁力:也吸金屬掉落物
         }
     },
-    /** 怨雷 (electric + dark): spiteful lightning, a soul-burning shock (then chains). */
+    /** 怨雷 (electric + dark): spiteful lightning, a soul-burning shock (then chains).
+     *  Conductive targets (wet or chilled) take a heavy bonus. */
     SPITE_BOLT {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.addEffect(new MobEffectInstance(ModMobEffects.SOULBURN, 100, 1));
+            float bonus = (target.isInWaterOrRain() || target.hasEffect(ModMobEffects.CHILL)) ? 4.0F + power * 0.3F : 0.0F;
             target.invulnerableTime = 0;
-            target.hurt(level.damageSources().lightningBolt(), 2.0F + power * 0.2F);
+            target.hurt(level.damageSources().lightningBolt(), 2.0F + power * 0.2F + bonus);
         }
     },
     /** 光電 (electric + light): a photoelectric flash, blinds and dazes (then chains). */
@@ -859,12 +875,14 @@ public enum SkillEffectOp {
     },
 
     // ── Reaction outputs, batch 4 (fill the trait matrix) ────────────────────
-    /** 熱離子 (heat + electric): superheated ions, ignite plus an electric jolt. */
+    /** 熱離子 (heat + electric): superheated ions, ignite plus an electric jolt.
+     *  Conductive targets (wet or chilled) take a bonus. */
     THERMION {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.setRemainingFireTicks(60);
+            float bonus = (target.isInWaterOrRain() || target.hasEffect(ModMobEffects.CHILL)) ? 3.0F + power * 0.25F : 0.0F;
             target.invulnerableTime = 0;
-            target.hurt(level.damageSources().lightningBolt(), 2.0F + power * 0.2F);
+            target.hurt(level.damageSources().lightningBolt(), 2.0F + power * 0.2F + bonus);
         }
     },
     /** 熔煉 (heat + metal): molten metal, ignite plus melted armor (heavy vulnerability). */
