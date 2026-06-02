@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.1.9-3] - 2026-06-03
+
 ### Player Changes / 玩家更新內容
 
 Fixed Nara watch model position on the wrist (shifted down and centered).
