@@ -492,6 +492,7 @@
   "block.koniava.mana_generator": "Mana Generator",
   "block.koniava.research_table": "Research Table",
   "block.koniava.aspect_research_desk": "Aspect Trading Station",
+  "entity.minecraft.villager.koniava.aspect_researcher": "Aspect Researcher",
   "research.koniava.locked": "You need to complete '%s' first.",
   "research.koniava.locked_gui": "Machine Locked",
   "gui.koniava.skip_confirm.title": "Skipping cutscenes will miss the full experience",
