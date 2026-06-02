@@ -167,7 +167,9 @@ public final class ReactionEngine {
             ReactionRule.of(opName(SkillEffectOp.ELEMENTAL_STORM), desc("elemental_storm"), SkillEffectOp.ELEMENTAL_STORM, HEAT, COLD, ELECTRIC),
             ReactionRule.of(opName(SkillEffectOp.THERMONUCLEAR), desc("thermonuclear"), SkillEffectOp.THERMONUCLEAR, HEAT, ARCANE, ELECTRIC),
             ReactionRule.of(opName(SkillEffectOp.HOLY_NOVA), desc("holy_nova"), SkillEffectOp.HOLY_NOVA, LIGHT, DARK, ARCANE),
-            ReactionRule.of(opName(SkillEffectOp.BLIGHT), desc("blight"), SkillEffectOp.BLIGHT, ORGANIC, HEAT, TOXIC)
+            ReactionRule.of(opName(SkillEffectOp.BLIGHT), desc("blight"), SkillEffectOp.BLIGHT, ORGANIC, HEAT, TOXIC),
+            // 引力亂流:水+力的渦流,需三個來源(一帶力、兩帶水),如風暴+坎+兌
+            ReactionRule.of(opName(SkillEffectOp.MAELSTROM), desc("maelstrom"), SkillEffectOp.MAELSTROM, FORCE, WATER, WATER)
     );
 
     // ── 級聯求解 ────────────────────────────────────────────────────────────
