@@ -852,9 +852,14 @@ public enum SkillEffectOp {
             target.addEffect(new MobEffectInstance(ModMobEffects.BLEED, 100, 1));
         }
     },
-    /** 熔毀 (heat + acid): meltdown, ignites and melts armor (heavy vulnerability). */
+    /** 熔毀 (heat + acid): meltdown, ignites and melts armor (heavy vulnerability). An
+     *  already-burning target melts down further, for a bonus hit. */
     MELTDOWN {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            if (target.isOnFire() || target.getRemainingFireTicks() > 0) {
+                target.invulnerableTime = 0;
+                target.hurt(level.damageSources().magic(), 3.0F + power * 0.3F); // 已燃燒:加劇熔毀
+            }
             target.setRemainingFireTicks((int) (100 + power * 20));
             target.addEffect(new MobEffectInstance(ModMobEffects.VULNERABLE, 160, 1));
         }
@@ -925,9 +930,10 @@ public enum SkillEffectOp {
     /** 冰封 (cold + water): a deep freeze, a hard chill plus heavy frozen ticks. */
     DEEP_FREEZE {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            TurretControlHelper.applySkillControl(target, ModMobEffects.CHILL, 140, 4);
-            target.setTicksFrozen(target.getTicksRequiredToFreeze() + 160);
-            TurretControlHelper.applySkillControl(target, ModMobEffects.ROOT, 40, 0); // 凍住:短暫完全不能動
+            boolean wet = target.isInWaterOrRain();
+            TurretControlHelper.applySkillControl(target, ModMobEffects.CHILL, wet ? 200 : 140, 4);
+            target.setTicksFrozen(target.getTicksRequiredToFreeze() + (wet ? 240 : 160)); // 潮濕:凍更久
+            TurretControlHelper.applySkillControl(target, ModMobEffects.ROOT, wet ? 60 : 40, 0); // 凍住:短暫完全不能動
         }
     },
     /** 冰蝕 (cold + acid): frost-brittle armor, chill plus vulnerability. */
@@ -1086,9 +1092,13 @@ public enum SkillEffectOp {
             target.hurt(level.damageSources().magic(), 2.0F + power * 0.2F);
         }
     },
-    /** 劇毒 (venom + life): virulence, life feeds the toxin into a brutal poison. */
+    /** 劇毒 (venom + life): virulence, life feeds the toxin into a brutal poison. On an
+     *  already-poisoned target the disease turns terminal (adds wither). */
     VIRULENCE {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            if (target.hasEffect(MobEffects.POISON)) {
+                target.addEffect(new MobEffectInstance(MobEffects.WITHER, 120, 1)); // 病入膏肓
+            }
             target.addEffect(new MobEffectInstance(MobEffects.POISON, 200, 3));
         }
     },
