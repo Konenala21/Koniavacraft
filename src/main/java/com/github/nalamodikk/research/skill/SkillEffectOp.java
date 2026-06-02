@@ -1275,16 +1275,27 @@ public enum SkillEffectOp {
 
     // ── Tier C 共用機制 ──
     /**
-     * 爆炸但不傷到施放者(explode 期間把施放者設無敵、事後還原)。
-     * 例外:飛翔自我施放時 target==caster(效果套在自己),保留自爆 → 衝刺自炸的玩法。
+     * 飛翔自炸對施放者的傷害 = 半徑 × 這個係數。實機可調(目前 2.0:半徑 ~4 約 8 點 = 4 心,痛但可活)。
+     */
+    private static final float SELF_BLAST_DAMAGE_PER_RADIUS = 2.0F;
+
+    /**
+     * 爆炸但不傷到施放者。
+     *
+     * 施放者一律當成爆炸的 source 傳進 explode():vanilla {@code Explosion.explode()} 用
+     * {@code getEntities(except = source)} 把 source 排除在傷害名單外,所以正常施放(target != caster)
+     * 時施放者一定不會被自己的技能爆炸炸到,不必另設無敵。
+     *
+     * 飛翔自炸(target == caster)是刻意的代價(火箭跳/玉石俱焚):source 排除會讓自炸不痛,所以這裡
+     * 在爆炸後對施放者「補一刀」明確的爆炸傷害。傷害值用 {@link #SELF_BLAST_DAMAGE_PER_RADIUS}
+     * 乘半徑,方便實機調整(吃爆炸抗性/盔甲)。
      */
     private static void safeExplode(ServerLevel level, @Nullable LivingEntity caster, LivingEntity target,
                                     double x, double y, double z, float radius) {
-        boolean guard = caster != null && caster != target; // 飛翔自炸(target==caster)不保護
-        boolean prev = caster != null && caster.isInvulnerable();
-        if (guard) caster.setInvulnerable(true);
         level.explode(caster, x, y, z, radius, Level.ExplosionInteraction.NONE);
-        if (guard) caster.setInvulnerable(prev);
+        if (caster != null && caster == target) {
+            caster.hurt(level.damageSources().explosion(caster, caster), radius * SELF_BLAST_DAMAGE_PER_RADIUS);
+        }
     }
 
     /** 把附近掉落物吸向中心(奇點機制)。 */

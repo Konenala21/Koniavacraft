@@ -60,22 +60,20 @@ public class SkillEffectGameTests {
     }
 
     /**
-     * Flight self-cast (target == caster): the caster is still the explosion source, so vanilla
-     * source-exclusion spares them: a self-centred COMBUSTION deals NO explosion damage to the
-     * caster. This documents current behavior. NOTE: if Flight self-blast is meant to be a real
-     * risk/cost, safeExplode needs to hurt the caster explicitly (the invuln "guard" alone cannot,
-     * since source-exclusion already shields them). Design decision pending.
+     * Flight self-cast (target == caster) is a deliberate self-blast (rocket-jump / kamikaze): it
+     * must hurt the caster. Vanilla excludes the explosion source from blast damage, so safeExplode
+     * deals explicit self-damage (radius * SELF_BLAST_DAMAGE_PER_RADIUS) when target == caster.
      */
     @GameTest(template = "empty", templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 40)
-    public static void selfCenteredExplosionSparesSourceCaster(GameTestHelper helper) {
+    public static void flightSelfBlastHurtsCaster(GameTestHelper helper) {
         helper.runAtTickTime(2, () -> {
             Pig caster = helper.spawn(EntityType.PIG, new BlockPos(2, 2, 2));
             caster.setNoAi(true);
             caster.setHealth(caster.getMaxHealth());
             float before = caster.getHealth();
             SkillEffectOp.COMBUSTION.apply(helper.getLevel(), caster, caster, new Vec3(1, 0, 0), 5.0F);
-            if (caster.getHealth() < before) {
-                helper.fail("source caster took explosion damage (vanilla should exclude the source)");
+            if (caster.getHealth() >= before) {
+                helper.fail("Flight self-blast should hurt the caster (target == caster)");
             } else {
                 helper.succeed();
             }
