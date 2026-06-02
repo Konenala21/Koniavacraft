@@ -34,6 +34,7 @@ public final class ShockwaveRenderer {
     private static final float RING_MAX_R = 15f;
     private static final float TOTAL_LIFE = RING_DELAY * (RING_COUNT - 1) + RING_MAX_R / RING_SPEED;
     private static final int   SEGS = 48;
+    private static final float GROUND_OFFSET = 0.05f; // 離地一點避免 z-fighting
 
     private static final float[] COS = new float[SEGS];
     private static final float[] SIN = new float[SEGS];
@@ -67,7 +68,8 @@ public final class ShockwaveRenderer {
         Vec3 cam = event.getCamera().getPosition();
         PoseStack ps = event.getPoseStack();
         var buf = mc.renderBuffers().bufferSource();
-        VertexConsumer vc = buf.getBuffer(MIRenderTypes.solarGlow());
+        // no-cull:環是水平鋪地的,預設 backface culling 會讓正上方視角看不到(剔掉朝上那面)。
+        VertexConsumer vc = buf.getBuffer(MIRenderTypes.solarGlowNoCull());
 
         Iterator<Wave> it = WAVES.iterator();
         while (it.hasNext()) {
@@ -76,7 +78,8 @@ public final class ShockwaveRenderer {
             if (elapsed > TOTAL_LIFE) { it.remove(); continue; }
 
             ps.pushPose();
-            ps.translate(w.pos().x - cam.x, w.pos().y - cam.y, w.pos().z - cam.z);
+            // 抬高一點點離開地表,避免跟地面方塊頂面 z-fighting。
+            ps.translate(w.pos().x - cam.x, w.pos().y - cam.y + GROUND_OFFSET, w.pos().z - cam.z);
             Matrix4f mat = ps.last().pose();
 
             for (int i = 0; i < RING_COUNT; i++) {
@@ -92,7 +95,7 @@ public final class ShockwaveRenderer {
             }
             ps.popPose();
         }
-        buf.endBatch(MIRenderTypes.solarGlow());
+        buf.endBatch(MIRenderTypes.solarGlowNoCull());
     }
 
     private static void drawRing(Matrix4f mat, VertexConsumer vc, float radius, float halfWidth, int r, int g, int a) {

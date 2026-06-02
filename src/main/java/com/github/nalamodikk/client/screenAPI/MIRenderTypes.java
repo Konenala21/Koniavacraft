@@ -58,6 +58,16 @@ public class MIRenderTypes {
         return SOLAR_GLOW;
     }
 
+    private static RenderType SOLAR_GLOW_NO_CULL;
+
+    // 跟 solarGlow 相同,但關掉 backface culling:水平鋪地的環(衝擊波)從正上方看也不會被剔面。
+    public static RenderType solarGlowNoCull() {
+        if (SOLAR_GLOW_NO_CULL == null) {
+            SOLAR_GLOW_NO_CULL = Factory.makeSolarGlowNoCull();
+        }
+        return SOLAR_GLOW_NO_CULL;
+    }
+
     private static RenderType VOID_CORE;
 
     // 黑洞核心：POSITION_COLOR、QUADS、普通 alpha 混合（黑色顯示為黑）、不寫深度
@@ -252,6 +262,18 @@ public class MIRenderTypes {
                             .setTransparencyState(LIGHTNING_TRANSPARENCY)
                             .setWriteMaskState(COLOR_WRITE)
                             .setTextureState(NO_TEXTURE)
+                            .createCompositeState(false));
+        }
+
+        // 與 makeSolarGlow 相同,只多 NO_CULL:讓水平環雙面可見(從正上方看不被剔面)。
+        private static RenderType makeSolarGlowNoCull() {
+            return create("koniava_solar_glow_no_cull", DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 2048, false, false,
+                    CompositeState.builder()
+                            .setShaderState(POSITION_COLOR_SHADER)
+                            .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                            .setWriteMaskState(COLOR_WRITE)
+                            .setTextureState(NO_TEXTURE)
+                            .setCullState(NO_CULL)
                             .createCompositeState(false));
         }
     }
