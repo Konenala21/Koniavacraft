@@ -12,6 +12,9 @@ The Nara watch has a new 3D model and texture made by collaborator Bksesame.
 The training dummy now uses a proper cactus model with idle and hit animations. The dummy sways gently when idle, blinks, and reacts visually when struck.
 訓練假人現在使用正式的仙人掌模型，附帶待機動畫（輕微搖晃 + 眨眼）和被打反應動畫。
 
+Some reactions now reward setup: Shatter and Cryocrystal deal a big bonus and consume the ice if the target is chilled or frozen (freeze it first, then shatter), and Thermal Shock hits harder and puts the fire out if the target is burning. Stacking the right reactions in order pays off.
+有些反應現在會獎勵鋪陳:碎冰與寒晶對被冰緩或冰凍的目標造成額外暴擊並消耗冰（先凍再碎），熱裂對燃燒中的目標傷害更高並滅火。把對的反應照順序疊起來更有回報。
+
 Reactions now look and play distinctly, not just stacked potion effects. Every reaction spawns its own particle signature on hit (fire bursts, snow, sparks, green clouds, light rays, an inward implosion swirl, and so on), so you can tell at a glance which reaction fired. A few also gained unique mechanics: Implosion and Magnetic Storm now vacuum nearby dropped items toward the center; Plague, Biohazard, Ash Storm and Tainted Water leave a lingering hazard cloud on the ground that keeps damaging or blinding; Deep Freeze briefly freezes the target solid (can't move at all).
 反應現在看起來、玩起來都不一樣了，不只是疊藥水效果。每個反應命中時會噴自己的粒子簽名（火花四散、雪花、電花、綠色毒雲、光束、向心吸入的內爆漩渦等），一眼就能認出觸發了哪個反應。有幾個還拿到獨特機制：內爆與磁暴會把附近掉落物吸向中心；瘟疫、生化浩劫、灰燼風暴、污水會在地上留下持續傷害或致盲的危險雲；冰封會短暫把目標凍住（完全不能動）。
 

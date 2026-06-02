@@ -400,11 +400,17 @@ public enum SkillEffectOp {
     // ── Reaction outputs: emergent results when two reacting aspects combine ──
     // These are produced by SkillCompiler's reaction table, never mapped from a
     // single aspect. They are the "chemistry" payoff of combining aspects.
-    /** 熱裂 (fire + frost): rapid temperature shock, a heavy burst hit. */
+    /** 熱裂 (fire + frost): rapid temperature shock, a heavy burst hit. Extra burst and
+     *  extinguish if the target is burning (the sudden cooling cracks it). */
     THERMAL_SHOCK {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            float bonus = 0.0F;
+            if (target.isOnFire() || target.getRemainingFireTicks() > 0) {
+                bonus = 4.0F + power * 0.4F; // 燃燒中急冷:額外爆發
+                target.clearFire();
+            }
             target.invulnerableTime = 0;
-            target.hurt(level.damageSources().magic(), 6.0F + power * 0.4F);
+            target.hurt(level.damageSources().magic(), 6.0F + power * 0.4F + bonus);
         }
     },
     /** 爆燃 (fire + energy): a larger fiery explosion that ignites the target. */
@@ -426,11 +432,18 @@ public enum SkillEffectOp {
             }
         }
     },
-    /** 碎冰 (frost + force): the chilled target is shattered for a heavy burst. */
+    /** 碎冰 (frost + force): the chilled target is shattered. Massive bonus if it is
+     *  chilled or frozen (the ice is consumed), rewarding cold-then-force combos. */
     SHATTER {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            float bonus = 0.0F;
+            if (target.hasEffect(ModMobEffects.CHILL) || target.getTicksFrozen() > 0) {
+                bonus = 6.0F + power * 0.5F; // 暴擊冰凍目標
+                target.removeEffect(ModMobEffects.CHILL);
+                target.setTicksFrozen(0);
+            }
             target.invulnerableTime = 0;
-            target.hurt(level.damageSources().magic(), 5.0F + power * 0.35F);
+            target.hurt(level.damageSources().magic(), 5.0F + power * 0.35F + bonus);
         }
     },
     /** 超載 (energy + crystal/arcana): an overcharged detonation, a much bigger blast. */
@@ -787,11 +800,17 @@ public enum SkillEffectOp {
             TurretControlHelper.applySkillControl(target, ModMobEffects.CHILL, 100, 2);
         }
     },
-    /** 寒晶 (cold + metal): ice crystals burst, a sharp hit plus bleeding. */
+    /** 寒晶 (cold + metal): ice crystals burst, a sharp hit plus bleeding. Shatters a
+     *  chilled/frozen target for a bonus too (consumes the ice). */
     CRYOCRYSTAL {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            float bonus = 0.0F;
+            if (target.hasEffect(ModMobEffects.CHILL) || target.getTicksFrozen() > 0) {
+                bonus = 4.0F + power * 0.4F;
+                target.setTicksFrozen(0);
+            }
             target.invulnerableTime = 0;
-            target.hurt(level.damageSources().magic(), 4.0F + power * 0.3F);
+            target.hurt(level.damageSources().magic(), 4.0F + power * 0.3F + bonus);
             target.addEffect(new MobEffectInstance(ModMobEffects.BLEED, 100, 1));
         }
     },
