@@ -279,7 +279,7 @@ public enum SkillEffectOp {
     ENERGY {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             float radius = Math.min(7.0F, 2.0F + power * 0.06F);
-            safeExplode(level, caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
+            safeExplode(level, caster, target, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
         }
     },
     /** 奧法: a heavier arcane detonation. */
@@ -421,7 +421,7 @@ public enum SkillEffectOp {
                 target.hurt(level.damageSources().magic(), 4.0F + power * 0.4F); // 引爆毒氣
             }
             float radius = Math.min(8.0F, 3.0F + power * 0.07F);
-            safeExplode(level, caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
+            safeExplode(level, caster, target, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
             target.setRemainingFireTicks(80);
         }
     },
@@ -458,7 +458,7 @@ public enum SkillEffectOp {
                 target.hurt(level.damageSources().magic(), 4.0F + power * 0.3F);
             }
             float radius = Math.min(9.0F, 4.0F + power * 0.08F);
-            safeExplode(level, caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
+            safeExplode(level, caster, target, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
         }
     },
     /** 死亡虹吸 (death + lifesteal): the wither feeds the caster a large heal, larger
@@ -573,7 +573,7 @@ public enum SkillEffectOp {
     THERMONUCLEAR {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             float radius = Math.min(10.0F, 5.0F + power * 0.09F);
-            safeExplode(level, caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
+            safeExplode(level, caster, target, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
             target.setRemainingFireTicks(120);
         }
     },
@@ -658,7 +658,7 @@ public enum SkillEffectOp {
                 target.hurt(level.damageSources().magic(), 3.0F + power * 0.25F);
             }
             float radius = Math.min(7.0F, 3.0F + power * 0.06F);
-            safeExplode(level, caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
+            safeExplode(level, caster, target, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
             Vec3 away = dir.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : dir.normalize();
             target.setDeltaMovement(away.x * 1.6, 0.6, away.z * 1.6);
             target.hurtMarked = true;
@@ -675,7 +675,7 @@ public enum SkillEffectOp {
                 le.hurtMarked = true;
             }
             vacuumItems(level, target, 4.5); // 奇點:把掉落物也吸進來
-            safeExplode(level, caster, center.x, center.y + target.getBbHeight() * 0.5, center.z,
+            safeExplode(level, caster, target, center.x, center.y + target.getBbHeight() * 0.5, center.z,
                     Math.min(7.0F, 3.0F + power * 0.06F));
         }
     },
@@ -751,7 +751,7 @@ public enum SkillEffectOp {
                 target.hurt(level.damageSources().magic(), 4.0F + power * 0.35F); // 聖光剋不死
             }
             float radius = Math.min(8.0F, 3.5F + power * 0.07F);
-            safeExplode(level, caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
+            safeExplode(level, caster, target, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
             target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0));
         }
     },
@@ -779,7 +779,7 @@ public enum SkillEffectOp {
     VOID_SURGE {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             float radius = Math.min(8.0F, 3.5F + power * 0.07F);
-            safeExplode(level, caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
+            safeExplode(level, caster, target, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
             target.addEffect(new MobEffectInstance(MobEffects.WITHER, 100, 1));
         }
     },
@@ -874,7 +874,7 @@ public enum SkillEffectOp {
     HYDROGEN_BLAST {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             float radius = Math.min(9.0F, 4.0F + power * 0.08F);
-            safeExplode(level, caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
+            safeExplode(level, caster, target, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
         }
     },
     /** 灰燼風暴 (ash + force): blowing ash, a blinding choking cloud over an area. */
@@ -1272,13 +1272,17 @@ public enum SkillEffectOp {
     }
 
     // ── Tier C 共用機制 ──
-    /** 爆炸但不傷到施放者:explode 期間把施放者設為無敵,事後還原(擊退不受影響、傷害免疫)。 */
-    private static void safeExplode(ServerLevel level, @Nullable LivingEntity caster,
+    /**
+     * 爆炸但不傷到施放者(explode 期間把施放者設無敵、事後還原)。
+     * 例外:飛翔自我施放時 target==caster(效果套在自己),保留自爆 → 衝刺自炸的玩法。
+     */
+    private static void safeExplode(ServerLevel level, @Nullable LivingEntity caster, LivingEntity target,
                                     double x, double y, double z, float radius) {
+        boolean guard = caster != null && caster != target; // 飛翔自炸(target==caster)不保護
         boolean prev = caster != null && caster.isInvulnerable();
-        if (caster != null) caster.setInvulnerable(true);
+        if (guard) caster.setInvulnerable(true);
         level.explode(caster, x, y, z, radius, Level.ExplosionInteraction.NONE);
-        if (caster != null) caster.setInvulnerable(prev);
+        if (guard) caster.setInvulnerable(prev);
     }
 
     /** 把附近掉落物吸向中心(奇點機制)。 */
