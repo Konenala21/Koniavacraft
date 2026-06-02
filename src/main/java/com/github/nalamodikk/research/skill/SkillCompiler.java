@@ -418,12 +418,6 @@ public final class SkillCompiler {
     }
 
     /**
-     * Aspect reactions (chemistry): when the effect set contains a reacting pair,
-     * append the emergent reaction op. Returns extra chain count (conduction).
-     * Reaction ops stack on top of each aspect's own effect, so the combination
-     * does something neither aspect does alone. More reactions can be added here.
-     */
-    /**
      * Runs the chemistry reaction engine over the effect aspects and appends the
      * resulting reaction ops (in cascade order) to {@code ops}. Returns the extra
      * chain jumps the reactions add. The actual trait table, rules and cascade

@@ -4,6 +4,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import com.github.nalamodikk.common.entity.ReactionCloud;
 import com.github.nalamodikk.common.entity.control.TurretControlHelper;
+import static com.github.nalamodikk.research.skill.SkillTargeting.safeDir;
+import static com.github.nalamodikk.research.skill.SkillTargeting.forEachEnemy;
 import com.github.nalamodikk.research.skill.reaction.ReactionFx;
 import com.github.nalamodikk.register.ModMobEffects;
 import net.minecraft.world.effect.MobEffectCategory;
@@ -146,7 +148,7 @@ public enum SkillEffectOp {
      *  knockback) so knockback-resistance can't soften it. */
     STORM {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            Vec3 away = dir.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : dir.normalize();
+            Vec3 away = safeDir(dir);
             double s = 1.4 + power * 0.06;
             target.setDeltaMovement(away.x * s, 0.42, away.z * s);
             target.hurtMarked = true;
@@ -430,11 +432,10 @@ public enum SkillEffectOp {
     /** 毒燃 (fire + venom): a burning toxic cloud, poison and fire on everything nearby. */
     TOXIC_BURN {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            AABB box = target.getBoundingBox().inflate(3.0);
-            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+            forEachEnemy(level, target.getBoundingBox().inflate(3.0), caster, le -> {
                 le.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 1));
                 le.setRemainingFireTicks(60);
-            }
+            });
         }
     },
     /** 碎冰 (frost + force): the chilled target is shattered. Massive bonus if it is
@@ -528,33 +529,29 @@ public enum SkillEffectOp {
     /** 閃焰 (radiance + fire): a solar flare, blinding fire to everything nearby. */
     SOLAR_FLARE {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            AABB box = target.getBoundingBox().inflate(3.5);
-            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+            forEachEnemy(level, target.getBoundingBox().inflate(3.5), caster, le -> {
                 le.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0));
                 TurretControlHelper.applySkillControl(le, ModMobEffects.DAZE, 60, 0);
                 le.setRemainingFireTicks(70);
-            }
+            });
         }
     },
     /** 蔓生 (growth + water): roots spread, rooting everything around the target. */
     OVERGROWTH {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            AABB box = target.getBoundingBox().inflate(3.5);
-            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
-                TurretControlHelper.applySkillControl(le, ModMobEffects.ROOT, 80, 0);
-            }
+            forEachEnemy(level, target.getBoundingBox().inflate(3.5), caster, le ->
+                    TurretControlHelper.applySkillControl(le, ModMobEffects.ROOT, 80, 0));
         }
     },
     /** 晶爆 (crystal + force): the crystal shatters into shrapnel, hitting all nearby.
      *  Shards dig into bleeding targets for extra damage. */
     SHRAPNEL {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            AABB box = target.getBoundingBox().inflate(3.0);
-            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+            forEachEnemy(level, target.getBoundingBox().inflate(3.0), caster, le -> {
                 float bonus = le.hasEffect(ModMobEffects.BLEED) ? 2.0F + power * 0.2F : 0.0F;
                 le.invulnerableTime = 0;
                 le.hurt(level.damageSources().magic(), 2.0F + power * 0.2F + bonus);
-            }
+            });
         }
     },
 
@@ -562,13 +559,12 @@ public enum SkillEffectOp {
     /** 元素風暴 (fire + frost + lightning): a heavy multi-element AoE burst. */
     ELEMENTAL_STORM {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            AABB box = target.getBoundingBox().inflate(4.0);
-            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+            forEachEnemy(level, target.getBoundingBox().inflate(4.0), caster, le -> {
                 le.invulnerableTime = 0;
                 le.hurt(level.damageSources().magic(), 4.0F + power * 0.3F);
                 le.setRemainingFireTicks(40);
                 TurretControlHelper.applySkillControl(le, ModMobEffects.CHILL, 80, 2);
-            }
+            });
         }
     },
     /** 熱核 (fire + energy + lightning): a thermonuclear blast, the biggest explosion. */
@@ -662,7 +658,7 @@ public enum SkillEffectOp {
             }
             float radius = Math.min(7.0F, 3.0F + power * 0.06F);
             safeExplode(level, caster, target, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
-            Vec3 away = dir.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : dir.normalize();
+            Vec3 away = safeDir(dir);
             target.setDeltaMovement(away.x * 1.6, 0.6, away.z * 1.6);
             target.hurtMarked = true;
         }
@@ -686,7 +682,7 @@ public enum SkillEffectOp {
     TOXIC_BURST {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             AABB box = target.getBoundingBox().inflate(3.5);
-            Vec3 away = dir.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : dir.normalize();
+            Vec3 away = safeDir(dir);
             for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
                 le.addEffect(new MobEffectInstance(MobEffects.POISON, 120, 1));
                 le.setDeltaMovement(away.x, 0.35, away.z);
@@ -861,7 +857,7 @@ public enum SkillEffectOp {
     ERUPTION {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             target.setRemainingFireTicks(80);
-            Vec3 away = dir.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : dir.normalize();
+            Vec3 away = safeDir(dir);
             target.setDeltaMovement(away.x * 1.0, 0.9, away.z * 1.0);
             target.hurtMarked = true;
         }
@@ -999,7 +995,7 @@ public enum SkillEffectOp {
     /** 激流 (water + force): a torrent, a powerful water-cannon knockback. */
     TORRENT {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            Vec3 away = dir.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : dir.normalize();
+            Vec3 away = safeDir(dir);
             double s = 1.7 + power * 0.06;
             target.setDeltaMovement(away.x * s, 0.35, away.z * s);
             target.hurtMarked = true;
@@ -1112,7 +1108,7 @@ public enum SkillEffectOp {
     ACID_SPLASH {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             AABB box = target.getBoundingBox().inflate(3.5);
-            Vec3 away = dir.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : dir.normalize();
+            Vec3 away = safeDir(dir);
             for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
                 le.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 120, 0));
                 le.setDeltaMovement(away.x, 0.3, away.z);
@@ -1182,7 +1178,7 @@ public enum SkillEffectOp {
     /** 光壓 (light + force): radiation pressure, a glowing shove that blasts the target away. */
     LIGHT_PRESSURE {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            Vec3 away = dir.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : dir.normalize();
+            Vec3 away = safeDir(dir);
             double s = 1.5 + power * 0.05;
             target.setDeltaMovement(away.x * s, 0.4, away.z * s);
             target.hurtMarked = true;
@@ -1193,7 +1189,7 @@ public enum SkillEffectOp {
     VINE_LASH {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             TurretControlHelper.applySkillControl(target, ModMobEffects.ROOT, 60, 0);
-            Vec3 away = dir.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : dir.normalize();
+            Vec3 away = safeDir(dir);
             target.setDeltaMovement(away.x * 1.2, 0.3, away.z * 1.2);
             target.hurtMarked = true;
         }

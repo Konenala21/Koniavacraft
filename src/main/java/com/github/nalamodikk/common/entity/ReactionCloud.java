@@ -22,6 +22,8 @@ public class ReactionCloud extends AreaEffectCloud {
 
     private static Field VICTIMS;
 
+    private boolean ownerSkipInjected = false;
+
     public ReactionCloud(Level level, double x, double y, double z) {
         super(level, x, y, z);
     }
@@ -32,18 +34,21 @@ public class ReactionCloud extends AreaEffectCloud {
         super.tick();
     }
 
+    /** 把 owner 以「永不到期」塞進 victims map 一次就好(值不會變,不必每 tick 反射重塞)。 */
     @SuppressWarnings("unchecked")
     private void skipOwner() {
+        if (ownerSkipInjected) return;
         LivingEntity owner = getOwner();
-        if (owner == null) return;
+        if (owner == null) return; // owner 還沒解析到,下個 tick 再試
         try {
             if (VICTIMS == null) {
                 VICTIMS = AreaEffectCloud.class.getDeclaredField("victims");
                 VICTIMS.setAccessible(true);
             }
             ((Map<Entity, Integer>) VICTIMS.get(this)).put(owner, Integer.MAX_VALUE); // 永不到期 -> 永遠跳過 owner
+            ownerSkipInjected = true;
         } catch (Exception ignored) {
-            // 反射失敗就退回 vanilla 行為(會影響 owner),不讓它 crash
+            ownerSkipInjected = true; // 反射失敗就退回 vanilla 行為,別每 tick 重試
         }
     }
 }

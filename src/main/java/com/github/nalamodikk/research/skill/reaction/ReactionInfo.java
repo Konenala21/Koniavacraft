@@ -7,9 +7,9 @@ import java.util.List;
 /**
  * 一個本源反應的「展示資料」:輸入本源(代表)、反應名稱鍵、效果說明鍵。
  *
- * 這份是給 JEI「本源反應」分頁顯示用的;實際的反應判定邏輯(用本源「家族」比對)在
- * {@code SkillCompiler.applyReactions}。這裡用代表性本源 + 註明「或同類」讓玩家看得懂。
- * 改反應時兩邊要一起更新。
+ * 這份是給 JEI「本源反應」分頁顯示用的;{@link #ALL} 直接從 {@link ReactionEngine#RULES} 衍生,
+ * 用每條規則需求性質的「代表本源」當輸入,所以改 {@code ReactionEngine.RULES} 這裡自動跟著變。
+ * 實際的反應判定(性質規則 + 級聯)在 {@link ReactionEngine}。
  */
 public record ReactionInfo(List<Aspect> inputs, String nameKey, String descKey) {
 
