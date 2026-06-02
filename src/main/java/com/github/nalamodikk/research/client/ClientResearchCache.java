@@ -68,8 +68,11 @@ public final class ClientResearchCache {
         discoveredAspects = mappedAspects;
     }
 
-    public static void updateAspects(Map<ResourceLocation, Integer> aspects) {
+    /** @return true 若內容跟原本不同(供呼叫端決定要不要做昂貴的後續,例如刷 JEI)。 */
+    public static boolean updateAspects(Map<ResourceLocation, Integer> aspects) {
+        boolean changed = !discoveredAspects.equals(aspects);
         discoveredAspects = new HashMap<>(aspects);
+        return changed;
     }
 
     public static boolean hasDiscovered(ResourceLocation aspectId) {

@@ -23,8 +23,10 @@ public class ResearchClientPayloadHandler {
 
     public static void handleAspectSync(AspectSyncPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
-            ClientResearchCache.updateAspects(packet.discovered());
-            if (ModList.get().isLoaded("jei")) AspectSynthesisJEIPlugin.refreshAspectIngredients();
+            // 只有本源真的變了才刷 JEI:研究台每次開都送這個 sync,JEI ingredient 重整很重,
+            // 每次開都刷會明顯卡頓。
+            boolean changed = ClientResearchCache.updateAspects(packet.discovered());
+            if (changed && ModList.get().isLoaded("jei")) AspectSynthesisJEIPlugin.refreshAspectIngredients();
         });
     }
 
