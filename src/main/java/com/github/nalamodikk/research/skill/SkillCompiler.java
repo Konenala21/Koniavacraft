@@ -5,8 +5,8 @@ import com.github.nalamodikk.common.entity.SpellProjectileEntity;
 import com.github.nalamodikk.research.aspect.Aspect;
 import com.github.nalamodikk.research.aspect.ModAspects;
 import com.github.nalamodikk.research.skill.reaction.ReactionEngine;
+import com.github.nalamodikk.research.skill.fx.CarrierFx;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -218,15 +218,7 @@ public final class SkillCompiler {
             }
         }
         chainOps(level, caster, hit, ops, damage, chainCount);
-        // sweep arc visual
-        Vec3 up = new Vec3(0, 1, 0);
-        Vec3 side = look.cross(up).normalize();
-        for (int i = 0; i <= 14; i++) {
-            double a = (i / 14.0 - 0.5) * Math.PI * 0.75;
-            Vec3 dir = look.scale(Math.cos(a)).add(side.scale(Math.sin(a))).normalize();
-            Vec3 p = eye.add(dir.scale(2.5));
-            level.sendParticles(ParticleTypes.SWEEP_ATTACK, p.x, p.y, p.z, 1, 0.0, 0.0, 0.0, 0.0);
-        }
+        CarrierFx.slash(level, eye, look); // 視覺:扇形劍氣
         level.playSound(null, caster.blockPosition(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1.0F, 1.1F);
     }
 
@@ -245,10 +237,7 @@ public final class SkillCompiler {
         Vec3 look = caster.getLookAngle();
         double range = 16.0;
         Vec3 end = start.add(look.scale(range));
-        for (int s = 0; s <= 24; s++) {
-            Vec3 m = start.lerp(end, s / 24.0);
-            level.sendParticles(ParticleTypes.END_ROD, m.x, m.y, m.z, 1, 0.0, 0.0, 0.0, 0.0);
-        }
+        CarrierFx.beam(level, start, end); // 視覺:光束
         DamageSource src = caster.damageSources().indirectMagic(caster, caster);
         AABB box = new AABB(start, end).inflate(1.5);
         java.util.Set<LivingEntity> hit = new java.util.HashSet<>();
@@ -284,8 +273,7 @@ public final class SkillCompiler {
                 Vec3 d = le.position().subtract(from.position());
                 Vec3 dir = d.lengthSqr() > 1.0E-4 ? d.normalize() : new Vec3(0, 0, 1);
                 for (SkillEffectOp op : ops) op.applyTo(level, le, caster, dir, damage * 0.5F);
-                level.sendParticles(ParticleTypes.ELECTRIC_SPARK,
-                        le.getX(), le.getY() + le.getBbHeight() * 0.5, le.getZ(), 6, 0.2, 0.2, 0.2, 0.02);
+                CarrierFx.chainSpark(level, le); // 視覺:連鎖火花
                 hit.add(le);
                 if (++chained >= chainCount) break;
             }
@@ -296,13 +284,7 @@ public final class SkillCompiler {
     private static void castField(ServerLevel level, ServerPlayer caster, float damage, List<SkillEffectOp> ops, int chainCount) {
         Vec3 center = caster.getEyePosition().add(caster.getLookAngle().scale(6.0));
         double radius = 4.0;
-        for (int i = 0; i < 40; i++) {
-            double a = level.random.nextDouble() * Math.PI * 2;
-            double r = radius * Math.sqrt(level.random.nextDouble());
-            Vec3 p = center.add(Math.cos(a) * r, level.random.nextDouble() * 2 - 1, Math.sin(a) * r);
-            level.sendParticles(ParticleTypes.PORTAL, p.x, p.y, p.z, 1,
-                    (center.x - p.x) * 0.2, (center.y - p.y) * 0.2, (center.z - p.z) * 0.2, 0.3);
-        }
+        CarrierFx.field(level, center, radius); // 視覺:重力漩渦
         DamageSource src = caster.damageSources().indirectMagic(caster, caster);
         AABB box = new AABB(center.subtract(radius, radius, radius), center.add(radius, radius, radius));
         java.util.Set<LivingEntity> hit = new java.util.HashSet<>();
