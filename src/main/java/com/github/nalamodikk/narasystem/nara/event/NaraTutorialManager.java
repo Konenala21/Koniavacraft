@@ -1,7 +1,7 @@
 package com.github.nalamodikk.narasystem.nara.event;
 
 import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorBlockEntity;
-import com.github.nalamodikk.common.item.equipment.boots.ManaSprintBootsItem;
+import com.github.nalamodikk.common.item.equipment.boots.ManaAlloyBootsItem;
 import com.github.nalamodikk.common.item.wand.WandRodItem;
 import com.github.nalamodikk.common.item.wand.core.WandCoreItem;
 import com.github.nalamodikk.narasystem.nara.hud.NaraTutorialFlow;
@@ -224,8 +224,8 @@ final class NaraTutorialManager {
 
     static void handleEquipmentChange(ServerPlayer player, EquipmentSlot slot, ItemStack from, ItemStack to) {
         if (slot != EquipmentSlot.FEET) return;
-        if (!(to.getItem() instanceof ManaSprintBootsItem)) return;
-        if (from.getItem() instanceof ManaSprintBootsItem) return;
+        if (!(to.getItem() instanceof ManaAlloyBootsItem)) return;
+        if (from.getItem() instanceof ManaAlloyBootsItem) return;
         var savedData = ResearchSavedData.get(player.serverLevel());
         if (savedData.getOrCreate(player.getUUID()).markTutorialSeen(NaraTutorialFlow.BOOTS_EQUIP)) {
             NaraTutorialPacket.send(player, NaraTutorialFlow.BOOTS_EQUIP);

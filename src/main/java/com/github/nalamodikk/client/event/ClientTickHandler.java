@@ -16,7 +16,7 @@ import com.github.nalamodikk.common.item.equipment.ManaArmorItem;
 import com.github.nalamodikk.common.item.equipment.armor.ManaAlloyHelmetItem;
 import com.github.nalamodikk.common.item.equipment.armor.ManaAlloyLeggingsItem;
 import com.github.nalamodikk.common.item.equipment.armor.ManaConcentrationHelper;
-import com.github.nalamodikk.common.item.equipment.boots.ManaSprintBootsItem;
+import com.github.nalamodikk.common.item.equipment.boots.ManaAlloyBootsItem;
 import com.github.nalamodikk.common.network.packet.server.armor.DoubleJumpPacket;
 import com.github.nalamodikk.common.item.wand.WandRodItem;
 import com.github.nalamodikk.common.event.HelmetNightVisionHandler;
@@ -95,7 +95,7 @@ public class ClientTickHandler {
                     for (EquipmentSlot slot : new EquipmentSlot[]{
                             EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET}) {
                         var item = mc.player.getItemBySlot(slot).getItem();
-                        if (item instanceof ManaArmorItem || item instanceof ManaSprintBootsItem) {
+                        if (item instanceof ManaArmorItem || item instanceof ManaAlloyBootsItem) {
                             mc.setScreen(new UnifiedArmorUpgradeScreen(slot));
                             break;
                         }
@@ -119,7 +119,7 @@ public class ClientTickHandler {
         if (ModKeyMappings.DASH.consumeClick()) {
             Minecraft mc = Minecraft.getInstance();
             if (mc.player != null && mc.screen == null
-                    && mc.player.getItemBySlot(EquipmentSlot.FEET).getItem() instanceof ManaSprintBootsItem
+                    && mc.player.getItemBySlot(EquipmentSlot.FEET).getItem() instanceof ManaAlloyBootsItem
                     && !mc.player.hasEffect(com.github.nalamodikk.register.ModMobEffects.SPRINT_COOLDOWN)) {
                 if (mc.player.isInWater() || mc.player.isInLava()) {
                     mc.player.displayClientMessage(

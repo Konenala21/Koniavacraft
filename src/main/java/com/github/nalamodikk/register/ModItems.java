@@ -29,7 +29,7 @@ import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeBehavior;
 import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.boots.BootsUpgradeBehavior;
 import com.github.nalamodikk.common.item.equipment.boots.BootsUpgradeItem;
-import com.github.nalamodikk.common.item.equipment.boots.ManaSprintBootsItem;
+import com.github.nalamodikk.common.item.equipment.boots.ManaAlloyBootsItem;
 import com.github.nalamodikk.common.item.equipment.armor.ManaAlloyHelmetItem;
 import com.github.nalamodikk.common.item.equipment.armor.ManaAlloyChestplateItem;
 import com.github.nalamodikk.common.item.equipment.armor.ManaAlloyLeggingsItem;
@@ -91,7 +91,7 @@ public class ModItems {
     public static final DeferredItem<Item> MANA_ALLOY_LEGGINGS_BASE =
             ITEMS.register("mana_alloy_leggings_base", () -> new Item(new Item.Properties()));
     public static final DeferredItem<Item> MANA_SPRINT_BOOTS_BASE =
-            ITEMS.registerSimpleItem("mana_sprint_boots_base", new Item.Properties().stacksTo(1));
+            ITEMS.registerSimpleItem("mana_alloy_boots_base", new Item.Properties().stacksTo(1));
 
 
     // ── 魔力合金套裝中間材料 ─────────────────────────────────────────────────────
@@ -364,13 +364,13 @@ public class ModItems {
                             .component(ModDataComponents.MANA_STORED, 0)
                             .component(ModDataComponents.MAX_MANA, ManaAlloyLeggingsItem.BASE_MAX_MANA)));
 
-    public static final DeferredItem<ManaSprintBootsItem> MANA_SPRINT_BOOTS =
-            ITEMS.register("mana_sprint_boots", () -> new ManaSprintBootsItem(
+    public static final DeferredItem<ManaAlloyBootsItem> MANA_SPRINT_BOOTS =
+            ITEMS.register("mana_alloy_boots", () -> new ManaAlloyBootsItem(
                     ModArmorMaterials.MANA_ALLOY,
                     new Item.Properties()
                             .durability(429)
                             .component(ModDataComponents.MANA_STORED, 0)
-                            .component(ModDataComponents.MAX_MANA, ManaSprintBootsItem.BASE_MAX_MANA)));
+                            .component(ModDataComponents.MAX_MANA, ManaAlloyBootsItem.BASE_MAX_MANA)));
 
 
     // 通用魔力容量升級（適用於所有魔力盔甲）

@@ -144,7 +144,7 @@ public class AltarRecipeProvider {
 
     private static void registerBoots(RecipeOutput output) {
         // 魔力衝刺靴底殼 T1 祭壇
-        save(output, "mana_sprint_boots_base",
+        save(output, "mana_alloy_boots_base",
                 Ingredient.of(ModItems.MANA_CRYSTAL.get()),
                 List.of(
                         Ingredient.of(Items.LEATHER_BOOTS),
@@ -161,7 +161,7 @@ public class AltarRecipeProvider {
         );
 
         // 魔力衝刺靴激活 T1 祭壇（底殼→完成）
-        save(output, "mana_sprint_boots_activate",
+        save(output, "mana_alloy_boots_activate",
                 Ingredient.of(ModItems.MANA_SPRINT_BOOTS_BASE.get()),
                 List.of(
                         Ingredient.of(ModItems.MANA_CRYSTAL_FRAGMENT.get()),

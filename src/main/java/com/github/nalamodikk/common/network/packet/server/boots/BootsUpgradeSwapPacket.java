@@ -2,7 +2,7 @@ package com.github.nalamodikk.common.network.packet.server.boots;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.item.equipment.ManaArmorItem;
-import com.github.nalamodikk.common.item.equipment.boots.ManaSprintBootsItem;
+import com.github.nalamodikk.common.item.equipment.boots.ManaAlloyBootsItem;
 import com.github.nalamodikk.common.item.upgrade.EquipmentUpgradeData;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -42,7 +42,7 @@ public record BootsUpgradeSwapPacket(int slot, int inventorySlot) implements Cus
         ctx.enqueueWork(() -> {
             if (!(ctx.player() instanceof ServerPlayer player)) return;
             ItemStack boots = player.getItemBySlot(EquipmentSlot.FEET);
-            if (!(boots.getItem() instanceof ManaSprintBootsItem bootsItem)) return;
+            if (!(boots.getItem() instanceof ManaAlloyBootsItem bootsItem)) return;
 
             EquipmentUpgradeData data = ManaArmorItem.getData(boots);
 
@@ -55,7 +55,7 @@ public record BootsUpgradeSwapPacket(int slot, int inventorySlot) implements Cus
     }
 
     private static void removeFromBoots(ServerPlayer player, ItemStack boots, EquipmentUpgradeData data,
-                                         int slot, ManaSprintBootsItem bootsItem) {
+                                         int slot, ManaAlloyBootsItem bootsItem) {
         ItemStack current = data.getUpgrade(slot);
         if (current.isEmpty()) return;
         ItemStack toReturn = current.copy();
@@ -65,7 +65,7 @@ public record BootsUpgradeSwapPacket(int slot, int inventorySlot) implements Cus
     }
 
     private static void installToBoots(ServerPlayer player, ItemStack boots, EquipmentUpgradeData data,
-                                        int slot, int invSlot, ManaSprintBootsItem bootsItem) {
+                                        int slot, int invSlot, ManaAlloyBootsItem bootsItem) {
         if (invSlot < 0 || invSlot >= player.getInventory().getContainerSize()) return;
         ItemStack fromInv = player.getInventory().getItem(invSlot);
         if (fromInv.isEmpty()) return;

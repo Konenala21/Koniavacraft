@@ -17,7 +17,7 @@ import net.minecraft.world.item.TooltipFlag;
 
 import java.util.List;
 
-public class ManaSprintBootsItem extends ManaArmorItem {
+public class ManaAlloyBootsItem extends ManaArmorItem {
 
     public static final int BASE_ARMOR = 2;
     public static final int BASE_MAX_MANA = 6000;
@@ -27,7 +27,7 @@ public class ManaSprintBootsItem extends ManaArmorItem {
     public static final double BASE_DASH_DISTANCE = 3.0;
     public static final int MAX_UPGRADE_SLOTS = 5;
 
-    public ManaSprintBootsItem(Holder<ArmorMaterial> material, Properties properties) {
+    public ManaAlloyBootsItem(Holder<ArmorMaterial> material, Properties properties) {
         super(material, Type.BOOTS, BASE_MAX_MANA, BASE_ARMOR, MAX_UPGRADE_SLOTS, properties);
     }
 
@@ -137,14 +137,14 @@ public class ManaSprintBootsItem extends ManaArmorItem {
 
     @Override
     public void appendHoverText(ItemStack stack, TooltipContext ctx, List<Component> lines, TooltipFlag flag) {
-        lines.add(Component.translatable("tooltip.koniava.mana_sprint_boots.mana",
+        lines.add(Component.translatable("tooltip.koniava.mana_alloy_boots.mana",
                 getMana(stack), getMaxMana(stack)));
         int count = (int) getData(stack).upgrades().values().stream().filter(s -> !s.isEmpty()).count();
         if (count > 0) {
-            lines.add(Component.translatable("tooltip.koniava.mana_sprint_boots.upgrades",
+            lines.add(Component.translatable("tooltip.koniava.mana_alloy_boots.upgrades",
                     count, MAX_UPGRADE_SLOTS));
         }
-        lines.add(Component.translatable("tooltip.koniava.mana_sprint_boots.open_upgrade",
+        lines.add(Component.translatable("tooltip.koniava.mana_alloy_boots.open_upgrade",
                 ModKeyMappings.OPEN_UPGRADE_GUI.getTranslatedKeyMessage()));
     }
 }

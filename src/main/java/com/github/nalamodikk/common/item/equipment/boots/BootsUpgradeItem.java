@@ -34,7 +34,7 @@ public class BootsUpgradeItem extends Item implements IModUpgrade {
         lines.add(Component.translatable("tooltip.koniava.wand_upgrade.type", behavior.getDisplayName()));
         lines.add(behavior.getEffectTooltip(mk));
         lines.add(Component.translatable("tooltip.koniava.upgrade.compatible",
-                Component.translatable("item.koniava.mana_sprint_boots").withStyle(ChatFormatting.YELLOW)
+                Component.translatable("item.koniava.mana_alloy_boots").withStyle(ChatFormatting.YELLOW)
         ).withStyle(ChatFormatting.GRAY));
     }
 }

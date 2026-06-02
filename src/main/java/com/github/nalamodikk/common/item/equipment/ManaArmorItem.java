@@ -107,7 +107,7 @@ public abstract class ManaArmorItem extends ArmorItem {
             lines.add(Component.translatable("tooltip.koniava.mana_armor.upgrades",
                     count, maxUpgradeSlots));
         }
-        lines.add(Component.translatable("tooltip.koniava.mana_sprint_boots.open_upgrade",
+        lines.add(Component.translatable("tooltip.koniava.mana_alloy_boots.open_upgrade",
                 ModKeyMappings.OPEN_UPGRADE_GUI.getTranslatedKeyMessage())
                 .withStyle(ChatFormatting.GRAY));
     }

@@ -1,7 +1,7 @@
 package com.github.nalamodikk.common.network.packet.server.boots;
 
 import com.github.nalamodikk.KoniavacraftMod;
-import com.github.nalamodikk.common.item.equipment.boots.ManaSprintBootsItem;
+import com.github.nalamodikk.common.item.equipment.boots.ManaAlloyBootsItem;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -28,8 +28,8 @@ public record DashPacket() implements CustomPacketPayload {
         ctx.enqueueWork(() -> {
             if (!(ctx.player() instanceof ServerPlayer player)) return;
             ItemStack boots = player.getItemBySlot(EquipmentSlot.FEET);
-            if (!(boots.getItem() instanceof ManaSprintBootsItem)) return;
-            ManaSprintBootsItem.performDash(player, boots);
+            if (!(boots.getItem() instanceof ManaAlloyBootsItem)) return;
+            ManaAlloyBootsItem.performDash(player, boots);
         });
     }
 
