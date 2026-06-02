@@ -1,5 +1,6 @@
 package com.github.nalamodikk.research.skill.fx;
 
+import com.github.nalamodikk.common.network.packet.client.skill.CarrierFxPacket;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
@@ -62,7 +63,7 @@ public final class CarrierFx {
         }
     }
 
-    /** 坤 SHOCKWAVE:沿地面的擴散環(server 粒子先用兩圈雲;真正的擴散由 shader 處理)。 */
+    /** 坤 SHOCKWAVE:地面擴散環。server 粒子當底,另送 packet 觸發 client 的 shader 擴散環。 */
     public static void shockwave(ServerLevel level, Vec3 center, double radius) {
         for (double rr : new double[]{radius * 0.6, radius}) {
             for (int i = 0; i < 36; i++) {
@@ -71,6 +72,7 @@ public final class CarrierFx {
                         center.x + Math.cos(a) * rr, center.y - 0.4, center.z + Math.sin(a) * rr, 1, 0.0, 0.0, 0.0, 0.02);
             }
         }
+        CarrierFxPacket.send(level, center, CarrierFxType.SHOCKWAVE); // shader 擴散環
     }
 
     /** 艮 EARTHWAVE:沿地面往前的一條碎裂帶。 */
