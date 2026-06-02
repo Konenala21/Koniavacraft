@@ -180,6 +180,12 @@ public final class SkillCompiler {
                 for (int i = 0; i < count; i++) castField(level, caster, dmg, finalOps, chainCount);
             } else if (carrier == ModAspects.BLADE) {
                 for (int i = 0; i < count; i++) castSlash(level, caster, dmg, finalOps, chainCount);
+            } else if (carrier == ModAspects.DUI) {
+                for (int i = 0; i < count; i++) castNova(level, caster, dmg, finalOps, chainCount);
+            } else if (carrier == ModAspects.KUN) {
+                for (int i = 0; i < count; i++) castShockwave(level, caster, dmg, finalOps, chainCount);
+            } else if (carrier == ModAspects.GEN) {
+                for (int i = 0; i < count; i++) castEarthwave(level, caster, dmg, finalOps, chainCount);
             } else if (carrier == ModAspects.MACHINE) {
                 // 機械載體：發射浮游砲子彈，帶技能傷害 + 命中效果 ops。
                 // 機械+火=火砲彈、機械+霜=冰砲彈、機械+凋零=腐蝕砲彈，效果本源決定砲彈變種。
@@ -300,6 +306,81 @@ public final class SkillCompiler {
         }
         chainOps(level, caster, hit, ops, damage * 0.6F, chainCount);
         level.playSound(null, BlockPos.containing(center), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 0.5F, 1.4F);
+    }
+
+    /** 兌 NOVA carrier: a burst centred on the caster, effects + light knockback on all nearby. */
+    private static void castNova(ServerLevel level, ServerPlayer caster, float damage, List<SkillEffectOp> ops, int chainCount) {
+        Vec3 center = caster.position().add(0, caster.getBbHeight() * 0.5, 0);
+        double radius = 4.0;
+        DamageSource src = caster.damageSources().indirectMagic(caster, caster);
+        java.util.Set<LivingEntity> hit = new java.util.HashSet<>();
+        AABB box = new AABB(center.subtract(radius, radius, radius), center.add(radius, radius, radius));
+        for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+            Vec3 away = le.position().subtract(center);
+            if (away.lengthSqr() > radius * radius) continue;
+            Vec3 dir = away.lengthSqr() > 1.0E-4 ? away.normalize() : new Vec3(0, 0, 1);
+            le.invulnerableTime = 0;
+            le.hurt(src, damage);
+            le.setDeltaMovement(le.getDeltaMovement().add(dir.x * 0.5, 0.25, dir.z * 0.5));
+            le.hurtMarked = true;
+            hit.add(le);
+            for (SkillEffectOp op : ops) op.applyTo(level, le, caster, dir, damage);
+        }
+        chainOps(level, caster, hit, ops, damage, chainCount);
+        CarrierFx.nova(level, center, radius);
+        level.playSound(null, caster.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 0.7F, 1.4F);
+    }
+
+    /** 坤 SHOCKWAVE carrier: a wide expanding ring, lighter damage but a strong outward shove (crowd control). */
+    private static void castShockwave(ServerLevel level, ServerPlayer caster, float damage, List<SkillEffectOp> ops, int chainCount) {
+        Vec3 center = caster.position().add(0, caster.getBbHeight() * 0.3, 0);
+        double radius = 6.0;
+        DamageSource src = caster.damageSources().indirectMagic(caster, caster);
+        java.util.Set<LivingEntity> hit = new java.util.HashSet<>();
+        AABB box = new AABB(center.subtract(radius, radius, radius), center.add(radius, radius, radius));
+        for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+            Vec3 away = le.position().subtract(center);
+            if (away.lengthSqr() > radius * radius) continue;
+            Vec3 dir = away.lengthSqr() > 1.0E-4 ? away.normalize() : new Vec3(0, 0, 1);
+            le.invulnerableTime = 0;
+            le.hurt(src, damage * 0.7F);
+            le.setDeltaMovement(dir.x * 1.3, 0.4, dir.z * 1.3); // 強力外推
+            le.hurtMarked = true;
+            hit.add(le);
+            for (SkillEffectOp op : ops) op.applyTo(level, le, caster, dir, damage * 0.7F);
+        }
+        chainOps(level, caster, hit, ops, damage * 0.7F, chainCount);
+        CarrierFx.shockwave(level, center, radius);
+        level.playSound(null, caster.blockPosition(), SoundEvents.WARDEN_SONIC_BOOM, SoundSource.PLAYERS, 0.8F, 0.9F);
+    }
+
+    /** 艮 EARTHWAVE carrier: a forward ground wave in a cone, pops grounded foes up. */
+    private static void castEarthwave(ServerLevel level, ServerPlayer caster, float damage, List<SkillEffectOp> ops, int chainCount) {
+        Vec3 origin = caster.position();
+        Vec3 look = caster.getLookAngle();
+        Vec3 flat = new Vec3(look.x, 0, look.z);
+        flat = flat.lengthSqr() > 1.0E-4 ? flat.normalize() : new Vec3(0, 0, 1);
+        double range = 8.0;
+        double coneCos = 0.55;
+        DamageSource src = caster.damageSources().indirectMagic(caster, caster);
+        java.util.Set<LivingEntity> hit = new java.util.HashSet<>();
+        AABB box = caster.getBoundingBox().inflate(range, 3.0, range);
+        for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+            Vec3 to = le.position().subtract(origin);
+            if (Math.abs(to.y) > 3.0) continue; // ground-ish
+            Vec3 toFlat = new Vec3(to.x, 0, to.z);
+            if (toFlat.length() > range || toFlat.lengthSqr() < 1.0E-4) continue;
+            if (toFlat.normalize().dot(flat) < coneCos) continue;
+            le.invulnerableTime = 0;
+            le.hurt(src, damage);
+            le.setDeltaMovement(le.getDeltaMovement().x, 0.55, le.getDeltaMovement().z); // 地面掀起
+            le.hurtMarked = true;
+            hit.add(le);
+            for (SkillEffectOp op : ops) op.applyTo(level, le, caster, flat, damage);
+        }
+        chainOps(level, caster, hit, ops, damage, chainCount);
+        CarrierFx.earthwave(level, origin.add(0, 0.1, 0), flat, range);
+        level.playSound(null, caster.blockPosition(), SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS, 0.6F, 0.6F);
     }
 
     /**

@@ -51,4 +51,34 @@ public final class CarrierFx {
         level.sendParticles(ParticleTypes.ELECTRIC_SPARK,
                 le.getX(), le.getY() + le.getBbHeight() * 0.5, le.getZ(), 6, 0.2, 0.2, 0.2, 0.02);
     }
+
+    /** 兌 NOVA:中心爆 + 一圈橫掃弧。 */
+    public static void nova(ServerLevel level, Vec3 center, double radius) {
+        level.sendParticles(ParticleTypes.EXPLOSION, center.x, center.y, center.z, 1, 0.0, 0.0, 0.0, 0.0);
+        for (int i = 0; i < 24; i++) {
+            double a = (Math.PI * 2 * i) / 24;
+            level.sendParticles(ParticleTypes.SWEEP_ATTACK,
+                    center.x + Math.cos(a) * radius, center.y, center.z + Math.sin(a) * radius, 1, 0.0, 0.0, 0.0, 0.0);
+        }
+    }
+
+    /** 坤 SHOCKWAVE:沿地面的擴散環(server 粒子先用兩圈雲;真正的擴散由 shader 處理)。 */
+    public static void shockwave(ServerLevel level, Vec3 center, double radius) {
+        for (double rr : new double[]{radius * 0.6, radius}) {
+            for (int i = 0; i < 36; i++) {
+                double a = (Math.PI * 2 * i) / 36;
+                level.sendParticles(ParticleTypes.POOF,
+                        center.x + Math.cos(a) * rr, center.y - 0.4, center.z + Math.sin(a) * rr, 1, 0.0, 0.0, 0.0, 0.02);
+            }
+        }
+    }
+
+    /** 艮 EARTHWAVE:沿地面往前的一條碎裂帶。 */
+    public static void earthwave(ServerLevel level, Vec3 origin, Vec3 dir, double range) {
+        for (int s = 0; s <= 16; s++) {
+            double t = s / 16.0;
+            Vec3 p = origin.add(dir.scale(range * t));
+            level.sendParticles(ParticleTypes.CRIT, p.x, p.y + 0.1, p.z, 3, 0.3, 0.1, 0.3, 0.05);
+        }
+    }
 }

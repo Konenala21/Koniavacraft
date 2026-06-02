@@ -67,7 +67,7 @@ public final class AspectRoles {
         put(ModAspects.NOURISH,    SkillRole.EFFECT);  // 再生
         put(ModAspects.VITAE,      SkillRole.EFFECT);  // 血氣 -> 吸血
         put(ModAspects.KAN,        SkillRole.EFFECT);  // 坎 水傷
-        put(ModAspects.DUI,        SkillRole.EFFECT);  // 兌 水
+        put(ModAspects.DUI,        SkillRole.EFFECT, SkillRole.CARRIER);  // 兌 水 / 載體=環爆 Nova
         put(ModAspects.GROWTH,     SkillRole.EFFECT);  // 藤蔓纏繞
         put(ModAspects.STORM,      SkillRole.EFFECT);  // 風暴範圍
         put(ModAspects.RADIANCE,   SkillRole.EFFECT);  // 光輝 -> 閃光彈/致盲
@@ -87,11 +87,11 @@ public final class AspectRoles {
         put(ModAspects.RESONANCE,  SkillRole.MODIFIER); // 回響/重複
         put(ModAspects.BLADE,      SkillRole.CARRIER, SkillRole.MODIFIER); // 載體=劍氣斬 / 修飾=穿透
         put(ModAspects.BINDING,    SkillRole.MODIFIER); // 定身
-        put(ModAspects.GEN,        SkillRole.MODIFIER); // 艮 緩停/釘住
+        put(ModAspects.GEN,        SkillRole.MODIFIER, SkillRole.CARRIER); // 艮 緩停/釘住 / 載體=震波 Earthwave
         put(ModAspects.WARDING,    SkillRole.MODIFIER); // 護盾
         put(ModAspects.FORTIFY,    SkillRole.MODIFIER); // 增傷
         put(ModAspects.SHADOW,     SkillRole.MODIFIER); // 致盲/潛行
-        put(ModAspects.KUN,        SkillRole.MODIFIER); // 坤 防禦/減傷
+        put(ModAspects.KUN,        SkillRole.MODIFIER, SkillRole.CARRIER); // 坤 防禦/減傷 / 載體=衝擊波環 Shockwave
         put(ModAspects.QIAN,       SkillRole.MODIFIER); // 乾 大幅增威
         put(ModAspects.MECHANISM,  SkillRole.MODIFIER); // 精準/命中
         put(ModAspects.INSTRUMENT, SkillRole.MODIFIER); // 器具 精準
