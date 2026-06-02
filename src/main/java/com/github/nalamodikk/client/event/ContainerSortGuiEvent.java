@@ -82,6 +82,7 @@ public class ContainerSortGuiEvent {
             || type == MenuType.GRINDSTONE
             || type == MenuType.STONECUTTER
             || type == MenuType.LOOM
-            || type == MenuType.CARTOGRAPHY_TABLE;
+            || type == MenuType.CARTOGRAPHY_TABLE
+            || type == MenuType.MERCHANT; // 村民交易:無可排序容器,且寬版佈局會讓按鈕位置跑掉
     }
 }
