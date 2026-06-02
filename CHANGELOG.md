@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Skills no longer hurt their own caster. Reaction explosions (combustion, overload, kinetic blast, etc.) no longer damage you when you cast them at close range, and the lingering poison/ash hazard clouds that could gas you have been removed (the reactions still hit enemies in the area, they just no longer leave a cloud on the ground that catches you too).
+技能不再傷到施放者自己。反應的爆炸（爆燃、超載、動能爆等）近距離施放時不再炸到你，會把你也燻到的滯留毒雲/灰燼雲也移除了（這些反應還是會打到範圍內的敵人，只是不再在地上留一團連你也波及的雲）。
+
 The Nara watch has a new 3D model and texture made by collaborator Bksesame.
 娜拉全息手錶換上了合作者 Bksesame 製作的新 3D 模型與貼圖。
 

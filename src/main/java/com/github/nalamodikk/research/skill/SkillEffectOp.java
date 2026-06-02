@@ -8,9 +8,7 @@ import com.github.nalamodikk.register.ModMobEffects;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.tags.EntityTypeTags;
-import net.minecraft.world.entity.AreaEffectCloud;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.LightningBolt;
@@ -281,8 +279,7 @@ public enum SkillEffectOp {
     ENERGY {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             float radius = Math.min(7.0F, 2.0F + power * 0.06F);
-            level.explode(caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
-                    radius, Level.ExplosionInteraction.NONE);
+            safeExplode(level, caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
         }
     },
     /** 奧法: a heavier arcane detonation. */
@@ -424,8 +421,7 @@ public enum SkillEffectOp {
                 target.hurt(level.damageSources().magic(), 4.0F + power * 0.4F); // 引爆毒氣
             }
             float radius = Math.min(8.0F, 3.0F + power * 0.07F);
-            level.explode(caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
-                    radius, Level.ExplosionInteraction.NONE);
+            safeExplode(level, caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
             target.setRemainingFireTicks(80);
         }
     },
@@ -462,8 +458,7 @@ public enum SkillEffectOp {
                 target.hurt(level.damageSources().magic(), 4.0F + power * 0.3F);
             }
             float radius = Math.min(9.0F, 4.0F + power * 0.08F);
-            level.explode(caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
-                    radius, Level.ExplosionInteraction.NONE);
+            safeExplode(level, caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
         }
     },
     /** 死亡虹吸 (death + lifesteal): the wither feeds the caster a large heal, larger
@@ -578,8 +573,7 @@ public enum SkillEffectOp {
     THERMONUCLEAR {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             float radius = Math.min(10.0F, 5.0F + power * 0.09F);
-            level.explode(caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
-                    radius, Level.ExplosionInteraction.NONE);
+            safeExplode(level, caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
             target.setRemainingFireTicks(120);
         }
     },
@@ -592,7 +586,6 @@ public enum SkillEffectOp {
                 le.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 140, 1));
                 le.setRemainingFireTicks(60);
             }
-            lingerCloud(level, target, new MobEffectInstance(MobEffects.POISON, 80, 1), 4.0F, 160); // 留毒火地形
         }
     },
     /** 聖核爆 (radiance + dark + energy): a holy nova, a massive burst to all nearby. */
@@ -665,8 +658,7 @@ public enum SkillEffectOp {
                 target.hurt(level.damageSources().magic(), 3.0F + power * 0.25F);
             }
             float radius = Math.min(7.0F, 3.0F + power * 0.06F);
-            level.explode(caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
-                    radius, Level.ExplosionInteraction.NONE);
+            safeExplode(level, caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
             Vec3 away = dir.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : dir.normalize();
             target.setDeltaMovement(away.x * 1.6, 0.6, away.z * 1.6);
             target.hurtMarked = true;
@@ -683,8 +675,8 @@ public enum SkillEffectOp {
                 le.hurtMarked = true;
             }
             vacuumItems(level, target, 4.5); // 奇點:把掉落物也吸進來
-            level.explode(caster, center.x, center.y + target.getBbHeight() * 0.5, center.z,
-                    Math.min(7.0F, 3.0F + power * 0.06F), Level.ExplosionInteraction.NONE);
+            safeExplode(level, caster, center.x, center.y + target.getBbHeight() * 0.5, center.z,
+                    Math.min(7.0F, 3.0F + power * 0.06F));
         }
     },
     /** 毒爆 (force + venom): a venom blast, knocks back and spreads poison around. */
@@ -759,8 +751,7 @@ public enum SkillEffectOp {
                 target.hurt(level.damageSources().magic(), 4.0F + power * 0.35F); // 聖光剋不死
             }
             float radius = Math.min(8.0F, 3.5F + power * 0.07F);
-            level.explode(caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
-                    radius, Level.ExplosionInteraction.NONE);
+            safeExplode(level, caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
             target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0));
         }
     },
@@ -772,7 +763,6 @@ public enum SkillEffectOp {
                 le.addEffect(new MobEffectInstance(MobEffects.POISON, 160, 2));
                 le.addEffect(new MobEffectInstance(MobEffects.WITHER, 100, 1));
             }
-            lingerCloud(level, target, new MobEffectInstance(MobEffects.POISON, 80, 1), 3.0F, 140); // 留病雲
         }
     },
     /** 腐生 (dark + organic): rotting bloom, wither spreading over an area. */
@@ -789,8 +779,7 @@ public enum SkillEffectOp {
     VOID_SURGE {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             float radius = Math.min(8.0F, 3.5F + power * 0.07F);
-            level.explode(caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
-                    radius, Level.ExplosionInteraction.NONE);
+            safeExplode(level, caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
             target.addEffect(new MobEffectInstance(MobEffects.WITHER, 100, 1));
         }
     },
@@ -885,8 +874,7 @@ public enum SkillEffectOp {
     HYDROGEN_BLAST {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             float radius = Math.min(9.0F, 4.0F + power * 0.08F);
-            level.explode(caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
-                    radius, Level.ExplosionInteraction.NONE);
+            safeExplode(level, caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(), radius);
         }
     },
     /** 灰燼風暴 (ash + force): blowing ash, a blinding choking cloud over an area. */
@@ -897,7 +885,6 @@ public enum SkillEffectOp {
                 le.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 80, 0));
                 TurretControlHelper.applySkillControl(le, ModMobEffects.DAZE, 80, 0);
             }
-            lingerCloud(level, target, new MobEffectInstance(MobEffects.BLINDNESS, 60, 0), 4.0F, 120); // 留灰雲
         }
     },
 
@@ -965,7 +952,6 @@ public enum SkillEffectOp {
             for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
                 le.addEffect(new MobEffectInstance(MobEffects.POISON, 120, 0));
             }
-            lingerCloud(level, target, new MobEffectInstance(MobEffects.POISON, 60, 0), 3.0F, 120); // 留污水池
         }
     },
     /** 稀釋酸 (water + acid): a washing acid splash, weakness over an area. */
@@ -1286,17 +1272,13 @@ public enum SkillEffectOp {
     }
 
     // ── Tier C 共用機制 ──
-    /** 留一團持續 AreaEffectCloud 在地上(雲類反應的「危險地形」)。 */
-    private static void lingerCloud(ServerLevel level, LivingEntity at, MobEffectInstance effect,
-                                    float radius, int duration) {
-        AreaEffectCloud cloud = new AreaEffectCloud(level, at.getX(), at.getY(), at.getZ());
-        cloud.setRadius(radius);
-        cloud.setDuration(duration);
-        cloud.setRadiusOnUse(-0.1F);
-        cloud.setWaitTime(5);
-        cloud.setParticle(ParticleTypes.SNEEZE);
-        cloud.addEffect(effect);
-        level.addFreshEntity(cloud);
+    /** 爆炸但不傷到施放者:explode 期間把施放者設為無敵,事後還原(擊退不受影響、傷害免疫)。 */
+    private static void safeExplode(ServerLevel level, @Nullable LivingEntity caster,
+                                    double x, double y, double z, float radius) {
+        boolean prev = caster != null && caster.isInvulnerable();
+        if (caster != null) caster.setInvulnerable(true);
+        level.explode(caster, x, y, z, radius, Level.ExplosionInteraction.NONE);
+        if (caster != null) caster.setInvulnerable(prev);
     }
 
     /** 把附近掉落物吸向中心(奇點機制)。 */
