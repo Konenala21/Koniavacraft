@@ -828,6 +828,329 @@ public enum SkillEffectOp {
                 TurretControlHelper.applySkillControl(le, ModMobEffects.DAZE, 80, 0);
             }
         }
+    },
+
+    // ── Reaction outputs, batch 4 (fill the trait matrix) ────────────────────
+    /** 熱離子 (heat + electric): superheated ions, ignite plus an electric jolt. */
+    THERMION {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.setRemainingFireTicks(60);
+            target.invulnerableTime = 0;
+            target.hurt(level.damageSources().lightningBolt(), 2.0F + power * 0.2F);
+        }
+    },
+    /** 熔煉 (heat + metal): molten metal, ignite plus melted armor (heavy vulnerability). */
+    SMELT {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.setRemainingFireTicks((int) (120 + power * 20));
+            target.addEffect(new MobEffectInstance(ModMobEffects.VULNERABLE, 140, 1));
+        }
+    },
+    /** 灼療 (heat + life): cauterize. Heals the struck ally and sears off bleed/poison. No damage. */
+    CAUTERIZE {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.heal(6.0F + power * 0.4F);
+            target.removeEffect(ModMobEffects.BLEED);
+            target.removeEffect(MobEffects.POISON);
+        }
+    },
+    /** 冰封 (cold + water): a deep freeze, a hard chill plus heavy frozen ticks. */
+    DEEP_FREEZE {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            TurretControlHelper.applySkillControl(target, ModMobEffects.CHILL, 140, 4);
+            target.setTicksFrozen(target.getTicksRequiredToFreeze() + 160);
+        }
+    },
+    /** 冰蝕 (cold + acid): frost-brittle armor, chill plus vulnerability. */
+    FROST_ETCH {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            TurretControlHelper.applySkillControl(target, ModMobEffects.CHILL, 100, 2);
+            target.addEffect(new MobEffectInstance(ModMobEffects.VULNERABLE, 120, 0));
+        }
+    },
+    /** 魔凍 (cold + arcane): mana-freeze, a chill plus an arcane burst. */
+    MANA_FREEZE {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            TurretControlHelper.applySkillControl(target, ModMobEffects.CHILL, 100, 2);
+            target.invulnerableTime = 0;
+            target.hurt(level.damageSources().magic(), 2.0F + power * 0.2F);
+        }
+    },
+    /** 冬眠 (cold + life): hibernation, a slow regenerating heal. No damage. */
+    HIBERNATE {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.heal(5.0F + power * 0.3F);
+            target.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 200, 1));
+        }
+    },
+    /** 污水 (water + venom): tainted water, spreads poison to everything nearby. */
+    TAINTED_WATER {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            AABB box = target.getBoundingBox().inflate(3.5);
+            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+                le.addEffect(new MobEffectInstance(MobEffects.POISON, 120, 0));
+            }
+        }
+    },
+    /** 稀釋酸 (water + acid): a washing acid splash, weakness over an area. */
+    ACID_WASH {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            AABB box = target.getBoundingBox().inflate(3.5);
+            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+                le.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 120, 0));
+            }
+        }
+    },
+    /** 鏽蝕 (water + metal): rust, eats armor (vulnerability plus weakness). */
+    RUST {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.addEffect(new MobEffectInstance(ModMobEffects.VULNERABLE, 140, 0));
+            target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 120, 0));
+        }
+    },
+    /** 聖水 (water + light): holy water, reveals foes and heals the caster a little. */
+    HOLY_WATER {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            AABB box = target.getBoundingBox().inflate(3.0);
+            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+                le.addEffect(new MobEffectInstance(MobEffects.GLOWING, 120, 0));
+            }
+            if (caster != null && caster.isAlive()) caster.heal(3.0F + power * 0.2F);
+        }
+    },
+    /** 沼氣 (water + dark): a miasma swamp gas, darkness plus poison around the target. */
+    MIASMA {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            AABB box = target.getBoundingBox().inflate(3.5);
+            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+                le.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 100, 0));
+                le.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 0));
+            }
+        }
+    },
+    /** 激流 (water + force): a torrent, a powerful water-cannon knockback. */
+    TORRENT {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            Vec3 away = dir.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : dir.normalize();
+            double s = 1.7 + power * 0.06;
+            target.setDeltaMovement(away.x * s, 0.35, away.z * s);
+            target.hurtMarked = true;
+        }
+    },
+    /** 靈泉 (water + arcane): a mana spring, an arcane burst that reveals. */
+    MANA_SPRING {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.invulnerableTime = 0;
+            target.hurt(level.damageSources().magic(), 2.5F + power * 0.2F);
+            target.addEffect(new MobEffectInstance(MobEffects.GLOWING, 80, 0));
+        }
+    },
+    /** 活泉 (water + life): a living spring, a heal plus regeneration. No damage. */
+    LIVING_SPRING {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.heal(7.0F + power * 0.4F);
+            target.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 140, 1));
+        }
+    },
+    /** 電解毒 (electric + venom): electrolysis, poison that spreads along the current (chains). */
+    ELECTROLYSIS {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.addEffect(new MobEffectInstance(MobEffects.POISON, 140, 1));
+        }
+    },
+    /** 電蝕 (electric + acid): electro-corrosion, vulnerability that arcs onward (chains). */
+    ELECTRO_CORROSION {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.addEffect(new MobEffectInstance(ModMobEffects.VULNERABLE, 140, 1));
+        }
+    },
+    /** 電磁脈衝 (electric + metal): an EMP, a disorienting jolt that dazes nearby foes. */
+    EMP {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            AABB box = target.getBoundingBox().inflate(4.0);
+            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+                TurretControlHelper.applySkillControl(le, ModMobEffects.DAZE, 60, 0);
+                TurretControlHelper.applySkillControl(le, ModMobEffects.ROOT, 20, 0);
+            }
+        }
+    },
+    /** 生物電 (electric + organic): bioelectric shock, locks the nervous system (chains). */
+    BIOELECTRIC {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            TurretControlHelper.applySkillControl(target, ModMobEffects.ROOT, 50, 0);
+        }
+    },
+    /** 去顫 (electric + life): defibrillate, a jolt that heals the struck ally. No damage. */
+    DEFIBRILLATE {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.heal(8.0F + power * 0.5F);
+            target.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 100, 1));
+        }
+    },
+    /** 重金屬毒 (venom + metal): heavy-metal poisoning, deep poison plus mining fatigue. */
+    HEAVY_METAL {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.addEffect(new MobEffectInstance(MobEffects.POISON, 160, 2));
+            target.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, 140, 1));
+        }
+    },
+    /** 淨毒 (venom + light): a purge, light detonates the poison for a burst plus blind. */
+    PURGE {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.invulnerableTime = 0;
+            target.hurt(level.damageSources().magic(), 4.0F + power * 0.3F);
+            target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 50, 0));
+        }
+    },
+    /** 魔毒 (venom + arcane): arcane venom, poison plus an arcane burst. */
+    ARCANE_VENOM {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.addEffect(new MobEffectInstance(MobEffects.POISON, 120, 1));
+            target.invulnerableTime = 0;
+            target.hurt(level.damageSources().magic(), 2.0F + power * 0.2F);
+        }
+    },
+    /** 劇毒 (venom + life): virulence, life feeds the toxin into a brutal poison. */
+    VIRULENCE {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.addEffect(new MobEffectInstance(MobEffects.POISON, 200, 3));
+        }
+    },
+    /** 焦蝕 (acid + light): searing etch, melts armor and blinds with a caustic flash. */
+    SEARING_ETCH {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.addEffect(new MobEffectInstance(ModMobEffects.VULNERABLE, 140, 1));
+            target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 50, 0));
+        }
+    },
+    /** 腐朽 (acid + dark): decay, rotting vulnerability plus wither. */
+    DECAY {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.addEffect(new MobEffectInstance(ModMobEffects.VULNERABLE, 140, 0));
+            target.addEffect(new MobEffectInstance(MobEffects.WITHER, 100, 1));
+        }
+    },
+    /** 酸爆 (acid + force): an acid splash blast, knockback plus spreading weakness. */
+    ACID_SPLASH {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            AABB box = target.getBoundingBox().inflate(3.5);
+            Vec3 away = dir.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : dir.normalize();
+            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+                le.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 120, 0));
+                le.setDeltaMovement(away.x, 0.3, away.z);
+                le.hurtMarked = true;
+            }
+        }
+    },
+    /** 枯萎 (acid + organic): wilt, plants rot into weakness and poison over an area. */
+    WILT {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            AABB box = target.getBoundingBox().inflate(3.5);
+            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+                le.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 140, 1));
+                le.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 0));
+            }
+        }
+    },
+    /** 魔蝕 (acid + arcane): mana corrosion, vulnerability plus an arcane burst. */
+    MANA_CORROSION {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.addEffect(new MobEffectInstance(ModMobEffects.VULNERABLE, 120, 1));
+            target.invulnerableTime = 0;
+            target.hurt(level.damageSources().magic(), 2.5F + power * 0.2F);
+        }
+    },
+    /** 中和 (acid + life): neutralize, life cancels the acid into a cleansing heal. No damage. */
+    NEUTRALIZE {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.heal(5.0F + power * 0.3F);
+            target.removeEffect(MobEffects.WEAKNESS);
+            target.removeEffect(MobEffects.POISON);
+        }
+    },
+    /** 鏡光 (metal + light): a mirror flash, a reflective glare that blinds nearby foes. */
+    MIRROR_FLASH {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            AABB box = target.getBoundingBox().inflate(3.5);
+            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+                le.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0));
+                TurretControlHelper.applySkillControl(le, ModMobEffects.DAZE, 60, 0);
+            }
+        }
+    },
+    /** 暗金 (metal + dark): cursed metal, wither plus melted armor. */
+    CURSED_METAL {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.addEffect(new MobEffectInstance(MobEffects.WITHER, 100, 1));
+            target.addEffect(new MobEffectInstance(ModMobEffects.VULNERABLE, 120, 0));
+        }
+    },
+    /** 礦化 (metal + organic): petrify, roots the target in stone plus vulnerability. */
+    PETRIFY {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            TurretControlHelper.applySkillControl(target, ModMobEffects.ROOT, 80, 0);
+            target.addEffect(new MobEffectInstance(ModMobEffects.VULNERABLE, 120, 0));
+        }
+    },
+    /** 鐵衛 (metal + life): an iron ward, shields the caster with resistance and absorption. */
+    IRON_WARD {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            if (caster != null && caster.isAlive()) {
+                caster.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 160, 1));
+                caster.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 200, 1));
+            }
+        }
+    },
+    /** 光壓 (light + force): radiation pressure, a glowing shove that blasts the target away. */
+    LIGHT_PRESSURE {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            Vec3 away = dir.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : dir.normalize();
+            double s = 1.5 + power * 0.05;
+            target.setDeltaMovement(away.x * s, 0.4, away.z * s);
+            target.hurtMarked = true;
+            target.addEffect(new MobEffectInstance(MobEffects.GLOWING, 80, 0));
+        }
+    },
+    /** 藤鞭 (force + organic): a vine lash, roots the target then whips it back. */
+    VINE_LASH {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            TurretControlHelper.applySkillControl(target, ModMobEffects.ROOT, 60, 0);
+            Vec3 away = dir.lengthSqr() < 1.0E-4 ? new Vec3(0, 0, 1) : dir.normalize();
+            target.setDeltaMovement(away.x * 1.2, 0.3, away.z * 1.2);
+            target.hurtMarked = true;
+        }
+    },
+    /** 震癒 (force + life): a resonant pulse, heals the caster and shoves nearby foes off. */
+    RESONANT_PULSE {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            if (caster != null && caster.isAlive()) caster.heal(4.0F + power * 0.3F);
+            AABB box = target.getBoundingBox().inflate(3.5);
+            Vec3 from = target.position();
+            for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+                Vec3 push = le.position().subtract(from);
+                if (push.lengthSqr() > 0.01) {
+                    le.setDeltaMovement(le.getDeltaMovement().add(push.normalize().scale(0.8)));
+                    le.hurtMarked = true;
+                }
+            }
+        }
+    },
+    /** 共生 (organic + arcane): symbiosis, mana-fed growth shields the caster over time. */
+    SYMBIOSIS {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            if (caster != null && caster.isAlive()) {
+                caster.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 160, 1));
+                caster.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 200, 0));
+            }
+        }
+    },
+    /** 奧術癒合 (arcane + life): arcane mending, a strong heal with regeneration and a shield. No damage. */
+    ARCANE_MENDING {
+        @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            target.heal(9.0F + power * 0.5F);
+            target.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 160, 2));
+            target.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 200, 1));
+        }
     };
 
     public abstract void apply(ServerLevel level, LivingEntity target,
@@ -842,7 +1165,14 @@ public enum SkillEffectOp {
             STEAM_BURST, CORRODE, KINETIC_BLAST, IMPLOSION, TOXIC_BURST, MAGNETIC_STORM, SPITE_BOLT,
             PHOTOELECTRIC, PHOTOSYNTHESIS, SANCTIFY, RADIANT_SURGE, PLAGUE, ROT_BLOOM, VOID_SURGE,
             SPORE_BURST, FLOURISH, SUPERCONDUCT, PRISM, WITHER_FROST, FROSTBIND, CRYOCRYSTAL,
-            MELTDOWN, ERUPTION, SUPERHEATED_PLASMA, HYDROGEN_BLAST, ASH_STORM);
+            MELTDOWN, ERUPTION, SUPERHEATED_PLASMA, HYDROGEN_BLAST, ASH_STORM,
+            // batch 4 (fill the trait matrix)
+            THERMION, SMELT, CAUTERIZE, DEEP_FREEZE, FROST_ETCH, MANA_FREEZE, HIBERNATE,
+            TAINTED_WATER, ACID_WASH, RUST, HOLY_WATER, MIASMA, TORRENT, MANA_SPRING, LIVING_SPRING,
+            ELECTROLYSIS, ELECTRO_CORROSION, EMP, BIOELECTRIC, DEFIBRILLATE, HEAVY_METAL, PURGE,
+            ARCANE_VENOM, VIRULENCE, SEARING_ETCH, DECAY, ACID_SPLASH, WILT, MANA_CORROSION, NEUTRALIZE,
+            MIRROR_FLASH, CURSED_METAL, PETRIFY, IRON_WARD, LIGHT_PRESSURE, VINE_LASH, RESONANT_PULSE,
+            SYMBIOSIS, ARCANE_MENDING);
 
     public boolean isReaction() {
         return REACTIONS.contains(this);
