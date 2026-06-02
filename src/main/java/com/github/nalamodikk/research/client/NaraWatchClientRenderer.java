@@ -36,12 +36,12 @@ public final class NaraWatchClientRenderer {
     private static final double WATCH_TARGET_RANGE = 4.5D;
     private static final int TARGET_NAME_COLOR = 0xD7F7FF;
     private static final int TARGET_NAME_SHADOW = 0x77001522;
-    private static final float WATCH_MODEL_SCALE = 0.3F; // Bksesame 新模型約大 5 倍,縮小以免第一人稱擋視野
+    private static final float WATCH_MODEL_SCALE = 0.22F; // Bksesame 新模型約大 5 倍,縮小以免第一人稱擋視野
     private static final float WATCH_MODEL_X_ROT = 45.0F;
     private static final float WATCH_MODEL_Y_ROT = 181.0F;
     private static final float WATCH_MODEL_Z_ROT = 0.0F;
-    private static final float WATCH_MODEL_X = -0.047F;
-    private static final float WATCH_MODEL_Y = -0.065F;
+    private static final float WATCH_MODEL_X = 0.04F;   // 往右(+X)
+    private static final float WATCH_MODEL_Y = -0.13F;  // 往下(-Y)
     private static final float WATCH_MODEL_Z = 0.45F;
 
     @SubscribeEvent
