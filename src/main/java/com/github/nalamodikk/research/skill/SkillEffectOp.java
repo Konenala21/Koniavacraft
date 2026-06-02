@@ -9,6 +9,7 @@ import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.tags.EntityTypeTags;
 import net.minecraft.world.entity.AreaEffectCloud;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -452,18 +453,28 @@ public enum SkillEffectOp {
             target.hurt(level.damageSources().magic(), 5.0F + power * 0.35F + bonus);
         }
     },
-    /** 超載 (energy + crystal/arcana): an overcharged detonation, a much bigger blast. */
+    /** 超載 (energy + crystal/arcana): an overcharged detonation, a much bigger blast.
+     *  The blast bites deeper into a target whose armor is cracked (vulnerable). */
     OVERLOAD {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            if (target.hasEffect(ModMobEffects.VULNERABLE)) {
+                target.invulnerableTime = 0;
+                target.hurt(level.damageSources().magic(), 4.0F + power * 0.3F);
+            }
             float radius = Math.min(9.0F, 4.0F + power * 0.08F);
             level.explode(caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
                     radius, Level.ExplosionInteraction.NONE);
         }
     },
-    /** 死亡虹吸 (death + lifesteal): the wither feeds the caster a large heal. */
+    /** 死亡虹吸 (death + lifesteal): the wither feeds the caster a large heal, larger
+     *  the more the target is already rotting (withered). */
     DEATH_SIPHON {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
-            if (caster != null && caster.isAlive()) caster.heal(Math.max(2.0F, power * 0.6F));
+            if (caster != null && caster.isAlive()) {
+                float heal = Math.max(2.0F, power * 0.6F);
+                if (target.hasEffect(MobEffects.WITHER)) heal += 4.0F; // 凋零目標:虹吸更多
+                caster.heal(heal);
+            }
         }
     },
     /** 野火 (growth/root + fire): the binding ignites and spreads fire to everything around. */
@@ -589,8 +600,9 @@ public enum SkillEffectOp {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
             AABB box = target.getBoundingBox().inflate(4.0);
             for (LivingEntity le : level.getEntitiesOfClass(LivingEntity.class, box, e -> e != caster && e.isAlive())) {
+                float bonus = le.getType().is(EntityTypeTags.UNDEAD) ? 4.0F + power * 0.3F : 0.0F; // 聖核爆剋不死
                 le.invulnerableTime = 0;
-                le.hurt(level.damageSources().magic(), 6.0F + power * 0.4F);
+                le.hurt(level.damageSources().magic(), 6.0F + power * 0.4F + bonus);
                 le.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0));
                 TurretControlHelper.applySkillControl(le, ModMobEffects.DAZE, 60, 0);
             }
@@ -644,9 +656,14 @@ public enum SkillEffectOp {
             target.hurt(level.damageSources().magic(), 2.0F + power * 0.2F);
         }
     },
-    /** 動能爆 (force + arcane): a concussive blast, explosion plus a hard launch. */
+    /** 動能爆 (force + arcane): a concussive blast, explosion plus a hard launch.
+     *  Hits a vulnerable (cracked-armor) target harder. */
     KINETIC_BLAST {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            if (target.hasEffect(ModMobEffects.VULNERABLE)) {
+                target.invulnerableTime = 0;
+                target.hurt(level.damageSources().magic(), 3.0F + power * 0.25F);
+            }
             float radius = Math.min(7.0F, 3.0F + power * 0.06F);
             level.explode(caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
                     radius, Level.ExplosionInteraction.NONE);
@@ -733,9 +750,14 @@ public enum SkillEffectOp {
             target.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 160, 2));
         }
     },
-    /** 聖能爆 (light + arcane): a radiant surge, a blinding light explosion. */
+    /** 聖能爆 (light + arcane): a radiant surge, a blinding light explosion. Holy light
+     *  sears the undead for a bonus. */
     RADIANT_SURGE {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            if (target.getType().is(EntityTypeTags.UNDEAD)) {
+                target.invulnerableTime = 0;
+                target.hurt(level.damageSources().magic(), 4.0F + power * 0.35F); // 聖光剋不死
+            }
             float radius = Math.min(8.0F, 3.5F + power * 0.07F);
             level.explode(caster, target.getX(), target.getY() + target.getBbHeight() * 0.5, target.getZ(),
                     radius, Level.ExplosionInteraction.NONE);
@@ -1042,11 +1064,17 @@ public enum SkillEffectOp {
             target.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, 140, 1));
         }
     },
-    /** 淨毒 (venom + light): a purge, light detonates the poison for a burst plus blind. */
+    /** 淨毒 (venom + light): a purge, light detonates the poison for a burst plus blind.
+     *  A poisoned target's toxin is detonated for a heavy bonus (poison consumed). */
     PURGE {
         @Override public void apply(ServerLevel level, LivingEntity target, @Nullable LivingEntity caster, Vec3 dir, float power) {
+            float bonus = 0.0F;
+            if (target.hasEffect(MobEffects.POISON)) {
+                target.removeEffect(MobEffects.POISON);
+                bonus = 4.0F + power * 0.4F;
+            }
             target.invulnerableTime = 0;
-            target.hurt(level.damageSources().magic(), 4.0F + power * 0.3F);
+            target.hurt(level.damageSources().magic(), 4.0F + power * 0.3F + bonus);
             target.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 50, 0));
         }
     },
