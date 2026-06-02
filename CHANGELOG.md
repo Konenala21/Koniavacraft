@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+The Nara watch has a new 3D model and texture made by collaborator Bksesame.
+娜拉全息手錶換上了合作者 Bksesame 製作的新 3D 模型與貼圖。
+
+The training dummy now uses a proper cactus model with idle and hit animations. The dummy sways gently when idle, blinks, and reacts visually when struck.
+訓練假人現在使用正式的仙人掌模型，附帶待機動畫（輕微搖晃 + 眨眼）和被打反應動畫。
+
 Aspect reactions are now a real chemistry engine, like a periodic table. Each effect aspect carries chemical traits (heat, cold, water, electric, toxic, acid, metal, light, dark, force, organic, arcane, life), and reactions fire from trait combinations rather than fixed aspect pairs, so far more combos do something. Best of all, reactions can chain: a reaction's product becomes a new ingredient that can react again. For example fire + ice makes thermal shock and steam; add lightning and the steam superheats into plasma. Acid + metal dissolves into a volatile gas; add heat and it detonates. Fire + plant makes wildfire and ash; add force and the ash becomes a blinding storm. There are now 48 reactions (up from 22), including new ones like scald, meltdown, eruption, magnetic storm, plague, photosynthesis, sanctify and superconduct, and the JEI "Aspect Reactions" page lists them all. Mix aspects and see what cascades.
 本源反應現在是一套真正的化學引擎，像元素週期表。每個效果本源帶化學性質（熱、寒、水、電、毒、酸、金屬、光、暗、力、生機、奧能、生命），反應靠性質組合觸發而不是固定的本源配對，所以更多組合都會有反應。最棒的是反應會連鎖：反應的產物會變成新原料再次反應。例如火 + 冰產生熱裂與蒸氣；再加雷，蒸氣就過熱成電漿。酸 + 金屬溶解出揮發氣；再加熱就引爆。火 + 植物產生野火與灰燼；再加力，灰燼就成致盲風暴。現在共有 48 個反應（從 22 個增加），新增蒸爆、熔毀、噴發、磁暴、瘟疫、光合、聖療、超導等，JEI「本源反應」分頁全部列出。把本源混在一起，看看會級聯出什麼。
 

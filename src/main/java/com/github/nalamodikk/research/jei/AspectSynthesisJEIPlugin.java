@@ -3,6 +3,7 @@ package com.github.nalamodikk.research.jei;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.research.aspect.Aspect;
 import com.github.nalamodikk.research.aspect.ModAspects;
+import com.github.nalamodikk.common.block.blockentity.skillencoder.SkillEncoderScreen;
 import com.github.nalamodikk.research.client.AspectSynthesisScreen;
 import com.github.nalamodikk.common.item.research.AspectTokenItem;
 import com.github.nalamodikk.research.jei.compat.JeiAspectAliasBridge;
@@ -138,5 +139,11 @@ public class AspectSynthesisJEIPlugin implements IModPlugin {
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
         registration.addRecipeClickArea(AspectSynthesisScreen.class, 108, 8, 28, 20,
                 AspectSynthesisRecipeCategory.RECIPE_TYPE);
+        // Skill Encoder 右側空白區 → 本源合成分頁
+        registration.addRecipeClickArea(SkillEncoderScreen.class, 172, 36, 55, 36,
+                AspectSynthesisRecipeCategory.RECIPE_TYPE);
+        // Skill Encoder 右側空白區下半 → 本源反應分頁
+        registration.addRecipeClickArea(SkillEncoderScreen.class, 172, 74, 55, 20,
+                ReactionCategory.RECIPE_TYPE);
     }
 }
