@@ -16,6 +16,10 @@ import com.github.nalamodikk.client.renderer.entity.FloatingTurretRenderer;
 import com.github.nalamodikk.client.renderer.entity.SpaceCrackRenderer;
 import com.github.nalamodikk.client.renderer.entity.PlayerCloneRenderer;
 import net.minecraft.client.renderer.entity.NoopRenderer;
+import net.minecraft.client.renderer.entity.player.PlayerRenderer;
+import net.minecraft.client.resources.PlayerSkin;
+import com.github.nalamodikk.client.renderer.armor.ManaAlloyArmorLayer;
+import com.github.nalamodikk.client.renderer.armor.ManaAlloyArmorModel;
 import com.github.nalamodikk.client.renderer.entity.NaraPhantomRenderer;
 import com.github.nalamodikk.client.renderer.entity.TrainingDummyModel;
 import com.github.nalamodikk.client.renderer.entity.TrainingDummyRenderer;
@@ -121,6 +125,14 @@ public class KoniavacraftMod {
             modEventBus.addListener((EntityRenderersEvent.RegisterLayerDefinitions e) -> {
                     e.registerLayerDefinition(FloatingTurretModel.LAYER_LOCATION, FloatingTurretModel::createBodyLayer);
                     e.registerLayerDefinition(TrainingDummyModel.LAYER_LOCATION, TrainingDummyModel::createBodyLayer);
+                    e.registerLayerDefinition(ManaAlloyArmorModel.LAYER, ManaAlloyArmorModel::createLayer);
+            });
+            modEventBus.addListener((EntityRenderersEvent.AddLayers e) -> {
+                    for (PlayerSkin.Model skin : e.getSkins()) {
+                        if (e.getSkin(skin) instanceof PlayerRenderer pr) {
+                            pr.addLayer(new ManaAlloyArmorLayer<>(pr, e.getEntityModels()));
+                        }
+                    }
             });
             modEventBus.addListener((ModelEvent.RegisterAdditional e) ->
                     e.register(FloatingTurretBEWLR.GEO_MODEL_LOCATION));
