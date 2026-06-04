@@ -2,125 +2,143 @@
 
 # Koniavacraft
 
-A magic-industrial mod built around one question:
-what if mana could be quantified, studied, engineered, and reinterpreted through science?
+What if mana wasn't mysterious and unknowable, but something you could quantify, study, and industrialize?
 
-You drop coal into a generator. It starts burning. Mana flows into the network.
-That's the starting point.
+What kind of world would that make?
 
-From there it grows into research, resonance structures, animated magical cores, custom equipment, and a personal guide who is not quite what she seems.
+> *"Hey. You finally showed up. I've been waiting."*
+> Nara
 
-Instead of traditional fantasy spellcasting, Koniavacraft leans toward arcane engineering: treating mana as an industrial resource you can measure, route, and control.
+---
 
-Still heavily in development. Still experimental. Still changing.
+## What is this
+
+Hi, I'm Konenala21. This is my first mod.
+
+It grew from that question. Mana as an energy source you can measure, route through pipes, burn as fuel, and eventually write as code. There are research trees, industrial machines, and a whole system of recipes built around understanding what mana actually is.
+
+But that's the outer layer.
+
+The further out you explore, the more the journey turns inward. Understanding mana turns out to be understanding something else.
 
 ---
 
 ## Nara
 
-Early on you bind a holographic assistant named Nara.
+You bind her early. She guides you through the first machines, reacts when you build things, and slowly reveals more about this world and herself as you go.
 
-She walks you through your first machines, reacts to what you build, and slowly reveals more about the world (and herself) as you progress. She is the voice of the mod: playful, a little chaotic, occasionally serious without warning.
+She won't hand you answers. She walks you to the place where you can see them yourself.
 
-She is also the reason the mod is not only about machines. The outer shell is "mana made measurable". Underneath, the further out you explore, the more it turns inward.
+> *"What are Aspects? They're the deepest layer of this world. You'll understand eventually."*
+
+She is why this mod is not just a tech mod.
 
 ---
 
 ## Research and Aspects
 
-Everything you build is gated behind a research tree, unlocked through a hex-grid puzzle at the Research Table.
+> *"Want to use magic? Go do your homework at the Research Table first. Yes, even magic requires a written report here."*
 
-To solve those puzzles you need Aspects: the elemental "source" essences behind the world. Point Nara's holographic watch at blocks, items, fluids, mobs (and even players) to scan and collect them. There are over 80 aspects, from the six primary elements up through layered compounds.
+Unlock the tech tree through hex-grid puzzles at the Research Table. Collect Aspects by scanning the world with Nara's holographic watch: blocks, items, mobs, fluids, even other players.
 
-Research is not just a tech gate. It is how the mod reveals its central idea: that mana is the world's original energy, and understanding it means understanding what everything is made of.
+> *"Point the watch at a rock and scan it. Tells you exactly what's inside. How does it work? Science. Don't ask."*
 
----
-
-## Machines and Networks
-
-* **Mana Generator:** burns fuel to produce mana or RF energy. Upgradeable and switchable.
-* **Arcane Conduit:** connects machines into a shared mana network. Higher conduit tiers raise total network capacity.
-* **Mana Grinder:** processes and transforms materials, sometimes producing unstable or corrupted byproducts.
-* **Mana Infuser:** injects magical energy into items to change what they are.
-* **Mana Crafting Table:** craft using stored mana instead of traditional progression.
-* **Solar Mana Collector:** passive generation from ambient magical energy.
-* **Deployer, Charger and more:** automation pieces for building real production lines.
+There are 80 Aspects, from the six primaries up through compounds, trigram aspects, and deeper tiers. You're not discovering new knowledge. You're recognizing something that was always at the bottom of the world.
 
 ---
 
-## The Aspect Altar
+## Machines
 
-A multiblock ritual structure that grows as you do.
+> *"Wait. You're burning coal to generate mana? How is that different from a power plant? ...Fine, it works, whatever."*
 
-Feed it catalysts and materials, channel mana through it, and it performs rituals that ordinary crafting cannot. As you ring it with resonance structures it upgrades through tiers, each one a larger, more elaborate, animated form. Progression is meant to feel physical, not just "higher tier blocks".
+A generator burns fuel and produces mana (or RF). Arcane Conduits carry it automatically to every machine in the network.
 
-Starve a high-tier ritual of mana and it will not fail quietly.
+> *"Mana flowing through pipes. Like plumbing. Romantic? That concept got quantified out of existence a long time ago."*
+
+The full industrial chain: Grinder, Infuser, Crafting Table, Deployer, Charger, Solar Collector. Each upgradeable, each part of a network you design yourself.
+
+The Aspect Altar sits above all of it: a multiblock structure that grows through six tiers of resonance rings, each upgrade larger and more elaborate than the last. Run it out of mana mid-ritual at T3 or higher and it explodes. That explosion opens a door.
 
 ---
 
-## Equipment and Combat
+## Spells You Build
 
-* **Modular Wands:** a wand rod with swappable cores and upgrade plugins. Build the tool you actually want.
-* **Floating Turrets (Nara Star-Ring):** carry them to fire by hand, or slot them as orbiting auto-turrets that defend you. Deeply upgradeable: capacity, healing, auto-aim, control shots, and more.
-* **Mana Alloy Armor:** a full set with its own mana storage and a unified upgrade screen. Double jump, dash boots, night vision, mana shields, and per-piece upgrade slots.
+After the mirror dimension, the full system opens.
+
+You pick a carrier (how the spell travels: projectile, beam, melee arc, gravity pull, orbital orbs, and more), add effects (fire, frost, bleed, paralysis, lifesteal), and stack modifiers (split, penetrate, root on hit). Encoding a skill consumes Aspects. Casting only burns wand mana.
+
+Aspects also react to each other. 88 reactions, triggered by properties rather than fixed aspect pairs. Heat and cold make Thermal Shock. Heat and arcane make Combustion. Reactions chain up to four layers deep. The Training Dummy shows you which ones fired.
+
+Mirror Core Shards from the boss can be traded with the Aspect Researcher villager for Basic Aspect Essence, so your aspect supply stays renewable.
+
+---
+
+## Equipment
+
+**Modular Wands**
+
+> *"I just want to ask: in what world does a magic wand take upgrade plugins like a USB drive? This one, apparently. (knock knock)"*
+
+Swap cores to change what the wand does. Slot upgrades to improve it. Formation, Activation, IO, Rotation, Ritual, Structure Build, and Spell cores, four upgrade types across Mk0-Mk3.
+
+**Floating Turrets (Nara Star-Ring)**
+
+> *"This one's my favorite. You have to try it."*
+
+Carry them to fire by hand, or slot them as orbiting auto-defenses. Six upgrade slots: healing, auto-aim, control shots (slow, root, levitate), protection, and more. The right build changes how a fight goes entirely.
+
+**Mana Alloy Armor**
+
+> *"The armor has a HUD. And you can double jump. Can we still call this magic? Also why does the back of your helmet have a face on it??"*
+
+Full set with built-in mana storage and a unified upgrade screen (press U). Head: night vision toggle. Legs: multi-jump. Boots: mana dash. Chest: two shield types, pick one: damage reduction with optional regen, or full mana absorption.
+
+**Training Dummy**
+
+> *"It even calculates your DPS for you. ...I think we went in a direction somewhere. Also WHY DOES IT LOOK LIKE A CACTUS"*
+
+A punchable target with a million HP that heals to full every tick. Tracks hits, total damage, DPS, active effects, and which reactions fired. Useful for testing builds.
 
 ---
 
 ## The Mirror Dimension
 
-Push a high-tier ritual past its limit and it can tear open a rift.
+When a high-tier altar runs out of mana and explodes, a spatial crack opens above the ruins.
 
-Step through, and you face something that fights exactly like you do: a mirror boss built from your own skin, gear, inventory and turrets. It walls you in, drains your mana, and transforms. Beating it is the current end of the line, and a key to what comes next.
+Step through. The dimension seals. A boss appears made from your own skin, gear, and turrets. It has everything you have. Walls go up from your own inventory. Below 30% it tears them down and accelerates. Reflect state means stop attacking.
 
----
-
-## Materials and World
-
-Mana Dust, Condensed Mana, Refined Mana, and corrupted variants when things go wrong. Mana is not just fuel: it is the foundation of the entire industrial chain.
-
-Explore the overworld to find the Mana Prairie, a biome shaped by abnormal magical concentration.
+Beat it. Collect the shards. Keep going.
 
 ---
 
-> [!WARNING]
-> Minecraft 1.20.1 is no longer maintained or updated.
-> Current development is focused on NeoForge 1.21.1.
+## World
+
+The Mana Prairie spreads through the overworld. The surface glows faintly. The flora is wrong in a way you can't immediately name.
+
+---
+
+> *"There's more you can do with Aspects than just scanning. But that part... wait until you're ready."*
 
 ---
 
 ## Compatibility
 
-* NeoForge 1.21.1
-* JEI support
-* Jade support
-* RF / FE compatible
-* Works alongside other tech mods
+NeoForge 1.21.1 / JEI (Aspect Reactions page, Boss Loot page) / Jade / RF/FE / works alongside other tech mods.
+
+The old Minecraft 1.20.1 build is no longer maintained. Current development is NeoForge 1.21.1.
+
+Modpack authors: Koniavacraft customizes the title screen by default. It auto-defers to FancyMenu and similar mods, or disable manually in `config/koniavacraft-client.toml`.
 
 ---
 
-## Notice for Modpack Authors
+## About
 
-Koniavacraft customizes the **main title screen** by default:
+Solo passion project. No schedule. No roadmap.
 
-* Replaces the vanilla Minecraft logo with the mod's own logo (subtle scale pulse)
-* Replaces the splash text with a curated pool of mod-themed lines (mixed Chinese/English)
-* Adds a small toggle button in the top-right of the title screen so players can switch back to vanilla instantly
+> *"I still have things to do. See you next time."*
+>
+> She says that every time. She never actually has anything going on.
 
-This is intentional for solo players who install the mod alone, but modpack authors usually want their own pack branding. To handle this:
+Thank you for bringing your imagination into this world.
 
-* **Auto-defer**: if another title-screen-customizing mod (FancyMenu, CustomMainMenu, BetterTitleScreen, TitleTweaks) is also loaded, Koniavacraft automatically steps aside and does not override the title.
-* **Manual disable**: in `config/koniavacraft-client.toml` under `[titleScreen]`, set `customTitleScreenEnabled = false` and `showTitleToggleButton = false` to fully hide our title and button.
-
-No restart needed: players can also use the in-game toggle button to switch between modded and vanilla title.
-
----
-
-## About the project
-
-Koniavacraft is a solo passion project developed during free time.
-
-No corporate roadmap. No forced release schedule. Just experimenting, learning, and slowly building a strange magical-industrial world with a story underneath it.
-
-Licensed under LGPL-3.0.
-
-Bug reports and feedback are always welcome.
+LGPL-3.0. Bug reports welcome.
