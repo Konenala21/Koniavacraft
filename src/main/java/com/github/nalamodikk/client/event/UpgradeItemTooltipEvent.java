@@ -37,9 +37,13 @@ public final class UpgradeItemTooltipEvent {
     }
 
     private static MutableComponent getCompatibleMachinesText(UpgradeType type) {
-    return switch (type) {
-            case SPEED, EFFICIENCY ->
-                    Component.translatable("tooltip.koniava.upgrade.compat.solar_mana_collector");
+        return switch (type) {
+            // SPEED 用於：太陽能收集器 + 研磨機 + 注入機
+            case SPEED ->
+                    Component.translatable("tooltip.koniava.upgrade.compat.speed_machines");
+            // EFFICIENCY 用於：太陽能收集器 + 研磨機 + 注入機 + 合成台
+            case EFFICIENCY ->
+                    Component.translatable("tooltip.koniava.upgrade.compat.efficiency_machines");
             case ACCELERATED_PROCESSING, EXPANDED_FUEL_CHAMBER, CATALYTIC_CONVERTER, DIAGNOSTIC_DISPLAY, MANA_OUTPUT, ENERGY_OUTPUT ->
                     Component.translatable("tooltip.koniava.upgrade.compat.mana_generator");
         };

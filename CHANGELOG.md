@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Fixed the Speed and Efficiency machine upgrade tooltips, which said they only fit the Solar Mana Collector. They actually also work in the Mana Grinder and Mana Infuser (Speed and Efficiency), and the Mana Crafting Table (Efficiency). The "compatible machines" line and the effect description now list every machine each upgrade fits.
+修正速度與效率機器升級的提示，原本只寫「適用太陽魔力收集器」。它們其實也能裝在魔力粉碎機、魔力注入機（速度與效率），以及魔力合成台（效率）。「可安裝於」那行與效果說明現在會列出每個升級實際適用的所有機器。
+
 Fixed missing English text: wand upgrade items, armor effect toggle keys, night vision, and several screen and error messages that previously showed a raw translation key in English are now translated. A few messages (placement blocked, conduit error, solar collector upgrade stats) were also missing in both languages and are now shown.
 修正缺失的英文文字：魔杖升級物品、護甲效果切換鍵、夜視，以及數個之前在英文下會顯示原始翻譯鍵的介面與錯誤訊息，現在都有翻譯了。另有幾條訊息（無法放置、導管錯誤、太陽能收集器升級數據）原本中英文都缺，現在會正常顯示。
 
