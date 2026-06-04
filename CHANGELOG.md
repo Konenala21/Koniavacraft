@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Player Changes / 玩家更新內容
+
+Fixed missing English text: wand upgrade items, armor effect toggle keys, night vision, and several screen and error messages that previously showed a raw translation key in English are now translated. A few messages (placement blocked, conduit error, solar collector upgrade stats) were also missing in both languages and are now shown.
+修正缺失的英文文字：魔杖升級物品、護甲效果切換鍵、夜視，以及數個之前在英文下會顯示原始翻譯鍵的介面與錯誤訊息，現在都有翻譯了。另有幾條訊息（無法放置、導管錯誤、太陽能收集器升級數據）原本中英文都缺，現在會正常顯示。
+
+### Developer Notes / 開發者備註
+
+Lang parity pass: en_us.json was missing 28 keys that zh_tw had (now added, terminology matched to existing entries); 5 genuinely-missing message/screen keys (cannot_place_here, conduit.error_occurred, solar.no_upgrades, solar.upgrade_stats, upgrade.fallback_error) added to both files. Verified that the per-armor-piece `*_upgrade_capacity` keys the lang-check flagged are dead-code references (the CAPACITY behavior enum values are never registered as items; capacity uses the shared ArmorCapacityUpgradeItem), so no lang was added for them. Updated the lang-check skill with a dead-code reachability check + an en/zh parity check + dynamic-prefix filtering.
+Lang 對齊：en_us.json 缺了 28 個 zh_tw 有的 key（已補，用詞對齊現有條目）；5 個中英都真缺的訊息/介面 key（cannot_place_here、conduit.error_occurred、solar.no_upgrades、solar.upgrade_stats、upgrade.fallback_error）兩邊都補上。確認 lang-check 報的各裝備 `*_upgrade_capacity` key 是死碼引用（CAPACITY behavior enum 值從未註冊成物品，容量走共用的 ArmorCapacityUpgradeItem），所以不為它們加 lang。更新 lang-check skill：加入死碼可達性檢查 + en/zh 對齊檢查 + 動態前綴過濾。
+
 ## [0.0.2.0] - 2026-06-03
 
 ### Player Changes / 玩家更新內容
