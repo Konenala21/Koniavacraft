@@ -138,22 +138,22 @@ void main(){
         vec3 surfCol;
         float dayFac = 1.0;
         vec2 uv = vec2(atan(rn.z, rn.x) / 6.28318 + 0.5, acos(clamp(rn.y, -1.0, 1.0)) / 3.14159);
-        // STBImage 強制 RGBA：JPG alpha=1.0，null貼圖(ID=0) alpha=0 → 用 alpha 判斷而非亮度
-        vec4 texFull = texture(uSurface, uv);
-        if (texFull.a > 0.5) {
-            surfCol = texFull.rgb;
+        vec3 texSample = texture(uSurface, uv).rgb;
+        // 亮度 > 0.001 = 有有效貼圖（null texture 回傳純黑 = 0）
+        if (dot(texSample, vec3(1.0)) > 0.001) {
+            surfCol = texSample;
             // 夜景混合
-            vec4 nightFull = texture(uNightTex, uv);
-            if (nightFull.a > 0.5) {
+            vec3 nightSample = texture(uNightTex, uv).rgb;
+            if (dot(nightSample, vec3(1.0)) > 0.001) {
                 dayFac = smoothstep(-0.15, 0.15, dot(n, lSun));
-                surfCol = mix(nightFull.rgb * 2.5, surfCol, dayFac);
+                surfCol = mix(nightSample * 2.5, surfCol, dayFac);
             }
             // 雲層疊加（獨立旋轉 UV）
             vec2 uvCloud = vec2(atan(rnC.z, rnC.x) / 6.28318 + 0.5, acos(clamp(rnC.y, -1.0, 1.0)) / 3.14159);
-            vec4 cloudFull = texture(uSurface2, uvCloud);
-            if (cloudFull.a > 0.5) {
-                float cloudCover = clamp(dot(cloudFull.rgb, vec3(0.33)), 0.0, 1.0);
-                surfCol = mix(surfCol, cloudFull.rgb, cloudCover * 0.85);
+            vec3 cloudSample = texture(uSurface2, uvCloud).rgb;
+            if (dot(cloudSample, vec3(1.0)) > 0.001) {
+                float cloudCover = clamp(dot(cloudSample, vec3(0.33)), 0.0, 1.0);
+                surfCol = mix(surfCol, cloudSample, cloudCover * 0.85);
             }
         } else {
             float coarse = fbm(rn * 2.2);

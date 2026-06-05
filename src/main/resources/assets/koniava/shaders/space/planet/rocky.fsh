@@ -69,10 +69,10 @@ void main(){
         vec3 wn3=n.x*xW3+n.y*yW3+n.z*uPlanetDir;
 
         vec2 uv3=vec2(atan(wn3.z,wn3.x)/(2.0*PI)+0.5, acos(clamp(wn3.y,-1.0,1.0))/PI);
-        vec4 tex3=texture(uSurface,uv3);
+        vec3 tex3=texture(uSurface,uv3).rgb;
         vec3 col;
-        if(tex3.a>0.5){
-            col=tex3.rgb*li;
+        if(dot(tex3,vec3(1.0))>0.001){
+            col=tex3*li;
         } else {
             vec2 uv=vec2(atan(n.x,n.z)/(2.0*PI)+0.5,
                          clamp(acos(clamp(n.y,-1.0,1.0))/PI,0.0,1.0));

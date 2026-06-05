@@ -77,9 +77,9 @@ void main(){
 
         vec3 col;
         vec2 sunUv=vec2(atan(rn.z,rn.x)/6.28318+0.5, acos(clamp(rn.y,-1.0,1.0))/3.14159);
-        vec4 sunTex=texture(uSurface,sunUv);
-        if(sunTex.a>0.5){
-            col=sunTex.rgb*limb*1.3;
+        vec3 sunTex=texture(uSurface,sunUv).rgb;
+        if(dot(sunTex,vec3(1.0))>0.001){
+            col=sunTex*limb*1.3;
             col=mix(col,vec3(1.5,1.4,1.1),pow(nDotV,3.0)*0.5);
         } else {
             float plasma=vnoise(rn*3.0)*0.5+vnoise(rn*7.0+vec3(1.3,2.7,0.9))*0.25;
