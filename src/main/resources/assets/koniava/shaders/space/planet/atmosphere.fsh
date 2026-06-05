@@ -11,6 +11,8 @@ uniform float uAtmoDensity;
 uniform float uAtmoHeight;
 uniform float uAngularRadius;
 uniform float iTime;
+uniform sampler2D uSurface;
+uniform int   uHasTexture;
 
 in  vec2 texCoord;
 out vec4 fragColor;
@@ -64,7 +66,8 @@ vec3 computeAtmo(vec3 cam,vec3 lD,vec3 lSun,float R,bool onSurface){
     float chord=chordThrough(d_sq,inner,R_atmo);
     float alpha=1.0-exp(-chord*uAtmoDensity/R);
     float dayFac=clamp(dot(normalize(ep),lSun)*0.7+0.3,0.0,1.0);
-    return uAtmoColor*alpha*dayFac;
+    float fwd=1.0+pow(max(dot(-lD,lSun),0.0),5.0)*1.2; // 瑞利前向散射
+    return uAtmoColor*alpha*dayFac*fwd;
 }
 
 void main(){
@@ -98,15 +101,20 @@ void main(){
         float cs=cos(angle), sn=sin(angle);
         vec3 rn = vec3(cs*n.x+sn*n.z, n.y, -sn*n.x+cs*n.z);
 
-        float coarse = fbm(rn * 2.2);
-        float fine   = fbm(rn * 5.5 + vec3(5.1,1.3,2.7));
-        float band   = sin(rn.y * 7.0 + coarse * 3.0) * 0.5 + 0.5;
-
-        // 增強對比：帶狀行星特徵更明顯
-        float detail = coarse * 0.65 + fine * 0.25 + (band - 0.5) * 0.40;
-        vec3  dark   = uPlanetColor * 0.55;
-        vec3  light  = uPlanetColor * 1.45;
-        vec3  surfCol = mix(dark, light, clamp(detail * 0.5 + 0.5, 0.0, 1.0));
+        vec3 surfCol;
+        if (uHasTexture != 0) {
+            // 球面 UV：u=經度（atan），v=緯度（快速近似，無 acos）
+            vec2 uv = vec2(atan(rn.z, rn.x) / 6.28318 + 0.5, rn.y * -0.5 + 0.5);
+            surfCol = texture(uSurface, uv).rgb;
+        } else {
+            float coarse = fbm(rn * 2.2);
+            float fine   = fbm(rn * 5.5 + vec3(5.1,1.3,2.7));
+            float band   = sin(rn.y * 7.0 + coarse * 3.0) * 0.5 + 0.5;
+            float detail = coarse * 0.65 + fine * 0.25 + (band - 0.5) * 0.40;
+            vec3  dark   = uPlanetColor * 0.55;
+            vec3  light  = uPlanetColor * 1.45;
+            surfCol = mix(dark, light, clamp(detail * 0.5 + 0.5, 0.0, 1.0));
+        }
 
         // ── 光照：Gotanda simplified Oren-Nayar（無 acos/tan）──
         float NdotL = max(dot(n, lSun), 0.0);

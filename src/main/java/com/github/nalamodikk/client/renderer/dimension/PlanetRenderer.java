@@ -4,9 +4,9 @@ import com.github.nalamodikk.KoniavacraftMod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
-import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
@@ -15,10 +15,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-/**
- * 渲染太空維度裡的星球球體。
- * 每顆星球建立一個實例，呼叫 render() 傳入目前的矩陣和星球參數。
- */
 public class PlanetRenderer {
 
     public enum Type { ATMOSPHERE, ROCKY, SUN }
@@ -28,63 +24,61 @@ public class PlanetRenderer {
     private int vaoId     = -1;
     private int vboId     = -1;
 
-    // atmosphere uniforms
     private int locTime, locRes, locInvProj, locInvView;
     private int locPlanetDir, locPlanetDist, locDirToStar;
     private int locAngularRadius, locPlanetColor;
     private int locAtmoColor, locAtmoDensity, locAtmoHeight, locPassGlow;
-    // rocky additional uniforms
     private int locColorLight, locColorDark, locHeatColor, locHeatAmount;
+    private int locSurface, locHasTexture;
 
     private boolean ready = false;
 
-    public PlanetRenderer(Type type) {
-        this.type = type;
-    }
+    public PlanetRenderer(Type type) { this.type = type; }
 
     public void init() {
         ResourceManager rm = Minecraft.getInstance().getResourceManager();
         String base = "shaders/space/planet/";
         try {
             String vert = read(rm, base + "atmosphere.vsh");
-            String fragFile = switch (type) {
+            String frag = read(rm, base + switch (type) {
                 case ROCKY -> "rocky.fsh";
                 case SUN   -> "sun.fsh";
                 default    -> "atmosphere.fsh";
-            };
-            String frag = read(rm, base + fragFile);
-            programId   = buildProgram(vert, frag);
+            });
+            programId = buildProgram(vert, frag);
         } catch (Exception e) {
             KoniavacraftMod.LOGGER.error("[PlanetRenderer:{}] Load failed", type, e);
             return;
         }
-        if (programId == -1) {
-            KoniavacraftMod.LOGGER.error("[PlanetRenderer:{}] Shader link failed, aborting init", type);
-            return;
-        }
+        if (programId == -1) return;
 
         GL20.glUseProgram(programId);
-        locTime         = GL20.glGetUniformLocation(programId, "iTime");
-        locRes          = GL20.glGetUniformLocation(programId, "iResolution");
-        locInvProj      = GL20.glGetUniformLocation(programId, "InvProjMat");
-        locInvView      = GL20.glGetUniformLocation(programId, "InvViewMat");
-        locPlanetDir    = GL20.glGetUniformLocation(programId, "uPlanetDir");
-        locPlanetDist   = GL20.glGetUniformLocation(programId, "uPlanetDist");
-        locAngularRadius= GL20.glGetUniformLocation(programId, "uAngularRadius");
+        locTime          = GL20.glGetUniformLocation(programId, "iTime");
+        locRes           = GL20.glGetUniformLocation(programId, "iResolution");
+        locInvProj       = GL20.glGetUniformLocation(programId, "InvProjMat");
+        locInvView       = GL20.glGetUniformLocation(programId, "InvViewMat");
+        locPlanetDir     = GL20.glGetUniformLocation(programId, "uPlanetDir");
+        locPlanetDist    = GL20.glGetUniformLocation(programId, "uPlanetDist");
+        locAngularRadius = GL20.glGetUniformLocation(programId, "uAngularRadius");
+        locDirToStar     = GL20.glGetUniformLocation(programId, "uDirToStar");
+        locSurface       = GL20.glGetUniformLocation(programId, "uSurface");
+        locHasTexture    = GL20.glGetUniformLocation(programId, "uHasTexture");
 
         if (type == Type.ATMOSPHERE || type == Type.SUN) {
-            locDirToStar  = GL20.glGetUniformLocation(programId, "uDirToStar");
-            locPlanetColor= GL20.glGetUniformLocation(programId, "uPlanetColor");
-            locAtmoColor  = GL20.glGetUniformLocation(programId, "uAtmoColor");
-            locAtmoDensity= GL20.glGetUniformLocation(programId, "uAtmoDensity");
-            locAtmoHeight = GL20.glGetUniformLocation(programId, "uAtmoHeight");
-            locPassGlow   = GL20.glGetUniformLocation(programId, "uPassGlow");
+            locPlanetColor = GL20.glGetUniformLocation(programId, "uPlanetColor");
+            locAtmoColor   = GL20.glGetUniformLocation(programId, "uAtmoColor");
+            locAtmoDensity = GL20.glGetUniformLocation(programId, "uAtmoDensity");
+            locAtmoHeight  = GL20.glGetUniformLocation(programId, "uAtmoHeight");
+            locPassGlow    = GL20.glGetUniformLocation(programId, "uPassGlow");
         } else {
             locColorLight = GL20.glGetUniformLocation(programId, "uColorLight");
             locColorDark  = GL20.glGetUniformLocation(programId, "uColorDark");
             locHeatColor  = GL20.glGetUniformLocation(programId, "uHeatColor");
             locHeatAmount = GL20.glGetUniformLocation(programId, "uHeatAmount");
         }
+
+        // 設定貼圖 sampler 到 unit 0
+        if (locSurface != -1) GL20.glUniform1i(locSurface, 0);
         GL20.glUseProgram(0);
 
         vaoId = GL30.glGenVertexArrays();
@@ -92,39 +86,41 @@ public class PlanetRenderer {
         GL30.glBindVertexArray(vaoId);
         GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
         GL15.glBufferData(GL15.GL_ARRAY_BUFFER,
-                new float[]{-1,-1, 1,-1, 1,1, -1,1}, GL15.GL_STATIC_DRAW);
+            new float[]{-1,-1, 1,-1, 1,1, -1,1}, GL15.GL_STATIC_DRAW);
         GL20.glVertexAttribPointer(0, 2, GL11.GL_FLOAT, false, 0, 0);
         GL20.glEnableVertexAttribArray(0);
         GL30.glBindVertexArray(0);
         ready = true;
     }
 
-    /** 渲染大氣層型星球 */
     public void renderAtmosphere(float[] invProj, float[] invView, float gameTime,
                                  float resW, float resH,
                                  Vector3f planetDir, float planetDist, float angularRadius,
                                  Vector3f dirToStar, Vector3f planetColor,
                                  Vector3f atmoColor, float atmoDensity, float atmoHeight,
-                                 boolean passGlow) {
+                                 boolean passGlow, int textureId) {
         if (!ready) return;
+        bindTexture(textureId);
         setCommon(invProj, invView, gameTime, resW, resH, planetDir, planetDist, angularRadius);
-        GL20.glUniform3f(locDirToStar,    dirToStar.x,  dirToStar.y,  dirToStar.z);
-        GL20.glUniform3f(locPlanetColor,  planetColor.x, planetColor.y, planetColor.z);
-        GL20.glUniform3f(locAtmoColor,    atmoColor.x,  atmoColor.y,  atmoColor.z);
-        GL20.glUniform1f(locAtmoDensity,  atmoDensity);
-        GL20.glUniform1f(locAtmoHeight,   atmoHeight);
-        GL20.glUniform1i(locPassGlow,     passGlow ? 1 : 0);
+        GL20.glUniform3f(locDirToStar,   dirToStar.x,   dirToStar.y,   dirToStar.z);
+        GL20.glUniform3f(locPlanetColor, planetColor.x, planetColor.y, planetColor.z);
+        GL20.glUniform3f(locAtmoColor,   atmoColor.x,   atmoColor.y,   atmoColor.z);
+        GL20.glUniform1f(locAtmoDensity, atmoDensity);
+        GL20.glUniform1f(locAtmoHeight,  atmoHeight);
+        GL20.glUniform1i(locPassGlow,    passGlow ? 1 : 0);
         draw();
     }
 
-    /** 渲染岩石型星球（Protoplanet 風格）*/
     public void renderRocky(float[] invProj, float[] invView, float gameTime,
                             float resW, float resH,
                             Vector3f planetDir, float planetDist, float angularRadius,
+                            Vector3f dirToStar,
                             Vector3f colorLight, Vector3f colorDark,
-                            Vector3f heatColor, float heatAmount) {
+                            Vector3f heatColor, float heatAmount, int textureId) {
         if (!ready) return;
+        bindTexture(textureId);
         setCommon(invProj, invView, gameTime, resW, resH, planetDir, planetDist, angularRadius);
+        GL20.glUniform3f(locDirToStar,  dirToStar.x,  dirToStar.y,  dirToStar.z);
         GL20.glUniform3f(locColorLight, colorLight.x, colorLight.y, colorLight.z);
         GL20.glUniform3f(locColorDark,  colorDark.x,  colorDark.y,  colorDark.z);
         GL20.glUniform3f(locHeatColor,  heatColor.x,  heatColor.y,  heatColor.z);
@@ -132,25 +128,34 @@ public class PlanetRenderer {
         draw();
     }
 
+    private void bindTexture(int textureId) {
+        GL13.glActiveTexture(GL13.GL_TEXTURE0);
+        if (textureId != -1) {
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
+            GL20.glUniform1i(locHasTexture, 1);
+        } else {
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+            GL20.glUniform1i(locHasTexture, 0);
+        }
+    }
+
     private void setCommon(float[] invProj, float[] invView, float gameTime,
                            float resW, float resH,
                            Vector3f planetDir, float planetDist, float angularRadius) {
-        int prev  = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
-        boolean d = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
-        boolean b = GL11.glIsEnabled(GL11.GL_BLEND);
+        _prevProg  = GL11.glGetInteger(GL20.GL_CURRENT_PROGRAM);
+        _wasDepth  = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
+        _wasBlend  = GL11.glIsEnabled(GL11.GL_BLEND);
         GL11.glDisable(GL11.GL_DEPTH_TEST);
         GL11.glEnable(GL11.GL_BLEND);
-        // Pre-multiplied alpha：光暈加法疊加，表面遮蔽背景
         GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
         GL20.glUseProgram(programId);
         GL20.glUniform1f(locTime,   gameTime);
         GL20.glUniform2f(locRes,    resW, resH);
         GL20.glUniformMatrix4fv(locInvProj, false, invProj);
         GL20.glUniformMatrix4fv(locInvView, false, invView);
-        GL20.glUniform3f(locPlanetDir,  planetDir.x,  planetDir.y,  planetDir.z);
-        GL20.glUniform1f(locPlanetDist, planetDist);
+        GL20.glUniform3f(locPlanetDir,    planetDir.x,    planetDir.y,    planetDir.z);
+        GL20.glUniform1f(locPlanetDist,   planetDist);
         GL20.glUniform1f(locAngularRadius, angularRadius);
-        this._prevProg = prev; this._wasDepth = d; this._wasBlend = b;
     }
 
     private void draw() {
@@ -179,7 +184,7 @@ public class PlanetRenderer {
     }
 
     private static int buildProgram(String vert, String frag) {
-        int v = compile(GL20.GL_VERTEX_SHADER,   vert);
+        int v = compile(GL20.GL_VERTEX_SHADER, vert);
         int f = compile(GL20.GL_FRAGMENT_SHADER, frag);
         int p = GL20.glCreateProgram();
         GL20.glAttachShader(p, v); GL20.glAttachShader(p, f);

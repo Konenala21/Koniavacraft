@@ -22,7 +22,7 @@ public final class StarSystemRegistry {
         List.of(
             // 水星：灰褐岩石，熾熱，幾乎無大氣
             new PlanetDef("mercury", ModDimensions.SPACE,
-                194f, 1.0f, 10f, 8f,
+                194f, 1.0f, 10f, 45f,
                 PlanetRenderer.Type.ROCKY,
                 new Vector3f(0.62f, 0.55f, 0.48f),
                 new Vector3f(0.35f, 0.28f, 0.22f),
@@ -31,16 +31,25 @@ public final class StarSystemRegistry {
 
             // 金星：超厚硫酸雲大氣
             new PlanetDef("venus", ModDimensions.SPACE,
-                362f, 2.56f, 60f, 19f,
+                362f, 2.56f, 60f, 110f,
                 PlanetRenderer.Type.ATMOSPHERE,
                 new Vector3f(0.92f, 0.78f, 0.38f),
                 new Vector3f(1.0f,  0.82f, 0.28f),
                 new Vector3f(0f), 0f,
                 3.5f, 0.28f),
 
+            // 地球：藍綠色，有白雲
+            new PlanetDef("earth", ModDimensions.SPACE,
+                500f, 4.15f, 0f, 120f,
+                PlanetRenderer.Type.ATMOSPHERE,
+                new Vector3f(0.20f, 0.45f, 0.70f),   // 海洋藍
+                new Vector3f(0.65f, 0.80f, 1.0f),    // 白雲/氮氧大氣
+                new Vector3f(0f), 0f,
+                0.9f, 0.10f),
+
             // 月球：灰色，繞地球軌道（近似放在地球軌道）
             new PlanetDef("moon", ModDimensions.SPACE,
-                502f, 0.31f, 200f, 5f,
+                502f, 0.31f, 200f, 40f,
                 PlanetRenderer.Type.ATMOSPHERE,
                 new Vector3f(0.52f, 0.52f, 0.54f),
                 new Vector3f(0.70f, 0.75f, 0.80f),
@@ -49,7 +58,7 @@ public final class StarSystemRegistry {
 
             // 火星：紅色，薄二氧化碳大氣
             new PlanetDef("mars", ModDimensions.SPACE,
-                762f, 3.91f, 145f, 11f,
+                762f, 3.91f, 145f, 65f,
                 PlanetRenderer.Type.ATMOSPHERE,
                 new Vector3f(0.72f, 0.32f, 0.18f),
                 new Vector3f(0.85f, 0.52f, 0.28f),
@@ -58,7 +67,7 @@ public final class StarSystemRegistry {
 
             // 木星：最大氣態巨星
             new PlanetDef("jupiter", ModDimensions.SPACE,
-                2600f, 49.3f, 320f, 220f,
+                2600f, 49.3f, 320f, 1200f,
                 PlanetRenderer.Type.ATMOSPHERE,
                 new Vector3f(0.85f, 0.65f, 0.42f),
                 new Vector3f(0.95f, 0.80f, 0.58f),
@@ -67,7 +76,7 @@ public final class StarSystemRegistry {
 
             // 土星：淡黃，第二大氣態巨星
             new PlanetDef("saturn", ModDimensions.SPACE,
-                4769f, 122.3f, 80f, 183f,
+                4769f, 122.3f, 80f, 1000f,
                 PlanetRenderer.Type.ATMOSPHERE,
                 new Vector3f(0.90f, 0.84f, 0.58f),
                 new Vector3f(0.95f, 0.90f, 0.70f),
@@ -76,7 +85,7 @@ public final class StarSystemRegistry {
 
             // 土衛六（泰坦）：甲烷濃霧橙色，繞土星
             new PlanetDef("titan", ModDimensions.SPACE,
-                4810f, 122.1f, 85f, 11f,
+                4810f, 122.1f, 85f, 65f,
                 PlanetRenderer.Type.ATMOSPHERE,
                 new Vector3f(0.80f, 0.58f, 0.22f),
                 new Vector3f(0.95f, 0.62f, 0.15f),
@@ -85,7 +94,7 @@ public final class StarSystemRegistry {
 
             // 天王星：冰質巨星，淡青色
             new PlanetDef("uranus", ModDimensions.SPACE,
-                9595f, 346.9f, 240f, 80f,
+                9595f, 346.9f, 240f, 400f,
                 PlanetRenderer.Type.ATMOSPHERE,
                 new Vector3f(0.55f, 0.82f, 0.88f),
                 new Vector3f(0.65f, 0.90f, 0.95f),
@@ -94,7 +103,7 @@ public final class StarSystemRegistry {
 
             // 海王星：深藍冰質巨星
             new PlanetDef("neptune", ModDimensions.SPACE,
-                15035f, 680.7f, 170f, 77f,
+                15035f, 680.7f, 170f, 380f,
                 PlanetRenderer.Type.ATMOSPHERE,
                 new Vector3f(0.18f, 0.32f, 0.82f),
                 new Vector3f(0.25f, 0.45f, 0.95f),
@@ -103,7 +112,7 @@ public final class StarSystemRegistry {
 
             // 冥王星：遠日冰岩，很小
             new PlanetDef("pluto", ModDimensions.SPACE,
-                19740f, 1028f, 50f, 4f,
+                19740f, 1028f, 50f, 12f,
                 PlanetRenderer.Type.ROCKY,
                 new Vector3f(0.72f, 0.65f, 0.58f),
                 new Vector3f(0.40f, 0.35f, 0.30f),
