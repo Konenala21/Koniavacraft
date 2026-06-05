@@ -6,6 +6,14 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Added a space dimension with a procedural starfield sky, physically-based planet rendering, and a full solar system (Mercury, Venus, Moon, Mars, Jupiter, Saturn, Titan, Uranus, Neptune, Pluto) plus a stub Alpha Centauri binary system. Planets are rendered as real 3D spheres whose apparent size scales with your distance. The Sun is visible with a corona glow. Players spawn near Earth's orbital position when entering the dimension.
+新增太空維度，包含程序生成的星空天空、物理正確的行星渲染，以及完整太陽系（水星、金星、月球、火星、木星、土星、土衛六、天王星、海王星、冥王星）和比鄰星系雛形（雙星系統）。行星為真實 3D 球體，視角大小隨距離動態縮放。太陽有日冕光暈。進入維度時玩家會出現在地球軌道附近。
+
+### Developer Notes / 開發者備註
+
+Space rendering architecture: StarSystemRegistry (replaces PlanetarySystem) supports arbitrary star systems each with multiple stars (single/binary/triple) and planet lists. StarDef supports orbital motion around the system barycenter for binary stars. PlanetDef now uses physicalRadius (blocks) instead of fixed angularRadiusDeg; apparent size is computed dynamically from player distance. SpacePlanetManager iterates all registered star systems, culls bodies behind the camera, sorts by distance (painter's algorithm), and renders with one draw call per body. Added SUN shader type (sun.fsh) for emissive star rendering with plasma surface noise and corona falloff. GL resources are released on world logout (ClientPlayerNetworkEvent.LoggingOut) to prevent stale state across world switches. Scale: 1 AU = 500 blocks; solar system fits within ~20 000 blocks radius; Alpha Centauri at 50 000 blocks requires warp drive.
+太空渲染架構：StarSystemRegistry（取代 PlanetarySystem）支援任意數量的星系，每個星系可包含多顆恆星（單/雙/三星）與行星列表。StarDef 支援雙星繞質心互轉動畫。PlanetDef 改用 physicalRadius（方塊）取代固定 angularRadiusDeg，視角大小從玩家距離動態計算。SpacePlanetManager 遍歷所有星系，背面剔除、距離排序後每顆天體一次 draw call。新增 SUN shader 型別（sun.fsh），支援發光電漿表面噪聲與日冕衰減。GL 資源在登出時釋放（ClientPlayerNetworkEvent.LoggingOut），避免跨世界殘留狀態。比例尺：1 AU = 500 格，太陽系約 20,000 格半徑，比鄰星在 50,000 格外需要曲速。
+
 Fixed the Speed and Efficiency machine upgrade tooltips, which said they only fit the Solar Mana Collector. They actually also work in the Mana Grinder and Mana Infuser (Speed and Efficiency), and the Mana Crafting Table (Efficiency). The "compatible machines" line and the effect description now list every machine each upgrade fits.
 修正速度與效率機器升級的提示，原本只寫「適用太陽魔力收集器」。它們其實也能裝在魔力粉碎機、魔力注入機（速度與效率），以及魔力合成台（效率）。「可安裝於」那行與效果說明現在會列出每個升級實際適用的所有機器。
 

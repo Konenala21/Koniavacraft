@@ -1,6 +1,8 @@
 package com.github.nalamodikk.client.renderer;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.client.renderer.dimension.SpacePlanetManager;
+import com.github.nalamodikk.client.renderer.dimension.SpaceSkyRenderer;
 import com.github.nalamodikk.common.item.DevRenderTestItem;
 import com.github.nalamodikk.common.item.DevRenderTestItem2;
 import net.minecraft.client.Minecraft;
@@ -10,6 +12,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 
 @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID, value = Dist.CLIENT)
 public final class ClientEffectEvents {
@@ -37,8 +40,17 @@ public final class ClientEffectEvents {
 
     private ClientEffectEvents() {}
 
+    // 換世界時清除 static shader 狀態，避免舊 GL 資源殘留
+    @SubscribeEvent
+    public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
+        SpaceSkyRenderer.reload();
+        SpacePlanetManager.reload();
+    }
+
     @SubscribeEvent
     public static void onRenderLevel(RenderLevelStageEvent event) {
+        SpaceSkyRenderer.onRenderLevel(event);
+        SpacePlanetManager.onRenderLevel(event);
         ManaStrikeShaderRenderer.onRenderLevel(event);
         ShockwaveRenderer.onRenderLevel(event);
         OrbitalTestShaderRenderer.onRenderLevel(event);
