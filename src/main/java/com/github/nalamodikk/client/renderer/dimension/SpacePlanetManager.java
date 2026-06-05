@@ -22,9 +22,7 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;
 import java.io.InputStream;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -95,7 +93,7 @@ public class SpacePlanetManager {
 
             float angDeg = (float) Math.toDegrees(Math.atan(star.radius() / sDist));
             if (angDeg < 0.01f) continue;
-            if (sDir.dot(camFwd) < -0.5f) continue;
+            if (sDir.dot(camFwd) < -0.95f) continue;
 
             float    cosAng = (float) Math.cos(Math.toRadians(angDeg));
             final float fSDist = sDist; final Vector3f fSDir = new Vector3f(sDir);
