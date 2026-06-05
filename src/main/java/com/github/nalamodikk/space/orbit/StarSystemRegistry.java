@@ -123,6 +123,20 @@ public final class StarSystemRegistry {
         )
     );
 
-    public static final List<StarSystem> ALL = List.of(SOLAR_SYSTEM, ALPHA_CENTAURI);
+    // 內建系統：JSON 沒載到任何星系時的安全 fallback
+    public static final List<StarSystem> BUILTIN = List.of(SOLAR_SYSTEM, ALPHA_CENTAURI);
+
+    // JSON datapack 載入的星系（StarSystemLoader 填）；空 = 用 BUILTIN
+    private static volatile List<StarSystem> loaded = List.of();
+
+    public static void setLoaded(List<StarSystem> systems) {
+        loaded = systems == null ? List.of() : List.copyOf(systems);
+    }
+
+    /** 目前生效的星系：有 JSON 載到就用 JSON，否則用內建。 */
+    public static List<StarSystem> getActive() {
+        return loaded.isEmpty() ? BUILTIN : loaded;
+    }
+
     private StarSystemRegistry() {}
 }

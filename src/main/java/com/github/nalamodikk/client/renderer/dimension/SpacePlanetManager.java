@@ -92,7 +92,7 @@ public class SpacePlanetManager {
             return;
         }
 
-        for (StarSystem system : StarSystemRegistry.ALL) {
+        for (StarSystem system : StarSystemRegistry.getActive()) {
             renderSystem(system, playerPos, camFwd, tick, gameTime,
                          invProj, invView, target.width, target.height);
         }
