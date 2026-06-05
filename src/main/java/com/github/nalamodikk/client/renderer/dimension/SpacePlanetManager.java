@@ -127,9 +127,8 @@ public class SpacePlanetManager {
             // 淡入：0.005°→0.08° 平滑出現，消除突然跳出感
             final float fadeAlpha = Math.min(1.0f, (angDeg - 0.005f) / 0.075f);
 
-            // 剔除：靠近時視角超過 90°（angDeg > 90 = 玩家在星球內），不剔除
-            // 遠距離只剔除完全背面（dot < -0.5）
-            if (angDeg < 85f && dir.dot(camFwd) < -0.5f) continue;
+            // 完全背面才剔除（shader 早退更精確，Java 端不要過度剔除）
+            if (dir.dot(camFwd) < -0.95f) continue;
 
             float cosAng = (float) Math.cos(Math.toRadians(angDeg));
             final float fDist = dist; final Vector3f fDir = new Vector3f(dir);

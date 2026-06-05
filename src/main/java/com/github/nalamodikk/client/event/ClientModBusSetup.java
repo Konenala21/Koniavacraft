@@ -28,6 +28,8 @@ import net.minecraft.client.renderer.entity.NoopRenderer;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
 import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
+import com.github.nalamodikk.client.renderer.dimension.SpacePlanetManager;
+import com.github.nalamodikk.client.renderer.dimension.SpaceSkyRenderer;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
@@ -86,6 +88,8 @@ public final class ClientModBusSetup {
                     AltarFadeRenderer.reload();
                     AltarExplosionRenderer.reload();
                     TurretHitEffectRenderer.reload();
+                    SpaceSkyRenderer.reload();
+                    SpacePlanetManager.reload();
                 }));
         // ClientEffectEvents is auto-registered by @EventBusSubscriber; no manual register needed.
     }

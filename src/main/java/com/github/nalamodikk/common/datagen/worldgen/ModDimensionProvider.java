@@ -31,6 +31,20 @@ public class ModDimensionProvider {
         HolderGetter<PlacedFeature> placedFeatures = context.lookup(Registries.PLACED_FEATURE);
         HolderGetter<ConfiguredWorldCarver<?>> worldCarvers = context.lookup(Registries.CONFIGURED_CARVER);
 
+        context.register(ModDimensions.SPACE_BIOME, new Biome.BiomeBuilder()
+                .hasPrecipitation(false)
+                .temperature(0.0f)
+                .downfall(0.0f)
+                .specialEffects(new BiomeSpecialEffects.Builder()
+                        .waterColor(0x000010)
+                        .waterFogColor(0x000010)
+                        .fogColor(0x000000)
+                        .skyColor(0x000000)
+                        .build())
+                .mobSpawnSettings(MobSpawnSettings.EMPTY)
+                .generationSettings(new BiomeGenerationSettings.Builder(placedFeatures, worldCarvers).build())
+                .build());
+
         context.register(ModDimensions.VOID_MIRROR_BIOME, new Biome.BiomeBuilder()
                 .hasPrecipitation(false)
                 .temperature(0.5f)
@@ -47,6 +61,16 @@ public class ModDimensionProvider {
     }
 
     public static void bootstrapDimensionType(BootstrapContext<DimensionType> context) {
+        context.register(ModDimensions.SPACE_TYPE, new DimensionType(
+                OptionalLong.of(18000),
+                false, false, false, false,
+                1.0, false, false,
+                -64, 384, 384,
+                BlockTags.INFINIBURN_OVERWORLD,
+                ModDimensions.SPACE_EFFECTS,
+                0.0f,
+                new DimensionType.MonsterSettings(false, false, UniformInt.of(0, 0), 0)
+        ));
         context.register(ModDimensions.VOID_MIRROR_TYPE, new DimensionType(
                 OptionalLong.of(6000),
                 false,
@@ -69,6 +93,12 @@ public class ModDimensionProvider {
     public static void bootstrapLevelStem(BootstrapContext<LevelStem> context) {
         HolderGetter<DimensionType> dimTypes = context.lookup(Registries.DIMENSION_TYPE);
         HolderGetter<Biome> biomes = context.lookup(Registries.BIOME);
+
+        var spaceType  = dimTypes.getOrThrow(ModDimensions.SPACE_TYPE);
+        var spaceBiome = biomes.getOrThrow(ModDimensions.SPACE_BIOME);
+        // 純虛空：不加任何層，不呼叫 updateLayers()，讓太空維度沒有地板
+        FlatLevelGeneratorSettings spaceFlat = new FlatLevelGeneratorSettings(Optional.empty(), spaceBiome, List.of());
+        context.register(ModDimensions.SPACE_STEM, new LevelStem(spaceType, new BoundedFlatChunkGenerator(spaceFlat)));
 
         var dimType = dimTypes.getOrThrow(ModDimensions.VOID_MIRROR_TYPE);
         var biome = biomes.getOrThrow(ModDimensions.VOID_MIRROR_BIOME);

@@ -55,22 +55,24 @@ void main(){
 
     // 射線 - 平面交叉
     float denom=dot(lD,ringNormal);
-    if(abs(denom)<0.0001){fragColor=vec4(0.0);return;}
+    if(abs(denom)<0.0005){fragColor=vec4(0.0);return;}  // 更嚴格閾值防 NaN
     float t=-dot(cam,ringNormal)/denom;
-    if(t<0.0){fragColor=vec4(0.0);return;}
+    if(t<0.0||t>1e5){fragColor=vec4(0.0);return;}       // 限制 t 範圍防 inf
 
     vec3 hitPt=cam+lD*t;
     float dist=length(hitPt);
     float innerR=R*uRingInner;
     float outerR=R*uRingOuter;
-    if(dist<innerR||dist>outerR){fragColor=vec4(0.0);return;}
+    if(dist<innerR||dist>outerR||outerR<=innerR){fragColor=vec4(0.0);return;}
+
+    // 採樣前確保 u 在安全範圍（NaN u 座標會崩 AMD 驅動）
+    float u=clamp((dist-innerR)/(outerR-innerR), 0.0, 1.0);
 
     // 若射線先打到星球表面則丟棄（光環在星球後方）
     vec2 sph=sphHit(cam,lD,R);
     if(sph.x>0.0&&sph.x<sph.y&&sph.x<t){fragColor=vec4(0.0);return;}
 
-    // 採樣光環貼圖（U = 從內緣到外緣）
-    float u=(dist-innerR)/(outerR-innerR);
+    // 採樣光環貼圖（U = 從內緣到外緣，已 clamp 防 NaN）
     vec4  ring=texture(uRingTex,vec2(u,0.5));
     if(ring.a<0.01){fragColor=vec4(0.0);return;}
 

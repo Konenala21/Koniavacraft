@@ -11,6 +11,29 @@ import net.minecraft.world.level.dimension.LevelStem;
 
 public class ModDimensions {
 
+    public static final ResourceKey<Level> SPACE = ResourceKey.create(
+            Registries.DIMENSION,
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "space")
+    );
+
+    public static final ResourceKey<DimensionType> SPACE_TYPE = ResourceKey.create(
+            Registries.DIMENSION_TYPE,
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "space")
+    );
+
+    public static final ResourceKey<Biome> SPACE_BIOME = ResourceKey.create(
+            Registries.BIOME,
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "space")
+    );
+
+    public static final ResourceKey<LevelStem> SPACE_STEM = ResourceKey.create(
+            Registries.LEVEL_STEM,
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "space")
+    );
+
+    public static final ResourceLocation SPACE_EFFECTS =
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "space");
+
     public static final ResourceKey<Level> VOID_MIRROR = ResourceKey.create(
             Registries.DIMENSION,
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "void_mirror")
