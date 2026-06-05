@@ -29,7 +29,8 @@ public class PlanetRenderer {
     private int locAngularRadius, locPlanetColor;
     private int locAtmoColor, locAtmoDensity, locAtmoHeight, locPassGlow;
     private int locColorLight, locColorDark, locHeatColor, locHeatAmount;
-    private int locSurface, locHasTexture;
+    private int locSurface, locHasTexture, locSurface2, locHasTexture2, locNightTex, locHasNight;
+    private int locRotSpeed, locCloudSpeed;
 
     private boolean ready = false;
 
@@ -63,6 +64,8 @@ public class PlanetRenderer {
         locDirToStar     = GL20.glGetUniformLocation(programId, "uDirToStar");
         locSurface       = GL20.glGetUniformLocation(programId, "uSurface");
         locHasTexture    = GL20.glGetUniformLocation(programId, "uHasTexture");
+        locSurface2      = GL20.glGetUniformLocation(programId, "uSurface2");
+        locHasTexture2   = GL20.glGetUniformLocation(programId, "uHasTexture2");
 
         if (type == Type.ATMOSPHERE || type == Type.SUN) {
             locPlanetColor = GL20.glGetUniformLocation(programId, "uPlanetColor");
@@ -78,7 +81,13 @@ public class PlanetRenderer {
         }
 
         // 設定貼圖 sampler 到 unit 0
-        if (locSurface != -1) GL20.glUniform1i(locSurface, 0);
+        if (locSurface   != -1) GL20.glUniform1i(locSurface,   0);
+        if (locSurface2  != -1) GL20.glUniform1i(locSurface2,  1);
+        locNightTex  = GL20.glGetUniformLocation(programId, "uNightTex");
+        locHasNight  = GL20.glGetUniformLocation(programId, "uHasNight");
+        if (locNightTex  != -1) GL20.glUniform1i(locNightTex,  2);
+        locRotSpeed   = GL20.glGetUniformLocation(programId, "uRotSpeed");
+        locCloudSpeed = GL20.glGetUniformLocation(programId, "uCloudSpeed");
         GL20.glUseProgram(0);
 
         vaoId = GL30.glGenVertexArrays();
@@ -98,10 +107,13 @@ public class PlanetRenderer {
                                  Vector3f planetDir, float planetDist, float angularRadius,
                                  Vector3f dirToStar, Vector3f planetColor,
                                  Vector3f atmoColor, float atmoDensity, float atmoHeight,
-                                 boolean passGlow, int textureId) {
+                                 boolean passGlow, int textureId, int textureId2, int nightTexId,
+                                 float rotSpeed, float cloudSpeed) {
         if (!ready) return;
-        bindTexture(textureId);
         setCommon(invProj, invView, gameTime, resW, resH, planetDir, planetDist, angularRadius);
+        bindTexture(textureId, textureId2, nightTexId);
+        if (locRotSpeed   != -1) GL20.glUniform1f(locRotSpeed,   rotSpeed);
+        if (locCloudSpeed != -1) GL20.glUniform1f(locCloudSpeed, cloudSpeed);
         GL20.glUniform3f(locDirToStar,   dirToStar.x,   dirToStar.y,   dirToStar.z);
         GL20.glUniform3f(locPlanetColor, planetColor.x, planetColor.y, planetColor.z);
         GL20.glUniform3f(locAtmoColor,   atmoColor.x,   atmoColor.y,   atmoColor.z);
@@ -118,8 +130,8 @@ public class PlanetRenderer {
                             Vector3f colorLight, Vector3f colorDark,
                             Vector3f heatColor, float heatAmount, int textureId) {
         if (!ready) return;
-        bindTexture(textureId);
         setCommon(invProj, invView, gameTime, resW, resH, planetDir, planetDist, angularRadius);
+        bindTexture(textureId);
         GL20.glUniform3f(locDirToStar,  dirToStar.x,  dirToStar.y,  dirToStar.z);
         GL20.glUniform3f(locColorLight, colorLight.x, colorLight.y, colorLight.z);
         GL20.glUniform3f(locColorDark,  colorDark.x,  colorDark.y,  colorDark.z);
@@ -128,15 +140,20 @@ public class PlanetRenderer {
         draw();
     }
 
-    private void bindTexture(int textureId) {
+    private void bindTexture(int t0) { bindTexture(t0, -1, -1); }
+    private void bindTexture(int t0, int t1) { bindTexture(t0, t1, -1); }
+
+    private void bindTexture(int t0, int t1, int t2) {
+        bind(GL13.GL_TEXTURE0, locHasTexture,  t0);
+        bind(GL13.GL_TEXTURE0 + 1, locHasTexture2, t1);
+        if (locHasNight != -1) bind(GL13.GL_TEXTURE0 + 2, locHasNight, t2);
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
-        if (textureId != -1) {
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
-            GL20.glUniform1i(locHasTexture, 1);
-        } else {
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
-            GL20.glUniform1i(locHasTexture, 0);
-        }
+    }
+
+    private void bind(int unit, int locFlag, int texId) {
+        GL13.glActiveTexture(unit);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId != -1 ? texId : 0);
+        if (locFlag != -1) GL20.glUniform1i(locFlag, texId != -1 ? 1 : 0);
     }
 
     private void setCommon(float[] invProj, float[] invView, float gameTime,

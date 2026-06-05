@@ -11,6 +11,8 @@ uniform float uAtmoDensity;   // 日冕強度
 uniform float uAtmoHeight;    // 日冕延伸比例
 uniform float uAngularRadius;
 uniform float iTime;
+uniform sampler2D uSurface;
+uniform int   uHasTexture;
 
 in  vec2 texCoord;
 out vec4 fragColor;
@@ -61,23 +63,24 @@ void main(){
     bool onSurface=hit.x>0.0&&hit.x<hit.y;
 
     if(onSurface){
-        // 太陽表面：發光電漿，不受方向光影響
         vec3 p=cam+lD*hit.x;
         vec3 n=normalize(p);
-
-        // 慢速電漿噪聲
         float angle=iTime*0.004;
         float cs=cos(angle),sn=sin(angle);
         vec3 rn=vec3(cs*n.x+sn*n.z,n.y,-sn*n.x+cs*n.z);
-        float plasma=vnoise(rn*3.0)*0.5+vnoise(rn*7.0+vec3(1.3,2.7,0.9))*0.25;
-
-        // 中心比邊緣亮（limb darkening 反向）
         float nDotV=max(dot(n,-lD),0.0);
         float limb=0.7+0.3*nDotV;
 
-        vec3 col=uPlanetColor*(1.0+plasma*0.2)*limb;
-        // 核心白熱
-        col=mix(col,vec3(1.4,1.3,1.1),pow(nDotV,3.0)*0.4);
+        vec3 col;
+        if(uHasTexture!=0){
+            vec2 uv=vec2(atan(rn.z,rn.x)/6.28318+0.5,rn.y*-0.5+0.5);
+            col=texture(uSurface,uv).rgb*limb*1.3;
+            col=mix(col,vec3(1.5,1.4,1.1),pow(nDotV,3.0)*0.5);
+        } else {
+            float plasma=vnoise(rn*3.0)*0.5+vnoise(rn*7.0+vec3(1.3,2.7,0.9))*0.25;
+            col=uPlanetColor*(1.0+plasma*0.2)*limb;
+            col=mix(col,vec3(1.4,1.3,1.1),pow(nDotV,3.0)*0.4);
+        }
 
         float chord=hit.y-hit.x;
         float edge=smoothstep(0.0,R*0.02,chord);

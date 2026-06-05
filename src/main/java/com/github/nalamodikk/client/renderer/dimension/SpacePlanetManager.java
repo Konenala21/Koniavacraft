@@ -16,7 +16,9 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL30;
 
-import com.mojang.blaze3d.platform.NativeImage;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.stb.STBImage;
+import org.lwjgl.system.MemoryStack;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -87,10 +89,12 @@ public class SpacePlanetManager {
             float    cosAng = (float) Math.cos(Math.toRadians(angDeg));
             final float fSDist = sDist; final Vector3f fSDir = new Vector3f(sDir);
             final float fCos = cosAng; final Vector3f fColor = star.color();
+            final int starTexId = getTexture(star.id());
             bodies.add(new Body(sDist, () ->
                 sunRenderer.renderAtmosphere(invProj, invView, gameTime, w, h,
                     fSDir, fSDist, fCos, fSDir, fColor,
-                    new Vector3f(1.0f, 0.6f, 0.2f), 1.5f, 0.0f, false, -1)
+                    new Vector3f(1.0f, 0.6f, 0.2f), 1.5f, 0.0f, false,
+                    starTexId, -1, -1, 0.002f, 0.002f)
             ));
         }
 
@@ -105,21 +109,25 @@ public class SpacePlanetManager {
             float angDeg = (float) Math.toDegrees(Math.atan(planet.physicalRadius() / dist));
             if (angDeg < 0.02f) continue;
 
-            float atmoFac = 1.0f + planet.atmoHeight();
-            float cullSin = (float) Math.sin(Math.toRadians(angDeg * atmoFac * 1.5f));
-            if (dir.dot(camFwd) < -cullSin) continue;
+            // 剔除：只有完全在背面才跳過（用 0.5 寬鬆餘裕避免大星球邊緣被誤切）
+            if (dir.dot(camFwd) < -0.5f) continue;
 
             float cosAng = (float) Math.cos(Math.toRadians(angDeg));
             final float fDist = dist; final Vector3f fDir = new Vector3f(dir);
             final float fCos = cosAng;
-            final int texId = getTexture(planet.id());
+            final int texId   = getTexture(planet.id());
+            final int texId2  = getTexture(planet.id() + "_atmo");
+            final int nightId = getTexture(planet.id() + "_night");
+            final float rotSpeed   = planet.rotSpeedRadPerSec();
+            final float cloudSpeed = rotSpeed * 1.08f; // 雲層比地表快 8%
 
             bodies.add(new Body(dist, () -> {
                 if (planet.shaderType() == PlanetRenderer.Type.ATMOSPHERE) {
                     atmosphereRenderer.renderAtmosphere(invProj, invView, gameTime, w, h,
                         fDir, fDist, fCos, sunLight,
                         planet.colorA(), planet.colorB(),
-                        planet.atmoDensity(), planet.atmoHeight(), false, texId);
+                        planet.atmoDensity(), planet.atmoHeight(), false,
+                        texId, texId2, nightId, rotSpeed, cloudSpeed);
                 } else {
                     rockyRenderer.renderRocky(invProj, invView, gameTime, w, h,
                         fDir, fDist, fCos, sunLight,
@@ -147,15 +155,29 @@ public class SpacePlanetManager {
             if (res.isEmpty()) continue;
 
             try (InputStream in = res.get().open();
-                 NativeImage img = NativeImage.read(in)) {
+                 MemoryStack stack = MemoryStack.stackPush()) {
+                byte[] bytes = in.readAllBytes();
+                var buf = BufferUtils.createByteBuffer(bytes.length);
+                buf.put(bytes).flip();
+
+                var w = stack.mallocInt(1);
+                var h = stack.mallocInt(1);
+                var ch = stack.mallocInt(1);
+                var pixels = STBImage.stbi_load_from_memory(buf, w, h, ch, 4);
+                if (pixels == null) {
+                    KoniavacraftMod.LOGGER.warn("[SpacePlanet] STB failed {}: {}", loc, STBImage.stbi_failure_reason());
+                    continue;
+                }
                 texId = GL11.glGenTextures();
                 GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId);
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-                img.upload(0, 0, 0, false);
+                GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA,
+                    w.get(0), h.get(0), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, pixels);
                 GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+                STBImage.stbi_image_free(pixels);
                 KoniavacraftMod.LOGGER.info("[SpacePlanet] Loaded texture: {}", loc);
                 break;
             } catch (Exception e) {

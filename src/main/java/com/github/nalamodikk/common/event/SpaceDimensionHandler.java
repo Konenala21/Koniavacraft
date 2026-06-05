@@ -29,7 +29,7 @@ public class SpaceDimensionHandler {
         Player player = event.getEntity();
         // 只有從非太空維度進入才重設位置
         if (!event.getFrom().equals(ModDimensions.SPACE)) {
-            player.teleportTo(500.0, 64.0, 0.0);
+            player.teleportTo(1500.0, 64.0, 0.0);
         }
     }
 

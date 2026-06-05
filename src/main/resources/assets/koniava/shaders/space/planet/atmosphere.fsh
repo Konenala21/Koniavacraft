@@ -11,8 +11,14 @@ uniform float uAtmoDensity;
 uniform float uAtmoHeight;
 uniform float uAngularRadius;
 uniform float iTime;
-uniform sampler2D uSurface;
+uniform float uRotSpeed;    // 自轉角速度（rad/遊戲秒）
+uniform float uCloudSpeed;  // 雲層角速度（略快於自轉）
+uniform sampler2D uSurface;    // 白天/地表貼圖
+uniform sampler2D uSurface2;   // 雲層/大氣疊加貼圖
+uniform sampler2D uNightTex;   // 夜景貼圖（城市燈光）
 uniform int   uHasTexture;
+uniform int   uHasTexture2;
+uniform int   uHasNight;
 
 in  vec2 texCoord;
 out vec4 fragColor;
@@ -96,16 +102,38 @@ void main(){
         vec3  n =normalize(p);
 
         // ── 表面噪聲 ──────────────────────────────────────
-        // 緩慢自轉：沿 Y 軸旋轉
-        float angle = iTime * 0.008;
+        // 自轉（各星球不同速度）
+        float angle  = iTime * uRotSpeed;
         float cs=cos(angle), sn=sin(angle);
         vec3 rn = vec3(cs*n.x+sn*n.z, n.y, -sn*n.x+cs*n.z);
+        // 雲層：略快（形成雲飄效果）
+        float angleC = iTime * uCloudSpeed;
+        float csC=cos(angleC), snC=sin(angleC);
+        vec3 rnC = vec3(csC*n.x+snC*n.z, n.y, -snC*n.x+csC*n.z);
 
         vec3 surfCol;
+        float dayFac = 1.0; // 用於讓夜景燈光不被陰影壓暗
         if (uHasTexture != 0) {
-            // 球面 UV：u=經度（atan），v=緯度（快速近似，無 acos）
             vec2 uv = vec2(atan(rn.z, rn.x) / 6.28318 + 0.5, rn.y * -0.5 + 0.5);
-            surfCol = texture(uSurface, uv).rgb;
+            vec3 dayCol = texture(uSurface, uv).rgb;
+
+            // 夜景：用太陽夾角混合白天/夜晚
+            if (uHasNight != 0) {
+                float sunAngle = dot(n, lSun);
+                dayFac = smoothstep(-0.15, 0.15, sunAngle);
+                vec3 nightCol = texture(uNightTex, uv).rgb * 2.5; // 城市燈光加亮
+                surfCol = mix(nightCol, dayCol, dayFac);
+            } else {
+                surfCol = dayCol;
+            }
+
+            // 雲層：使用獨立旋轉 UV（雲飄效果）
+            if (uHasTexture2 != 0) {
+                vec2 uvCloud = vec2(atan(rnC.z, rnC.x) / 6.28318 + 0.5, rnC.y * -0.5 + 0.5);
+                vec3 cloud = texture(uSurface2, uvCloud).rgb;
+                float cloudCover = clamp(dot(cloud, vec3(0.33)), 0.0, 1.0);
+                surfCol = mix(surfCol, cloud, cloudCover * 0.85);
+            }
         } else {
             float coarse = fbm(rn * 2.2);
             float fine   = fbm(rn * 5.5 + vec3(5.1,1.3,2.7));
@@ -126,7 +154,8 @@ void main(){
         float LdotV = dot(lSun, -lD);
         float s     = LdotV - NdotL * nDotV;
         float t     = s <= 0.0 ? 1.0 : max(NdotL, nDotV + 0.001);
-        float sh    = NdotL * (A + B * s / t) * 0.85 + 0.18;
+        // 夜景側：城市燈光不受陽光影響（dayFac=0 時 sh→1.0）
+        float sh    = mix(1.0, NdotL * (A + B * s / t) * 0.85 + 0.18, dayFac);
 
         // 邊緣暗化
         float limb = pow(nDotV, 0.35);
