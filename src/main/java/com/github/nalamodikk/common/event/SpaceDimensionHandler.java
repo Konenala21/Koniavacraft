@@ -22,6 +22,10 @@ public class SpaceDimensionHandler {
         if (player.isNoGravity() != inSpace) {
             player.setNoGravity(inSpace);
         }
+        // 防止玩家漂入虛空觸發傷害動畫（即使傷害為 0 仍會抖動）
+        if (inSpace && player.getY() < 0) {
+            player.teleportTo(player.getX(), 64.0, player.getZ());
+        }
     }
 
     // 進入太空維度時，傳送到地球軌道附近 (500, 64, 0)

@@ -22,7 +22,9 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;
 import java.io.InputStream;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +40,9 @@ public class SpacePlanetManager {
 
     // 行星貼圖快取：planet id → GL texture id（-1=無貼圖）
     private static final Map<String, Integer> textureCache = new HashMap<>();
+    // 每幀最多上傳 N 張貼圖，避免首次進入維度時一幀全部上傳造成延遲
+    private static final int MAX_TEXTURE_UPLOADS_PER_FRAME = 2;
+    private static int textureUploadsThisFrame = 0;
 
     public static void onRenderLevel(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SKY) return;
@@ -45,6 +50,7 @@ public class SpacePlanetManager {
         if (mc.level == null || mc.player == null) return;
         if (!mc.level.dimension().equals(ModDimensions.SPACE)) return;
 
+        textureUploadsThisFrame = 0; // 每幀重置上傳計數
         if (!initialized) { init(); initCooldown = 3; return; }
         if (initCooldown > 0) { initCooldown--; return; }
 
@@ -198,6 +204,11 @@ public class SpacePlanetManager {
         if (textureCache.containsKey(planetId)) return textureCache.get(planetId);
 
         ResourceManager rm = Minecraft.getInstance().getResourceManager();
+        // 每幀上傳限制：超過上限本幀回傳 -1（下幀再試），避免首次進入卡頓
+        if (textureUploadsThisFrame >= MAX_TEXTURE_UPLOADS_PER_FRAME) {
+            return -1;
+        }
+
         int texId = -1;
 
         for (String ext : new String[]{"jpg", "png"}) {
@@ -235,6 +246,7 @@ public class SpacePlanetManager {
                 GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0,
                     w.get(0), h.get(0), GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, pixels);
                 STBImage.stbi_image_free(pixels);
+                textureUploadsThisFrame++;
                 KoniavacraftMod.LOGGER.info("[SpacePlanet] Loaded {}x{} {}", w.get(0), h.get(0), loc);
                 break;
             } catch (Exception e) {
