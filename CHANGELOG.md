@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Saturn, Uranus, and Neptune now have visible rings. Saturn has wide golden rings from real Solar System Scope textures. Uranus has 11 narrow bluish rings (tilted nearly vertical at 97.8°, so they look like a standing wheel). Neptune has 5 faint reddish rings with the bright Adams ring at the outer edge. All planets now orbit at realistic proportions: Earth completes one orbit per in-game year (365 days), with other planets scaled accordingly. Titan orbits Saturn and the Moon orbits Earth, and both are properly occluded when passing behind their parent planet instead of visually popping.
+土星、天王星和海王星現在有可見的行星環。土星有寬廣的金色環（來自 Solar System Scope 真實貼圖）。天王星有 11 條細窄藍灰環（傾斜達 97.8°，看起來像直立的輪子）。海王星有 5 條暗紅色環，外緣最亮的亞當斯環清晰可見。所有行星現在有現實比例的軌道：地球每遊戲年（365 天）公轉一圈，其他行星按比例縮放。土衛六繞土星、月球繞地球，兩者遮擋在父行星後方時正確消失，不再瞬間跳躍。
+
 Added a space dimension with a procedural starfield sky, physically-based planet rendering, and a full solar system (Mercury, Venus, Moon, Mars, Jupiter, Saturn, Titan, Uranus, Neptune, Pluto) plus a stub Alpha Centauri binary system. Planets are rendered as real 3D spheres whose apparent size scales with your distance. The Sun is visible with a corona glow. Players spawn near Earth's orbital position when entering the dimension.
 新增太空維度，包含程序生成的星空天空、物理正確的行星渲染，以及完整太陽系（水星、金星、月球、火星、木星、土星、土衛六、天王星、海王星、冥王星）和比鄰星系雛形（雙星系統）。行星為真實 3D 球體，視角大小隨距離動態縮放。太陽有日冕光暈。進入維度時玩家會出現在地球軌道附近。
 
