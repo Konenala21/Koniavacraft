@@ -4,6 +4,7 @@ uniform float iTime;
 uniform vec2  iResolution;
 uniform mat4  InvProjMat;
 uniform mat4  InvViewMat;
+uniform int   uMoonSky;   // 1 = 月球（無大氣：星星更亮不閃爍、無流星）
 
 in  vec2 texCoord;
 out vec4 fragColor;
@@ -35,8 +36,14 @@ void main(){
     float bright=dim*0.7+big*1.4;
 
     vec3 bigCell=floor(dir.yzx*45.0);
-    float twinkle=0.8+0.2*sin(iTime*2.1+hash31(bigCell)*6.28);
-    bright=bright-big*1.4+big*1.4*twinkle;
+    if(uMoonSky==1){
+        // 月球無大氣：星星不閃爍，整體更亮更清澈
+        bright *= 1.4;
+    } else {
+        // 太空：大氣外仍給亮星輕微閃爍
+        float twinkle=0.8+0.2*sin(iTime*2.1+hash31(bigCell)*6.28);
+        bright=bright-big*1.4+big*1.4*twinkle;
+    }
 
     // ── 恆星色溫（赫羅圖分布）────────────────────────────────────────────
     // M=紅矮星 K=橙星 G=類太陽黃 F=白 A=藍白 B/O=藍
@@ -59,11 +66,11 @@ void main(){
     // 中心偏暖（老恆星密集），外圍偏藍（年輕熱星）
     vec3 mwCol=mix(vec3(0.14,0.17,0.30),vec3(0.30,0.22,0.16),mwCore)*mwBright;
 
-    // ── 流星（每 9 秒一顆，持續 0.7 秒）─────────────────────────────────
+    // ── 流星（每 9 秒一顆）：月球無大氣無流星，只太空有 ──────────────────
     float ssPeriod=9.0;
     float ssT=mod(iTime,ssPeriod);
     float ssDur=0.7;
-    if(ssT<ssDur){
+    if(uMoonSky==0 && ssT<ssDur){
         float prog=ssT/ssDur;
         float seed=floor(iTime/ssPeriod);
         float az=hash31(vec3(seed,1.3,0.0))*5.28+0.5;

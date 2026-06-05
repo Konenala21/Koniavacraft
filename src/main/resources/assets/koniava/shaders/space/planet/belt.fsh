@@ -59,7 +59,8 @@ void main(){
                 float edgeFade=smoothstep(uRingInner,uRingInner+bw*0.18,radius)
                               *smoothstep(uRingOuter,uRingOuter-bw*0.18,radius);
                 // 徑向不均勻（模擬柯克伍德空隙/密度團塊）
-                float clump=0.6+0.4*sin(radius*0.0025+hash13(floor(rel*0.003))*6.28);
+                vec2 cf=floor(rel*0.003);
+                float clump=0.6+0.4*sin(radius*0.0025+hash13(vec3(cf,0.0))*6.28);
 
                 // 微緩公轉漂移（整條帶緩慢轉）
                 float ang=iTime*0.0008;

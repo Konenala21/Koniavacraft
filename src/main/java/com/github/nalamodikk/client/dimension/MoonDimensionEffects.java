@@ -14,8 +14,8 @@ public class MoonDimensionEffects extends DimensionSpecialEffects {
 
     public MoonDimensionEffects() {
         // cloudLevel=NaN（無雲）, hasGround=true（有地表，地平線分明）,
-        // skyType=NORMAL（畫原版星空）, forceBrightLightmap=false, constantAmbientLight=false
-        super(Float.NaN, true, SkyType.NORMAL, false, false);
+        // skyType=NONE（不畫 vanilla 藍天/太陽，全部自己用 shader 畫）
+        super(Float.NaN, true, SkyType.NONE, false, false);
     }
 
     @Override

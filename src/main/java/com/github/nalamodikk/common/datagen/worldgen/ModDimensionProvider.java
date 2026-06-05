@@ -62,7 +62,7 @@ public class ModDimensionProvider {
         // 月球：灰色月壤，純黑天空，無大氣無降水無生物
         context.register(ModDimensions.MOON_BIOME, new Biome.BiomeBuilder()
                 .hasPrecipitation(false)
-                .temperature(0.0f)
+                .temperature(2.0f)   // 高溫避免下雪/結冰（月球無大氣，不該有降水）
                 .downfall(0.0f)
                 .specialEffects(new BiomeSpecialEffects.Builder()
                         .waterColor(0x383844)
@@ -104,10 +104,10 @@ public class ModDimensionProvider {
                 new DimensionType.MonsterSettings(false, false, UniformInt.of(0, 0), 0)
         ));
 
-        // 月球：固定為夜晚（看得到星空與地球），無天光，coordinateScale=1
+        // 月球：時間流動（日夜循環）+ 天光（地表跟著太陽明暗），黑色星空由 effects 畫
         context.register(ModDimensions.MOON_TYPE, new DimensionType(
-                OptionalLong.of(18000),   // 固定時間（黑天）
-                false,  // hasSkyLight：無太陽光照，全靠方塊光
+                OptionalLong.empty(),  // 時間流動，產生日夜
+                true,   // hasSkyLight：地表有日夜明暗
                 false,  // hasCeiling
                 false,  // ultraWarm
                 false,  // natural（false → 不能用床、指南針旋轉等）
@@ -117,7 +117,7 @@ public class ModDimensionProvider {
                 -64, 384, 384,
                 BlockTags.INFINIBURN_OVERWORLD,
                 ModDimensions.MOON_EFFECTS,
-                0.05f,  // ambientLight：微光，地表不全黑
+                0.02f,  // ambientLight：夜晚微光不全黑
                 new DimensionType.MonsterSettings(false, false, UniformInt.of(0, 0), 0)
         ));
     }

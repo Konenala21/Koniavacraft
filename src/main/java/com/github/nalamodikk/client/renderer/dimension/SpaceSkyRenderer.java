@@ -22,7 +22,7 @@ public class SpaceSkyRenderer {
     private static int vaoId     = -1;
     private static int vboId     = -1;
 
-    private static int locTime, locInvProj, locInvView, locResolution;
+    private static int locTime, locInvProj, locInvView, locResolution, locMoonSky;
 
     private static boolean initialized = false;
 
@@ -31,7 +31,9 @@ public class SpaceSkyRenderer {
 
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
-        if (!mc.level.dimension().equals(ModDimensions.SPACE)) return;
+        boolean space = mc.level.dimension().equals(ModDimensions.SPACE);
+        boolean moon  = mc.level.dimension().equals(ModDimensions.MOON);
+        if (!space && !moon) return;
 
         if (!initialized) {
             init();
@@ -52,6 +54,7 @@ public class SpaceSkyRenderer {
         float gameTime = (mc.level.getGameTime() + partial) / 20.0f;
         GL20.glUniform1f(locTime, gameTime);
         GL20.glUniform2f(locResolution, target.width, target.height);
+        if (locMoonSky != -1) GL20.glUniform1i(locMoonSky, moon ? 1 : 0);
 
         float[] invProj = new float[16];
         float[] invView = new float[16];
@@ -88,6 +91,7 @@ public class SpaceSkyRenderer {
         locInvProj    = GL20.glGetUniformLocation(programId, "InvProjMat");
         locInvView    = GL20.glGetUniformLocation(programId, "InvViewMat");
         locResolution = GL20.glGetUniformLocation(programId, "iResolution");
+        locMoonSky    = GL20.glGetUniformLocation(programId, "uMoonSky");
         GL20.glUseProgram(0);
 
         vaoId = GL30.glGenVertexArrays();

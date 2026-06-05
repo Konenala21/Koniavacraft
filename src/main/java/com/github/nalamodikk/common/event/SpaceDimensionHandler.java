@@ -34,11 +34,13 @@ public class SpaceDimensionHandler {
         }
     }
 
-    // 太空維度禁止天氣
+    // 太空 + 月球維度禁止天氣（月球無大氣不該下雪/雨）
     @SubscribeEvent
     public static void onLevelTick(LevelTickEvent.Post event) {
         if (!(event.getLevel() instanceof ServerLevel level)) return;
-        if (!level.dimension().equals(ModDimensions.SPACE)) return;
+        boolean space = level.dimension().equals(ModDimensions.SPACE);
+        boolean moon  = level.dimension().equals(ModDimensions.MOON);
+        if (!space && !moon) return;
         if (level.isRaining() || level.isThundering()) {
             level.setWeatherParameters(6000, 0, false, false);
         }

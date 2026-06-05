@@ -37,9 +37,9 @@ public class MoonCoreTraversalHandler {
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Post event) {
         Player player = event.getEntity();
-        if (player.level().isClientSide) return;
         boolean onMoon = player.level().dimension().equals(ModDimensions.MOON);
         UUID id = player.getUUID();
+        boolean serverSide = !player.level().isClientSide;
 
         if (!onMoon) {
             inTransit.remove(id);
@@ -50,24 +50,23 @@ public class MoonCoreTraversalHandler {
         Vec3 v = player.getDeltaMovement();
 
         if (transit) {
-            // TRANSIT：往上加速（+Y），免 fall damage（fallDistance 歸零）
+            // TRANSIT：往上加速（+Y），免 fall damage（兩端都套，client 才有體感）
             player.setDeltaMovement(v.x, v.y + FLIP_ACCEL, v.z);
             player.fallDistance = 0;
             player.resetFallDistance();
             // 升回地表 → 轉回正常重力
             if (player.getY() > SURFACE_EXIT) {
                 inTransit.put(id, false);
-                // 給一點向下初速，自然落到地表
                 player.setDeltaMovement(player.getDeltaMovement().x, -0.1, player.getDeltaMovement().z);
             }
         } else {
-            // NORMAL：月球低重力（抵消大部分原生重力）
-            if (v.y < 0) {
-                // 原生每 tick 約 -0.08 重力，月球只要 0.16 倍 → 補回 0.84*0.08
+            // NORMAL：月球低重力（飄飄感）——兩端都套，本地玩家 client 端才感覺得到
+            // 跳躍上升段也減速 → 跳更高、滯空久、慢慢落；站地面不補避免被頂
+            if (!player.onGround() && Math.abs(v.y) > 1e-4) {
                 player.setDeltaMovement(v.x, v.y + 0.08 * (1.0 - MOON_GRAVITY), v.z);
             }
-            // 掉到核心深處 + 正在下墜 → 觸發翻轉 + 傳送
-            if (player.getY() < CORE_TRIGGER && v.y < -0.05) {
+            // 核心傳送：只在 server 端觸發（避免 client 重複傳送/desync）
+            if (serverSide && player.getY() < CORE_TRIGGER && v.y < -0.05) {
                 triggerCorePassage(player);
             }
         }

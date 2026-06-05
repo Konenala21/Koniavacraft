@@ -52,7 +52,9 @@ public class SpacePlanetManager {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SKY) return;
         var mc = Minecraft.getInstance();
         if (mc.level == null || mc.player == null) return;
-        if (!mc.level.dimension().equals(ModDimensions.SPACE)) return;
+        boolean inSpace = mc.level.dimension().equals(ModDimensions.SPACE);
+        boolean onMoon  = mc.level.dimension().equals(ModDimensions.MOON);
+        if (!inSpace && !onMoon) return;
 
         textureUploadsThisFrame = 0; // 每幀重置上傳計數
         if (!initialized) { init(); initCooldown = 3; return; }
@@ -83,10 +85,56 @@ public class SpacePlanetManager {
         );
         Vector3f camFwd = new Vector3f(-invView[8], -invView[9], -invView[10]).normalize();
 
+        if (onMoon) {
+            // 月球天空：從地表往上看，太陽走天空弧（日夜）、地球固定掛天上有相位
+            float partialT = event.getPartialTick().getGameTimeDeltaPartialTick(false);
+            renderMoonSky(mc, partialT, gameTime, invProj, invView, target.width, target.height);
+            return;
+        }
+
         for (StarSystem system : StarSystemRegistry.ALL) {
             renderSystem(system, playerPos, camFwd, tick, gameTime,
                          invProj, invView, target.width, target.height);
         }
+    }
+
+    /** 月球天空：簡單明亮太陽（驅動日夜）+ 精緻地球（固定掛天上，相位由太陽方向自動算）。 */
+    private static void renderMoonSky(Minecraft mc, float partial, float gameTime,
+                                      float[] invProj, float[] invView, int w, int h) {
+        // 太陽方向：綁 MC 自然日夜時間，跟地表明暗一致
+        // dayTime: 0=日出(東), 6000=正午(頂), 12000=日落(西), 18000=午夜(地平線下)
+        double t = (mc.level.getDayTime() % 24000L) / 24000.0;
+        double ang = (t - 0.0) * 2.0 * Math.PI;  // 0..2π
+        // 弧線：東(+X)升起 → 頂(+Y) → 西(-X)落下；午夜在地平線下
+        Vector3f sunDir = new Vector3f(
+            (float) Math.cos(ang),
+            (float) Math.sin(ang),
+            0.15f
+        ).normalize();
+
+        // 地球：潮汐鎖定固定掛在天空（南方高處），不隨日夜移動
+        Vector3f earthDir = new Vector3f(0.0f, 0.55f, -0.84f).normalize();
+        // 地球→太陽方向 = 太陽方向（太陽極遠，方向近似相同）→ 給地球 shader 算相位
+        Vector3f earthToSun = new Vector3f(sunDir);
+
+        // ── 太陽（簡單亮盤）：用 sun shader 但小尺寸，從地表看就是顆亮球 ──
+        float sunCos = (float) Math.cos(Math.toRadians(2.2)); // 視角半徑 2.2°
+        sunRenderer.renderAtmosphere(invProj, invView, gameTime, w, h,
+            sunDir, 1500f, sunCos, sunDir,
+            new Vector3f(1.0f, 0.95f, 0.80f),
+            new Vector3f(1.0f, 0.7f, 0.3f), 1.2f, 0.0f, false,
+            -1, -1, -1, 0.002f, 0.002f, 1.0f, null, 1.001f);
+
+        // ── 地球（精緻，有相位/雲/夜景）視角半徑 6° ──
+        float earthCos = (float) Math.cos(Math.toRadians(6.0));
+        int earthTex   = getTexture("earth");
+        int earthAtmo  = getTexture("earth_atmo");
+        int earthNight = getTexture("earth_night");
+        atmosphereRenderer.renderAtmosphere(invProj, invView, gameTime, w, h,
+            earthDir, 1500f, earthCos, earthToSun,
+            new Vector3f(0.18f, 0.42f, 0.68f), new Vector3f(0.35f, 0.62f, 1.0f),
+            1.2f, 0.10f, false,
+            earthTex, earthAtmo, earthNight, 0.002f, 0.00216f, 1.0f, null, 1.001f);
     }
 
     private static void renderSystem(StarSystem system, Vector3f playerPos, Vector3f camFwd,
