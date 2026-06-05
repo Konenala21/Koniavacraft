@@ -14,6 +14,8 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
 import org.lwjgl.BufferUtils;
@@ -32,6 +34,7 @@ public class SpacePlanetManager {
     private static final PlanetRenderer sunRenderer        = new PlanetRenderer(PlanetRenderer.Type.SUN);
     private static final PlanetRenderer ringRenderer       = new PlanetRenderer(PlanetRenderer.Type.RING);
     private static boolean initialized = false;
+    private static int     initCooldown = 0; // AMD：init 後跳過 N 幀再開始渲染
 
     // 行星貼圖快取：planet id → GL texture id（-1=無貼圖）
     private static final Map<String, Integer> textureCache = new HashMap<>();
@@ -42,7 +45,8 @@ public class SpacePlanetManager {
         if (mc.level == null || mc.player == null) return;
         if (!mc.level.dimension().equals(ModDimensions.SPACE)) return;
 
-        if (!initialized) init();
+        if (!initialized) { init(); initCooldown = 3; return; }
+        if (initCooldown > 0) { initCooldown--; return; }
 
         float partial  = event.getPartialTick().getGameTimeDeltaPartialTick(false);
         float gameTime = (mc.level.getGameTime() + partial) / 20.0f;
@@ -176,7 +180,6 @@ public class SpacePlanetManager {
                         planet.heatColor(), planet.heatAmount(), texId, fadeAlpha,
                         fOccDir, fOccCos);
                 }
-                // 土星環（行星本體之後畫，前方環蓋在星球上）
                 if (planet.hasRings() && ringTexId != -1) {
                     ringRenderer.renderRing(invProj, invView, gameTime, w, h,
                         fDir, fDist, fCos, sunLight,
@@ -223,11 +226,16 @@ public class SpacePlanetManager {
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+                // AMD driver bug（atio6axx 24+/26.x）：
+                // glTexImage2D 在 shader reload 後崩潰。
+                // 修法：先用 null data 分配空間，再用 glTexSubImage2D 上傳像素
                 GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA,
-                    w.get(0), h.get(0), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, pixels);
-                GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+                    w.get(0), h.get(0), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE,
+                    (java.nio.ByteBuffer) null);
+                GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0,
+                    w.get(0), h.get(0), GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, pixels);
                 STBImage.stbi_image_free(pixels);
-                KoniavacraftMod.LOGGER.info("[SpacePlanet] Loaded texture: {}", loc);
+                KoniavacraftMod.LOGGER.info("[SpacePlanet] Loaded {}x{} {}", w.get(0), h.get(0), loc);
                 break;
             } catch (Exception e) {
                 KoniavacraftMod.LOGGER.warn("[SpacePlanet] Failed to load {}: {}", loc, e.getMessage());
@@ -248,14 +256,20 @@ public class SpacePlanetManager {
     }
 
     public static void reload() {
-        atmosphereRenderer.release();
-        rockyRenderer.release();
-        sunRenderer.release();
-        ringRenderer.release();
+        // AMD driver 26.x bug：glDeleteProgram 後重建 + glTexImage2D 會 EXCEPTION_ACCESS_VIOLATION
+        // 修法：F3+T 只清貼圖快取，不刪 shader program
+        // shader 變更需要完整重啟遊戲才生效（可接受的 trade-off）
+        GL11.glFinish();
+        for (int unit = 0; unit < 4; unit++) {
+            GL13.glActiveTexture(GL13.GL_TEXTURE0 + unit);
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+        }
+        GL13.glActiveTexture(GL13.GL_TEXTURE0);
         for (int id : textureCache.values()) {
             if (id != -1) GL11.glDeleteTextures(id);
         }
         textureCache.clear();
-        initialized = false;
+        // 不呼叫 atmosphereRenderer.release() 等，保留已編譯的 shader program
+        // initialized 維持 true，避免觸發重編 shader 的崩潰序列
     }
 }

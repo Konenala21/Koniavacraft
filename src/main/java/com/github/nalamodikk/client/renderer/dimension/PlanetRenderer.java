@@ -151,7 +151,7 @@ public class PlanetRenderer {
         setCommon(invProj, invView, gameTime, resW, resH, planetDir, planetDist, angularRadius);
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, ringTexId != -1 ? ringTexId : 0);
-        GL20.glUniform3f(locDirToStar,  dirToStar.x,  dirToStar.y,  dirToStar.z);
+        GL20.glUniform3f(locDirToStar, dirToStar.x, dirToStar.y, dirToStar.z);
         if (locRingInner != -1) GL20.glUniform1f(locRingInner, ringInner);
         if (locRingOuter != -1) GL20.glUniform1f(locRingOuter, ringOuter);
         if (locRingTilt  != -1) GL20.glUniform1f(locRingTilt,  (float)Math.toRadians(ringTiltDeg));

@@ -8,7 +8,7 @@ from PIL import Image
 import os
 
 W = 512
-H = 4
+H = 64  # 至少 64 避免 AMD 極端比例貼圖崩潰（原 4 = 128:1 比例，AMD 26.x 無法接受）
 OUT = os.path.join(os.path.dirname(__file__),
     "../src/main/resources/assets/koniava/textures/space")
 os.makedirs(OUT, exist_ok=True)
