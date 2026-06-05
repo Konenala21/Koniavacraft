@@ -10,6 +10,9 @@ uniform vec3  uColorLight;
 uniform vec3  uColorDark;
 uniform vec3  uHeatColor;
 uniform float uHeatAmount;
+uniform float uAlpha;
+uniform vec3  uOccluderDir;
+uniform float uOccluderCos;
 uniform sampler2D uSurface;
 uniform int   uHasTexture;
 
@@ -41,6 +44,7 @@ void main(){
     vec4 vd=InvProjMat*vec4(ndc,1.0,1.0);vd.xyz/=vd.w;
     vec3 dir=normalize((InvViewMat*vec4(normalize(vd.xyz),0.0)).xyz);
 
+    if(uOccluderCos<1.0&&dot(dir,uOccluderDir)>uOccluderCos){fragColor=vec4(0.0);return;}
     float cosA=dot(dir,uPlanetDir);
     if(cosA<uAngularRadius-0.005){fragColor=vec4(0.0);return;}
 
@@ -59,11 +63,16 @@ void main(){
         vec3  n =normalize(p);
         float li=max(dot(n,lSun),0.0)*0.70+0.30;
 
+        vec3 wUp3=abs(uPlanetDir.y)<0.9?vec3(0,1,0):vec3(1,0,0);
+        vec3 xW3=normalize(cross(wUp3,uPlanetDir));
+        vec3 yW3=cross(uPlanetDir,xW3);
+        vec3 wn3=n.x*xW3+n.y*yW3+n.z*uPlanetDir;
+
+        vec2 uv3=vec2(atan(wn3.z,wn3.x)/(2.0*PI)+0.5, acos(clamp(wn3.y,-1.0,1.0))/PI);
+        vec3 tex3=texture(uSurface,uv3).rgb;
         vec3 col;
-        if(uHasTexture!=0){
-            // 球面 UV
-            vec2 uv=vec2(atan(n.z,n.x)/(2.0*PI)+0.5, n.y*-0.5+0.5);
-            col=texture(uSurface,uv).rgb*li;
+        if(dot(tex3,vec3(1.0))>0.02){
+            col=tex3*li;
         } else {
             vec2 uv=vec2(atan(n.x,n.z)/(2.0*PI)+0.5,
                          clamp(acos(clamp(n.y,-1.0,1.0))/PI,0.0,1.0));
@@ -72,7 +81,7 @@ void main(){
             col+=c*uHeatAmount*uHeatColor;
         }
         col=pow(max(col,0.0),vec3(1.0/2.2));
-        float alpha=smoothstep(uAngularRadius-0.0003,uAngularRadius,cosA);
+        float alpha=smoothstep(uAngularRadius-0.0003,uAngularRadius,cosA)*uAlpha;
         fragColor=vec4(col*alpha,alpha);
     } else {
         fragColor=vec4(0.0);

@@ -11,8 +11,11 @@ uniform float uAtmoDensity;
 uniform float uAtmoHeight;
 uniform float uAngularRadius;
 uniform float iTime;
-uniform float uRotSpeed;    // 自轉角速度（rad/遊戲秒）
-uniform float uCloudSpeed;  // 雲層角速度（略快於自轉）
+uniform float uRotSpeed;
+uniform float uCloudSpeed;
+uniform float uAlpha;
+uniform vec3  uOccluderDir; // 父行星方向（歸一）
+uniform float uOccluderCos; // 父行星視角半徑餘弦；1.001=無遮擋       // 淡入係數（0=不可見 1=完全顯示）
 uniform sampler2D uSurface;    // 白天/地表貼圖
 uniform sampler2D uSurface2;   // 雲層/大氣疊加貼圖
 uniform sampler2D uNightTex;   // 夜景貼圖（城市燈光）
@@ -69,11 +72,17 @@ vec3 computeAtmo(vec3 cam,vec3 lD,vec3 lSun,float R,bool onSurface){
     float t=-dot(cam,lD); vec3 ep=cam+lD*t; float d_sq=dot(ep,ep);
     if(d_sq>R_atmo*R_atmo)return vec3(0.0);
     float inner=onSurface?R:0.0;
-    float chord=chordThrough(d_sq,inner,R_atmo);
-    float alpha=1.0-exp(-chord*uAtmoDensity/R);
-    float dayFac=clamp(dot(normalize(ep),lSun)*0.7+0.3,0.0,1.0);
-    float fwd=1.0+pow(max(dot(-lD,lSun),0.0),5.0)*1.2; // 瑞利前向散射
-    return uAtmoColor*alpha*dayFac*fwd;
+    float chord    = chordThrough(d_sq,inner,R_atmo);
+    float optDepth = chord * uAtmoDensity / R;
+    float alpha    = 1.0 - exp(-optDepth);
+    float dayFac = clamp(dot(normalize(ep), lSun)*0.7+0.3, 0.0, 1.0);
+    float mie = pow(max(dot(lD, lSun), 0.0), 6.0) * 3.0;
+    float illumination = max(dayFac, mie);
+    float depthFrac = clamp(optDepth / 3.0, 0.0, 1.0);
+    vec3 outerColor = uAtmoColor;                        // 外圈：行星定義的大氣色
+    vec3 innerColor = uAtmoColor * vec3(1.8, 1.1, 0.6); // 內圈偏橙紅
+    vec3 layeredColor = mix(outerColor, innerColor, depthFrac * 0.5);
+    return layeredColor * alpha * illumination;
 }
 
 void main(){
@@ -81,11 +90,19 @@ void main(){
     vec4 vd=InvProjMat*vec4(ndc,1.0,1.0);vd.xyz/=vd.w;
     vec3 dir=normalize((InvViewMat*vec4(normalize(vd.xyz),0.0)).xyz);
 
+    // 父行星遮擋：視線穿過父行星圓盤時直接丟棄（消除衛星跳躍）
+    if(uOccluderCos < 1.0 && dot(dir, uOccluderDir) > uOccluderCos){
+        fragColor=vec4(0.0); return;
+    }
+
     float cosA=dot(dir,uPlanetDir);
     float sinA   =sqrt(max(1.0-uAngularRadius*uAngularRadius,0.0));
     float sinAtmo=sinA*(1.0+uAtmoHeight);
-    float cosAtmo=sqrt(max(1.0-sinAtmo*sinAtmo,0.0));
-    if(cosA<cosAtmo-0.001){fragColor=vec4(0.0);return;}
+    // 只有大氣層角度在 90° 以內才做早退；超過（玩家在行星內）任何方向都可見
+    if(sinAtmo<1.0){
+        float cosAtmo=sqrt(1.0-sinAtmo*sinAtmo);
+        if(cosA<cosAtmo-0.001){fragColor=vec4(0.0);return;}
+    }
 
     mat3  L   =buildFrame(uPlanetDir);
     vec3  lD  =normalize(L*dir);
@@ -94,6 +111,12 @@ void main(){
     float R   =uPlanetDist*sinA;
     if(R<0.1){fragColor=vec4(0.0);return;}
 
+    // local→world：明確展開（避免 mat3 constructor 在某些驅動有問題）
+    vec3 pDir = uPlanetDir;
+    vec3 wUp  = abs(pDir.y)<0.9?vec3(0,1,0):vec3(1,0,0);
+    vec3 xW   = normalize(cross(wUp, pDir));
+    vec3 yW   = cross(pDir, xW);
+
     vec2  hit      =sphHit(cam,lD,R);
     bool  onSurface=hit.x>0.0&&hit.x<hit.y;
 
@@ -101,38 +124,39 @@ void main(){
         vec3  p =cam+lD*hit.x;
         vec3  n =normalize(p);
 
-        // ── 表面噪聲 ──────────────────────────────────────
-        // 自轉（各星球不同速度）
+        // world-space 法線：明確展開 local→world（UV 固定在星球表面）
+        vec3 wn = n.x * xW + n.y * yW + n.z * pDir;
+
+        // 自轉：繞 world Y 軸旋轉
         float angle  = iTime * uRotSpeed;
         float cs=cos(angle), sn=sin(angle);
-        vec3 rn = vec3(cs*n.x+sn*n.z, n.y, -sn*n.x+cs*n.z);
-        // 雲層：略快（形成雲飄效果）
+        vec3 rn = vec3(cs*wn.x+sn*wn.z, wn.y, -sn*wn.x+cs*wn.z);
         float angleC = iTime * uCloudSpeed;
         float csC=cos(angleC), snC=sin(angleC);
-        vec3 rnC = vec3(csC*n.x+snC*n.z, n.y, -snC*n.x+csC*n.z);
+        vec3 rnC = vec3(csC*wn.x+snC*wn.z, wn.y, -snC*wn.x+csC*wn.z);
 
         vec3 surfCol;
-        float dayFac = 1.0; // 用於讓夜景燈光不被陰影壓暗
-        if (uHasTexture != 0) {
-            vec2 uv = vec2(atan(rn.z, rn.x) / 6.28318 + 0.5, rn.y * -0.5 + 0.5);
-            vec3 dayCol = texture(uSurface, uv).rgb;
-
-            // 夜景：用太陽夾角混合白天/夜晚
-            if (uHasNight != 0) {
-                float sunAngle = dot(n, lSun);
-                dayFac = smoothstep(-0.15, 0.15, sunAngle);
-                vec3 nightCol = texture(uNightTex, uv).rgb * 2.5; // 城市燈光加亮
-                surfCol = mix(nightCol, dayCol, dayFac);
+        float dayFac = 1.0;
+        // 統一 UV（貼圖用 world-space 法線）
+        vec2 uv = vec2(atan(rn.z, rn.x) / 6.28318 + 0.5, acos(clamp(rn.y, -1.0, 1.0)) / 3.14159);
+        vec3 texSample = texture(uSurface, uv).rgb;
+        // 若貼圖有顏色（非純黑）則使用貼圖；否則退回程序噪聲
+        if (dot(texSample, vec3(1.0)) > 0.02) {
+            vec3 dayCol = texSample;
+            // 夜景混合
+            vec3 nightSample = texture(uNightTex, uv).rgb;
+            if (dot(nightSample, vec3(1.0)) > 0.02) {
+                dayFac = smoothstep(-0.15, 0.15, dot(n, lSun));
+                surfCol = mix(nightSample * 2.5, dayCol, dayFac);
             } else {
                 surfCol = dayCol;
             }
-
-            // 雲層：使用獨立旋轉 UV（雲飄效果）
-            if (uHasTexture2 != 0) {
-                vec2 uvCloud = vec2(atan(rnC.z, rnC.x) / 6.28318 + 0.5, rnC.y * -0.5 + 0.5);
-                vec3 cloud = texture(uSurface2, uvCloud).rgb;
-                float cloudCover = clamp(dot(cloud, vec3(0.33)), 0.0, 1.0);
-                surfCol = mix(surfCol, cloud, cloudCover * 0.85);
+            // 雲層疊加（獨立旋轉 UV）
+            vec2 uvCloud = vec2(atan(rnC.z, rnC.x) / 6.28318 + 0.5, acos(clamp(rnC.y, -1.0, 1.0)) / 3.14159);
+            vec3 cloudSample = texture(uSurface2, uvCloud).rgb;
+            if (dot(cloudSample, vec3(1.0)) > 0.02) {
+                float cloudCover = clamp(dot(cloudSample, vec3(0.33)), 0.0, 1.0);
+                surfCol = mix(surfCol, cloudSample, cloudCover * 0.85);
             }
         } else {
             float coarse = fbm(rn * 2.2);
@@ -169,11 +193,12 @@ void main(){
         float softEdge = smoothstep(0.0, R * 0.04, chord);
 
         vec3  col = surfCol * sh + uAtmoColor * edgeAtmo;
+        softEdge *= uAlpha;
         fragColor = vec4(col * softEdge, softEdge);
 
     } else {
         vec3 atmo = computeAtmo(cam, lD, lSun, R, false);
         if(length(atmo) < 0.001){fragColor=vec4(0.0);return;}
-        fragColor = vec4(atmo, 0.0);
+        fragColor = vec4(atmo * uAlpha, 0.0);
     }
 }

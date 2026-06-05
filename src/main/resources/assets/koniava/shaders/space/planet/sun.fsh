@@ -48,10 +48,10 @@ void main(){
     float cosA=dot(dir,uPlanetDir);
     float sinA=sqrt(max(1.0-uAngularRadius*uAngularRadius,0.0));
     // 日冕延伸到 3x 半徑
-    float coronaFac = 3.0;
-    float sinCorona = sinA * coronaFac;
-    float cosCorona = sqrt(max(1.0-sinCorona*sinCorona,0.0));
-    if(cosA < cosCorona-0.001){fragColor=vec4(0.0);return;}
+    float coronaFac = 3.5;
+    float sinCorona = min(sinA * coronaFac, 0.999);
+    float cosCorona = sqrt(1.0 - sinCorona*sinCorona);
+    if(cosA < cosCorona - 0.002){fragColor=vec4(0.0);return;}
 
     mat3  L  =buildFrame(uPlanetDir);
     vec3  lD =normalize(L*dir);
@@ -65,16 +65,21 @@ void main(){
     if(onSurface){
         vec3 p=cam+lD*hit.x;
         vec3 n=normalize(p);
+        vec3 wUp2=abs(uPlanetDir.y)<0.9?vec3(0,1,0):vec3(1,0,0);
+        vec3 xW2=normalize(cross(wUp2,uPlanetDir));
+        vec3 yW2=cross(uPlanetDir,xW2);
+        vec3 wn=n.x*xW2+n.y*yW2+n.z*uPlanetDir;
         float angle=iTime*0.004;
         float cs=cos(angle),sn=sin(angle);
-        vec3 rn=vec3(cs*n.x+sn*n.z,n.y,-sn*n.x+cs*n.z);
+        vec3 rn=vec3(cs*wn.x+sn*wn.z,wn.y,-sn*wn.x+cs*wn.z);
         float nDotV=max(dot(n,-lD),0.0);
         float limb=0.7+0.3*nDotV;
 
         vec3 col;
-        if(uHasTexture!=0){
-            vec2 uv=vec2(atan(rn.z,rn.x)/6.28318+0.5,rn.y*-0.5+0.5);
-            col=texture(uSurface,uv).rgb*limb*1.3;
+        vec2 sunUv=vec2(atan(rn.z,rn.x)/6.28318+0.5, acos(clamp(rn.y,-1.0,1.0))/3.14159);
+        vec3 sunTex=texture(uSurface,sunUv).rgb;
+        if(dot(sunTex,vec3(1.0))>0.02){
+            col=sunTex*limb*1.3;
             col=mix(col,vec3(1.5,1.4,1.1),pow(nDotV,3.0)*0.5);
         } else {
             float plasma=vnoise(rn*3.0)*0.5+vnoise(rn*7.0+vec3(1.3,2.7,0.9))*0.25;

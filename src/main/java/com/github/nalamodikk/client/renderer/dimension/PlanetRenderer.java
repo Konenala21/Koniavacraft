@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
 
 public class PlanetRenderer {
 
-    public enum Type { ATMOSPHERE, ROCKY, SUN }
+    public enum Type { ATMOSPHERE, ROCKY, SUN, RING }
 
     private final Type type;
     private int programId = -1;
@@ -30,7 +30,9 @@ public class PlanetRenderer {
     private int locAtmoColor, locAtmoDensity, locAtmoHeight, locPassGlow;
     private int locColorLight, locColorDark, locHeatColor, locHeatAmount;
     private int locSurface, locHasTexture, locSurface2, locHasTexture2, locNightTex, locHasNight;
-    private int locRotSpeed, locCloudSpeed;
+    private int locRotSpeed, locCloudSpeed, locAlpha;
+    private int locRingInner, locRingOuter, locRingTilt, locRingTex;
+    private int locOccluderDir, locOccluderCos;
 
     private boolean ready = false;
 
@@ -44,6 +46,7 @@ public class PlanetRenderer {
             String frag = read(rm, base + switch (type) {
                 case ROCKY -> "rocky.fsh";
                 case SUN   -> "sun.fsh";
+                case RING  -> "ring.fsh";
                 default    -> "atmosphere.fsh";
             });
             programId = buildProgram(vert, frag);
@@ -88,6 +91,16 @@ public class PlanetRenderer {
         if (locNightTex  != -1) GL20.glUniform1i(locNightTex,  2);
         locRotSpeed   = GL20.glGetUniformLocation(programId, "uRotSpeed");
         locCloudSpeed = GL20.glGetUniformLocation(programId, "uCloudSpeed");
+        locAlpha       = GL20.glGetUniformLocation(programId, "uAlpha");
+        locOccluderDir = GL20.glGetUniformLocation(programId, "uOccluderDir");
+        locOccluderCos = GL20.glGetUniformLocation(programId, "uOccluderCos");
+        if (type == Type.RING) {
+            locRingInner = GL20.glGetUniformLocation(programId, "uRingInner");
+            locRingOuter = GL20.glGetUniformLocation(programId, "uRingOuter");
+            locRingTilt  = GL20.glGetUniformLocation(programId, "uRingTilt");
+            locRingTex   = GL20.glGetUniformLocation(programId, "uRingTex");
+            if (locRingTex != -1) GL20.glUniform1i(locRingTex, 0);
+        }
         GL20.glUseProgram(0);
 
         vaoId = GL30.glGenVertexArrays();
@@ -108,12 +121,17 @@ public class PlanetRenderer {
                                  Vector3f dirToStar, Vector3f planetColor,
                                  Vector3f atmoColor, float atmoDensity, float atmoHeight,
                                  boolean passGlow, int textureId, int textureId2, int nightTexId,
-                                 float rotSpeed, float cloudSpeed) {
+                                 float rotSpeed, float cloudSpeed, float alpha,
+                                 Vector3f occluderDir, float occluderCos) {
         if (!ready) return;
         setCommon(invProj, invView, gameTime, resW, resH, planetDir, planetDist, angularRadius);
         bindTexture(textureId, textureId2, nightTexId);
         if (locRotSpeed   != -1) GL20.glUniform1f(locRotSpeed,   rotSpeed);
         if (locCloudSpeed != -1) GL20.glUniform1f(locCloudSpeed, cloudSpeed);
+        if (locAlpha      != -1) GL20.glUniform1f(locAlpha,      alpha);
+        if (locOccluderCos!= -1) GL20.glUniform1f(locOccluderCos, occluderCos);
+        if (locOccluderDir!= -1 && occluderDir != null)
+            GL20.glUniform3f(locOccluderDir, occluderDir.x, occluderDir.y, occluderDir.z);
         GL20.glUniform3f(locDirToStar,   dirToStar.x,   dirToStar.y,   dirToStar.z);
         GL20.glUniform3f(locPlanetColor, planetColor.x, planetColor.y, planetColor.z);
         GL20.glUniform3f(locAtmoColor,   atmoColor.x,   atmoColor.y,   atmoColor.z);
@@ -123,15 +141,38 @@ public class PlanetRenderer {
         draw();
     }
 
+    public void renderRing(float[] invProj, float[] invView, float gameTime,
+                           float resW, float resH,
+                           Vector3f planetDir, float planetDist, float angularRadius,
+                           Vector3f dirToStar,
+                           float ringInner, float ringOuter, float ringTiltDeg,
+                           int ringTexId, float alpha) {
+        if (!ready) return;
+        setCommon(invProj, invView, gameTime, resW, resH, planetDir, planetDist, angularRadius);
+        GL13.glActiveTexture(GL13.GL_TEXTURE0);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, ringTexId != -1 ? ringTexId : 0);
+        GL20.glUniform3f(locDirToStar,  dirToStar.x,  dirToStar.y,  dirToStar.z);
+        if (locRingInner != -1) GL20.glUniform1f(locRingInner, ringInner);
+        if (locRingOuter != -1) GL20.glUniform1f(locRingOuter, ringOuter);
+        if (locRingTilt  != -1) GL20.glUniform1f(locRingTilt,  (float)Math.toRadians(ringTiltDeg));
+        if (locAlpha     != -1) GL20.glUniform1f(locAlpha,     alpha);
+        draw();
+    }
+
     public void renderRocky(float[] invProj, float[] invView, float gameTime,
                             float resW, float resH,
                             Vector3f planetDir, float planetDist, float angularRadius,
                             Vector3f dirToStar,
                             Vector3f colorLight, Vector3f colorDark,
-                            Vector3f heatColor, float heatAmount, int textureId) {
+                            Vector3f heatColor, float heatAmount, int textureId, float alpha,
+                            Vector3f occluderDir, float occluderCos) {
         if (!ready) return;
         setCommon(invProj, invView, gameTime, resW, resH, planetDir, planetDist, angularRadius);
         bindTexture(textureId);
+        if (locAlpha      != -1) GL20.glUniform1f(locAlpha,      alpha);
+        if (locOccluderCos!= -1) GL20.glUniform1f(locOccluderCos, occluderCos);
+        if (locOccluderDir!= -1 && occluderDir != null)
+            GL20.glUniform3f(locOccluderDir, occluderDir.x, occluderDir.y, occluderDir.z);
         GL20.glUniform3f(locDirToStar,  dirToStar.x,  dirToStar.y,  dirToStar.z);
         GL20.glUniform3f(locColorLight, colorLight.x, colorLight.y, colorLight.z);
         GL20.glUniform3f(locColorDark,  colorDark.x,  colorDark.y,  colorDark.z);
@@ -173,6 +214,15 @@ public class PlanetRenderer {
         GL20.glUniform3f(locPlanetDir,    planetDir.x,    planetDir.y,    planetDir.z);
         GL20.glUniform1f(locPlanetDist,   planetDist);
         GL20.glUniform1f(locAngularRadius, angularRadius);
+    }
+
+    public void setOccluder(Vector3f dir, float cosCutoff) {
+        if (locOccluderDir != -1) GL20.glUniform3f(locOccluderDir, dir.x, dir.y, dir.z);
+        if (locOccluderCos != -1) GL20.glUniform1f(locOccluderCos, cosCutoff);
+    }
+
+    public void clearOccluder() {
+        if (locOccluderCos != -1) GL20.glUniform1f(locOccluderCos, 1.001f);
     }
 
     private void draw() {

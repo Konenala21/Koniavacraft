@@ -19,9 +19,12 @@ public record PlanetDef(
     float    heatAmount,
     float    atmoDensity,
     float    atmoHeight,
-    float    selfRotationDays  // 自轉週期（遊戲天），負值=逆行
+    float    selfRotationDays,
+    String   parentId,
+    float    ringInner,    // 0 = 無環；否則為內緣半徑 / 星球半徑
+    float    ringOuter,    // 外緣半徑 / 星球半徑
+    float    ringTiltDeg   // 自轉軸傾斜度（土星 ≈ 26.7°）
 ) {
-    /** 行星在太空維度的實際方塊位置。 */
     public Vector3f worldPositionAt(long gameTick, Vector3f starWorldPos) {
         float progress = (gameTick / 24000.0f) / orbitalPeriodDays;
         float angle    = (float) Math.toRadians(startAngleDeg + progress * 360.0f);
@@ -32,10 +35,10 @@ public record PlanetDef(
         );
     }
 
-    /** 自轉角速度（弧度/遊戲秒），供 shader 使用。 */
     public float rotSpeedRadPerSec() {
         if (selfRotationDays == 0) return 0f;
-        // 1 遊戲天 = 24000 tick = 1200 遊戲秒
         return (float)(2 * Math.PI / (selfRotationDays * 1200.0));
     }
+
+    public boolean hasRings() { return ringInner > 0f; }
 }

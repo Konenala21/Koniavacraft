@@ -30,6 +30,7 @@ public class SpacePlanetManager {
     private static final PlanetRenderer atmosphereRenderer = new PlanetRenderer(PlanetRenderer.Type.ATMOSPHERE);
     private static final PlanetRenderer rockyRenderer      = new PlanetRenderer(PlanetRenderer.Type.ROCKY);
     private static final PlanetRenderer sunRenderer        = new PlanetRenderer(PlanetRenderer.Type.SUN);
+    private static final PlanetRenderer ringRenderer       = new PlanetRenderer(PlanetRenderer.Type.RING);
     private static boolean initialized = false;
 
     // 行星貼圖快取：planet id → GL texture id（-1=無貼圖）
@@ -84,7 +85,7 @@ public class SpacePlanetManager {
 
             float angDeg = (float) Math.toDegrees(Math.atan(star.radius() / sDist));
             if (angDeg < 0.01f) continue;
-            if (sDir.dot(camFwd) < -(float) Math.sin(Math.toRadians(angDeg * 3.5f))) continue;
+            if (sDir.dot(camFwd) < -0.5f) continue;
 
             float    cosAng = (float) Math.cos(Math.toRadians(angDeg));
             final float fSDist = sDist; final Vector3f fSDir = new Vector3f(sDir);
@@ -94,23 +95,41 @@ public class SpacePlanetManager {
                 sunRenderer.renderAtmosphere(invProj, invView, gameTime, w, h,
                     fSDir, fSDist, fCos, fSDir, fColor,
                     new Vector3f(1.0f, 0.6f, 0.2f), 1.5f, 0.0f, false,
-                    starTexId, -1, -1, 0.002f, 0.002f)
+                    starTexId, -1, -1, 0.002f, 0.002f, 1.0f, null, 1.001f)
             ));
         }
 
-        // 行星
+        // 第一趟：計算所有主行星位置（parentId 為空）
+        java.util.Map<String, Vector3f> planetPositions = new java.util.HashMap<>();
         for (PlanetDef planet : system.planets()) {
-            Vector3f planetPos = planet.worldPositionAt(tick, starPos);
+            if (planet.parentId().isEmpty()) {
+                planetPositions.put(planet.id(), planet.worldPositionAt(tick, starPos));
+            }
+        }
+        // 第二趟：計算衛星位置（parentId 不為空，繞父行星）
+        for (PlanetDef planet : system.planets()) {
+            if (!planet.parentId().isEmpty()) {
+                Vector3f parentPos = planetPositions.getOrDefault(planet.parentId(), starPos);
+                planetPositions.put(planet.id(), planet.worldPositionAt(tick, parentPos));
+            }
+        }
+
+        // 行星（含衛星）
+        for (PlanetDef planet : system.planets()) {
+            Vector3f planetPos = planetPositions.getOrDefault(planet.id(), starPos);
             Vector3f toPlanet  = new Vector3f(planetPos).sub(playerPos);
             float    dist      = toPlanet.length();
             if (dist < 0.1f) continue;
             Vector3f dir = new Vector3f(toPlanet).normalize();
 
             float angDeg = (float) Math.toDegrees(Math.atan(planet.physicalRadius() / dist));
-            if (angDeg < 0.02f) continue;
+            if (angDeg < 0.005f) continue;
+            // 淡入：0.005°→0.08° 平滑出現，消除突然跳出感
+            final float fadeAlpha = Math.min(1.0f, (angDeg - 0.005f) / 0.075f);
 
-            // 剔除：只有完全在背面才跳過（用 0.5 寬鬆餘裕避免大星球邊緣被誤切）
-            if (dir.dot(camFwd) < -0.5f) continue;
+            // 剔除：靠近時視角超過 90°（angDeg > 90 = 玩家在星球內），不剔除
+            // 遠距離只剔除完全背面（dot < -0.5）
+            if (angDeg < 85f && dir.dot(camFwd) < -0.5f) continue;
 
             float cosAng = (float) Math.cos(Math.toRadians(angDeg));
             final float fDist = dist; final Vector3f fDir = new Vector3f(dir);
@@ -121,18 +140,49 @@ public class SpacePlanetManager {
             final float rotSpeed   = planet.rotSpeedRadPerSec();
             final float cloudSpeed = rotSpeed * 1.08f; // 雲層比地表快 8%
 
+            final int ringTexId = planet.hasRings() ? getTexture(planet.id() + "_ring") : -1;
+
+            // 衛星遮擋：計算父行星是否在衛星前方（若是，傳遮擋參數消除跳躍）
+            final Vector3f occDir = new Vector3f();
+            final float occCos;
+            if (!planet.parentId().isEmpty()) {
+                Vector3f parentPos = planetPositions.getOrDefault(planet.parentId(), starPos);
+                Vector3f toParent = new Vector3f(parentPos).sub(playerPos);
+                float parentDist = Math.max(toParent.length(), 0.1f);
+                if (parentDist < dist) {
+                    // 父行星在衛星前面 → 計算遮擋角
+                    occDir.set(toParent).normalize();
+                    PlanetDef parentPlanet = system.planets().stream()
+                        .filter(p -> p.id().equals(planet.parentId())).findFirst().orElse(null);
+                    float parentRadius = parentPlanet != null ? parentPlanet.physicalRadius() : 0f;
+                    occCos = (float) Math.cos(Math.atan(parentRadius / parentDist));
+                } else { occCos = 1.001f; }
+            } else { occCos = 1.001f; }
+
+            final Vector3f fOccDir = occCos < 1.0f ? new Vector3f(occDir) : null;
+            final float fOccCos = occCos;
+
             bodies.add(new Body(dist, () -> {
                 if (planet.shaderType() == PlanetRenderer.Type.ATMOSPHERE) {
                     atmosphereRenderer.renderAtmosphere(invProj, invView, gameTime, w, h,
                         fDir, fDist, fCos, sunLight,
                         planet.colorA(), planet.colorB(),
                         planet.atmoDensity(), planet.atmoHeight(), false,
-                        texId, texId2, nightId, rotSpeed, cloudSpeed);
+                        texId, texId2, nightId, rotSpeed, cloudSpeed, fadeAlpha,
+                        fOccDir, fOccCos);
                 } else {
                     rockyRenderer.renderRocky(invProj, invView, gameTime, w, h,
                         fDir, fDist, fCos, sunLight,
                         planet.colorA(), planet.colorB(),
-                        planet.heatColor(), planet.heatAmount(), texId);
+                        planet.heatColor(), planet.heatAmount(), texId, fadeAlpha,
+                        fOccDir, fOccCos);
+                }
+                // 土星環（行星本體之後畫，前方環蓋在星球上）
+                if (planet.hasRings() && ringTexId != -1) {
+                    ringRenderer.renderRing(invProj, invView, gameTime, w, h,
+                        fDir, fDist, fCos, sunLight,
+                        planet.ringInner(), planet.ringOuter(), planet.ringTiltDeg(),
+                        ringTexId, fadeAlpha);
                 }
             }));
         }
@@ -194,6 +244,7 @@ public class SpacePlanetManager {
         atmosphereRenderer.init();
         rockyRenderer.init();
         sunRenderer.init();
+        ringRenderer.init();
         initialized = true;
     }
 
@@ -201,6 +252,7 @@ public class SpacePlanetManager {
         atmosphereRenderer.release();
         rockyRenderer.release();
         sunRenderer.release();
+        ringRenderer.release();
         for (int id : textureCache.values()) {
             if (id != -1) GL11.glDeleteTextures(id);
         }
