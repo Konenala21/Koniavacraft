@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
 
 public class PlanetRenderer {
 
-    public enum Type { ATMOSPHERE, ROCKY, SUN, RING }
+    public enum Type { ATMOSPHERE, ROCKY, SUN, RING, BELT }
 
     private final Type type;
     private int programId = -1;
@@ -47,6 +47,7 @@ public class PlanetRenderer {
                 case ROCKY -> "rocky.fsh";
                 case SUN   -> "sun.fsh";
                 case RING  -> "ring.fsh";
+                case BELT  -> "belt.fsh";
                 default    -> "atmosphere.fsh";
             });
             programId = buildProgram(vert, frag);
@@ -70,7 +71,7 @@ public class PlanetRenderer {
         locSurface2      = GL20.glGetUniformLocation(programId, "uSurface2");
         locHasTexture2   = GL20.glGetUniformLocation(programId, "uHasTexture2");
 
-        if (type == Type.ATMOSPHERE || type == Type.SUN) {
+        if (type == Type.ATMOSPHERE || type == Type.SUN || type == Type.BELT) {
             locPlanetColor = GL20.glGetUniformLocation(programId, "uPlanetColor");
             locAtmoColor   = GL20.glGetUniformLocation(programId, "uAtmoColor");
             locAtmoDensity = GL20.glGetUniformLocation(programId, "uAtmoDensity");
@@ -94,7 +95,7 @@ public class PlanetRenderer {
         locAlpha       = GL20.glGetUniformLocation(programId, "uAlpha");
         locOccluderDir = GL20.glGetUniformLocation(programId, "uOccluderDir");
         locOccluderCos = GL20.glGetUniformLocation(programId, "uOccluderCos");
-        if (type == Type.RING) {
+        if (type == Type.RING || type == Type.BELT) {
             locRingInner = GL20.glGetUniformLocation(programId, "uRingInner");
             locRingOuter = GL20.glGetUniformLocation(programId, "uRingOuter");
             locRingTilt  = GL20.glGetUniformLocation(programId, "uRingTilt");
@@ -159,6 +160,25 @@ public class PlanetRenderer {
         draw();
     }
 
+    /** 渲染小行星帶 / 柯伊伯帶。planetDir/Dist 為恆星方向與距離（帶中心=恆星）。 */
+    public void renderBelt(float[] invProj, float[] invView, float gameTime,
+                           float resW, float resH,
+                           Vector3f starDir, float starDist, Vector3f dirToStar,
+                           float innerR, float outerR, float thickness,
+                           float density, Vector3f beltColor, float alpha) {
+        if (!ready) return;
+        // angularRadius 對帶無意義，傳 0
+        setCommon(invProj, invView, gameTime, resW, resH, starDir, starDist, 0f);
+        GL20.glUniform3f(locDirToStar, dirToStar.x, dirToStar.y, dirToStar.z);
+        if (locPlanetColor != -1) GL20.glUniform3f(locPlanetColor, beltColor.x, beltColor.y, beltColor.z);
+        if (locAtmoDensity != -1) GL20.glUniform1f(locAtmoDensity, density);
+        if (locRingInner   != -1) GL20.glUniform1f(locRingInner, innerR);
+        if (locRingOuter   != -1) GL20.glUniform1f(locRingOuter, outerR);
+        if (locRingTilt    != -1) GL20.glUniform1f(locRingTilt,  thickness);
+        if (locAlpha       != -1) GL20.glUniform1f(locAlpha,     alpha);
+        draw();
+    }
+
     public void renderRocky(float[] invProj, float[] invView, float gameTime,
                             float resW, float resH,
                             Vector3f planetDir, float planetDist, float angularRadius,
@@ -187,7 +207,8 @@ public class PlanetRenderer {
     private void bindTexture(int t0, int t1, int t2) {
         bind(GL13.GL_TEXTURE0, locHasTexture,  t0);
         bind(GL13.GL_TEXTURE0 + 1, locHasTexture2, t1);
-        if (locHasNight != -1) bind(GL13.GL_TEXTURE0 + 2, locHasNight, t2);
+        // 夜景一律綁到 unit 2（不再依賴 locHasNight，shader 改用亮度判斷後該 uniform 被優化掉）
+        if (locNightTex != -1) bind(GL13.GL_TEXTURE0 + 2, locHasNight, t2);
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
     }
 

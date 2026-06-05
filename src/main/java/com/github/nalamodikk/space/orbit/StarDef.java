@@ -15,14 +15,14 @@ public record StarDef(
     float orbitPeriodDays  // 繞質心的週期（雙星互繞）
 ) {
     /** 在 gameTick 時這顆恆星的實際世界位置。 */
-    public Vector3f worldPositionAt(long gameTick, Vector3f systemWorldPos) {
+    public Vector3f worldPositionAt(double gameTick, Vector3f systemWorldPos) {
         if (orbitRadius < 0.01f) return new Vector3f(systemWorldPos);
-        float progress = (gameTick / 24000.0f) / orbitPeriodDays;
-        float angle    = (float) Math.toRadians(progress * 360.0f);
+        double progress = (gameTick / 24000.0) / orbitPeriodDays;
+        double angle    = Math.toRadians(progress * 360.0);
         return new Vector3f(
-            systemWorldPos.x + (float) Math.cos(angle) * orbitRadius,
+            systemWorldPos.x + (float) (Math.cos(angle) * orbitRadius),
             systemWorldPos.y,
-            systemWorldPos.z + (float) Math.sin(angle) * orbitRadius
+            systemWorldPos.z + (float) (Math.sin(angle) * orbitRadius)
         );
     }
 }

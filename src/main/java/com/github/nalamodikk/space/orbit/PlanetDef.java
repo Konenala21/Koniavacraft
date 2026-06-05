@@ -25,13 +25,13 @@ public record PlanetDef(
     float    ringOuter,    // 外緣半徑 / 星球半徑
     float    ringTiltDeg   // 自轉軸傾斜度（土星 ≈ 26.7°）
 ) {
-    public Vector3f worldPositionAt(long gameTick, Vector3f starWorldPos) {
-        float progress = (gameTick / 24000.0f) / orbitalPeriodDays;
-        float angle    = (float) Math.toRadians(startAngleDeg + progress * 360.0f);
+    public Vector3f worldPositionAt(double gameTick, Vector3f starWorldPos) {
+        double progress = (gameTick / 24000.0) / orbitalPeriodDays;
+        double angle    = Math.toRadians(startAngleDeg + progress * 360.0);
         return new Vector3f(
-            starWorldPos.x + (float) Math.cos(angle) * orbitalRadius,
+            starWorldPos.x + (float) (Math.cos(angle) * orbitalRadius),
             starWorldPos.y,
-            starWorldPos.z + (float) Math.sin(angle) * orbitalRadius
+            starWorldPos.z + (float) (Math.sin(angle) * orbitalRadius)
         );
     }
 

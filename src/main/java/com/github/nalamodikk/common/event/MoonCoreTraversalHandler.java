@@ -1,0 +1,97 @@
+package com.github.nalamodikk.common.event;
+
+import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.dimension.ModDimensions;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.living.LivingFallEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+/**
+ * 月球核心貫穿機制：空心月球，掉到核心觸發重力翻轉 + 座標映射到「另一面」。
+ *
+ * 重力狀態機（per player）：
+ *   NORMAL(-Y) → 掉到 Y<CORE_TRIGGER 且下墜 → TRANSIT(+Y) + XZ 傳送到 (D-x,-z)
+ *   TRANSIT(+Y) → 升到 Y>SURFACE_EXIT → 轉回 NORMAL(-Y)，落在另一面地表
+ *
+ * 座標映射：(x,z) ↔ (D-x, -z)，D=100000，可逆，大偏移避免小座標破功。
+ */
+@EventBusSubscriber(modid = KoniavacraftMod.MOD_ID)
+public class MoonCoreTraversalHandler {
+
+    private static final int   COORD_OFFSET   = 100000; // D
+    private static final double CORE_TRIGGER  = -38.0;  // 掉到此高度觸發翻轉+傳送
+    private static final double SURFACE_EXIT  = 68.0;    // 升回此高度轉回正常重力
+    private static final double FLIP_ACCEL    = 0.08;    // TRANSIT 每 tick 向上加速度
+    private static final double MOON_GRAVITY  = 0.16;    // 月球地表重力係數（地球=1）
+
+    // 處於 TRANSIT（+Y 重力上升中）的玩家
+    private static final Map<UUID, Boolean> inTransit = new HashMap<>();
+
+    @SubscribeEvent
+    public static void onPlayerTick(PlayerTickEvent.Post event) {
+        Player player = event.getEntity();
+        if (player.level().isClientSide) return;
+        boolean onMoon = player.level().dimension().equals(ModDimensions.MOON);
+        UUID id = player.getUUID();
+
+        if (!onMoon) {
+            inTransit.remove(id);
+            return;
+        }
+
+        boolean transit = inTransit.getOrDefault(id, false);
+        Vec3 v = player.getDeltaMovement();
+
+        if (transit) {
+            // TRANSIT：往上加速（+Y），免 fall damage（fallDistance 歸零）
+            player.setDeltaMovement(v.x, v.y + FLIP_ACCEL, v.z);
+            player.fallDistance = 0;
+            player.resetFallDistance();
+            // 升回地表 → 轉回正常重力
+            if (player.getY() > SURFACE_EXIT) {
+                inTransit.put(id, false);
+                // 給一點向下初速，自然落到地表
+                player.setDeltaMovement(player.getDeltaMovement().x, -0.1, player.getDeltaMovement().z);
+            }
+        } else {
+            // NORMAL：月球低重力（抵消大部分原生重力）
+            if (v.y < 0) {
+                // 原生每 tick 約 -0.08 重力，月球只要 0.16 倍 → 補回 0.84*0.08
+                player.setDeltaMovement(v.x, v.y + 0.08 * (1.0 - MOON_GRAVITY), v.z);
+            }
+            // 掉到核心深處 + 正在下墜 → 觸發翻轉 + 傳送
+            if (player.getY() < CORE_TRIGGER && v.y < -0.05) {
+                triggerCorePassage(player);
+            }
+        }
+    }
+
+    private static void triggerCorePassage(Player player) {
+        double nx = COORD_OFFSET - player.getX();
+        double nz = -player.getZ();
+        // 傳到另一面同樣的核心深處，往上挖出去
+        player.teleportTo(nx, player.getY(), nz);
+        // 進入 TRANSIT：重力翻轉成 +Y
+        inTransit.put(player.getUUID(), true);
+        // 給向上初速，開始上升
+        player.setDeltaMovement(player.getDeltaMovement().x, 0.3, player.getDeltaMovement().z);
+        player.fallDistance = 0;
+        player.resetFallDistance();
+    }
+
+    // TRANSIT 中完全免 fall damage
+    @SubscribeEvent
+    public static void onFall(LivingFallEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        if (!player.level().dimension().equals(ModDimensions.MOON)) return;
+        // 月球低重力：摔落傷害大幅降低
+        event.setDistance(event.getDistance() * (float) MOON_GRAVITY);
+    }
+}

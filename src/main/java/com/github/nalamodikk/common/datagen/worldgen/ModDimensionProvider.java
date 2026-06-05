@@ -58,6 +58,21 @@ public class ModDimensionProvider {
                 .mobSpawnSettings(MobSpawnSettings.EMPTY)
                 .generationSettings(new BiomeGenerationSettings.Builder(placedFeatures, worldCarvers).build())
                 .build());
+
+        // 月球：灰色月壤，純黑天空，無大氣無降水無生物
+        context.register(ModDimensions.MOON_BIOME, new Biome.BiomeBuilder()
+                .hasPrecipitation(false)
+                .temperature(0.0f)
+                .downfall(0.0f)
+                .specialEffects(new BiomeSpecialEffects.Builder()
+                        .waterColor(0x383844)
+                        .waterFogColor(0x202028)
+                        .fogColor(0x000000)
+                        .skyColor(0x000000)
+                        .build())
+                .mobSpawnSettings(MobSpawnSettings.EMPTY)
+                .generationSettings(new BiomeGenerationSettings.Builder(placedFeatures, worldCarvers).build())
+                .build());
     }
 
     public static void bootstrapDimensionType(BootstrapContext<DimensionType> context) {
@@ -88,6 +103,23 @@ public class ModDimensionProvider {
                 1.0f,
                 new DimensionType.MonsterSettings(false, false, UniformInt.of(0, 0), 0)
         ));
+
+        // 月球：固定為夜晚（看得到星空與地球），無天光，coordinateScale=1
+        context.register(ModDimensions.MOON_TYPE, new DimensionType(
+                OptionalLong.of(18000),   // 固定時間（黑天）
+                false,  // hasSkyLight：無太陽光照，全靠方塊光
+                false,  // hasCeiling
+                false,  // ultraWarm
+                false,  // natural（false → 不能用床、指南針旋轉等）
+                1.0,    // coordinateScale
+                false,  // bedWorks
+                false,  // respawnAnchorWorks
+                -64, 384, 384,
+                BlockTags.INFINIBURN_OVERWORLD,
+                ModDimensions.MOON_EFFECTS,
+                0.05f,  // ambientLight：微光，地表不全黑
+                new DimensionType.MonsterSettings(false, false, UniformInt.of(0, 0), 0)
+        ));
     }
 
     public static void bootstrapLevelStem(BootstrapContext<LevelStem> context) {
@@ -111,5 +143,12 @@ public class ModDimensionProvider {
         flat.updateLayers();
 
         context.register(ModDimensions.VOID_MIRROR_STEM, new LevelStem(dimType, new BoundedFlatChunkGenerator(flat)));
+
+        // ── 月球：noise 丘陵 + 隕石坑（MoonChunkGenerator）──────────────
+        var moonType  = dimTypes.getOrThrow(ModDimensions.MOON_TYPE);
+        var moonBiome = biomes.getOrThrow(ModDimensions.MOON_BIOME);
+        var moonBiomeSource = new net.minecraft.world.level.biome.FixedBiomeSource(moonBiome);
+        context.register(ModDimensions.MOON_STEM,
+                new LevelStem(moonType, new com.github.nalamodikk.dimension.MoonChunkGenerator(moonBiomeSource)));
     }
 }

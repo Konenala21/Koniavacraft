@@ -46,6 +46,27 @@ public class ModBlocks {
     public static final DeferredBlock<Block> MANA_BLOCK =
             registerBlock("mana_block", () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)));
 
+    // ── 月球方塊 ─────────────────────────────────────────────────────────
+    // 月壤（表層細塵，灰白，鏟挖）
+    public static final DeferredBlock<Block> MOON_REGOLITH =
+            registerBlock("moon_regolith", () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.STONE).strength(0.6f).sound(SoundType.GRAVEL)));
+    // 月岩（灰色基岩，鎬挖）
+    public static final DeferredBlock<Block> MOON_STONE =
+            registerBlock("moon_stone", () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.STONE).strength(1.6f, 6.0f).sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops()));
+    // 深層月岩（深灰，更硬）
+    public static final DeferredBlock<Block> MOON_DEEPSTONE =
+            registerBlock("moon_deepstone", () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.DEEPSLATE).strength(3.0f, 9.0f).sound(SoundType.DEEPSLATE)
+                    .requiresCorrectToolForDrops()));
+    // 月核（發光，中空底部的核心；玩家在此重力翻轉穿到另一面）
+    public static final DeferredBlock<Block> MOON_CORE =
+            registerBlock("moon_core", () -> new Block(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_ORANGE).strength(5.0f, 12.0f).sound(SoundType.NETHERITE_BLOCK)
+                    .lightLevel(s -> 10).requiresCorrectToolForDrops()));
+
     // 本源研究桌:本源研究員村民的職業方塊(純方塊、無 BlockEntity,跟玩家用的研究台分開,避免 POI 卡頓)
     public static final DeferredBlock<Block> ASPECT_RESEARCH_DESK =
             registerBlock("aspect_research_desk", () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.LECTERN)));

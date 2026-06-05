@@ -76,8 +76,9 @@ vec3 computeAtmo(vec3 cam,vec3 lD,vec3 lSun,float R,bool onSurface){
     float optDepth = chord * uAtmoDensity / R;
     float alpha    = 1.0 - exp(-optDepth);
     float dayFac = clamp(dot(normalize(ep), lSun)*0.7+0.3, 0.0, 1.0);
-    float mie = pow(max(dot(lD, lSun), 0.0), 6.0) * 3.0;
-    float illumination = max(dayFac, mie);
+    // Mie 前向散射：背光薄環。係數降低 + 收緊指數，只在邊緣形成細亮環不爆白
+    float mie = pow(max(dot(lD, lSun), 0.0), 8.0) * 1.6;
+    float illumination = clamp(max(dayFac, mie), 0.0, 1.2);
     float depthFrac = clamp(optDepth / 3.0, 0.0, 1.0);
     vec3 outerColor = uAtmoColor;                        // 外圈：行星定義的大氣色
     vec3 innerColor = uAtmoColor * vec3(1.8, 1.1, 0.6); // 內圈偏橙紅
@@ -136,18 +137,11 @@ void main(){
         vec3 rnC = vec3(csC*wn.x+snC*wn.z, wn.y, -snC*wn.x+csC*wn.z);
 
         vec3 surfCol;
-        float dayFac = 1.0;
         vec2 uv = vec2(atan(rn.z, rn.x) / 6.28318 + 0.5, acos(clamp(rn.y, -1.0, 1.0)) / 3.14159);
         vec3 texSample = texture(uSurface, uv).rgb;
         // 亮度 > 0.001 = 有有效貼圖（null texture 回傳純黑 = 0）
         if (dot(texSample, vec3(1.0)) > 0.001) {
             surfCol = texSample;
-            // 夜景混合
-            vec3 nightSample = texture(uNightTex, uv).rgb;
-            if (dot(nightSample, vec3(1.0)) > 0.001) {
-                dayFac = smoothstep(-0.15, 0.15, dot(n, lSun));
-                surfCol = mix(nightSample * 2.5, surfCol, dayFac);
-            }
             // 雲層疊加（獨立旋轉 UV）
             vec2 uvCloud = vec2(atan(rnC.z, rnC.x) / 6.28318 + 0.5, acos(clamp(rnC.y, -1.0, 1.0)) / 3.14159);
             vec3 cloudSample = texture(uSurface2, uvCloud).rgb;
@@ -175,21 +169,29 @@ void main(){
         float LdotV = dot(lSun, -lD);
         float s     = LdotV - NdotL * nDotV;
         float t     = s <= 0.0 ? 1.0 : max(NdotL, nDotV + 0.001);
-        // 夜景側：城市燈光不受陽光影響（dayFac=0 時 sh→1.0）
-        float sh    = mix(1.0, NdotL * (A + B * s / t) * 0.85 + 0.18, dayFac);
+        float sh    = NdotL * (A + B * s / t) * 0.85 + 0.18;
 
         // 邊緣暗化
         float limb = pow(nDotV, 0.35);
         sh *= limb * 0.70 + 0.30;
 
-        // 邊緣大氣暈：只用 nDotV（不依賴太陽方向，避免中心亮峰）
-        float edgeAtmo = pow(1.0 - nDotV, 2.5) * uAtmoDensity * 0.35;
-        edgeAtmo = clamp(edgeAtmo, 0.0, 0.9);
+        // 邊緣大氣暈：前向散射增強，朝太陽那側邊緣形成細亮環（背光更真實）
+        float fwdScatter = pow(max(dot(lD, lSun), 0.0), 4.0);
+        float edgeAtmo = pow(1.0 - nDotV, 2.4) * uAtmoDensity * (0.28 + 0.55 * fwdScatter);
+        edgeAtmo = clamp(edgeAtmo, 0.0, 0.85);
 
         float chord    = hit.y - hit.x;
         float softEdge = smoothstep(0.0, R * 0.04, chord);
 
         vec3  col = surfCol * sh + uAtmoColor * edgeAtmo;
+
+        // ── 夜景城市燈光：自發光，純加法疊在暗面（不受光照壓暗）──────
+        vec3 nightSample = texture(uNightTex, uv).rgb;
+        if (dot(nightSample, vec3(1.0)) > 0.001) {
+            float nightVis = 1.0 - smoothstep(-0.20, 0.05, dot(n, lSun)); // 1=暗面
+            col += nightSample * 3.5 * nightVis;
+        }
+
         softEdge *= uAlpha;
         fragColor = vec4(col * softEdge, softEdge);
 

@@ -1,6 +1,7 @@
 package com.github.nalamodikk.register.client;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.client.dimension.MoonDimensionEffects;
 import com.github.nalamodikk.client.dimension.SpaceDimensionEffects;
 import com.github.nalamodikk.client.dimension.VoidMirrorDimensionEffects;
 import com.github.nalamodikk.dimension.ModDimensions;
@@ -25,6 +26,7 @@ public class ClientModEvents {
     public static void onRegisterDimensionEffects(RegisterDimensionSpecialEffectsEvent event) {
         event.register(ModDimensions.SPACE_EFFECTS, new SpaceDimensionEffects());
         event.register(ModDimensions.VOID_MIRROR_EFFECTS, new VoidMirrorDimensionEffects());
+        event.register(ModDimensions.MOON_EFFECTS, new MoonDimensionEffects());
     }
 
     @SubscribeEvent

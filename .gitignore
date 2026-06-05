@@ -96,3 +96,4 @@ local.properties
 /src/main/resources/koniava_data/aspect_semantic/
 
 .playwright-mcp/
+/scripts/

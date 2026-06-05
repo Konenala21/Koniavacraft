@@ -29,6 +29,24 @@ float vnoise(vec3 p){
                mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),
                    mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z)*2.0-1.0;
 }
+// 多八度 FBM（persistence 0.7，仿 bpodgursky 程序恆星）
+float fbm(vec3 p){
+    float v=0.0,a=0.5;
+    for(int i=0;i<4;i++){ v+=a*vnoise(p); p=p*2.0+vec3(1.7,9.2,3.4); a*=0.7; }
+    return v;
+}
+// 溫度 → 光球層顏色（冷=深橙黑子，熱=近白亮斑）
+vec3 tempColor(float t){
+    vec3 c0=vec3(0.35,0.10,0.02); // 黑子本影（最冷）
+    vec3 c1=vec3(0.85,0.35,0.08); // 暗胞間隙
+    vec3 c2=vec3(1.00,0.70,0.30); // 正常光球 5772K
+    vec3 c3=vec3(1.00,0.92,0.65); // 熱胞中心
+    vec3 c4=vec3(1.00,0.98,0.90); // 亮斑（最熱）
+    if(t<0.25) return mix(c0,c1,t/0.25);
+    if(t<0.50) return mix(c1,c2,(t-0.25)/0.25);
+    if(t<0.75) return mix(c2,c3,(t-0.50)/0.25);
+    return mix(c3,c4,(t-0.75)/0.25);
+}
 
 vec2 sphHit(vec3 o,vec3 d,float r){
     float b=dot(o,d),c=dot(o,o)-r*r,disc=b*b-c;
@@ -75,17 +93,41 @@ void main(){
         float nDotV=max(dot(n,-lD),0.0);
         float limb=0.7+0.3*nDotV;
 
-        vec3 col;
+        // ── 混合：sun.jpg 真實貼圖 + 程序沸騰層 ────────────────────────
+        vec3  sp = rn;
+        float tt = iTime * 0.03; // 沸騰速度
+
+        // 程序三層噪聲（bpodgursky）
+        float gran = (fbm(sp*10.0 + vec3(0.0,0.0,tt)) + 1.0) * 0.5;
+        float fine = (fbm(sp*22.0 + vec3(tt*1.5,0.0,0.0)) + 1.0) * 0.5;
+        float granExpr = mix(gran, fine, 0.35);
+        float ssN = fbm(sp*2.4 + vec3(tt*0.15)) * 1.4 - 0.7;
+        float latFac = 1.0 - abs(sp.y)*0.6;
+        float ss = max(0.0, ssN) * latFac;
+        float bsN = fbm(sp*1.4 + vec3(5.1,1.3,tt*0.1)) * 1.3 - 0.8;
+        float brightSpot = max(0.0, bsN);
+        float total = clamp(granExpr - ss*1.4 + brightSpot*0.5, 0.0, 1.0);
+
         vec2 sunUv=vec2(atan(rn.z,rn.x)/6.28318+0.5, acos(clamp(rn.y,-1.0,1.0))/3.14159);
         vec3 sunTex=texture(uSurface,sunUv).rgb;
+
+        vec3 col;
         if(dot(sunTex,vec3(1.0))>0.001){
-            col=sunTex*limb*1.3;
-            col=mix(col,vec3(1.5,1.4,1.1),pow(nDotV,3.0)*0.5);
+            // 有貼圖：真實照片當底色，程序層做動態調變
+            col = sunTex * 1.3;
+            // 沸騰亮度起伏（程序 total 圍繞 0.5 調變貼圖明暗）
+            col *= 0.78 + total*0.5;
+            // 程序黑子疊上去（暗化）
+            col *= (1.0 - ss*0.55);
+            // 溫度色偏：熱的地方往白，冷的往橙，輕微混入
+            col = mix(col, tempColor(total)*1.3, 0.30);
         } else {
-            float plasma=vnoise(rn*3.0)*0.5+vnoise(rn*7.0+vec3(1.3,2.7,0.9))*0.25;
-            col=uPlanetColor*(1.0+plasma*0.2)*limb;
-            col=mix(col,vec3(1.4,1.3,1.1),pow(nDotV,3.0)*0.4);
+            // 無貼圖：純程序
+            col = tempColor(total) * mix(vec3(1.0), uPlanetColor*1.3, 0.25);
         }
+        col *= limb;
+        // 核心過曝白熱（讓它像恆星不像球）
+        col = mix(col, vec3(1.7,1.6,1.3), pow(nDotV,3.5)*0.5);
 
         float chord=hit.y-hit.x;
         float edge=smoothstep(0.0,R*0.02,chord);
@@ -99,10 +141,79 @@ void main(){
 
         float falloff=exp(-(normDist-1.0)*4.0/coronaFac)*uAtmoDensity;
         falloff=clamp(falloff,0.0,1.0);
-        if(falloff<0.001){fragColor=vec4(0.0);return;}
 
         // 日冕顏色偏橙紅
         vec3 coronaCol=mix(uAtmoColor,uPlanetColor,0.3)*falloff;
+
+        // ── 日珥噴發（Solar Prominences）─────────────────────────────────
+        // 角度用 WORLD space 計算（不跟玩家視角/位置轉，修坑1）
+        float tt=iTime*0.08;
+        vec3  toSunW=uPlanetDir*uPlanetDist;        // world: 玩家→太陽中心
+        float tW=dot(toSunW,dir);
+        vec3  closestW=dir*tW;
+        vec3  fcW=normalize(closestW-toSunW);       // world: 太陽中心→光線最近點
+        float promAngle=atan(fcW.z,fcW.x)+iTime*0.01; // + 太陽自轉
+        float promZone=normDist-1.0;                 // 0=表面, 往外增加
+
+        vec3 promCol=vec3(0.0);
+        // 近表面亮、往外變淡的整體衰減（真實日珥特徵）
+        float heightFade=exp(-promZone*2.2);
+
+        // ── 寧靜日珥拱圈（Quiescent Loops）：穩定存在，只緩慢呼吸飄動 ──
+        // 真實太陽：寧靜日珥可持續數天到數週，幾乎不動
+        for(int i=0;i<4;i++){
+            float fi=float(i);
+            float A1=fi*1.7+sin(fi*4.3)*1.5+iTime*0.002*(0.4+fi*0.2); // 極緩慢漂移
+            float arcSpan=0.30+fi*0.10;
+            // 呼吸：高度只 ±12% 微幅起伏，不是噴發
+            float breathe=0.94+0.06*sin(iTime*0.04+fi*2.0);
+            float peakH=(0.45+fi*0.15)*breathe;
+
+            float dA=promAngle-A1;
+            dA=mod(dA+3.14159,6.28318)-3.14159;
+            float s=dA/arcSpan;
+            if(s<0.0||s>1.0) continue;
+
+            float archH=peakH*sin(3.14159*s);
+            float dH=promZone-archH;
+            float thick=(0.03+0.015*sin(3.14159*s));
+            float wisp=0.6+0.4*fbm(vec3(s*7.0, promZone*6.0-iTime*0.05, fi)); // 紊流也放慢
+            float tube=exp(-(dH*dH)/(thick*thick))*wisp;
+            vec3 pc=mix(vec3(1.0,0.55,0.12), vec3(1.0,0.28,0.05), clamp(promZone/peakH,0.0,1.0));
+            promCol+=pc*tube;
+        }
+
+        // ── 爆發日珥（Eruptive）：稀有離散事件，按遊戲時間縮放 ────────
+        // iTime 已含 timeScale，調快遊戲時噴發也跟著變頻
+        for(int j=0;j<3;j++){
+            float fj=float(j);
+            // 每 ~50 iTime 單位一個週期窗口（timeScale=1 約每 50 秒一窗）
+            float period=50.0+fj*17.0;
+            float cyc=iTime/period+fj*0.41;
+            float cycId=floor(cyc);
+            float cycPhase=fract(cyc);
+            // 此週期是否真的噴發（hash 決定，~35% 機率）
+            float roll=fract(sin(cycId*12.9898+fj*78.233)*43758.5453);
+            if(roll<0.65) continue; // 多數週期無事發生
+            // 噴發只在週期前 25% 發生：快速上升 → 緩慢消散
+            if(cycPhase>0.25) continue;
+            float ep=cycPhase/0.25;             // 0..1 噴發進程
+            float env=sin(3.14159*ep);          // 上升下降包絡
+            // 噴發角度（此週期隨機）
+            float jetAngle=fract(sin(cycId*3.7+fj*5.1)*1000.0)*6.28318;
+            float dA=promAngle-jetAngle;
+            dA=mod(dA+3.14159,6.28318)-3.14159;
+            float jetH=(0.8+fj*0.2)*env;
+            float hN=clamp(promZone/max(jetH,0.001),0.0,1.0);
+            float w=0.035*(1.0+hN*1.5);         // 往上展開成羽流
+            float fil=0.5+0.5*fbm(vec3(dA*8.0, promZone*8.0-iTime*0.3, fj));
+            float jet=exp(-(dA*dA)/(w*w))*pow(1.0-hN,1.1)*step(promZone,jetH)*fil;
+            promCol+=mix(vec3(1.0,0.75,0.35), vec3(1.0,0.12,0.03), hN)*jet*1.5;
+        }
+
+        coronaCol+=promCol*heightFade*2.6;
+
+        if(dot(coronaCol,vec3(1.0))<0.001){fragColor=vec4(0.0);return;}
         fragColor=vec4(coronaCol,0.0);  // alpha=0：純加法混合
     }
 }

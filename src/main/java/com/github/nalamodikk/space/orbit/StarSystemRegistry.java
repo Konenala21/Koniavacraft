@@ -40,8 +40,8 @@ public final class StarSystemRegistry {
                 new Vector3f(0.18f, 0.42f, 0.68f), new Vector3f(0.35f, 0.62f, 1.0f),
                 new Vector3f(0f), 0f, 1.4f, 0.08f, 1.0f, "", 0,0,0),
 
-            // 月球：0.273x 地球，繞地球 27.3 天
-            new PlanetDef("moon", ModDimensions.SPACE,
+            // 月球：0.273x 地球，繞地球 27.3 天（降落 → MOON 維度）
+            new PlanetDef("moon", ModDimensions.MOON,
                 200f, 27.3f, 200f, 33f,
                 PlanetRenderer.Type.ATMOSPHERE,
                 new Vector3f(0.52f, 0.52f, 0.54f), new Vector3f(0.70f, 0.75f, 0.80f),
@@ -95,6 +95,15 @@ public final class StarSystemRegistry {
                 PlanetRenderer.Type.ROCKY,
                 new Vector3f(0.72f, 0.65f, 0.58f), new Vector3f(0.40f, 0.35f, 0.30f),
                 new Vector3f(0f), 0f, 0f, 0f, 6.4f, "", 0,0,0)
+        ),
+        // 帶：小行星帶（火星-木星間）、柯伊伯帶（海王星外）
+        List.of(
+            new BeltDef("asteroid_belt",
+                3200f, 5400f, 180f, 0.93f,
+                new Vector3f(0.45f, 0.40f, 0.34f)),   // 灰褐金屬岩
+            new BeltDef("kuiper_belt",
+                50000f, 68000f, 600f, 0.95f,
+                new Vector3f(0.55f, 0.62f, 0.70f))    // 冰白藍
         )
     );
 

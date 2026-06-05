@@ -2,6 +2,7 @@ package com.github.nalamodikk.register;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.dimension.BoundedFlatChunkGenerator;
+import com.github.nalamodikk.dimension.MoonChunkGenerator;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.chunk.ChunkGenerator;
@@ -16,6 +17,9 @@ public class ModChunkGenerators {
 
     public static final DeferredHolder<MapCodec<? extends ChunkGenerator>, MapCodec<BoundedFlatChunkGenerator>> BOUNDED_FLAT =
             CHUNK_GENERATORS.register("bounded_flat", () -> BoundedFlatChunkGenerator.CODEC);
+
+    public static final DeferredHolder<MapCodec<? extends ChunkGenerator>, MapCodec<MoonChunkGenerator>> MOON =
+            CHUNK_GENERATORS.register("moon", () -> MoonChunkGenerator.CODEC);
 
     public static void register(IEventBus bus) {
         CHUNK_GENERATORS.register(bus);

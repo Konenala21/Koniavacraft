@@ -56,4 +56,28 @@ public class ModDimensions {
 
     public static final ResourceLocation VOID_MIRROR_EFFECTS =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "void_mirror");
+
+    // ── 月球維度（第一顆可降落的行星）────────────────────────────────────
+    public static final ResourceKey<Level> MOON = ResourceKey.create(
+            Registries.DIMENSION,
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "moon")
+    );
+
+    public static final ResourceKey<DimensionType> MOON_TYPE = ResourceKey.create(
+            Registries.DIMENSION_TYPE,
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "moon")
+    );
+
+    public static final ResourceKey<Biome> MOON_BIOME = ResourceKey.create(
+            Registries.BIOME,
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "moon")
+    );
+
+    public static final ResourceKey<LevelStem> MOON_STEM = ResourceKey.create(
+            Registries.LEVEL_STEM,
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "moon")
+    );
+
+    public static final ResourceLocation MOON_EFFECTS =
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "moon");
 }

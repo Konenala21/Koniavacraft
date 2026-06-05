@@ -3,12 +3,12 @@ package com.github.nalamodikk.common.event;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.dimension.ModDimensions;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.living.MobSpawnEvent;
 import net.neoforged.neoforge.event.tick.LevelTickEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
@@ -41,6 +41,20 @@ public class SpaceDimensionHandler {
         if (!level.dimension().equals(ModDimensions.SPACE)) return;
         if (level.isRaining() || level.isThundering()) {
             level.setWeatherParameters(6000, 0, false, false);
+        }
+    }
+
+    // 太空維度禁止自然生怪（敵對 + 生物，保持空曠）
+    @SubscribeEvent
+    public static void onMobSpawn(MobSpawnEvent.PositionCheck event) {
+        if (!(event.getLevel() instanceof ServerLevel level)) return;
+        if (!level.dimension().equals(ModDimensions.SPACE)) return;
+        MobCategory cat = event.getEntity().getType().getCategory();
+        // 只擋自然生成的怪物/生物，不擋玩家召喚或其他來源
+        if (cat == MobCategory.MONSTER || cat == MobCategory.CREATURE
+                || cat == MobCategory.AMBIENT || cat == MobCategory.WATER_CREATURE
+                || cat == MobCategory.WATER_AMBIENT) {
+            event.setResult(MobSpawnEvent.PositionCheck.Result.FAIL);
         }
     }
 

@@ -87,6 +87,10 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
     protected void generate() {
         // 🏗️ 標準方塊：掉落自身
         dropSelf(ModBlocks.MANA_BLOCK.get());           // 魔力錠磚
+        dropSelf(ModBlocks.MOON_REGOLITH.get());        // 月壤
+        dropSelf(ModBlocks.MOON_STONE.get());           // 月岩
+        dropSelf(ModBlocks.MOON_DEEPSTONE.get());       // 深層月岩
+        dropSelf(ModBlocks.MOON_CORE.get());            // 月核
         dropSelf(ModBlocks.MANA_GENERATOR.get());       // 魔力發電機
         dropSelf(ModBlocks.SOLAR_MANA_COLLECTOR.get()); // 太陽能魔力收集器
         dropSelf(ModBlocks.BASIC_ARCANE_CONDUIT.get()); // 🆕 基礎奧術導管

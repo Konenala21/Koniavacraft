@@ -33,8 +33,14 @@ public class SpacePlanetManager {
     private static final PlanetRenderer rockyRenderer      = new PlanetRenderer(PlanetRenderer.Type.ROCKY);
     private static final PlanetRenderer sunRenderer        = new PlanetRenderer(PlanetRenderer.Type.SUN);
     private static final PlanetRenderer ringRenderer       = new PlanetRenderer(PlanetRenderer.Type.RING);
+    private static final PlanetRenderer beltRenderer       = new PlanetRenderer(PlanetRenderer.Type.BELT);
     private static boolean initialized = false;
     private static int     initCooldown = 0; // AMD：init 後跳過 N 幀再開始渲染
+    // 公轉/自轉時間倍率（由 /koniava timescale 設定，SpaceTimeScalePacket 同步）
+    public static volatile float timeScale = 1.0f;
+    // 累積的縮放時間：每幀只累加 delta*timeScale，改倍率時不會瞬移（只改速率）
+    private static double accumulatedTime = 0.0;
+    private static double lastRawTime = Double.NaN;
 
     // 行星貼圖快取：planet id → GL texture id（-1=無貼圖）
     private static final Map<String, Integer> textureCache = new HashMap<>();
@@ -53,8 +59,16 @@ public class SpacePlanetManager {
         if (initCooldown > 0) { initCooldown--; return; }
 
         float partial  = event.getPartialTick().getGameTimeDeltaPartialTick(false);
-        float gameTime = (mc.level.getGameTime() + partial) / 20.0f;
-        long  tick     = mc.level.getGameTime();
+        // 累積縮放時間：每幀累加 delta*timeScale，改 timescale 不會瞬移（只變速率）
+        double rawNow = mc.level.getGameTime() + partial;
+        if (Double.isNaN(lastRawTime)) lastRawTime = rawNow;
+        double delta = rawNow - lastRawTime;
+        if (delta < 0) delta = 0; // 換世界/回繞保護
+        accumulatedTime += delta * timeScale;
+        lastRawTime = rawNow;
+
+        float  gameTime  = (float)(accumulatedTime / 20.0);
+        double tick      = accumulatedTime;
         var   target   = mc.getMainRenderTarget();
 
         float[] invProj = new float[16];
@@ -76,10 +90,21 @@ public class SpacePlanetManager {
     }
 
     private static void renderSystem(StarSystem system, Vector3f playerPos, Vector3f camFwd,
-                                     long tick, float gameTime,
+                                     double tick, float gameTime,
                                      float[] invProj, float[] invView, int w, int h) {
         Vector3f starPos  = system.worldPos();
         Vector3f sunLight = system.combinedLightDir(tick, playerPos);
+
+        // 帶最先畫（最遠的背景，岩石點疊在星空上、行星之下）
+        Vector3f toStarB = new Vector3f(starPos).sub(playerPos);
+        float    starDistB = Math.max(toStarB.length(), 0.1f);
+        Vector3f starDirB  = new Vector3f(toStarB).normalize();
+        for (var belt : system.belts()) {
+            beltRenderer.renderBelt(invProj, invView, gameTime, w, h,
+                starDirB, starDistB, sunLight,
+                belt.innerRadius(), belt.outerRadius(), belt.thickness(),
+                belt.density(), belt.color(), 1.0f);
+        }
 
         record Body(float dist, Runnable draw) {}
         List<Body> bodies = new ArrayList<>();
@@ -262,24 +287,13 @@ public class SpacePlanetManager {
         rockyRenderer.init();
         sunRenderer.init();
         ringRenderer.init();
+        beltRenderer.init();
         initialized = true;
     }
 
     public static void reload() {
-        // AMD driver 26.x bug：glDeleteProgram 後重建 + glTexImage2D 會 EXCEPTION_ACCESS_VIOLATION
-        // 修法：F3+T 只清貼圖快取，不刪 shader program
-        // shader 變更需要完整重啟遊戲才生效（可接受的 trade-off）
-        GL11.glFinish();
-        for (int unit = 0; unit < 4; unit++) {
-            GL13.glActiveTexture(GL13.GL_TEXTURE0 + unit);
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
-        }
-        GL13.glActiveTexture(GL13.GL_TEXTURE0);
-        for (int id : textureCache.values()) {
-            if (id != -1) GL11.glDeleteTextures(id);
-        }
-        textureCache.clear();
-        // 不呼叫 atmosphereRenderer.release() 等，保留已編譯的 shader program
-        // initialized 維持 true，避免觸發重編 shader 的崩潰序列
+        // AMD driver 26.x bug：glDeleteTextures + 重新 glTexImage2D 會 EXCEPTION_ACCESS_VIOLATION
+        // 所以 F3+T 完全不動：貼圖保留、shader 不重編
+        // 代價：shader/貼圖變更需要完整重啟遊戲才生效（AMD 驅動限制，無法繞過）
     }
 }
