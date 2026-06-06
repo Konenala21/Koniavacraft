@@ -260,6 +260,42 @@ public class ShipAssemblyGameTests {
                 .thenSucceed();
     }
 
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 80)
+    public static void shipStopsAtTerrain(GameTestHelper helper) {
+        ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);
+        helper.setBlock(new BlockPos(4, 2, 4), core());
+        helper.setBlock(new BlockPos(4, 2, 5), filler()); // 船朝 +z 延伸
+        // 前方 +z 放一道牆（z=7，在 setupBaseAndPad 清空範圍 z<=6 之外）
+        helper.setBlock(new BlockPos(4, 2, 7), Blocks.STONE.defaultBlockState());
+        helper.setBlock(new BlockPos(4, 3, 7), Blocks.STONE.defaultBlockState());
+
+        ShipEntity[] shipRef = new ShipEntity[1];
+
+        helper.startSequence()
+                .thenExecute(pad::assembleShip)
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
+                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
+                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
+                            .findFirst().orElse(null);
+                    if (ship == null) { helper.fail("no ship"); return; }
+                    shipRef[0] = ship;
+                    Player p = helper.makeMockPlayer(GameType.SURVIVAL);
+                    p.startRiding(ship, true);
+                    ship.setControlInput(1f, 0f, 0, 0f); // yaw=0 → 朝 +z 開
+                })
+                .thenIdle(40)
+                .thenExecute(() -> {
+                    ShipEntity ship = shipRef[0];
+                    if (ship == null) { helper.fail("ship lost"); return; }
+                    // 牆在 z=7，船不該穿過去（核心起點 z=4，無碰撞會飛到 z>10）
+                    if (ship.getZ() > 6.5)
+                        helper.fail("ship flew through the wall (z=" + ship.getZ() + ")");
+                })
+                .thenSucceed();
+    }
+
     @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
     public static void seatsAllowMultiplePassengersOneDriver(GameTestHelper helper) {
         ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);

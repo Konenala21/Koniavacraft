@@ -9,8 +9,10 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.EntityBlock;
@@ -71,6 +73,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         this.contraption = contraption;
         this.renderBEs = null;   // contraption 換了，BE 快取作廢
         this.meshCache = null;   // 烤好的 VBO 也作廢（contraption 只在 spawn 設一次，實務上不會走到）
+        refreshDimensions();     // 依新 contraption 撐大 hitbox
     }
 
     // ── 靜態方塊 VBO 快取（client）──────────────────────────────────────────
@@ -140,10 +143,50 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             shipVel = shipVel.add(target.subtract(shipVel).scale(ACCEL));
             if (shipVel.lengthSqr() < 1e-6) shipVel = Vec3.ZERO;
             if (shipVel.lengthSqr() > 0) {
-                setPos(getX() + shipVel.x, getY() + shipVel.y, getZ() + shipVel.z);
+                Vec3 allowed = resolveTerrain(shipVel); // 撞地形的軸歸零（會沿牆滑）
+                if (allowed.lengthSqr() > 0) {
+                    setPos(getX() + allowed.x, getY() + allowed.y, getZ() + allowed.z);
+                }
+                shipVel = allowed; // 撞到的軸不保留動量
             }
         }
         setDeltaMovement(0, 0, 0); // 自己用 setPos 移動，不靠 vanilla 速度
+    }
+
+    /**
+     * 船撞地形：逐軸檢查移動後有沒有船方塊會卡進世界固體方塊，會的話該軸歸零（沿牆滑）。
+     * 船方塊不在世界裡（在 entity），所以 noCollision 只會撞到真實地形，船自己不互撞。
+     */
+    private Vec3 resolveTerrain(Vec3 move) {
+        if (contraption == null) return move;
+        double mx = move.x != 0 && blockedBy(move.x, 0, 0) ? 0 : move.x;
+        double my = move.y != 0 && blockedBy(0, move.y, 0) ? 0 : move.y;
+        double mz = move.z != 0 && blockedBy(0, 0, move.z) ? 0 : move.z;
+        return new Vec3(mx, my, mz);
+    }
+
+    private boolean blockedBy(double dx, double dy, double dz) {
+        for (BlockPos local : contraption.getBlocks().keySet()) {
+            AABB box = new AABB(getX() + local.getX(), getY() + local.getY(), getZ() + local.getZ(),
+                    getX() + local.getX() + 1, getY() + local.getY() + 1, getZ() + local.getZ() + 1)
+                    .move(dx, dy, dz).deflate(0.02);
+            if (!level().noCollision(this, box)) return true;
+        }
+        return false;
+    }
+
+    // hitbox：把實體尺寸撐到涵蓋整艘船（getBoundingBox 是 final 不能覆寫，改由 dimensions 決定），
+    // 這樣對船身任何地方右鍵都點得到。EntityDimensions 是以 x/z 為中心、腳底往上的對稱盒，
+    // 核心在角落故取四向最大延伸當半寬（會略大於船，picking 可接受）；核心下方的方塊邊角情況不涵蓋。
+    @Override
+    public EntityDimensions getDimensions(Pose pose) {
+        if (contraption == null) return super.getDimensions(pose);
+        AABB b = contraption.bounds();
+        double halfW = Math.max(Math.max(Math.abs(b.minX), Math.abs(b.maxX)),
+                Math.max(Math.abs(b.minZ), Math.abs(b.maxZ)));
+        float w = (float) Math.max(halfW * 2, 1.0);
+        float h = (float) Math.max(b.maxY, 1.0);
+        return EntityDimensions.scalable(w, h);
     }
 
     // ── 騎乘 ────────────────────────────────────────────────────────────────
@@ -242,6 +285,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             ShipContraption c = new ShipContraption();
             c.readNbt(level(), tag.getCompound("Ship"));
             this.contraption = c;
+            refreshDimensions();
         }
     }
 
@@ -267,6 +311,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
                 ShipContraption c = new ShipContraption();
                 c.readNbt(level(), tag);
                 this.contraption = c;
+                refreshDimensions();
             }
         }
     }
