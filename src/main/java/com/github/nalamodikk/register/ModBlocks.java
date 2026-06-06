@@ -22,6 +22,7 @@ import com.github.nalamodikk.common.block.normal.DeepManaSoilBlock;
 import com.github.nalamodikk.common.block.normal.ManaBloomBlock;
 import com.github.nalamodikk.common.block.normal.ManaGrassBlock;
 import com.github.nalamodikk.common.block.normal.ManaSoilBlock;
+import com.github.nalamodikk.space.ship.ShipCoreBlock;
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -224,6 +225,11 @@ public class ModBlocks {
             () -> new ResonanceRingBlock(BlockBehaviour.Properties.of().mapColor(MapColor.STONE)
                     .strength(3.0f).sound(SoundType.STONE).requiresCorrectToolForDrops()
                     .lightLevel(state -> 8).noOcclusion()));
+
+    // ── 飛船核心（M1：右鍵組裝，flood-fill 掃相連方塊回報）─────────────────
+    public static final DeferredBlock<ShipCoreBlock> SHIP_CORE = registerBlock("ship_core",
+            () -> new ShipCoreBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL)
+                    .strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops()));
 
 
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> block) {
