@@ -26,6 +26,7 @@ import com.github.nalamodikk.space.ship.ShipAssemblyBaseBlock;
 import com.github.nalamodikk.space.ship.ShipAssemblyGantryBlock;
 import com.github.nalamodikk.space.ship.ShipAssemblyPadBlock;
 import com.github.nalamodikk.space.ship.ShipCoreBlock;
+import com.github.nalamodikk.space.ship.ShipSeatBlock;
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -248,6 +249,11 @@ public class ModBlocks {
     public static final DeferredBlock<ShipAssemblyGantryBlock> SHIP_ASSEMBLY_GANTRY = registerBlock("ship_assembly_gantry",
             () -> new ShipAssemblyGantryBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL)
                     .strength(3.0f).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion()));
+
+    // ── 飛船座椅（組進船的乘客座位，核心=駕駛位）─────────────────────────
+    public static final DeferredBlock<ShipSeatBlock> SHIP_SEAT = registerBlock("ship_seat",
+            () -> new ShipSeatBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)
+                    .strength(2.0f).sound(SoundType.METAL).noOcclusion()));
 
 
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> block) {

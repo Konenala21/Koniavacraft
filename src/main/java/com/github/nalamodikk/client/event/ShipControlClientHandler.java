@@ -21,7 +21,8 @@ public class ShipControlClientHandler {
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
-        if (!(mc.player.getVehicle() instanceof ShipEntity)) return;
+        if (!(mc.player.getVehicle() instanceof ShipEntity ship)) return;
+        if (ship.getControllingPassenger() != mc.player) return; // 非駕駛(乘客)不送控制
 
         Options o = mc.options;
         float forward = (o.keyUp.isDown() ? 1 : 0) - (o.keyDown.isDown() ? 1 : 0);

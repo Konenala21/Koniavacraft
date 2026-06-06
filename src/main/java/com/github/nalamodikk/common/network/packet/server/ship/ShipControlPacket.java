@@ -41,7 +41,8 @@ public record ShipControlPacket(float forward, float strafe, int vertical, float
     public static void handle(ShipControlPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
-            if (player.getVehicle() instanceof ShipEntity ship) {
+            // 只有駕駛（核心位）能控制；乘客的輸入忽略
+            if (player.getVehicle() instanceof ShipEntity ship && ship.getControllingPassenger() == player) {
                 ship.setControlInput(packet.forward(), packet.strafe(), packet.vertical(), packet.yaw());
             }
         });

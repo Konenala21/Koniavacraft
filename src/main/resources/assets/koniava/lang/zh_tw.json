@@ -528,6 +528,7 @@
   "block.koniava.ship_assembly_pad": "飛船組裝台",
   "block.koniava.ship_assembly_base": "飛船組裝底座",
   "block.koniava.ship_assembly_gantry": "飛船組裝架",
+  "block.koniava.ship_seat": "飛船座椅",
   "message.koniava.ship_core.use_pad": "請用飛船組裝台來組裝飛船。",
   "message.koniava.ship.dock_blocked": "這裡停不了:有方塊擋住。",
   "screen.koniava.ship_assembly_pad.scan": "掃描",

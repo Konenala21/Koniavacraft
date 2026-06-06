@@ -36,6 +36,7 @@ public class ShipAssemblyGameTests {
     private static BlockState pad()    { return ModBlocks.SHIP_ASSEMBLY_PAD.get().defaultBlockState(); }
     private static BlockState core()   { return ModBlocks.SHIP_CORE.get().defaultBlockState(); }
     private static BlockState filler() { return ModBlocks.MANA_BLOCK.get().defaultBlockState(); }
+    private static BlockState seat()   { return ModBlocks.SHIP_SEAT.get().defaultBlockState(); }
 
     /** 鋪 3x3 底座（x∈[3,5], z∈[3,5], y=1）+ 西側放組裝台 (2,1,4)。 */
     private static ShipAssemblyPadBlockEntity setupBaseAndPad(GameTestHelper helper) {
@@ -144,13 +145,12 @@ public class ShipAssemblyGameTests {
                     helper.assertBlockPresent(Blocks.AIR, new BlockPos(4, 2, 4));
                     helper.assertBlockPresent(Blocks.AIR, new BlockPos(3, 2, 4));
                     helper.assertBlockPresent(Blocks.AIR, new BlockPos(5, 2, 4));
-                    // 直接查 level 的飛船實體（assertEntityPresent 的 bounds 判定不可靠）
-                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(24);
-                    List<ShipEntity> ships = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area);
-                    if (ships.isEmpty()) helper.fail("no ship entity spawned");
-                    else if (ships.get(0).getContraption() == null
-                            || ships.get(0).getContraption().size() != 3)
-                        helper.fail("ship contraption size wrong");
+                    // 直接查 level 的飛船實體，過濾出本測試的船（3 塊），避開鄰測試殘留
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
+                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
+                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 3)
+                            .findFirst().orElse(null);
+                    if (ship == null) helper.fail("ship entity with 3 blocks not spawned");
                 })
                 .thenSucceed();
     }
@@ -168,10 +168,11 @@ public class ShipAssemblyGameTests {
                 .thenExecute(pad::assembleShip)
                 .thenIdle(5)
                 .thenExecute(() -> {
-                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(32);
-                    List<ShipEntity> ships = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area);
-                    if (ships.isEmpty()) { helper.fail("no ship spawned"); return; }
-                    ShipEntity ship = ships.get(0);
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
+                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
+                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
+                            .findFirst().orElse(null);
+                    if (ship == null) { helper.fail("no ship spawned"); return; }
                     shipRef[0] = ship;
                     Player p = helper.makeMockPlayer(GameType.SURVIVAL);
                     p.setPos(ship.getX() + 0.5, ship.getY() + 1, ship.getZ() + 0.5);
@@ -205,16 +206,18 @@ public class ShipAssemblyGameTests {
                 .thenExecute(pad::assembleShip)
                 .thenIdle(5)
                 .thenExecute(() -> {
-                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(32);
-                    List<ShipEntity> ships = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area);
-                    if (ships.isEmpty()) { helper.fail("no ship to disassemble"); return; }
-                    if (!ships.get(0).disassemble()) helper.fail("disassemble returned false");
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
+                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
+                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
+                            .findFirst().orElse(null);
+                    if (ship == null) { helper.fail("no ship to disassemble"); return; }
+                    if (!ship.disassemble()) helper.fail("disassemble returned false");
                 })
                 .thenIdle(2)
                 .thenExecute(() -> {
                     helper.assertBlockPresent(ModBlocks.SHIP_CORE.get(), new BlockPos(4, 2, 4));
                     helper.assertBlockPresent(ModBlocks.MANA_BLOCK.get(), new BlockPos(3, 2, 4));
-                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(32);
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
                     if (!helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).isEmpty())
                         helper.fail("ship entity not removed after disassemble");
                 })
@@ -237,10 +240,12 @@ public class ShipAssemblyGameTests {
                 .thenExecute(pad::assembleShip)
                 .thenIdle(5)
                 .thenExecute(() -> {
-                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(32);
-                    List<ShipEntity> ships = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area);
-                    if (ships.isEmpty()) { helper.fail("no ship"); return; }
-                    if (!ships.get(0).disassemble()) helper.fail("disassemble returned false");
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
+                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
+                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
+                            .findFirst().orElse(null);
+                    if (ship == null) { helper.fail("no ship"); return; }
+                    if (!ship.disassemble()) helper.fail("disassemble returned false");
                 })
                 .thenIdle(2)
                 .thenExecute(() -> {
@@ -251,6 +256,49 @@ public class ShipAssemblyGameTests {
                     ItemStack s = restored.getItem(0);
                     if (!s.is(Items.DIAMOND) || s.getCount() != 5)
                         helper.fail("chest contents lost (got " + s + ")");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
+    public static void seatsAllowMultiplePassengersOneDriver(GameTestHelper helper) {
+        ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);
+        helper.setBlock(new BlockPos(4, 2, 4), core());
+        helper.setBlock(new BlockPos(5, 2, 4), seat()); // 1 個座椅 → 共 2 座位（核心+座椅）
+
+        helper.startSequence()
+                .thenExecute(pad::assembleShip)
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
+                    // 過濾出本測試的船（core+座椅=2 塊），避開鄰測試殘留的船
+                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
+                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
+                            .findFirst().orElse(null);
+                    if (ship == null) { helper.fail("ship with core+seat not found"); return; }
+                    if (ship.getSeats().size() != 2)
+                        helper.fail("expected 2 seats, got " + ship.getSeats().size());
+
+                    Player p1 = helper.makeMockPlayer(GameType.SURVIVAL);
+                    Player p2 = helper.makeMockPlayer(GameType.SURVIVAL);
+                    Player p3 = helper.makeMockPlayer(GameType.SURVIVAL);
+                    p1.startRiding(ship, false);
+                    p2.startRiding(ship, false);
+                    p3.startRiding(ship, false); // 第 3 人應被擋（只有 2 座位，canAddPassenger=false）
+
+                    if (ship.getPassengers().size() != 2)
+                        helper.fail("expected 2 passengers, got " + ship.getPassengers().size());
+                    if (p3.isPassenger()) helper.fail("3rd passenger should be rejected (only 2 seats)");
+                    if (ship.getControllingPassenger() != p1)
+                        helper.fail("driver should be the first rider");
+
+                    // 兩人對應不同座位（index + 座標）。直接驗指派邏輯，
+                    // 不依賴 positionRider 自動執行（gametest mock player 不一定 tick）
+                    int i1 = ship.getPassengers().indexOf(p1);
+                    int i2 = ship.getPassengers().indexOf(p2);
+                    if (i1 < 0 || i2 < 0 || i1 == i2) helper.fail("passengers share a seat index");
+                    if (ship.getSeats().get(i1).equals(ship.getSeats().get(i2)))
+                        helper.fail("two passengers mapped to the same seat position");
                 })
                 .thenSucceed();
     }

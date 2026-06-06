@@ -18,6 +18,11 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+
 /**
  * 飛船實體：承載一個 ShipContraption（一組方塊），組裝後方塊從世界移除、改由這個實體渲染/移動。
  *
@@ -123,18 +128,43 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     @Nullable
     @Override
     public LivingEntity getControllingPassenger() {
+        // 駕駛 = 坐核心(座位 index 0)那人，也就是第一個上船的 passenger
         return getFirstPassenger() instanceof Player p ? p : null;
     }
 
     @Override
     protected boolean canAddPassenger(Entity passenger) {
-        return getPassengers().isEmpty(); // 先一人駕駛
+        return getPassengers().size() < seatCount();
     }
 
     @Override
     protected void positionRider(Entity passenger, MoveFunction callback) {
-        // 坐在核心方塊上方（entity 落在核心角落）
-        callback.accept(passenger, getX() + 0.5, getY() + 1.0, getZ() + 0.5);
+        List<BlockPos> seats = getSeats();
+        int idx = getPassengers().indexOf(passenger);
+        if (idx < 0 || idx >= seats.size()) idx = 0;
+        BlockPos seat = seats.get(idx);
+        callback.accept(passenger, getX() + seat.getX() + 0.5, getY() + seat.getY() + 1.0,
+                getZ() + seat.getZ() + 0.5);
+    }
+
+    /** 座位清單（local 座標，確定性順序）：核心(0,0,0) 在 index 0=駕駛，其餘為座椅方塊依座標排序。 */
+    public List<BlockPos> getSeats() {
+        List<BlockPos> seats = new ArrayList<>();
+        seats.add(BlockPos.ZERO); // 核心 = 駕駛位
+        if (contraption != null) {
+            contraption.getBlocks().entrySet().stream()
+                    .filter(e -> e.getValue().state().getBlock() instanceof ShipSeatBlock)
+                    .map(Map.Entry::getKey)
+                    .sorted(Comparator.<BlockPos>comparingInt(BlockPos::getX)
+                            .thenComparingInt(BlockPos::getY)
+                            .thenComparingInt(BlockPos::getZ))
+                    .forEach(seats::add);
+        }
+        return seats;
+    }
+
+    private int seatCount() {
+        return getSeats().size();
     }
 
     // 實體本體只有 1x1，但船可能很大：用 contraption 範圍當渲染剔除框，
