@@ -63,10 +63,30 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     // client 渲染用：從 contraption NBT 還原的臨時 BlockEntity（箱子等 BER 方塊），建一次快取
     @Nullable private Map<BlockPos, BlockEntity> renderBEs;
+    // client 渲染用：靜態方塊烤好的 VBO 快取（型別 Object 避免 server 載入 client 類別）
+    @Nullable private Object meshCache;
+    private boolean meshFailed;
 
     public void setContraption(ShipContraption contraption) {
         this.contraption = contraption;
-        this.renderBEs = null; // contraption 換了，BE 快取作廢
+        this.renderBEs = null;   // contraption 換了，BE 快取作廢
+        this.meshCache = null;   // 烤好的 VBO 也作廢（contraption 只在 spawn 設一次，實務上不會走到）
+    }
+
+    // ── 靜態方塊 VBO 快取（client）──────────────────────────────────────────
+    @Nullable public Object getMeshCache() { return meshCache; }
+    public void setMeshCache(@Nullable Object cache) { this.meshCache = cache; }
+    public boolean isMeshFailed() { return meshFailed; }
+    public void markMeshFailed() { this.meshFailed = true; }
+
+    @Override
+    public void remove(Entity.RemovalReason reason) {
+        // 釋放烤好的 VBO（GL 資源）。client 端、render thread 上做
+        if (level().isClientSide && meshCache instanceof AutoCloseable ac) {
+            try { ac.close(); } catch (Exception ignored) {}
+            meshCache = null;
+        }
+        super.remove(reason);
     }
 
     /**
@@ -139,10 +159,16 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             }
             return InteractionResult.CONSUME;
         }
-        if (getControllingPassenger() == null) {
-            player.startRiding(this);
+        if (getPassengers().size() < getSeats().size()) {
+            player.startRiding(this); // 坐進下一個空位（第一個上船=駕駛）
         }
         return InteractionResult.sidedSuccess(false);
+    }
+
+    // 預設 Entity.isPickable() 回 false → 點不到實體、interact 不觸發。飛船要可被右鍵
+    @Override
+    public boolean isPickable() {
+        return !isRemoved();
     }
 
     /** 收船：把 contraption 方塊寫回世界（snap 到整數格）並 discard 自己。被擋則不動，回傳 false。 */

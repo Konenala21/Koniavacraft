@@ -37,6 +37,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.MOON_STONE);
         blockWithItem(ModBlocks.MOON_DEEPSTONE);
         blockWithItem(ModBlocks.MOON_CORE);
+        // 飛船方塊（cubeAll，貼圖在 block/ship_*.png）
+        blockWithItem(ModBlocks.SHIP_CORE);
+        blockWithItem(ModBlocks.SHIP_ASSEMBLY_PAD);
+        blockWithItem(ModBlocks.SHIP_ASSEMBLY_BASE);
+        blockWithItem(ModBlocks.SHIP_ASSEMBLY_GANTRY);
+        blockWithItem(ModBlocks.SHIP_SEAT);
         blockWithItem(ModBlocks.ASPECT_RESEARCH_DESK);
         blockWithItem(ModBlocks.MAGIC_ORE);
         blockWithItem(ModBlocks.DEEPSLATE_MAGIC_ORE);

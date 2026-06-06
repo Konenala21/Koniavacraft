@@ -1,5 +1,6 @@
 package com.github.nalamodikk.client.renderer.entity;
 
+import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.space.ship.ShipContraption;
 import com.github.nalamodikk.space.ship.ShipEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -50,23 +51,27 @@ public class ShipEntityRenderer extends EntityRenderer<ShipEntity> {
                        MultiBufferSource buffers, int packedLight) {
         ShipContraption c = entity.getContraption();
         if (c != null) {
-            ShipRenderWorld world = new ShipRenderWorld(entity.level(), c);
-            ModelBlockRenderer modelRenderer = blockRenderer.getModelRenderer();
-            for (Map.Entry<BlockPos, StructureBlockInfo> e : c.getBlocks().entrySet()) {
-                BlockPos local = e.getKey();
-                BlockState state = e.getValue().state();
-                if (state.isAir() || state.getRenderShape() != RenderShape.MODEL) continue;
-
-                BakedModel model = blockRenderer.getBlockModel(state);
-                long seed = state.getSeed(local);
-                ModelData modelData = model.getModelData(world, local, state, ModelData.EMPTY);
-                pose.pushPose();
-                pose.translate(local.getX(), local.getY(), local.getZ());
-                for (RenderType rt : model.getRenderTypes(state, random, modelData)) {
-                    modelRenderer.tesselateBlock(world, model, state, local, pose, buffers.getBuffer(rt),
-                            true, random, seed, OverlayTexture.NO_OVERLAY, modelData, rt);
+            // 靜態方塊：優先用烤好的 VBO（每幀只變換）；烤失敗則退回每幀 tesselate
+            boolean drewStatic = false;
+            if (!entity.isMeshFailed()) {
+                ShipMeshCache cache = (ShipMeshCache) entity.getMeshCache();
+                try {
+                    if (cache == null) {
+                        cache = new ShipMeshCache();
+                        entity.setMeshCache(cache);
+                    }
+                    cache.buildIfNeeded(c, entity.level());
+                    cache.draw(pose);
+                    drewStatic = true;
+                } catch (Exception ex) {
+                    KoniavacraftMod.LOGGER.error("[Ship] VBO bake failed, falling back to per-frame", ex);
+                    if (cache != null) try { cache.close(); } catch (Exception ignored) {}
+                    entity.setMeshCache(null);
+                    entity.markMeshFailed();
                 }
-                pose.popPose();
+            }
+            if (!drewStatic) {
+                renderStaticPerFrame(entity, c, pose, buffers);
             }
 
             // BER 方塊（箱子等）：用快取的臨時 BlockEntity 每幀畫
@@ -79,6 +84,28 @@ public class ShipEntityRenderer extends EntityRenderer<ShipEntity> {
             }
         }
         super.render(entity, yaw, partialTick, pose, buffers, packedLight);
+    }
+
+    /** 退回方案：每幀逐方塊 tesselate（VBO 烤失敗時用）。 */
+    private void renderStaticPerFrame(ShipEntity entity, ShipContraption c, PoseStack pose,
+                                      MultiBufferSource buffers) {
+        ShipRenderWorld world = new ShipRenderWorld(entity.level(), c);
+        ModelBlockRenderer modelRenderer = blockRenderer.getModelRenderer();
+        for (Map.Entry<BlockPos, StructureBlockInfo> e : c.getBlocks().entrySet()) {
+            BlockPos local = e.getKey();
+            BlockState state = e.getValue().state();
+            if (state.isAir() || state.getRenderShape() != RenderShape.MODEL) continue;
+            BakedModel model = blockRenderer.getBlockModel(state);
+            long seed = state.getSeed(local);
+            ModelData modelData = model.getModelData(world, local, state, ModelData.EMPTY);
+            pose.pushPose();
+            pose.translate(local.getX(), local.getY(), local.getZ());
+            for (RenderType rt : model.getRenderTypes(state, random, modelData)) {
+                modelRenderer.tesselateBlock(world, model, state, local, pose, buffers.getBuffer(rt),
+                        true, random, seed, OverlayTexture.NO_OVERLAY, modelData, rt);
+            }
+            pose.popPose();
+        }
     }
 
     @Override
