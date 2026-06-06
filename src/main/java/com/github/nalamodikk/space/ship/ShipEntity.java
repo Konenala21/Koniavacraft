@@ -161,9 +161,12 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         setDeltaMovement(0, 0, 0); // 自己用 setPos 移動，不靠 vanilla 速度
     }
 
-    /** 把 local 方塊角落依船 yaw 繞核心中心旋轉後的世界座標（僅 X/Z 平面，Y 不變）。 */
+    /**
+     * 把 local 方塊角落依船 yaw 繞核心中心旋轉後的世界座標（僅 X/Z 平面，Y 不變）。
+     * 用 yaw+180（船頭=local -z 面向視角），與渲染 180-yaw 一致。
+     */
     public Vec3 rotatedWorldCorner(int lx, int ly, int lz) {
-        double rad = Math.toRadians(getYRot());
+        double rad = Math.toRadians(getYRot() + 180);
         double cos = Math.cos(rad), sin = Math.sin(rad);
         double rx = lx * cos - lz * sin;
         double rz = lx * sin + lz * cos;
@@ -260,9 +263,9 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         return true;
     }
 
-    /** 把連續 yaw snap 到最近的 90° 對應的 Rotation。 */
+    /** 把連續 yaw snap 到最近的 90° 對應的 Rotation（+180 對齊渲染/碰撞的 yaw+180 慣例）。 */
     private static Rotation snapRotation(float yaw) {
-        int steps = Math.floorMod(Math.round(yaw / 90f), 4);
+        int steps = Math.floorMod(Math.round((yaw + 180) / 90f), 4);
         return switch (steps) {
             case 1 -> Rotation.CLOCKWISE_90;
             case 2 -> Rotation.CLOCKWISE_180;
