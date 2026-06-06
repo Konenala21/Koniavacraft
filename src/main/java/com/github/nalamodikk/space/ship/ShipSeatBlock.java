@@ -31,6 +31,7 @@ public class ShipSeatBlock extends Block {
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+        // 椅子面向放置者看的方向（坐進去=朝前），不要 getOpposite（那會讓椅子朝向放置者=反的）
+        return defaultBlockState().setValue(FACING, context.getHorizontalDirection());
     }
 }
