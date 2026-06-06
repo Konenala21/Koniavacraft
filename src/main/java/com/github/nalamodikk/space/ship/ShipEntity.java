@@ -16,6 +16,7 @@ import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -41,6 +42,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     private static final double MAX_SPEED = 0.4;  // 每 tick 最大速度
     private static final double ACCEL = 0.1;       // 朝目標速度的 lerp（慣性感）
+    private static final float YAW_LERP = 0.15f;   // 船頭轉向駕駛視角的平滑度
 
     @Nullable private ShipContraption contraption;
 
@@ -134,10 +136,14 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         // （輸入只在駕駛 client 本地設），等於 no-op，會被 client 的位置覆蓋。
         // gametest 沒有真 client（mock player 非 local），就由 server 端用測試設的輸入算移動。
         if (isControlledByLocalInstance() || !level().isClientSide) {
-            if (!(getControllingPassenger() instanceof Player)) {
+            boolean hasDriver = getControllingPassenger() instanceof Player;
+            if (!hasDriver) {
                 inForward = 0; inStrafe = 0; inVertical = 0;
+            } else {
+                // 船頭平滑轉向駕駛的視角方向（整艘船跟著轉）
+                setYRot(Mth.rotLerp(YAW_LERP, getYRot(), riderYaw));
             }
-            double rad = Math.toRadians(riderYaw);
+            double rad = Math.toRadians(getYRot()); // 移動相對「船頭」（=船的 yaw）
             Vec3 forwardDir = new Vec3(-Math.sin(rad), 0, Math.cos(rad));
             Vec3 rightDir = new Vec3(Math.cos(rad), 0, Math.sin(rad));
             Vec3 target = forwardDir.scale(inForward).add(rightDir.scale(inStrafe)).add(0, inVertical, 0);
@@ -155,6 +161,15 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         setDeltaMovement(0, 0, 0); // 自己用 setPos 移動，不靠 vanilla 速度
     }
 
+    /** 把 local 方塊角落依船 yaw 繞核心中心旋轉後的世界座標（僅 X/Z 平面，Y 不變）。 */
+    public Vec3 rotatedWorldCorner(int lx, int ly, int lz) {
+        double rad = Math.toRadians(getYRot());
+        double cos = Math.cos(rad), sin = Math.sin(rad);
+        double rx = lx * cos - lz * sin;
+        double rz = lx * sin + lz * cos;
+        return new Vec3(getX() + rx, getY() + ly, getZ() + rz);
+    }
+
     /**
      * 船撞地形：逐軸檢查移動後有沒有船方塊會卡進世界固體方塊，會的話該軸歸零（沿牆滑）。
      * 船方塊不在世界裡（在 entity），所以 noCollision 只會撞到真實地形，船自己不互撞。
@@ -169,7 +184,9 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     private boolean blockedBy(double dx, double dy, double dz) {
         for (BlockPos local : contraption.getBlocks().keySet()) {
-            double x0 = getX() + local.getX() + dx, y0 = getY() + local.getY() + dy, z0 = getZ() + local.getZ() + dz;
+            // 用旋轉後的世界角落（船會轉），碰撞用軸對齊 1x1 近似（夠用，不做 OBB）
+            Vec3 c = rotatedWorldCorner(local.getX(), local.getY(), local.getZ());
+            double x0 = c.x + dx, y0 = c.y + dy, z0 = c.z + dz;
             AABB box = new AABB(x0, y0, z0, x0 + 1, y0 + 1, z0 + 1).deflate(0.06);
             int minX = Mth.floor(box.minX), maxX = Mth.floor(box.maxX);
             int minY = Mth.floor(box.minY), maxY = Mth.floor(box.maxY);
@@ -229,14 +246,29 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         return !isRemoved();
     }
 
-    /** 收船：把 contraption 方塊寫回世界（snap 到整數格）並 discard 自己。被擋則不動，回傳 false。 */
+    /**
+     * 收船：把 contraption 方塊寫回世界並 discard。船會轉，所以 yaw snap 到最近的 90°，
+     * 方塊位置與 blockstate 一起套用該旋轉（不能用任意角度放回方塊）。被擋則不動，回傳 false。
+     */
     public boolean disassemble() {
         if (level().isClientSide || contraption == null) return false;
+        Rotation rotation = snapRotation(getYRot());
         BlockPos target = new BlockPos(
                 Mth.floor(getX() + 0.5), Mth.floor(getY() + 0.5), Mth.floor(getZ() + 0.5));
-        if (!contraption.addToWorld(level(), target)) return false;
+        if (!contraption.addToWorld(level(), target, rotation)) return false;
         discard();
         return true;
+    }
+
+    /** 把連續 yaw snap 到最近的 90° 對應的 Rotation。 */
+    private static Rotation snapRotation(float yaw) {
+        int steps = Math.floorMod(Math.round(yaw / 90f), 4);
+        return switch (steps) {
+            case 1 -> Rotation.CLOCKWISE_90;
+            case 2 -> Rotation.CLOCKWISE_180;
+            case 3 -> Rotation.COUNTERCLOCKWISE_90;
+            default -> Rotation.NONE;
+        };
     }
 
     @Nullable
@@ -257,8 +289,18 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         int idx = getPassengers().indexOf(passenger);
         if (idx < 0 || idx >= seats.size()) idx = 0;
         BlockPos seat = seats.get(idx);
-        callback.accept(passenger, getX() + seat.getX() + 0.5, getY() + seat.getY() + 1.0,
-                getZ() + seat.getZ() + 0.5);
+        Vec3 c = rotatedWorldCorner(seat.getX(), seat.getY(), seat.getZ()); // 座位也跟著船轉
+        callback.accept(passenger, c.x + 0.5, c.y + 1.0, c.z + 0.5);
+        // 非駕駛乘客的視角跟著船轉（駕駛自己控制視角、船跟著駕駛轉，不強制）
+        if (passenger != getControllingPassenger()) {
+            float dYaw = getYRot() - yRotO;
+            if (dYaw != 0) {
+                passenger.setYRot(passenger.getYRot() + dYaw);
+                if (passenger instanceof LivingEntity living) {
+                    living.setYHeadRot(living.getYHeadRot() + dYaw);
+                }
+            }
+        }
     }
 
     /** 座位清單（local 座標，確定性順序）：核心(0,0,0) 在 index 0=駕駛，其餘為座椅方塊依座標排序。 */

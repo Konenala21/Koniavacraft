@@ -13,6 +13,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate.StructureBlockInfo;
@@ -162,20 +163,20 @@ public class ShipContraption {
     }
 
     /**
-     * 把飛船方塊寫回世界（收船）。targetAnchor 為核心要放回的位置，其餘方塊放在 targetAnchor + localPos。
-     * 先檢查所有目標格都可放（空氣/可替換），有任何一格被擋就整批不寫、回傳 false。
+     * 把飛船方塊寫回世界（收船），套用 rotation（船會轉，yaw snap 到 90° 後的 Rotation）。
+     * 位置與 blockstate 一起旋轉。先檢查所有目標格都可放，有一格被擋就整批不寫、回傳 false。
      * 箱子/機器用 loadWithComponents 還原內容物（NBT 補回 x/y/z）。
      */
-    public boolean addToWorld(Level world, BlockPos targetAnchor) {
+    public boolean addToWorld(Level world, BlockPos targetAnchor, Rotation rotation) {
         for (BlockPos localPos : blocks.keySet()) {
-            BlockPos wp = localPos.offset(targetAnchor);
+            BlockPos wp = rotatedTarget(localPos, targetAnchor, rotation);
             BlockState existing = world.getBlockState(wp);
             if (!existing.isAir() && !existing.canBeReplaced()) return false;
         }
         for (Map.Entry<BlockPos, StructureBlockInfo> e : blocks.entrySet()) {
-            BlockPos wp = e.getKey().offset(targetAnchor);
+            BlockPos wp = rotatedTarget(e.getKey(), targetAnchor, rotation);
             StructureBlockInfo info = e.getValue();
-            world.setBlock(wp, info.state(), Block.UPDATE_ALL);
+            world.setBlock(wp, info.state().rotate(rotation), Block.UPDATE_ALL);
             if (info.nbt() != null) {
                 BlockEntity be = world.getBlockEntity(wp);
                 if (be != null) {
@@ -188,6 +189,19 @@ public class ShipContraption {
             }
         }
         return true;
+    }
+
+    /** local 座標依 Rotation 旋轉後 + 錨點 = 目標世界座標（與 ShipEntity.rotatedWorldCorner 的方向一致）。 */
+    private static BlockPos rotatedTarget(BlockPos local, BlockPos anchor, Rotation rotation) {
+        int lx = local.getX(), ly = local.getY(), lz = local.getZ();
+        int rx, rz;
+        switch (rotation) {
+            case CLOCKWISE_90 -> { rx = -lz; rz = lx; }
+            case CLOCKWISE_180 -> { rx = -lx; rz = -lz; }
+            case COUNTERCLOCKWISE_90 -> { rx = lz; rz = -lx; }
+            default -> { rx = lx; rz = lz; }
+        }
+        return anchor.offset(rx, ly, rz);
     }
 
     // ── getters ──────────────────────────────────────────────────────────────

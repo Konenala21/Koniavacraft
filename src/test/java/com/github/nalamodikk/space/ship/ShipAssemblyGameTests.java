@@ -270,6 +270,7 @@ public class ShipAssemblyGameTests {
         helper.setBlock(new BlockPos(4, 3, 7), Blocks.STONE.defaultBlockState());
 
         ShipEntity[] shipRef = new ShipEntity[1];
+        double[] startZ = new double[1];
 
         helper.startSequence()
                 .thenExecute(pad::assembleShip)
@@ -281,6 +282,7 @@ public class ShipAssemblyGameTests {
                             .findFirst().orElse(null);
                     if (ship == null) { helper.fail("no ship"); return; }
                     shipRef[0] = ship;
+                    startZ[0] = ship.getZ();
                     Player p = helper.makeMockPlayer(GameType.SURVIVAL);
                     p.startRiding(ship, true);
                     ship.setControlInput(1f, 0f, 0, 0f); // yaw=0 → 朝 +z 開
@@ -289,9 +291,11 @@ public class ShipAssemblyGameTests {
                 .thenExecute(() -> {
                     ShipEntity ship = shipRef[0];
                     if (ship == null) { helper.fail("ship lost"); return; }
-                    // 牆在 z=7，船不該穿過去（核心起點 z=4，無碰撞會飛到 z>10）
-                    if (ship.getZ() > 6.5)
-                        helper.fail("ship flew through the wall (z=" + ship.getZ() + ")");
+                    // 牆在核心前方（核心 z=4、filler z=5、牆 z=7）。撞牆應在位移 ~1 內停。
+                    // 用相對位移判斷（不是絕對座標）。無碰撞會飛走 >5。
+                    double dz = ship.getZ() - startZ[0];
+                    if (dz > 2.5)
+                        helper.fail("ship flew through the wall (dz=" + dz + ")");
                 })
                 .thenSucceed();
     }

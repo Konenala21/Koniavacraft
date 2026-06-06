@@ -4,6 +4,7 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.space.ship.ShipContraption;
 import com.github.nalamodikk.space.ship.ShipEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -51,6 +52,13 @@ public class ShipEntityRenderer extends EntityRenderer<ShipEntity> {
                        MultiBufferSource buffers, int packedLight) {
         ShipContraption c = entity.getContraption();
         if (c != null) {
+            // 整艘船依 yaw 旋轉（繞核心中心；實體落在核心角落故先 +0.5 到中心再轉）
+            float shipYaw = entity.getViewYRot(partialTick);
+            pose.pushPose();
+            pose.translate(0.5, 0, 0.5);
+            pose.mulPose(Axis.YP.rotationDegrees(-shipYaw));
+            pose.translate(-0.5, 0, -0.5);
+
             // 靜態方塊：優先用烤好的 VBO（每幀只變換）；烤失敗則退回每幀 tesselate
             boolean drewStatic = false;
             if (!entity.isMeshFailed()) {
@@ -82,6 +90,7 @@ public class ShipEntityRenderer extends EntityRenderer<ShipEntity> {
                 beRenderer.render(e.getValue(), partialTick, pose, buffers);
                 pose.popPose();
             }
+            pose.popPose(); // 結束整艘船的 yaw 旋轉
         }
         super.render(entity, yaw, partialTick, pose, buffers, packedLight);
     }
