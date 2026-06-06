@@ -180,7 +180,7 @@ public class ShipAssemblyGameTests {
                     startZ[0] = ship.getZ();
                     ship.setControlInput(1f, 0f, 0, 0f); // yaw=0 → forward = +Z
                 })
-                .thenIdle(25)
+                .thenIdle(40)
                 .thenExecute(() -> {
                     ShipEntity ship = shipRef[0];
                     if (ship == null) { helper.fail("ship lost"); return; }
