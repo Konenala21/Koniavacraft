@@ -129,10 +129,11 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             return;
         }
 
-        // 載具移動由「控制者的 client」算（vanilla 模型：駕駛 client 是位置權威，
-        // 會自動送 ServerboundMoveVehiclePacket 同步給 server）。在 server 端算會被
-        // client 送來的位置覆蓋，等於白算。其餘端（server/旁觀 client）只跟同步位置。
-        if (isControlledByLocalInstance()) {
+        // 載具移動由「控制者的 client」算（vanilla 模型：駕駛 client 是位置權威，自動送
+        // ServerboundMoveVehiclePacket 同步給 server）。真實遊戲 server 也跑這段但輸入=0
+        // （輸入只在駕駛 client 本地設），等於 no-op，會被 client 的位置覆蓋。
+        // gametest 沒有真 client（mock player 非 local），就由 server 端用測試設的輸入算移動。
+        if (isControlledByLocalInstance() || !level().isClientSide) {
             if (!(getControllingPassenger() instanceof Player)) {
                 inForward = 0; inStrafe = 0; inVertical = 0;
             }

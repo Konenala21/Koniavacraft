@@ -519,7 +519,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
                     .face(Direction.WEST).uvs(11, 0, 14, 9).texture("#t").end()
                     .face(Direction.EAST).uvs(11, 0, 14, 9).texture("#t").end()
                     .end();
-        simpleBlock(ModBlocks.SHIP_SEAT.get(), seat);
+        // 依 FACING 旋轉（椅背在 north z 高側，預設面向 = 模型朝 south）
+        horizontalBlock(ModBlocks.SHIP_SEAT.get(), seat);
         simpleBlockItem(ModBlocks.SHIP_SEAT.get(), seat);
     }
 
