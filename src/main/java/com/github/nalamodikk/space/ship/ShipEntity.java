@@ -1,5 +1,6 @@
 package com.github.nalamodikk.space.ship;
 
+import com.github.nalamodikk.common.network.packet.server.ship.ShipMovePacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -156,6 +157,12 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
                 setPos(getX() + allowed.x, getY() + allowed.y, getZ() + allowed.z);
             }
             shipVel = allowed; // 撞到的軸不保留動量
+
+            // 駕駛 client 把位置/yaw 同步給 server（vanilla MoveVehiclePacket 對自訂載具不可靠，
+            // 不同步會造成下船彈回組裝點、拆解無視距離）
+            if (level().isClientSide) {
+                ShipMovePacket.sendToServer(getX(), getY(), getZ(), getYRot());
+            }
         }
         setDeltaMovement(0, 0, 0); // 自己用 setPos 移動，不靠 vanilla 速度
     }
