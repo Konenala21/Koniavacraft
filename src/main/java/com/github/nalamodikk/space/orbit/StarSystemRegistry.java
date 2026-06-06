@@ -43,9 +43,9 @@ public final class StarSystemRegistry {
                 new Vector3f(0.18f, 0.42f, 0.68f), new Vector3f(0.35f, 0.62f, 1.0f),
                 new Vector3f(0f), 0f, 1.4f, 0.08f, 1.0f, "", 0,0,0),
 
-            // 月球：0.273x 地球，繞地球（降落 → MOON 維度）
+            // 月球：0.273x 地球，繞地球（降落 → MOON 維度）；軌道 700 改善月地間隔
             new PlanetDef("moon", ModDimensions.MOON,
-                200f, 27.3f, 200f, 21f,
+                700f, 27.3f, 200f, 21f,
                 PlanetRenderer.Type.ATMOSPHERE,
                 new Vector3f(0.52f, 0.52f, 0.54f), new Vector3f(0.70f, 0.75f, 0.80f),
                 new Vector3f(0f), 0f, 0.3f, 0.008f, 27.3f, "earth", 0,0,0),

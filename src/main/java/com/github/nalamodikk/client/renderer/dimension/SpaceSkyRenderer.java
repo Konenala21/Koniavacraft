@@ -34,6 +34,9 @@ public class SpaceSkyRenderer {
         boolean space = mc.level.dimension().equals(ModDimensions.SPACE);
         boolean moon  = mc.level.dimension().equals(ModDimensions.MOON);
         if (!space && !moon) return;
+        // 月球地底/中空不畫星空
+        if (moon && mc.player != null
+                && mc.player.getY() < com.github.nalamodikk.dimension.MoonChunkGenerator.CRUST_BOTTOM) return;
 
         if (!initialized) {
             init();

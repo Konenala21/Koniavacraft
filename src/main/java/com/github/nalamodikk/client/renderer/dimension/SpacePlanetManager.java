@@ -50,6 +50,8 @@ public class SpacePlanetManager {
         boolean inSpace = mc.level.dimension().equals(ModDimensions.SPACE);
         boolean onMoon  = mc.level.dimension().equals(ModDimensions.MOON);
         if (!inSpace && !onMoon) return;
+        // 月球地底/中空（地殼底以下）不畫天空，否則在星球內部看到星空很怪
+        if (onMoon && mc.player.getY() < com.github.nalamodikk.dimension.MoonChunkGenerator.CRUST_BOTTOM) return;
 
         textureUploadsThisFrame = 0; // 每幀重置上傳計數
         if (!initialized) { init(); initCooldown = 3; return; }
