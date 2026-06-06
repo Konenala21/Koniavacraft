@@ -9,6 +9,7 @@ import com.github.nalamodikk.common.entity.SpellProjectileEntity;
 import com.github.nalamodikk.common.entity.PlayerCloneEntity;
 import com.github.nalamodikk.common.entity.NaraPhantomEntity;
 import com.github.nalamodikk.common.entity.TrainingDummyEntity;
+import com.github.nalamodikk.space.ship.ShipEntity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.neoforged.bus.api.IEventBus;
@@ -95,6 +96,16 @@ public class ModEntities {
                             .sized(0.7F, 1.9F)
                             .clientTrackingRange(10)
                             .build(KoniavacraftMod.MOD_ID + ":training_dummy")
+            );
+
+    // 飛船實體（承載 contraption，組裝後生成）。範圍大、要看遠一點，clientTrackingRange 拉高
+    public static final DeferredHolder<EntityType<?>, EntityType<ShipEntity>> SHIP =
+            ENTITY_TYPES.register("ship", () ->
+                    EntityType.Builder.<ShipEntity>of(ShipEntity::new, MobCategory.MISC)
+                            .sized(1.0F, 1.0F)
+                            .clientTrackingRange(16)
+                            .updateInterval(3)
+                            .build(KoniavacraftMod.MOD_ID + ":ship")
             );
 
     @SubscribeEvent

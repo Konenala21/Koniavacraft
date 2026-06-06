@@ -11,6 +11,7 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -144,6 +145,19 @@ public class ShipContraption {
             CompoundTag nbt = e.contains("Nbt") ? e.getCompound("Nbt") : null;
             blocks.put(pos, new StructureBlockInfo(pos, state, nbt));
             bounds = bounds.minmax(new AABB(pos));
+        }
+    }
+
+    /**
+     * 把組裝到的方塊從世界移除（換成空氣），改由 ShipEntity 承載。
+     * 用 UPDATE_SUPPRESS_DROPS 避免箱子/機器把內容物噴一地（內容物已存在 contraption NBT 裡）。
+     */
+    public void removeFromWorld(Level world) {
+        int flags = Block.UPDATE_CLIENTS | Block.UPDATE_SUPPRESS_DROPS | Block.UPDATE_KNOWN_SHAPE;
+        for (BlockPos localPos : blocks.keySet()) {
+            BlockPos wp = localPos.offset(anchor);
+            world.removeBlockEntity(wp);
+            world.setBlock(wp, Blocks.AIR.defaultBlockState(), flags);
         }
     }
 

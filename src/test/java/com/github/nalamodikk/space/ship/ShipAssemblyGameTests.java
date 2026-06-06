@@ -2,12 +2,17 @@ package com.github.nalamodikk.space.ship;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.register.ModBlocks;
+import com.github.nalamodikk.register.ModEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+
+import java.util.List;
 
 /**
  * 飛船組裝台掃描邏輯的 GameTest（純 server 邏輯：底座 footprint、組裝架高度、找核心、
@@ -109,6 +114,34 @@ public class ShipAssemblyGameTests {
         expect(helper, pad, ShipAssemblyPadBlockEntity.DATA_STATUS,
                 ShipAssemblyPadBlockEntity.STATUS_MULTI_CORE, "status");
         helper.succeed();
+    }
+
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 40)
+    public static void assembleShipRemovesBlocksAndSpawnsEntity(GameTestHelper helper) {
+        ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);
+        helper.setBlock(new BlockPos(4, 2, 4), core());
+        helper.setBlock(new BlockPos(3, 2, 4), filler());
+        helper.setBlock(new BlockPos(5, 2, 4), filler());
+
+        helper.startSequence()
+                .thenExecute(pad::assembleShip)
+                .thenIdle(2) // addFreshEntity 下一 tick 才進世界
+                .thenExecute(() -> {
+                    expect(helper, pad, ShipAssemblyPadBlockEntity.DATA_STATUS,
+                            ShipAssemblyPadBlockEntity.STATUS_LAUNCHED, "status");
+                    expect(helper, pad, ShipAssemblyPadBlockEntity.DATA_COUNT, 3, "count");
+                    helper.assertBlockPresent(Blocks.AIR, new BlockPos(4, 2, 4));
+                    helper.assertBlockPresent(Blocks.AIR, new BlockPos(3, 2, 4));
+                    helper.assertBlockPresent(Blocks.AIR, new BlockPos(5, 2, 4));
+                    // 直接查 level 的飛船實體（assertEntityPresent 的 bounds 判定不可靠）
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(24);
+                    List<ShipEntity> ships = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area);
+                    if (ships.isEmpty()) helper.fail("no ship entity spawned");
+                    else if (ships.get(0).getContraption() == null
+                            || ships.get(0).getContraption().size() != 3)
+                        helper.fail("ship contraption size wrong");
+                })
+                .thenSucceed();
     }
 
     @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 20)

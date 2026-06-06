@@ -1,6 +1,7 @@
 package com.github.nalamodikk.space.ship;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.network.packet.server.ship.ShipAssemblePacket;
 import com.github.nalamodikk.common.network.packet.server.ship.ShipScanPacket;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -31,6 +32,11 @@ public class ShipAssemblyPadScreen extends AbstractContainerScreen<ShipAssemblyP
                 b -> ShipScanPacket.sendToServer(menu.getPadPos()))
                 .bounds(leftPos + 20, topPos + 170, 90, 20)
                 .build());
+        addRenderableWidget(Button.builder(
+                Component.translatable("screen.koniava.ship_assembly_pad.assemble"),
+                b -> ShipAssemblePacket.sendToServer(menu.getPadPos()))
+                .bounds(leftPos + 120, topPos + 170, 90, 20)
+                .build());
     }
 
     @Override
@@ -60,13 +66,15 @@ public class ShipAssemblyPadScreen extends AbstractContainerScreen<ShipAssemblyP
             case ShipAssemblyPadBlockEntity.STATUS_FAILED -> "failed";
             case ShipAssemblyPadBlockEntity.STATUS_NO_BASE -> "no_base";
             case ShipAssemblyPadBlockEntity.STATUS_TOO_BIG -> "too_big";
+            case ShipAssemblyPadBlockEntity.STATUS_LAUNCHED -> "launched";
             default -> "idle";
         };
         return Component.translatable("screen.koniava.ship_assembly_pad.status." + key);
     }
 
     private static int statusColor(int status) {
-        return status == ShipAssemblyPadBlockEntity.STATUS_OK ? 0x2E7D32 : 0xB71C1C;
+        return (status == ShipAssemblyPadBlockEntity.STATUS_OK
+                || status == ShipAssemblyPadBlockEntity.STATUS_LAUNCHED) ? 0x2E7D32 : 0xB71C1C;
     }
 
     @Override

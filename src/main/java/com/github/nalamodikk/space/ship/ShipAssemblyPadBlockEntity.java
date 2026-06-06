@@ -1,8 +1,10 @@
 package com.github.nalamodikk.space.ship;
 
 import com.github.nalamodikk.register.ModBlockEntities;
+import com.github.nalamodikk.register.ModEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
@@ -54,6 +56,7 @@ public class ShipAssemblyPadBlockEntity extends BlockEntity implements MenuProvi
     public static final int STATUS_FAILED = 4;
     public static final int STATUS_NO_BASE = 5;     // 旁邊沒有相連的組裝底座
     public static final int STATUS_TOO_BIG = 6;     // 底座超過 footprint 上限
+    public static final int STATUS_LAUNCHED = 7;    // 已組裝出航（方塊變成飛船實體）
 
     private final ContainerData data = new SimpleContainerData(6);
 
@@ -65,10 +68,11 @@ public class ShipAssemblyPadBlockEntity extends BlockEntity implements MenuProvi
         super(ModBlockEntities.SHIP_ASSEMBLY_PAD.get(), pos, state);
     }
 
-    /** 掃描：讀結構算盒 → 找核心 → 組裝，結果寫進 ContainerData（server 端）。 */
-    public void scan() {
-        if (level == null || level.isClientSide) return;
-
+    /**
+     * 讀發射台結構算建造盒：底座 footprint + 組裝架高度。成功時設好 boxMin/boxMax 並回填盒尺寸，
+     * 回傳 true；失敗（沒底座/太大）時設好狀態並回傳 false。
+     */
+    private boolean computeBox() {
         int baseY = worldPosition.getY();
 
         // 1) flood-fill 與組裝台同層、相連的底座（水平 4 鄰），取外接矩形
@@ -78,14 +82,14 @@ public class ShipAssemblyPadBlockEntity extends BlockEntity implements MenuProvi
             BlockPos n = worldPosition.relative(d);
             if (level.getBlockState(n).getBlock() instanceof ShipAssemblyBaseBlock) q.add(n);
         }
-        if (q.isEmpty()) { setNoBox(STATUS_NO_BASE); return; }
+        if (q.isEmpty()) { setNoBox(STATUS_NO_BASE); return false; }
 
         int minX = Integer.MAX_VALUE, maxX = Integer.MIN_VALUE;
         int minZ = Integer.MAX_VALUE, maxZ = Integer.MIN_VALUE;
         while (!q.isEmpty()) {
             BlockPos p = q.poll();
             if (!base.add(p)) continue;
-            if (base.size() > MAX_BASE_BLOCKS) { setNoBox(STATUS_TOO_BIG); return; }
+            if (base.size() > MAX_BASE_BLOCKS) { setNoBox(STATUS_TOO_BIG); return false; }
             minX = Math.min(minX, p.getX()); maxX = Math.max(maxX, p.getX());
             minZ = Math.min(minZ, p.getZ()); maxZ = Math.max(maxZ, p.getZ());
             for (Direction d : Direction.Plane.HORIZONTAL) {
@@ -96,7 +100,7 @@ public class ShipAssemblyPadBlockEntity extends BlockEntity implements MenuProvi
         }
         if (maxX - minX + 1 > MAX_FOOTPRINT || maxZ - minZ + 1 > MAX_FOOTPRINT) {
             setNoBox(STATUS_TOO_BIG);
-            return;
+            return false;
         }
 
         // 2) 高度 = footprint 內最高組裝架柱（到底座的高度）；沒有就用預設
@@ -113,38 +117,81 @@ public class ShipAssemblyPadBlockEntity extends BlockEntity implements MenuProvi
 
         boxMin = new BlockPos(minX, baseY + 1, minZ);
         boxMax = new BlockPos(maxX, baseY + height, maxZ);
-        int boxW = maxX - minX + 1, boxD = maxZ - minZ + 1;
+        data.set(DATA_BOX_W, maxX - minX + 1);
+        data.set(DATA_BOX_H, height);
+        data.set(DATA_BOX_D, maxZ - minZ + 1);
+        return true;
+    }
 
-        // 3) 找盒內飛船核心
+    /** 盒內飛船核心：回傳唯一核心位置，0 或多個回傳 null 並把數量寫進 coreCountOut[0]。 */
+    @Nullable
+    private BlockPos findSingleCore(int[] coreCountOut) {
         BlockPos core = null;
-        int coreCount = 0;
+        int count = 0;
         for (BlockPos p : BlockPos.betweenClosed(boxMin, boxMax)) {
             if (level.getBlockState(p).getBlock() instanceof ShipCoreBlock) {
-                coreCount++;
+                count++;
                 core = p.immutable();
             }
         }
-        if (coreCount == 0) { setResult(0, 0, STATUS_NO_CORE, boxW, height, boxD); return; }
-        if (coreCount > 1)  { setResult(0, coreCount, STATUS_MULTI_CORE, boxW, height, boxD); return; }
+        coreCountOut[0] = count;
+        return count == 1 ? core : null;
+    }
 
-        // 4) 在盒內組裝
+    /** 掃描：讀結構算盒 → 找核心 → 試組裝，結果寫進 ContainerData（不改世界）。 */
+    public void scan() {
+        if (level == null || level.isClientSide) return;
+        if (!computeBox()) return;
+
+        int[] cc = new int[1];
+        BlockPos core = findSingleCore(cc);
+        if (cc[0] == 0) { data.set(DATA_COUNT, 0); data.set(DATA_CORES, 0); setStatus(STATUS_NO_CORE); return; }
+        if (cc[0] > 1)  { data.set(DATA_COUNT, 0); data.set(DATA_CORES, cc[0]); setStatus(STATUS_MULTI_CORE); return; }
+
         ShipContraption ship = new ShipContraption();
         boolean ok = ship.assemble(level, core, boxMin, boxMax);
-        setResult(ok ? ship.size() : 0, 1, ok ? STATUS_OK : STATUS_FAILED, boxW, height, boxD);
+        data.set(DATA_COUNT, ok ? ship.size() : 0);
+        data.set(DATA_CORES, 1);
+        setStatus(ok ? STATUS_OK : STATUS_FAILED);
+    }
+
+    /** 組裝出航：算盒 → 組裝 → 移除世界方塊 → 生成 ShipEntity（server 端）。 */
+    public void assembleShip() {
+        if (!(level instanceof ServerLevel server)) return;
+        if (!computeBox()) return;
+
+        int[] cc = new int[1];
+        BlockPos core = findSingleCore(cc);
+        if (cc[0] == 0) { data.set(DATA_CORES, 0); setStatus(STATUS_NO_CORE); return; }
+        if (cc[0] > 1)  { data.set(DATA_CORES, cc[0]); setStatus(STATUS_MULTI_CORE); return; }
+
+        ShipContraption ship = new ShipContraption();
+        if (!ship.assemble(server, core, boxMin, boxMax)) {
+            data.set(DATA_CORES, 1);
+            setStatus(STATUS_FAILED);
+            return;
+        }
+
+        ship.removeFromWorld(server);
+        ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), server);
+        entity.setContraption(ship);
+        entity.setPos(core.getX() + 0.5, core.getY(), core.getZ() + 0.5);
+        server.addFreshEntity(entity);
+
+        data.set(DATA_COUNT, ship.size());
+        data.set(DATA_CORES, 1);
+        setStatus(STATUS_LAUNCHED);
     }
 
     private void setNoBox(int status) {
         boxMin = null; boxMax = null;
-        setResult(0, 0, status, 0, 0, 0);
+        data.set(DATA_BOX_W, 0); data.set(DATA_BOX_H, 0); data.set(DATA_BOX_D, 0);
+        data.set(DATA_COUNT, 0); data.set(DATA_CORES, 0);
+        setStatus(status);
     }
 
-    private void setResult(int count, int cores, int status, int boxW, int boxH, int boxD) {
-        data.set(DATA_COUNT, count);
-        data.set(DATA_CORES, cores);
+    private void setStatus(int status) {
         data.set(DATA_STATUS, status);
-        data.set(DATA_BOX_W, boxW);
-        data.set(DATA_BOX_H, boxH);
-        data.set(DATA_BOX_D, boxD);
         setChanged();
     }
 
