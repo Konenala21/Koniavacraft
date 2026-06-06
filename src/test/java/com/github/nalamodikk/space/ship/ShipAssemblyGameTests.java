@@ -6,6 +6,8 @@ import com.github.nalamodikk.register.ModEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -125,7 +127,7 @@ public class ShipAssemblyGameTests {
 
         helper.startSequence()
                 .thenExecute(pad::assembleShip)
-                .thenIdle(2) // addFreshEntity 下一 tick 才進世界
+                .thenIdle(5) // addFreshEntity 下一 tick 才進世界（多測試負載下拉長保險）
                 .thenExecute(() -> {
                     expect(helper, pad, ShipAssemblyPadBlockEntity.DATA_STATUS,
                             ShipAssemblyPadBlockEntity.STATUS_LAUNCHED, "status");
@@ -140,6 +142,46 @@ public class ShipAssemblyGameTests {
                     else if (ships.get(0).getContraption() == null
                             || ships.get(0).getContraption().size() != 3)
                         helper.fail("ship contraption size wrong");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 80)
+    public static void shipFliesForwardWithInput(GameTestHelper helper) {
+        ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);
+        helper.setBlock(new BlockPos(4, 2, 4), core());
+        helper.setBlock(new BlockPos(4, 2, 5), filler());
+
+        ShipEntity[] shipRef = new ShipEntity[1];
+        double[] startZ = new double[1];
+
+        helper.startSequence()
+                .thenExecute(pad::assembleShip)
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(32);
+                    List<ShipEntity> ships = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area);
+                    if (ships.isEmpty()) { helper.fail("no ship spawned"); return; }
+                    ShipEntity ship = ships.get(0);
+                    shipRef[0] = ship;
+                    Player p = helper.makeMockPlayer(GameType.SURVIVAL);
+                    p.setPos(ship.getX() + 0.5, ship.getY() + 1, ship.getZ() + 0.5);
+                    p.startRiding(ship, true);
+                    startZ[0] = ship.getZ();
+                    ship.setControlInput(1f, 0f, 0, 0f); // yaw=0 → forward = +Z
+                })
+                .thenIdle(25)
+                .thenExecute(() -> {
+                    ShipEntity ship = shipRef[0];
+                    if (ship == null) { helper.fail("ship lost"); return; }
+                    double dz = ship.getZ() - startZ[0];
+                    if (dz < 1.0) helper.fail("ship did not fly forward (dz=" + dz + ")");
+                    if (!(ship.getControllingPassenger() instanceof Player p)) {
+                        helper.fail("rider lost");
+                        return;
+                    }
+                    if (Math.abs(p.getZ() - (ship.getZ() + 0.5)) > 1.5)
+                        helper.fail("rider did not move with the ship");
                 })
                 .thenSucceed();
     }
