@@ -174,10 +174,14 @@ void main(){
             float s=dA/arcSpan;
             if(s<0.0||s>1.0) continue;
 
-            float archH=peakH*sin(3.14159*s);
+            // 不規則拱形：用噪聲擾動高度，弧線不再是完美拋物線（飄動電漿）
+            float warp=(fbm(vec3(s*4.0, fi*3.0, iTime*0.03))-0.5)*0.35  // 大尺度起伏
+                      +(fbm(vec3(s*11.0, fi*5.0, iTime*0.08))-0.5)*0.15; // 細節抖動
+            float archH=peakH*(sin(3.14159*s)*(1.0+warp));
             float dH=promZone-archH;
-            float thick=(0.03+0.015*sin(3.14159*s));
-            float wisp=0.6+0.4*fbm(vec3(s*7.0, promZone*6.0-iTime*0.05, fi)); // 紊流也放慢
+            // 管壁厚度也隨機，不均勻
+            float thick=(0.03+0.015*sin(3.14159*s))*(0.7+0.6*fbm(vec3(s*6.0,fi,iTime*0.05)));
+            float wisp=0.55+0.45*fbm(vec3(s*9.0, promZone*7.0-iTime*0.06, fi)); // 絲狀紊流
             float tube=exp(-(dH*dH)/(thick*thick))*wisp;
             vec3 pc=mix(vec3(1.0,0.55,0.12), vec3(1.0,0.28,0.05), clamp(promZone/peakH,0.0,1.0));
             promCol+=pc*tube;

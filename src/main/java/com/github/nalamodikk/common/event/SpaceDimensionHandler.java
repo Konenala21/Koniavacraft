@@ -22,6 +22,14 @@ public class SpaceDimensionHandler {
         if (player.isNoGravity() != inSpace) {
             player.setNoGravity(inSpace);
         }
+
+        // 太空維度旁觀者模式：飛行加速（真實尺度太大，原速跑不動）
+        var abilities = player.getAbilities();
+        float want = (inSpace && player.isSpectator()) ? 0.8f : 0.05f;
+        if (Math.abs(abilities.getFlyingSpeed() - want) > 1e-4f) {
+            abilities.setFlyingSpeed(want);
+            if (!player.level().isClientSide) player.onUpdateAbilities();
+        }
     }
 
     // 進入太空維度時，傳送到地球軌道附近 (1500, 64, 0)
@@ -30,7 +38,7 @@ public class SpaceDimensionHandler {
         if (!event.getTo().equals(ModDimensions.SPACE)) return;
         Player player = event.getEntity();
         if (!event.getFrom().equals(ModDimensions.SPACE)) {
-            player.teleportTo(1500.0, 64.0, 0.0);
+            player.teleportTo(3000.0, 64.0, 0.0);
         }
     }
 
