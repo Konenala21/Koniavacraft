@@ -67,7 +67,12 @@ public class ModBlockTagProvider extends BlockTagsProvider {
         this.tag(BlockTags.MINEABLE_WITH_PICKAXE)
                 .add(ModBlocks.CRACKED_MANA_BRICKS.get())
                 .add(ModBlocks.MOSSY_MANA_BRICKS.get())
-                .add(ModBlocks.RUINED_MANA_PEDESTAL.get());
+                .add(ModBlocks.RUINED_MANA_PEDESTAL.get())
+                .add(ModBlocks.SHIP_CORE.get())
+                .add(ModBlocks.SHIP_ASSEMBLY_PAD.get())
+                .add(ModBlocks.SHIP_ASSEMBLY_BASE.get())
+                .add(ModBlocks.SHIP_ASSEMBLY_GANTRY.get())
+                .add(ModBlocks.SHIP_SEAT.get());
 
         this.tag(BlockTags.MINEABLE_WITH_SHOVEL)
                 .add(ModBlocks.MANA_GRASS_BLOCK.get())
