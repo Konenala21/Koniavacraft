@@ -143,13 +143,21 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
             shipVel = shipVel.add(target.subtract(shipVel).scale(ACCEL));
             if (shipVel.lengthSqr() < 1e-6) shipVel = Vec3.ZERO;
-            if (shipVel.lengthSqr() > 0) {
-                Vec3 allowed = resolveTerrain(shipVel); // 撞地形的軸歸零（會沿牆滑）
-                if (allowed.lengthSqr() > 0) {
-                    setPos(getX() + allowed.x, getY() + allowed.y, getZ() + allowed.z);
-                }
-                shipVel = allowed; // 撞到的軸不保留動量
+            Vec3 allowed = resolveTerrain(shipVel); // 撞地形的軸歸零（會沿牆滑）
+            // 診斷 log：有駕駛時每秒印一次輸入/速度，定位「動不了」卡在哪
+            boolean hasDriver = getControllingPassenger() instanceof Player;
+            if (hasDriver && tickCount % 20 == 0
+                    && (inForward != 0 || inStrafe != 0 || inVertical != 0 || shipVel.lengthSqr() > 1e-6)) {
+                com.github.nalamodikk.KoniavacraftMod.LOGGER.info(
+                        "[Ship] in(f={},s={},v={}) yaw={} vel={} allowed={}",
+                        inForward, inStrafe, inVertical, riderYaw,
+                        String.format("%.3f,%.3f,%.3f", shipVel.x, shipVel.y, shipVel.z),
+                        String.format("%.3f,%.3f,%.3f", allowed.x, allowed.y, allowed.z));
             }
+            if (allowed.lengthSqr() > 0) {
+                setPos(getX() + allowed.x, getY() + allowed.y, getZ() + allowed.z);
+            }
+            shipVel = allowed; // 撞到的軸不保留動量
         }
         setDeltaMovement(0, 0, 0); // 自己用 setPos 移動，不靠 vanilla 速度
     }
@@ -215,16 +223,9 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     @Override
     public InteractionResult interact(Player player, InteractionHand hand) {
         if (level().isClientSide) return InteractionResult.sidedSuccess(true);
-        if (player.isShiftKeyDown()) {
-            // 潛行 + 右鍵 = 收船（把方塊寫回世界）
-            if (!disassemble()) {
-                player.displayClientMessage(
-                        Component.translatable("message.koniava.ship.dock_blocked"), true);
-            }
-            return InteractionResult.CONSUME;
-        }
+        // 右鍵 = 上船（坐進下一個空位，第一個上船=駕駛）。拆解改走組裝台 GUI 的拆解按鈕
         if (getPassengers().size() < getSeats().size()) {
-            player.startRiding(this); // 坐進下一個空位（第一個上船=駕駛）
+            player.startRiding(this);
         }
         return InteractionResult.sidedSuccess(false);
     }

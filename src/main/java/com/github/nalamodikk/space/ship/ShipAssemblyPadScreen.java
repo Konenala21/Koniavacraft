@@ -33,18 +33,18 @@ public class ShipAssemblyPadScreen extends AbstractContainerScreen<ShipAssemblyP
         addRenderableWidget(Button.builder(
                 Component.translatable("screen.koniava.ship_assembly_pad.assemble"),
                 b -> ShipAssemblePacket.sendToServer(menu.getPadPos()))
-                .bounds(leftPos + 9, topPos + PANEL_H - 54, 90, 20)
+                .bounds(leftPos + 4, topPos + PANEL_H - 54, 90, 20)
                 .build());
         addRenderableWidget(Button.builder(
                 Component.translatable("screen.koniava.ship_assembly_pad.scan"),
                 b -> ShipScanPacket.sendToServer(menu.getPadPos()))
-                .bounds(leftPos + 9, topPos + PANEL_H - 30, 90, 20)
+                .bounds(leftPos + 4, topPos + PANEL_H - 30, 90, 20)
                 .build());
-        // 右側藍色面板：拆解（收回附近的飛船）
+        // 右側藍色面板：拆解（收回附近的飛船），與掃描鈕同高
         addRenderableWidget(Button.builder(
                 Component.translatable("screen.koniava.ship_assembly_pad.disassemble"),
                 b -> ShipDisassemblePacket.sendToServer(menu.getPadPos()))
-                .bounds(leftPos + 375, topPos + 95, 90, 20)
+                .bounds(leftPos + 375, topPos + PANEL_H - 30, 90, 20)
                 .build());
     }
 

@@ -42,8 +42,17 @@ public record ShipControlPacket(float forward, float strafe, int vertical, float
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
             // 只有駕駛（核心位）能控制；乘客的輸入忽略
-            if (player.getVehicle() instanceof ShipEntity ship && ship.getControllingPassenger() == player) {
-                ship.setControlInput(packet.forward(), packet.strafe(), packet.vertical(), packet.yaw());
+            if (player.getVehicle() instanceof ShipEntity ship) {
+                boolean isDriver = ship.getControllingPassenger() == player;
+                if (isDriver) {
+                    ship.setControlInput(packet.forward(), packet.strafe(), packet.vertical(), packet.yaw());
+                }
+                if ((packet.forward() != 0 || packet.strafe() != 0 || packet.vertical() != 0)
+                        && player.tickCount % 20 == 0) {
+                    com.github.nalamodikk.KoniavacraftMod.LOGGER.info(
+                            "[Ship/server] got input from player, isDriver={} f={} s={} v={}",
+                            isDriver, packet.forward(), packet.strafe(), packet.vertical());
+                }
             }
         });
     }
