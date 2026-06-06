@@ -1,8 +1,11 @@
 package com.github.nalamodikk.space.ship;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
@@ -92,10 +95,29 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     @Override
     public InteractionResult interact(Player player, InteractionHand hand) {
-        if (!level().isClientSide && getControllingPassenger() == null) {
+        if (level().isClientSide) return InteractionResult.sidedSuccess(true);
+        if (player.isShiftKeyDown()) {
+            // 潛行 + 右鍵 = 收船（把方塊寫回世界）
+            if (!disassemble()) {
+                player.displayClientMessage(
+                        Component.translatable("message.koniava.ship.dock_blocked"), true);
+            }
+            return InteractionResult.CONSUME;
+        }
+        if (getControllingPassenger() == null) {
             player.startRiding(this);
         }
-        return InteractionResult.sidedSuccess(level().isClientSide);
+        return InteractionResult.sidedSuccess(false);
+    }
+
+    /** 收船：把 contraption 方塊寫回世界（snap 到整數格）並 discard 自己。被擋則不動，回傳 false。 */
+    public boolean disassemble() {
+        if (level().isClientSide || contraption == null) return false;
+        BlockPos target = new BlockPos(
+                Mth.floor(getX() + 0.5), Mth.floor(getY() + 0.5), Mth.floor(getZ() + 0.5));
+        if (!contraption.addToWorld(level(), target)) return false;
+        discard();
+        return true;
     }
 
     @Nullable

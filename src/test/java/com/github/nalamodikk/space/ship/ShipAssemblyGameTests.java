@@ -6,7 +6,10 @@ import com.github.nalamodikk.register.ModEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -36,6 +39,12 @@ public class ShipAssemblyGameTests {
 
     /** 鋪 3x3 底座（x∈[3,5], z∈[3,5], y=1）+ 西側放組裝台 (2,1,4)。 */
     private static ShipAssemblyPadBlockEntity setupBaseAndPad(GameTestHelper helper) {
+        // 先清空建造區：收船測試用 world.setBlock 寫回的方塊不被 gametest 追蹤清理，
+        // 會殘留污染後續測試的盒，導致 scan 多算。每個測試開頭清乾淨。
+        for (int x = 2; x <= 8; x++)
+            for (int y = 2; y <= 7; y++)
+                for (int z = 2; z <= 6; z++)
+                    helper.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState());
         for (int x = 3; x <= 5; x++)
             for (int z = 3; z <= 5; z++)
                 helper.setBlock(new BlockPos(x, 1, z), base());
@@ -182,6 +191,66 @@ public class ShipAssemblyGameTests {
                     }
                     if (Math.abs(p.getZ() - (ship.getZ() + 0.5)) > 1.5)
                         helper.fail("rider did not move with the ship");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
+    public static void disassembleReturnsBlocksAndRemovesEntity(GameTestHelper helper) {
+        ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);
+        helper.setBlock(new BlockPos(4, 2, 4), core());
+        helper.setBlock(new BlockPos(3, 2, 4), filler());
+
+        helper.startSequence()
+                .thenExecute(pad::assembleShip)
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(32);
+                    List<ShipEntity> ships = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area);
+                    if (ships.isEmpty()) { helper.fail("no ship to disassemble"); return; }
+                    if (!ships.get(0).disassemble()) helper.fail("disassemble returned false");
+                })
+                .thenIdle(2)
+                .thenExecute(() -> {
+                    helper.assertBlockPresent(ModBlocks.SHIP_CORE.get(), new BlockPos(4, 2, 4));
+                    helper.assertBlockPresent(ModBlocks.MANA_BLOCK.get(), new BlockPos(3, 2, 4));
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(32);
+                    if (!helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).isEmpty())
+                        helper.fail("ship entity not removed after disassemble");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
+    public static void disassemblePreservesChestContents(GameTestHelper helper) {
+        ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);
+        helper.setBlock(new BlockPos(4, 2, 4), core());
+        helper.setBlock(new BlockPos(3, 2, 4), Blocks.CHEST.defaultBlockState());
+        if (helper.getBlockEntity(new BlockPos(3, 2, 4)) instanceof Container chest) {
+            chest.setItem(0, new ItemStack(Items.DIAMOND, 5));
+        } else {
+            helper.fail("chest BE missing");
+            return;
+        }
+
+        helper.startSequence()
+                .thenExecute(pad::assembleShip)
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(32);
+                    List<ShipEntity> ships = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area);
+                    if (ships.isEmpty()) { helper.fail("no ship"); return; }
+                    if (!ships.get(0).disassemble()) helper.fail("disassemble returned false");
+                })
+                .thenIdle(2)
+                .thenExecute(() -> {
+                    if (!(helper.getBlockEntity(new BlockPos(3, 2, 4)) instanceof Container restored)) {
+                        helper.fail("chest not restored");
+                        return;
+                    }
+                    ItemStack s = restored.getItem(0);
+                    if (!s.is(Items.DIAMOND) || s.getCount() != 5)
+                        helper.fail("chest contents lost (got " + s + ")");
                 })
                 .thenSucceed();
     }

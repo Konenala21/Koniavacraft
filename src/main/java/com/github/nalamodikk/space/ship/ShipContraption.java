@@ -161,6 +161,35 @@ public class ShipContraption {
         }
     }
 
+    /**
+     * 把飛船方塊寫回世界（收船）。targetAnchor 為核心要放回的位置，其餘方塊放在 targetAnchor + localPos。
+     * 先檢查所有目標格都可放（空氣/可替換），有任何一格被擋就整批不寫、回傳 false。
+     * 箱子/機器用 loadWithComponents 還原內容物（NBT 補回 x/y/z）。
+     */
+    public boolean addToWorld(Level world, BlockPos targetAnchor) {
+        for (BlockPos localPos : blocks.keySet()) {
+            BlockPos wp = localPos.offset(targetAnchor);
+            BlockState existing = world.getBlockState(wp);
+            if (!existing.isAir() && !existing.canBeReplaced()) return false;
+        }
+        for (Map.Entry<BlockPos, StructureBlockInfo> e : blocks.entrySet()) {
+            BlockPos wp = e.getKey().offset(targetAnchor);
+            StructureBlockInfo info = e.getValue();
+            world.setBlock(wp, info.state(), Block.UPDATE_ALL);
+            if (info.nbt() != null) {
+                BlockEntity be = world.getBlockEntity(wp);
+                if (be != null) {
+                    CompoundTag tag = info.nbt().copy();
+                    tag.putInt("x", wp.getX());
+                    tag.putInt("y", wp.getY());
+                    tag.putInt("z", wp.getZ());
+                    be.loadWithComponents(tag, world.registryAccess());
+                }
+            }
+        }
+        return true;
+    }
+
     // ── getters ──────────────────────────────────────────────────────────────
 
     public Map<BlockPos, StructureBlockInfo> getBlocks() { return blocks; }

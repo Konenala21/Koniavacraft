@@ -524,6 +524,7 @@
   "block.koniava.ship_assembly_base": "Ship Assembly Base",
   "block.koniava.ship_assembly_gantry": "Ship Assembly Gantry",
   "message.koniava.ship_core.use_pad": "Use a Ship Assembly Pad to assemble the ship.",
+  "message.koniava.ship.dock_blocked": "Cannot park here: blocks are in the way.",
   "screen.koniava.ship_assembly_pad.scan": "Scan",
   "screen.koniava.ship_assembly_pad.assemble": "Assemble",
   "screen.koniava.ship_assembly_pad.area": "Build area: %sx%sx%s",
