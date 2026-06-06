@@ -36,6 +36,7 @@ import com.github.nalamodikk.common.screen.block.shared.FallbackUpgradeMenu;
 import com.github.nalamodikk.common.screen.block.shared.UniversalConfigMenu;
 import com.github.nalamodikk.common.screen.block.shared.UpgradeMenu;
 import com.github.nalamodikk.common.screen.player.ExtraEquipmentMenu;
+import com.github.nalamodikk.space.ship.ShipAssemblyPadMenu;
 import com.github.nalamodikk.common.utils.upgrade.api.IUpgradeableMachine;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -167,6 +168,10 @@ public class ModMenuTypes {
 
     public static final DeferredHolder<MenuType<?>, MenuType<ResearchTableMenu>> RESEARCH_TABLE_MENU =
             registerMenuType("research_table", ResearchTableMenu::new);
+
+    // === 🚀 飛船組裝台菜單（無物品槽，只同步掃描結果）===
+    public static final DeferredHolder<MenuType<?>, MenuType<ShipAssemblyPadMenu>> SHIP_ASSEMBLY_PAD_MENU =
+            registerMenuType("ship_assembly_pad", (id, inv, buf) -> new ShipAssemblyPadMenu(id, inv, buf));
 
 
     /***

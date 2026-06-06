@@ -15,6 +15,7 @@ import com.github.nalamodikk.common.block.blockentity.skillencoder.SkillEncoderS
 import com.github.nalamodikk.common.screen.block.shared.UniversalConfigScreen;
 import com.github.nalamodikk.common.screen.block.shared.UpgradeScreen;
 import com.github.nalamodikk.common.screen.player.ExtraEquipmentScreen;
+import com.github.nalamodikk.space.ship.ShipAssemblyPadScreen;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -38,6 +39,7 @@ public class ModMenuScreens {
         event.register(ModMenuTypes.MANA_CHARGER_MENU.get(), ManaChargerScreen::new);
         event.register(ModMenuTypes.MANA_PLATE_PRESS_MENU.get(), ManaPlatePressScreen::new);
         event.register(ModMenuTypes.SKILL_ENCODER_MENU.get(), SkillEncoderScreen::new);
+        event.register(ModMenuTypes.SHIP_ASSEMBLY_PAD_MENU.get(), ShipAssemblyPadScreen::new);
     }
 
 }

@@ -33,7 +33,7 @@ import java.util.Set;
  */
 public class ShipContraption {
 
-    public static final int MAX_BLOCKS = 256;
+    public static final int MAX_BLOCKS = 512; // naive 渲染階段上限；之後烤 buffer + tier 再開大
 
     private final Map<BlockPos, StructureBlockInfo> blocks = new HashMap<>();
     private final Map<BlockPos, CompoundTag> updateTags = new HashMap<>();
@@ -41,17 +41,19 @@ public class ShipContraption {
     private AABB bounds = new AABB(BlockPos.ZERO);
 
     /**
-     * 從核心位置 BFS flood-fill 抓所有相連的可移動方塊（含核心本身）。
-     * 鄰居規則簡化版：6 面相連、非空氣、非液體方塊、非不可破壞，就納入。
-     * 空氣/液體會被 poll 到但不通過 isMovable，因此不再往外擴散，自然成為邊界。
+     * 從核心位置 BFS flood-fill 抓所有相連的可移動方塊（含核心本身），但**只在建造盒內擴散**。
+     * 盒由組裝台投射（min/max 含端點），盒外的地面/牆碰到也不抓；組裝台在盒下方，自然排除。
+     * 鄰居規則簡化版：6 面相連、在盒內、非空氣、非液體方塊、非不可破壞，就納入。
      *
      * @return true 組裝成功；false 超過上限或沒抓到任何方塊
      */
-    public boolean assemble(Level world, BlockPos anchorPos) {
+    public boolean assemble(Level world, BlockPos anchorPos, BlockPos boxMin, BlockPos boxMax) {
         this.anchor = anchorPos;
         this.bounds = new AABB(BlockPos.ZERO);
         blocks.clear();
         updateTags.clear();
+
+        if (!inBox(anchorPos, boxMin, boxMax)) return false;
 
         Queue<BlockPos> frontier = new ArrayDeque<>();
         Set<BlockPos> visited = new HashSet<>();
@@ -70,16 +72,26 @@ public class ShipContraption {
 
             for (Direction d : Direction.values()) {
                 BlockPos np = pos.relative(d);
-                if (!visited.contains(np)) frontier.add(np);
+                if (!visited.contains(np) && inBox(np, boxMin, boxMax)) frontier.add(np);
             }
         }
         return !blocks.isEmpty();
+    }
+
+    private static boolean inBox(BlockPos p, BlockPos min, BlockPos max) {
+        return p.getX() >= min.getX() && p.getX() <= max.getX()
+                && p.getY() >= min.getY() && p.getY() <= max.getY()
+                && p.getZ() >= min.getZ() && p.getZ() <= max.getZ();
     }
 
     private static boolean isMovable(BlockState state, Level world, BlockPos pos) {
         if (state.isAir()) return false;
         if (state.getBlock() instanceof LiquidBlock) return false;   // 水/熔岩方塊本身（waterlogged 固體仍可移動）
         if (state.getDestroySpeed(world, pos) < 0) return false;     // 不可破壞（基岩等）
+        // 發射台結構（底座/組裝架/組裝台）是鷹架，不算飛船的一部分，當邊界
+        if (state.getBlock() instanceof ShipAssemblyBaseBlock
+                || state.getBlock() instanceof ShipAssemblyGantryBlock
+                || state.getBlock() instanceof ShipAssemblyPadBlock) return false;
         return true;
     }
 

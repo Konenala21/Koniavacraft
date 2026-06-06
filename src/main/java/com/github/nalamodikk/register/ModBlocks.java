@@ -22,6 +22,9 @@ import com.github.nalamodikk.common.block.normal.DeepManaSoilBlock;
 import com.github.nalamodikk.common.block.normal.ManaBloomBlock;
 import com.github.nalamodikk.common.block.normal.ManaGrassBlock;
 import com.github.nalamodikk.common.block.normal.ManaSoilBlock;
+import com.github.nalamodikk.space.ship.ShipAssemblyBaseBlock;
+import com.github.nalamodikk.space.ship.ShipAssemblyGantryBlock;
+import com.github.nalamodikk.space.ship.ShipAssemblyPadBlock;
 import com.github.nalamodikk.space.ship.ShipCoreBlock;
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.item.BlockItem;
@@ -226,10 +229,25 @@ public class ModBlocks {
                     .strength(3.0f).sound(SoundType.STONE).requiresCorrectToolForDrops()
                     .lightLevel(state -> 8).noOcclusion()));
 
-    // ── 飛船核心（M1：右鍵組裝，flood-fill 掃相連方塊回報）─────────────────
+    // ── 飛船核心（駕駛/錨點，會跟船走；用組裝台組裝）─────────────────────
     public static final DeferredBlock<ShipCoreBlock> SHIP_CORE = registerBlock("ship_core",
             () -> new ShipCoreBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL)
                     .strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops()));
+
+    // ── 飛船組裝台（控制台，右鍵開 GUI 掃描/組裝）───────────────────────
+    public static final DeferredBlock<ShipAssemblyPadBlock> SHIP_ASSEMBLY_PAD = registerBlock("ship_assembly_pad",
+            () -> new ShipAssemblyPadBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL)
+                    .strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops()));
+
+    // ── 飛船組裝底座（地板，footprint 由相連底座外接矩形決定）────────────
+    public static final DeferredBlock<ShipAssemblyBaseBlock> SHIP_ASSEMBLY_BASE = registerBlock("ship_assembly_base",
+            () -> new ShipAssemblyBaseBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL)
+                    .strength(3.0f).sound(SoundType.METAL).requiresCorrectToolForDrops()));
+
+    // ── 飛船組裝架（龍門框架柱，最高的決定建造盒高度）──────────────────
+    public static final DeferredBlock<ShipAssemblyGantryBlock> SHIP_ASSEMBLY_GANTRY = registerBlock("ship_assembly_gantry",
+            () -> new ShipAssemblyGantryBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL)
+                    .strength(3.0f).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion()));
 
 
     private static <T extends Block> DeferredBlock<T> registerBlock(String name, Supplier<T> block) {

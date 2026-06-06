@@ -29,6 +29,7 @@ import com.github.nalamodikk.common.network.packet.client.skill.SkillCooldownPac
 import com.github.nalamodikk.common.network.packet.client.skill.CarrierFxPacket;
 import com.github.nalamodikk.common.network.packet.server.turret.TurretUpgradeSwapPacket;
 import com.github.nalamodikk.common.network.packet.server.deployer.SetDeployerIntervalPacket;
+import com.github.nalamodikk.common.network.packet.server.ship.ShipScanPacket;
 import com.github.nalamodikk.common.network.packet.server.deployer.ToggleDeployerEnabledPacket;
 import com.github.nalamodikk.common.network.packet.server.conduit.PriorityUpdatePacket;
 import com.github.nalamodikk.common.network.packet.server.conduit.ResetPrioritiesPacket;
@@ -86,6 +87,8 @@ public class ModNetworking {
 
         SetDeployerIntervalPacket.registerTo(registrar);
         ToggleDeployerEnabledPacket.registerTo(registrar);
+
+        ShipScanPacket.registerTo(registrar);
 
         ResearchCompletePacket.registerTo(registrar);
         ResearchAspectPlacePacket.registerTo(registrar);

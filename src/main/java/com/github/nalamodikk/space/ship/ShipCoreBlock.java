@@ -1,6 +1,5 @@
 package com.github.nalamodikk.space.ship;
 
-import com.github.nalamodikk.KoniavacraftMod;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -8,12 +7,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 
 /**
- * 飛船核心方塊。右鍵 = 組裝飛船（M1：只跑 ShipContraption.assemble 並回報抓到的方塊）。
- * M2 之後這裡會改成「組裝 → 移除世界方塊 → 生成 ShipEntity」。
+ * 飛船核心方塊：飛船的駕駛/錨點，會跟著船走。組裝不在這裡觸發，
+ * 要在組裝台 GUI 進行（核心必須蓋在組裝台投射的建造盒內）。
+ * 右鍵核心只提示玩家去用組裝台。
  */
 public class ShipCoreBlock extends Block {
 
@@ -25,22 +24,9 @@ public class ShipCoreBlock extends Block {
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                Player player, BlockHitResult hit) {
         if (!level.isClientSide()) {
-            ShipContraption ship = new ShipContraption();
-            boolean ok = ship.assemble(level, pos);
-            if (ok) {
-                String msg = "Ship assembled: " + ship.size() + " blocks, bounds "
-                        + describe(ship.bounds());
-                KoniavacraftMod.LOGGER.info("[ShipCore] {} (anchor {})", msg, pos);
-                player.displayClientMessage(Component.literal(msg), false);
-            } else {
-                KoniavacraftMod.LOGGER.info("[ShipCore] assembly failed (too large or empty) at {}", pos);
-                player.displayClientMessage(Component.literal("Ship assembly failed (too large or empty)"), false);
-            }
+            player.displayClientMessage(
+                    Component.translatable("message.koniava.ship_core.use_pad"), true);
         }
         return InteractionResult.SUCCESS;
-    }
-
-    private static String describe(AABB b) {
-        return String.format("%.0fx%.0fx%.0f", b.getXsize() + 1, b.getYsize() + 1, b.getZsize() + 1);
     }
 }
