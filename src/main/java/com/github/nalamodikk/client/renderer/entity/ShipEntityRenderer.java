@@ -56,7 +56,7 @@ public class ShipEntityRenderer extends EntityRenderer<ShipEntity> {
             float shipYaw = entity.getViewYRot(partialTick);
             pose.pushPose();
             pose.translate(0.5, 0, 0.5);
-            pose.mulPose(Axis.YP.rotationDegrees(180 - shipYaw)); // 船頭=local -z，面向視角（標準 entity 朝向慣例）
+            pose.mulPose(Axis.YP.rotationDegrees(-shipYaw)); // yaw=0 時不轉（組裝照建造樣子）
             pose.translate(-0.5, 0, -0.5);
 
             // 靜態方塊：優先用烤好的 VBO（每幀只變換）；烤失敗則退回每幀 tesselate

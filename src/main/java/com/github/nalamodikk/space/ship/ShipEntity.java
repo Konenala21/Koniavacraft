@@ -131,11 +131,10 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             return;
         }
 
-        // 載具移動由「控制者的 client」算（vanilla 模型：駕駛 client 是位置權威，自動送
-        // ServerboundMoveVehiclePacket 同步給 server）。真實遊戲 server 也跑這段但輸入=0
-        // （輸入只在駕駛 client 本地設），等於 no-op，會被 client 的位置覆蓋。
-        // gametest 沒有真 client（mock player 非 local），就由 server 端用測試設的輸入算移動。
-        if (isControlledByLocalInstance() || !level().isClientSide) {
+        // server 權威：覆寫 isControlledByLocalInstance()=false 讓 client 不送 MoveVehiclePacket，
+        // 移動只在 server 算（輸入由 ShipControlPacket 從駕駛 client 傳來），位置再同步給所有 client。
+        // 這樣不會「動不了」（client 覆蓋）也不會「渲染跟實際分家」（單一真相在 server）。
+        if (!level().isClientSide) {
             boolean hasDriver = getControllingPassenger() instanceof Player;
             if (!hasDriver) {
                 inForward = 0; inStrafe = 0; inVertical = 0;
@@ -161,12 +160,9 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         setDeltaMovement(0, 0, 0); // 自己用 setPos 移動，不靠 vanilla 速度
     }
 
-    /**
-     * 把 local 方塊角落依船 yaw 繞核心中心旋轉後的世界座標（僅 X/Z 平面，Y 不變）。
-     * 用 yaw+180（船頭=local -z 面向視角），與渲染 180-yaw 一致。
-     */
+    /** 把 local 方塊角落依船 yaw 繞核心中心旋轉後的世界座標（僅 X/Z 平面，Y 不變）。 */
     public Vec3 rotatedWorldCorner(int lx, int ly, int lz) {
-        double rad = Math.toRadians(getYRot() + 180);
+        double rad = Math.toRadians(getYRot());
         double cos = Math.cos(rad), sin = Math.sin(rad);
         double rx = lx * cos - lz * sin;
         double rz = lx * sin + lz * cos;
@@ -177,7 +173,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
      * 船撞地形：逐軸檢查移動後有沒有船方塊會卡進世界固體方塊，會的話該軸歸零（沿牆滑）。
      * 船方塊不在世界裡（在 entity），所以 noCollision 只會撞到真實地形，船自己不互撞。
      */
-    private Vec3 resolveTerrain(Vec3 move) {
+    Vec3 resolveTerrain(Vec3 move) { // package-visible 給 GameTest 直接測碰撞
         if (contraption == null) return move;
         double mx = move.x != 0 && blockedBy(move.x, 0, 0) ? 0 : move.x;
         double my = move.y != 0 && blockedBy(0, move.y, 0) ? 0 : move.y;
@@ -249,6 +245,13 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         return !isRemoved();
     }
 
+    // 強制 false：飛船是 server 權威移動，client 不該送 ServerboundMoveVehiclePacket
+    // （那會覆蓋 server 的位置，造成「動不了」或「渲染跟實際分家」）
+    @Override
+    public boolean isControlledByLocalInstance() {
+        return false;
+    }
+
     /**
      * 收船：把 contraption 方塊寫回世界並 discard。船會轉，所以 yaw snap 到最近的 90°，
      * 方塊位置與 blockstate 一起套用該旋轉（不能用任意角度放回方塊）。被擋則不動，回傳 false。
@@ -263,9 +266,9 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         return true;
     }
 
-    /** 把連續 yaw snap 到最近的 90° 對應的 Rotation（+180 對齊渲染/碰撞的 yaw+180 慣例）。 */
+    /** 把連續 yaw snap 到最近的 90° 對應的 Rotation。 */
     private static Rotation snapRotation(float yaw) {
-        int steps = Math.floorMod(Math.round((yaw + 180) / 90f), 4);
+        int steps = Math.floorMod(Math.round(yaw / 90f), 4);
         return switch (steps) {
             case 1 -> Rotation.CLOCKWISE_90;
             case 2 -> Rotation.CLOCKWISE_180;
