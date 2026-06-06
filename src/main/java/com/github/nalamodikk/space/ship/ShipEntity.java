@@ -131,10 +131,10 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             return;
         }
 
-        // server 權威：覆寫 isControlledByLocalInstance()=false 讓 client 不送 MoveVehiclePacket，
-        // 移動只在 server 算（輸入由 ShipControlPacket 從駕駛 client 傳來），位置再同步給所有 client。
-        // 這樣不會「動不了」（client 覆蓋）也不會「渲染跟實際分家」（單一真相在 server）。
-        if (!level().isClientSide) {
+        // client 權威（vanilla 船模型）：只有「駕駛的 client」算移動，順、不抖。
+        // server 端**完全不算移動**（不跟 client 打架=不會分家），位置靠 vanilla
+        // ServerboundMoveVehiclePacket 從駕駛 client 同步給 server，再傳給其他 client。
+        if (isControlledByLocalInstance()) {
             boolean hasDriver = getControllingPassenger() instanceof Player;
             if (!hasDriver) {
                 inForward = 0; inStrafe = 0; inVertical = 0;
@@ -243,13 +243,6 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     @Override
     public boolean isPickable() {
         return !isRemoved();
-    }
-
-    // 強制 false：飛船是 server 權威移動，client 不該送 ServerboundMoveVehiclePacket
-    // （那會覆蓋 server 的位置，造成「動不了」或「渲染跟實際分家」）
-    @Override
-    public boolean isControlledByLocalInstance() {
-        return false;
     }
 
     /**
