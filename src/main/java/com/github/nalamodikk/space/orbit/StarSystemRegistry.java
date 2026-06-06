@@ -2,6 +2,7 @@ package com.github.nalamodikk.space.orbit;
 
 import com.github.nalamodikk.client.renderer.dimension.PlanetRenderer;
 import com.github.nalamodikk.dimension.ModDimensions;
+import net.minecraft.world.level.Level;
 import org.joml.Vector3f;
 
 import java.util.List;
@@ -35,8 +36,8 @@ public final class StarSystemRegistry {
                 new Vector3f(0.92f, 0.78f, 0.38f), new Vector3f(1.0f, 0.82f, 0.28f),
                 new Vector3f(0f), 0f, 3.5f, 0.18f, -243f, "", 0,0,0),
 
-            // 地球：基準 76 格，365 天（= 1 遊戲年）
-            new PlanetDef("earth", ModDimensions.SPACE,
+            // 地球：基準 76 格，365 天（= 1 遊戲年）；地球 = 主世界
+            new PlanetDef("earth", Level.OVERWORLD,
                 3000f, 365f, 90f, 76f,
                 PlanetRenderer.Type.ATMOSPHERE,
                 new Vector3f(0.18f, 0.42f, 0.68f), new Vector3f(0.35f, 0.62f, 1.0f),

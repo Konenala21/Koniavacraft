@@ -2,7 +2,11 @@ package com.github.nalamodikk.common.event;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.dimension.ModDimensions;
+import com.github.nalamodikk.space.orbit.PlanetDef;
+import com.github.nalamodikk.space.orbit.StarSystem;
+import com.github.nalamodikk.space.orbit.StarSystemRegistry;
 import net.minecraft.server.level.ServerLevel;
+import org.joml.Vector3f;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -36,10 +40,36 @@ public class SpaceDimensionHandler {
     @SubscribeEvent
     public static void onDimensionChange(PlayerEvent.PlayerChangedDimensionEvent event) {
         if (!event.getTo().equals(ModDimensions.SPACE)) return;
+        if (event.getFrom().equals(ModDimensions.SPACE)) return;
         Player player = event.getEntity();
-        if (!event.getFrom().equals(ModDimensions.SPACE)) {
-            player.teleportTo(3000.0, 64.0, 0.0);
+        long tick = player.level().getGameTime();
+
+        // 依來源維度找對應星球，從那顆星球旁邊出現
+        for (StarSystem sys : StarSystemRegistry.getActive()) {
+            for (PlanetDef p : sys.planets()) {
+                if (p.dimension().equals(event.getFrom())) {
+                    Vector3f pos = planetWorldPos(sys, p, tick);
+                    // 偏移到星球外側（不卡進星球），距離 = 半徑×2.5 + 緩衝
+                    float off = p.physicalRadius() * 2.5f + 60f;
+                    player.teleportTo(pos.x + off, pos.y, pos.z);
+                    return;
+                }
+            }
         }
+        // 找不到對應星球（如從地獄來）→ 預設地球軌道
+        player.teleportTo(3000.0, 64.0, 0.0);
+    }
+
+    /** 算星球當前世界位置（含繞父行星的衛星鏈）。 */
+    private static Vector3f planetWorldPos(StarSystem sys, PlanetDef planet, long tick) {
+        Vector3f starPos = sys.worldPos();
+        if (planet.parentId().isEmpty()) {
+            return planet.worldPositionAt(tick, starPos);
+        }
+        PlanetDef parent = sys.planets().stream()
+                .filter(pp -> pp.id().equals(planet.parentId())).findFirst().orElse(null);
+        Vector3f parentPos = parent != null ? parent.worldPositionAt(tick, starPos) : starPos;
+        return planet.worldPositionAt(tick, parentPos);
     }
 
     // 太空 + 月球維度禁止天氣（月球無大氣不該下雪/雨）

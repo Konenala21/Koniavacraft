@@ -36,11 +36,6 @@ public class SpacePlanetManager {
     private static final PlanetRenderer beltRenderer       = new PlanetRenderer(PlanetRenderer.Type.BELT);
     private static boolean initialized = false;
     private static int     initCooldown = 0; // AMD：init 後跳過 N 幀再開始渲染
-    // 公轉/自轉時間倍率（由 /koniava timescale 設定，SpaceTimeScalePacket 同步）
-    public static volatile float timeScale = 1.0f;
-    // 累積的縮放時間：每幀只累加 delta*timeScale，改倍率時不會瞬移（只改速率）
-    private static double accumulatedTime = 0.0;
-    private static double lastRawTime = Double.NaN;
 
     // 行星貼圖快取：planet id → GL texture id（-1=無貼圖）
     private static final Map<String, Integer> textureCache = new HashMap<>();
@@ -61,13 +56,8 @@ public class SpacePlanetManager {
         if (initCooldown > 0) { initCooldown--; return; }
 
         float partial  = event.getPartialTick().getGameTimeDeltaPartialTick(false);
-        // 累積縮放時間：每幀累加 delta*timeScale，改 timescale 不會瞬移（只變速率）
-        double rawNow = mc.level.getGameTime() + partial;
-        if (Double.isNaN(lastRawTime)) lastRawTime = rawNow;
-        double delta = rawNow - lastRawTime;
-        if (delta < 0) delta = 0; // 換世界/回繞保護
-        accumulatedTime += delta * timeScale;
-        lastRawTime = rawNow;
+        // 單純用遊戲時間（含 partial tick），平滑不頓
+        double accumulatedTime = mc.level.getGameTime() + partial;
 
         float  gameTime  = (float)(accumulatedTime / 20.0);
         double tick      = accumulatedTime;
