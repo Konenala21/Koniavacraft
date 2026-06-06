@@ -76,7 +76,8 @@ public class MoonCoreTraversalHandler {
         } else {
             // NORMAL：月球低重力（飄飄感）——兩端都套，本地玩家 client 端才感覺得到
             // 跳躍上升段也減速 → 跳更高、滯空久、慢慢落；站地面不補避免被頂
-            if (!player.onGround() && Math.abs(v.y) > 1e-4) {
+            // 飛行（creative/spectator）時不補，否則會一直往上飄
+            if (!player.onGround() && !player.getAbilities().flying && Math.abs(v.y) > 1e-4) {
                 player.setDeltaMovement(v.x, v.y + 0.08 * (1.0 - MOON_GRAVITY), v.z);
             }
             // 核心傳送：只在 server 端觸發（避免 client 重複傳送/desync）
