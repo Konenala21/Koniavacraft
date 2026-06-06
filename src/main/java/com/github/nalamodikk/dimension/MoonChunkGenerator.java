@@ -38,9 +38,9 @@ public class MoonChunkGenerator extends ChunkGenerator {
     private static final int HILL_AMP    = 14;   // 丘陵起伏振幅
     private static final int CRATER_GRID = 64;   // 隕石坑分布網格
 
-    // 空心結構：地殼 [CRUST_BOTTOM, top] / 中空 (CORE_TOP, CRUST_BOTTOM) / 核心 [minY, CORE_TOP]
-    public static final int CRUST_BOTTOM = 20;   // 地殼最低，往下進中空
-    public static final int CORE_TOP     = -40;  // 核心發光殼頂，往下到世界底都是核心
+    // 實心結構：月壤(表層) → 月岩 → 深層月岩 → 發光核心 [minY, CORE_TOP]
+    public static final int CRUST_BOTTOM = 0;    // 地表下沉判定門檻（低於此視為地底，不畫星空）
+    public static final int CORE_TOP     = -40;  // 發光核心頂，往下到世界底都是核心
 
     private final BlockState regolith;
     private final BlockState moonStone;
@@ -120,16 +120,13 @@ public class MoonChunkGenerator extends ChunkGenerator {
         return Math.round(h + crater);
     }
 
-    /** 該 Y 在空心月球的方塊：地殼/中空(空氣)/核心。top 為該柱地表高度。 */
+    /** 該 Y 在實心月球的方塊：月壤/月岩/深層月岩/核心。top 為該柱地表高度。 */
     private BlockState blockAt(int y, int top, int minY) {
-        if (y > top) return air;                  // 地表以上
-        if (y >= CRUST_BOTTOM) {                  // 地殼
-            if (y > top - 4)            return regolith;   // 表層月壤
-            if (y > CRUST_BOTTOM + 10)  return moonStone;  // 月岩
-            return deepStone;                              // 地殼底深層月岩
-        }
-        if (y <= CORE_TOP) return core;           // 核心（發光，到世界底）
-        return air;                               // 中空內部
+        if (y > top)        return air;       // 地表以上
+        if (y > top - 4)    return regolith;  // 表層月壤
+        if (y <= CORE_TOP)  return core;      // 底部發光核心（到世界底）
+        if (y > top - 28)   return moonStone; // 中層月岩
+        return deepStone;                     // 深層月岩
     }
 
     @Override
