@@ -79,10 +79,14 @@ public class ShipMeshCache implements AutoCloseable {
         }
     }
 
-    /** 每幀畫：pose 已含相機+實體位移，直接當 model-view 矩陣餵 chunk shader。 */
+    /**
+     * 每幀畫。model-view = 相機視角矩陣(RenderSystem) × 實體位移(pose)。
+     * 烤好的頂點是 contraption local 空間，pose 只含「實體相對相機的位移」(不含相機旋轉)，
+     * 相機旋轉在全域 modelview。漏乘相機矩陣會讓船黏著畫面跟玩家跑，所以這裡要相乘。
+     */
     public void draw(PoseStack pose) {
         if (buffers.isEmpty()) return;
-        Matrix4f modelView = pose.last().pose();
+        Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(pose.last().pose());
         Matrix4f projection = RenderSystem.getProjectionMatrix();
         for (Map.Entry<RenderType, VertexBuffer> e : buffers.entrySet()) {
             RenderType layer = e.getKey();
