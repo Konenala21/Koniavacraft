@@ -16,46 +16,49 @@ public class ShipAssemblyPadScreen extends AbstractContainerScreen<ShipAssemblyP
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/gui/ship_assembly_pad.png");
     private static final int TEX_W = 512, TEX_H = 512;
 
+    // 面板實際內容區（wand 貼圖在 512x512 的左上 509x216）
+    private static final int PANEL_W = 509, PANEL_H = 216;
+
     public ShipAssemblyPadScreen(ShipAssemblyPadMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
-        this.imageWidth = 473;
-        this.imageHeight = 210;
+        this.imageWidth = PANEL_W;
+        this.imageHeight = PANEL_H;
     }
 
     @Override
     protected void init() {
         super.init();
-        this.titleLabelX = 12;
-        this.titleLabelY = 10;
         addRenderableWidget(Button.builder(
                 Component.translatable("screen.koniava.ship_assembly_pad.scan"),
                 b -> ShipScanPacket.sendToServer(menu.getPadPos()))
-                .bounds(leftPos + 20, topPos + 170, 90, 20)
+                .bounds(leftPos + 14, topPos + PANEL_H - 30, 90, 20)
                 .build());
         addRenderableWidget(Button.builder(
                 Component.translatable("screen.koniava.ship_assembly_pad.assemble"),
                 b -> ShipAssemblePacket.sendToServer(menu.getPadPos()))
-                .bounds(leftPos + 120, topPos + 170, 90, 20)
+                .bounds(leftPos + 110, topPos + PANEL_H - 30, 90, 20)
                 .build());
     }
 
     @Override
     protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
-        g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, TEX_W, TEX_H);
+        g.blit(TEXTURE, leftPos, topPos, 0, 0, PANEL_W, PANEL_H, TEX_W, TEX_H);
     }
 
     @Override
     protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
-        super.renderLabels(g, mouseX, mouseY);
-        int x = 14, y = 34, line = 12;
+        // 不呼叫 super：避免畫出預設的「物品欄」label（這 GUI 沒有物品欄）
+        // 文字用白色 + 陰影，在藍底/深藍底上都可讀
+        g.drawString(font, title, 12, 8, 0xFFFFFF, true);
+        int x = 14, y = 32, line = 12;
         g.drawString(font, Component.translatable("screen.koniava.ship_assembly_pad.area",
                         menu.getBoxW(), menu.getBoxH(), menu.getBoxD()),
-                x, y, 0x404040, false);
+                x, y, 0xFFFFFF, true);
         g.drawString(font, Component.translatable("screen.koniava.ship_assembly_pad.blocks", menu.getBlockCount()),
-                x, y + line, 0x404040, false);
+                x, y + line, 0xFFFFFF, true);
         g.drawString(font, Component.translatable("screen.koniava.ship_assembly_pad.cores", menu.getCoreCount()),
-                x, y + line * 2, 0x404040, false);
-        g.drawString(font, statusText(menu.getStatus()), x, y + line * 3, statusColor(menu.getStatus()), false);
+                x, y + line * 2, 0xFFFFFF, true);
+        g.drawString(font, statusText(menu.getStatus()), x, y + line * 3, statusColor(menu.getStatus()), true);
     }
 
     private static Component statusText(int status) {
@@ -73,8 +76,9 @@ public class ShipAssemblyPadScreen extends AbstractContainerScreen<ShipAssemblyP
     }
 
     private static int statusColor(int status) {
+        // 亮色（配陰影）：成功綠、其餘紅
         return (status == ShipAssemblyPadBlockEntity.STATUS_OK
-                || status == ShipAssemblyPadBlockEntity.STATUS_LAUNCHED) ? 0x2E7D32 : 0xB71C1C;
+                || status == ShipAssemblyPadBlockEntity.STATUS_LAUNCHED) ? 0x55FF55 : 0xFF6666;
     }
 
     @Override

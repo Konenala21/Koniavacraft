@@ -6,6 +6,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,6 +44,14 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         if (!level().isClientSide && contraption == null) {
             discard(); // 沒有 contraption 的飛船無意義
         }
+    }
+
+    // 實體本體只有 1x1，但船可能很大：用 contraption 範圍當渲染剔除框，
+    // 否則核心移出畫面時整艘船會被 frustum culling 剔掉
+    @Override
+    public AABB getBoundingBoxForCulling() {
+        if (contraption == null) return super.getBoundingBoxForCulling();
+        return contraption.bounds().move(getX(), getY(), getZ()).inflate(1.0);
     }
 
     @Override

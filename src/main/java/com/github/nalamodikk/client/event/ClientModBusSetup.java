@@ -11,6 +11,7 @@ import com.github.nalamodikk.client.renderer.altar.AltarT6ClimaxRenderer;
 import com.github.nalamodikk.client.renderer.armor.ManaAlloyArmorLayer;
 import com.github.nalamodikk.client.renderer.armor.ManaAlloyArmorModel;
 import com.github.nalamodikk.client.renderer.entity.FloatingTurretModel;
+import com.github.nalamodikk.client.renderer.entity.ShipEntityRenderer;
 import com.github.nalamodikk.client.renderer.entity.FloatingTurretProjectileRenderer;
 import com.github.nalamodikk.client.renderer.entity.FloatingTurretRenderer;
 import com.github.nalamodikk.client.renderer.entity.NaraPhantomRenderer;
@@ -63,6 +64,7 @@ public final class ClientModBusSetup {
             e.registerEntityRenderer(ModEntities.PLAYER_CLONE.get(), PlayerCloneRenderer::new);
             e.registerEntityRenderer(ModEntities.NARA_PHANTOM.get(), NaraPhantomRenderer::new);
             e.registerEntityRenderer(ModEntities.TRAINING_DUMMY.get(), TrainingDummyRenderer::new);
+            e.registerEntityRenderer(ModEntities.SHIP.get(), ShipEntityRenderer::new);
         });
         modEventBus.addListener((EntityRenderersEvent.RegisterLayerDefinitions e) -> {
             e.registerLayerDefinition(FloatingTurretModel.LAYER_LOCATION, FloatingTurretModel::createBodyLayer);
