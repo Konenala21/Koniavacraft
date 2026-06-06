@@ -3,10 +3,13 @@ package com.github.nalamodikk.client.renderer.entity;
 import com.github.nalamodikk.space.ship.ShipContraption;
 import com.github.nalamodikk.space.ship.ShipEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.block.ModelBlockRenderer;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
@@ -33,11 +36,13 @@ import java.util.Map;
 public class ShipEntityRenderer extends EntityRenderer<ShipEntity> {
 
     private final BlockRenderDispatcher blockRenderer;
+    private final BlockEntityRenderDispatcher beRenderer;
     private final RandomSource random = RandomSource.create();
 
     public ShipEntityRenderer(EntityRendererProvider.Context ctx) {
         super(ctx);
         this.blockRenderer = ctx.getBlockRenderDispatcher();
+        this.beRenderer = Minecraft.getInstance().getBlockEntityRenderDispatcher();
     }
 
     @Override
@@ -61,6 +66,15 @@ public class ShipEntityRenderer extends EntityRenderer<ShipEntity> {
                     modelRenderer.tesselateBlock(world, model, state, local, pose, buffers.getBuffer(rt),
                             true, random, seed, OverlayTexture.NO_OVERLAY, modelData, rt);
                 }
+                pose.popPose();
+            }
+
+            // BER 方塊（箱子等）：用快取的臨時 BlockEntity 每幀畫
+            for (Map.Entry<BlockPos, BlockEntity> e : entity.getRenderBlockEntities().entrySet()) {
+                BlockPos local = e.getKey();
+                pose.pushPose();
+                pose.translate(local.getX(), local.getY(), local.getZ());
+                beRenderer.render(e.getValue(), partialTick, pose, buffers);
                 pose.popPose();
             }
         }

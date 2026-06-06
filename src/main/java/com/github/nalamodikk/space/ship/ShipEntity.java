@@ -13,6 +13,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
@@ -20,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -58,8 +61,35 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         this.riderYaw = yaw;
     }
 
+    // client 渲染用：從 contraption NBT 還原的臨時 BlockEntity（箱子等 BER 方塊），建一次快取
+    @Nullable private Map<BlockPos, BlockEntity> renderBEs;
+
     public void setContraption(ShipContraption contraption) {
         this.contraption = contraption;
+        this.renderBEs = null; // contraption 換了，BE 快取作廢
+    }
+
+    /**
+     * client 渲染用：盤點 contraption 裡需要 BER 的方塊（EntityBlock + 有 NBT，例如箱子），
+     * 從 NBT 還原成臨時 BlockEntity 並快取（不每幀重建）。setLevel 用真實 level 讓 BER 能查時間/光照。
+     */
+    public Map<BlockPos, BlockEntity> getRenderBlockEntities() {
+        if (renderBEs == null) {
+            renderBEs = new HashMap<>();
+            if (contraption != null) {
+                for (var e : contraption.getBlocks().entrySet()) {
+                    var info = e.getValue();
+                    if (info.nbt() == null || !(info.state().getBlock() instanceof EntityBlock)) continue;
+                    BlockEntity be = BlockEntity.loadStatic(e.getKey(), info.state(), info.nbt(),
+                            level().registryAccess());
+                    if (be != null) {
+                        be.setLevel(level());
+                        renderBEs.put(e.getKey(), be);
+                    }
+                }
+            }
+        }
+        return renderBEs;
     }
 
     @Nullable
