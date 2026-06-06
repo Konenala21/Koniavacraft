@@ -42,7 +42,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.SHIP_ASSEMBLY_PAD);
         blockWithItem(ModBlocks.SHIP_ASSEMBLY_BASE);
         blockWithItem(ModBlocks.SHIP_ASSEMBLY_GANTRY);
-        blockWithItem(ModBlocks.SHIP_SEAT);
+        shipSeatModel(); // 椅子造型（座板 + 椅背），非整塊
         blockWithItem(ModBlocks.ASPECT_RESEARCH_DESK);
         blockWithItem(ModBlocks.MAGIC_ORE);
         blockWithItem(ModBlocks.DEEPSLATE_MAGIC_ORE);
@@ -492,6 +492,35 @@ public class ModBlockStateProvider extends BlockStateProvider {
      */
     private void blockWithItem(DeferredBlock<?> deferredBlock) {
         simpleBlockWithItem(deferredBlock.get(), cubeAll(deferredBlock.get()));
+    }
+
+    /** 飛船座椅：椅子造型（座板 2~14 高 0~7 + 椅背靠北面 z11~14 高 7~16），單一貼圖 ship_seat。 */
+    private void shipSeatModel() {
+        var t = modLoc("block/ship_seat");
+        var seat = models().withExistingParent("ship_seat", mcLoc("block/block"))
+                .ao(false)
+                .texture("particle", t)
+                .texture("t", t)
+                // 座板
+                .element().from(2, 0, 2).to(14, 7, 14)
+                    .face(Direction.DOWN).uvs(2, 2, 14, 14).texture("#t").end()
+                    .face(Direction.UP).uvs(2, 2, 14, 14).texture("#t").end()
+                    .face(Direction.NORTH).uvs(2, 9, 14, 16).texture("#t").end()
+                    .face(Direction.SOUTH).uvs(2, 9, 14, 16).texture("#t").end()
+                    .face(Direction.WEST).uvs(2, 9, 14, 16).texture("#t").end()
+                    .face(Direction.EAST).uvs(2, 9, 14, 16).texture("#t").end()
+                    .end()
+                // 椅背（靠 north，z 11~14）
+                .element().from(2, 7, 11).to(14, 16, 14)
+                    .face(Direction.NORTH).uvs(2, 0, 14, 9).texture("#t").end()
+                    .face(Direction.SOUTH).uvs(2, 0, 14, 9).texture("#t").end()
+                    .face(Direction.UP).uvs(2, 11, 14, 14).texture("#t").end()
+                    .face(Direction.DOWN).uvs(2, 11, 14, 14).texture("#t").end()
+                    .face(Direction.WEST).uvs(11, 0, 14, 9).texture("#t").end()
+                    .face(Direction.EAST).uvs(11, 0, 14, 9).texture("#t").end()
+                    .end();
+        simpleBlock(ModBlocks.SHIP_SEAT.get(), seat);
+        simpleBlockItem(ModBlocks.SHIP_SEAT.get(), seat);
     }
 
     /**

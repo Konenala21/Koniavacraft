@@ -529,6 +529,8 @@
   "message.koniava.ship.dock_blocked": "Cannot park here: blocks are in the way.",
   "screen.koniava.ship_assembly_pad.scan": "Scan",
   "screen.koniava.ship_assembly_pad.assemble": "Assemble",
+  "screen.koniava.ship_assembly_pad.disassemble": "Disassemble",
+  "message.koniava.ship.no_ship_nearby": "No ship near the assembly pad.",
   "screen.koniava.ship_assembly_pad.area": "Build area: %sx%sx%s",
   "screen.koniava.ship_assembly_pad.blocks": "Blocks: %s",
   "screen.koniava.ship_assembly_pad.cores": "Cores: %s",

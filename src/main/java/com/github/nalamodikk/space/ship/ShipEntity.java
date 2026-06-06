@@ -17,6 +17,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
@@ -167,12 +168,32 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     private boolean blockedBy(double dx, double dy, double dz) {
         for (BlockPos local : contraption.getBlocks().keySet()) {
-            AABB box = new AABB(getX() + local.getX(), getY() + local.getY(), getZ() + local.getZ(),
-                    getX() + local.getX() + 1, getY() + local.getY() + 1, getZ() + local.getZ() + 1)
-                    .move(dx, dy, dz).deflate(0.02);
-            if (!level().noCollision(this, box)) return true;
+            double x0 = getX() + local.getX() + dx, y0 = getY() + local.getY() + dy, z0 = getZ() + local.getZ() + dz;
+            AABB box = new AABB(x0, y0, z0, x0 + 1, y0 + 1, z0 + 1).deflate(0.06);
+            int minX = Mth.floor(box.minX), maxX = Mth.floor(box.maxX);
+            int minY = Mth.floor(box.minY), maxY = Mth.floor(box.maxY);
+            int minZ = Mth.floor(box.minZ), maxZ = Mth.floor(box.maxZ);
+            for (int bx = minX; bx <= maxX; bx++)
+                for (int by = minY; by <= maxY; by++)
+                    for (int bz = minZ; bz <= maxZ; bz++) {
+                        BlockPos bp = new BlockPos(bx, by, bz);
+                        BlockState s = level().getBlockState(bp);
+                        if (s.isAir() || isShipScaffolding(s)) continue; // 自己的發射台結構不擋船
+                        var shape = s.getCollisionShape(level(), bp);
+                        if (shape.isEmpty()) continue;
+                        if (box.intersects(shape.bounds().move(bx, by, bz))) return true;
+                    }
         }
         return false;
+    }
+
+    /** 發射台鷹架（底座/組裝架/組裝台/核心/座椅）不算地形，不擋船移動。 */
+    private static boolean isShipScaffolding(BlockState s) {
+        return s.getBlock() instanceof ShipAssemblyBaseBlock
+                || s.getBlock() instanceof ShipAssemblyGantryBlock
+                || s.getBlock() instanceof ShipAssemblyPadBlock
+                || s.getBlock() instanceof ShipCoreBlock
+                || s.getBlock() instanceof ShipSeatBlock;
     }
 
     // hitbox：把實體尺寸撐到涵蓋整艘船（getBoundingBox 是 final 不能覆寫，改由 dimensions 決定），

@@ -534,6 +534,8 @@
   "message.koniava.ship.dock_blocked": "這裡停不了:有方塊擋住。",
   "screen.koniava.ship_assembly_pad.scan": "掃描",
   "screen.koniava.ship_assembly_pad.assemble": "組裝",
+  "screen.koniava.ship_assembly_pad.disassemble": "拆解",
+  "message.koniava.ship.no_ship_nearby": "組裝台附近沒有飛船。",
   "screen.koniava.ship_assembly_pad.area": "建造範圍: %sx%sx%s",
   "screen.koniava.ship_assembly_pad.blocks": "方塊數: %s",
   "screen.koniava.ship_assembly_pad.cores": "核心數: %s",
