@@ -207,6 +207,14 @@ public class ShipContraption {
     // ── getters ──────────────────────────────────────────────────────────────
 
     public Map<BlockPos, StructureBlockInfo> getBlocks() { return blocks; }
+
+    /** 換掉某 local 方塊的 blockstate（保留位置與 BE NBT）。互動方塊切狀態(門開關等)用。 */
+    public void setBlockState(BlockPos local, BlockState state) {
+        StructureBlockInfo old = blocks.get(local);
+        if (old == null) return;
+        blocks.put(local, new StructureBlockInfo(local, state, old.nbt()));
+    }
+
     public int size() { return blocks.size(); }
     public BlockPos anchor() { return anchor; }
     public AABB bounds() { return bounds; }

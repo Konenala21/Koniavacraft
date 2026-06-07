@@ -1,5 +1,6 @@
 package com.github.nalamodikk.space.ship;
 
+import com.github.nalamodikk.common.network.packet.client.ship.ShipBlockUpdatePacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -18,12 +19,23 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.ButtonBlock;
+import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.FenceGateBlock;
+import net.minecraft.world.level.block.LeverBlock;
 import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.TrapDoorBlock;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -146,6 +158,23 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     public void setMeshCache(@Nullable Object cache) { this.meshCache = cache; }
     public boolean isMeshFailed() { return meshFailed; }
     public void markMeshFailed() { this.meshFailed = true; }
+
+    /**
+     * 換掉 contraption 裡某 local 方塊的 blockstate（互動方塊切狀態用，例如門開關）。
+     * 失效碰撞形狀 + 渲染 VBO/BER 快取，門才會視覺打開、碰撞跟著變。server/client 都呼叫；
+     * server 端另外送 ShipBlockUpdatePacket 給 client。
+     */
+    public void updateContraptionBlock(BlockPos local, BlockState state) {
+        if (contraption == null) return;
+        contraption.setBlockState(local, state);
+        localCollisionShapeCache = null;
+        renderBEs = null;
+        if (meshCache instanceof AutoCloseable ac) {
+            try { ac.close(); } catch (Exception ignored) {}
+        }
+        meshCache = null;
+        meshFailed = false;
+    }
 
     @Override
     public void remove(Entity.RemovalReason reason) {
@@ -500,8 +529,66 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             }
             return InteractionResult.sidedSuccess(level().isClientSide);
         }
-        // TODO Phase 2+：互動方塊轉發（門/按鈕/拉桿 → 改 blockstate；箱子 → 容器；機器 → 虛擬世界）
+        // Phase 2：門/活板門/柵欄門/拉桿/按鈕 → 切 blockstate（船上沒紅石，拉桿/按鈕純視覺切換）
+        if (!level().isClientSide && tryToggleBlock(local, info.state())) {
+            return InteractionResult.sidedSuccess(false);
+        }
+        if (level().isClientSide && isToggleable(info.state())) {
+            return InteractionResult.sidedSuccess(true);
+        }
+        // TODO Phase 3+：箱子 → 容器 GUI；機器 → 虛擬世界 tick
         return InteractionResult.PASS;
+    }
+
+    private static boolean isToggleable(BlockState s) {
+        Block b = s.getBlock();
+        return ((b instanceof DoorBlock || b instanceof TrapDoorBlock || b instanceof FenceGateBlock)
+                && s.hasProperty(BlockStateProperties.OPEN))
+                || ((b instanceof LeverBlock || b instanceof ButtonBlock)
+                && s.hasProperty(BlockStateProperties.POWERED));
+    }
+
+    /** 切換互動方塊狀態（server）。門連另一半一起切。回傳是否有切。package-visible 給 GameTest。 */
+    boolean tryToggleBlock(BlockPos local, BlockState s) {
+        Block b = s.getBlock();
+        if (b instanceof DoorBlock && s.hasProperty(BlockStateProperties.OPEN)) {
+            boolean open = !s.getValue(BlockStateProperties.OPEN);
+            setAndSync(local, s.setValue(BlockStateProperties.OPEN, open));
+            // 門的另一半（上/下）也要切，否則只開一半
+            BlockPos other = s.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == DoubleBlockHalf.LOWER
+                    ? local.above() : local.below();
+            var oi = contraption.getBlocks().get(other);
+            if (oi != null && oi.state().getBlock() instanceof DoorBlock
+                    && oi.state().hasProperty(BlockStateProperties.OPEN)) {
+                setAndSync(other, oi.state().setValue(BlockStateProperties.OPEN, open));
+            }
+            playInteractSound(local, open ? SoundEvents.WOODEN_DOOR_OPEN : SoundEvents.WOODEN_DOOR_CLOSE);
+            return true;
+        }
+        if ((b instanceof TrapDoorBlock || b instanceof FenceGateBlock) && s.hasProperty(BlockStateProperties.OPEN)) {
+            boolean open = !s.getValue(BlockStateProperties.OPEN);
+            setAndSync(local, s.setValue(BlockStateProperties.OPEN, open));
+            playInteractSound(local, b instanceof FenceGateBlock
+                    ? (open ? SoundEvents.FENCE_GATE_OPEN : SoundEvents.FENCE_GATE_CLOSE)
+                    : (open ? SoundEvents.WOODEN_TRAPDOOR_OPEN : SoundEvents.WOODEN_TRAPDOOR_CLOSE));
+            return true;
+        }
+        if ((b instanceof LeverBlock || b instanceof ButtonBlock) && s.hasProperty(BlockStateProperties.POWERED)) {
+            setAndSync(local, s.cycle(BlockStateProperties.POWERED)); // 船上無紅石，純視覺
+            playInteractSound(local, SoundEvents.LEVER_CLICK);
+            return true;
+        }
+        return false;
+    }
+
+    private void setAndSync(BlockPos local, BlockState ns) {
+        updateContraptionBlock(local, ns);
+        ShipBlockUpdatePacket.sendToClients(this, local, ns);
+    }
+
+    private void playInteractSound(BlockPos local, SoundEvent sound) {
+        Vec3 w = rotatedWorldPoint(local.getX() + 0.5, local.getY() + 0.5, local.getZ() + 0.5);
+        level().playSound(null, w.x, w.y, w.z, sound, SoundSource.BLOCKS, 1.0f, 1.0f);
     }
 
     /** 從玩家視線 raycast 找指到的 local 方塊（用 outline 形狀，逐方塊取最近命中）。 */

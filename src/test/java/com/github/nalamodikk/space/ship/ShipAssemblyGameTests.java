@@ -12,6 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -325,6 +326,34 @@ public class ShipAssemblyGameTests {
                     Vec3 sideAllowed = ship.restrictMotion(sideBox, new Vec3(-1.0, 0, 0));
                     if (sideAllowed.x < -0.95)
                         helper.fail("wall did not block sideways move, allowed.x=" + sideAllowed.x);
+                })
+                .thenSucceed();
+    }
+
+    /** Phase 2 互動方塊：切換船上活板門的 OPEN 狀態（server 端邏輯）。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
+    public static void interactTogglesTrapdoor(GameTestHelper helper) {
+        ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);
+        helper.setBlock(new BlockPos(4, 2, 4), core());
+        helper.setBlock(new BlockPos(5, 2, 4), Blocks.OAK_TRAPDOOR.defaultBlockState());
+
+        helper.startSequence()
+                .thenExecute(pad::assembleShip)
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
+                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
+                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
+                            .findFirst().orElse(null);
+                    if (ship == null) { helper.fail("core+trapdoor ship not found"); return; }
+                    BlockPos local = new BlockPos(1, 0, 0); // 活板門相對核心錨點
+                    var info = ship.getContraption().getBlocks().get(local);
+                    if (info == null) { helper.fail("trapdoor not in contraption"); return; }
+                    boolean before = info.state().getValue(BlockStateProperties.OPEN);
+                    ship.tryToggleBlock(local, info.state());
+                    boolean after = ship.getContraption().getBlocks().get(local).state()
+                            .getValue(BlockStateProperties.OPEN);
+                    if (after == before) helper.fail("trapdoor OPEN did not toggle (" + before + ")");
                 })
                 .thenSucceed();
     }

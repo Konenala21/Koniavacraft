@@ -33,6 +33,7 @@ import com.github.nalamodikk.common.network.packet.server.ship.ShipAssemblePacke
 import com.github.nalamodikk.common.network.packet.server.ship.ShipDisassemblePacket;
 import com.github.nalamodikk.common.network.packet.server.ship.ShipInputPacket;
 import com.github.nalamodikk.common.network.packet.server.ship.ShipScanPacket;
+import com.github.nalamodikk.common.network.packet.client.ship.ShipBlockUpdatePacket;
 import com.github.nalamodikk.common.network.packet.server.deployer.ToggleDeployerEnabledPacket;
 import com.github.nalamodikk.common.network.packet.server.conduit.PriorityUpdatePacket;
 import com.github.nalamodikk.common.network.packet.server.conduit.ResetPrioritiesPacket;
@@ -95,6 +96,7 @@ public class ModNetworking {
         ShipAssemblePacket.registerTo(registrar);
         ShipDisassemblePacket.registerTo(registrar);
         ShipInputPacket.registerTo(registrar);
+        ShipBlockUpdatePacket.registerTo(registrar);
 
         ResearchCompletePacket.registerTo(registrar);
         ResearchAspectPlacePacket.registerTo(registrar);
