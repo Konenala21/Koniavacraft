@@ -11,7 +11,8 @@
     "OverworldBiomeBuilderMixin",
     "SpaceVoidDamageMixin",
     "EntityShipCollisionMixin",
-    "MenuShipShadowMixin"
+    "MenuShipShadowMixin",
+    "ContainerShipShadowMixin"
   ],
   "client": [
     "client.MinecraftAccessor",

@@ -1,6 +1,7 @@
 package com.github.nalamodikk.space.ship;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.block.blockentity.collector.solarmana.SolarManaCollectorBlockEntity;
 import com.github.nalamodikk.dimension.ModDimensions;
 import com.github.nalamodikk.register.ModBlocks;
 import com.github.nalamodikk.register.ModEntities;
@@ -16,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.block.state.BlockState;
@@ -269,6 +271,44 @@ public class ShipAssemblyGameTests {
                     if (info == null || !info.state().is(Blocks.GOLD_BLOCK))
                         helper.fail("mirror did not reflect shadow change (got "
                                 + (info == null ? "null" : info.state().getBlock()) + ")");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * VM1：機器真的在影子維度裡 tick。組裝一台頂部有太陽能收集器的船（影子是固定正午+天光），
+     * 等它在影子裡產魔力 → 影子收集器 mana > 0。headless GameTestServer 無維度 → 跳過；runClient `/test` 才真跑。
+     */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 160)
+    public static void shipMachineTicksInShadow(GameTestHelper helper) {
+        ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);
+        helper.setBlock(new BlockPos(4, 2, 4), core());
+        helper.setBlock(new BlockPos(4, 3, 4), ModBlocks.SOLAR_MANA_COLLECTOR.get().defaultBlockState()); // local (0,1,0)，上方見天
+
+        ShipEntity[] shipRef = new ShipEntity[1];
+        helper.startSequence()
+                .thenExecute(pad::assembleShip)
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(6);
+                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
+                            .filter(s -> s.getContraption() != null).findFirst().orElse(null);
+                    if (ship == null) { helper.fail("no ship"); return; }
+                    shipRef[0] = ship;
+                })
+                .thenIdle(100) // 等收集器在影子裡產魔力
+                .thenExecute(() -> {
+                    ShipEntity ship = shipRef[0];
+                    if (ship == null || ship.getShadowAnchor() == null) return; // 無維度(headless) → 跳過
+                    ServerLevel shadow = helper.getLevel().getServer().getLevel(ModDimensions.SHIP_SHADOW);
+                    if (shadow == null) return;
+                    BlockPos sp = ship.getShadowAnchor().offset(0, 1, 0); // 收集器 local (0,1,0)
+                    BlockEntity be = shadow.getBlockEntity(sp);
+                    if (!(be instanceof SolarManaCollectorBlockEntity solar)) {
+                        helper.fail("collector not ticking in shadow (be=" + be + ")"); return;
+                    }
+                    if (solar.getManaStored() <= 0)
+                        helper.fail("collector produced no mana in shadow (mana=" + solar.getManaStored() + ")");
                 })
                 .thenSucceed();
     }

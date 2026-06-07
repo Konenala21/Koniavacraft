@@ -335,23 +335,14 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
      */
     private boolean forwardUseToShadow(ServerPlayer player, BlockPos local, BlockState expected, InteractionHand hand) {
         ServerLevel shadow = getShadow();
-        if (shadow == null) {
-            com.github.nalamodikk.KoniavacraftMod.LOGGER.warn("[ship] forwardUse: shadow dimension is NULL (anchor={}, dim not loaded? run runData + restart)", shadowAnchor);
-            return false;
-        }
+        if (shadow == null) return false;
         BlockPos sp = shadowAnchor.offset(local);
         BlockState ss = shadow.getBlockState(sp);
-        if (ss.isAir() || ss.getBlock() != expected.getBlock()) {
-            com.github.nalamodikk.KoniavacraftMod.LOGGER.warn("[ship] forwardUse: shadow block at {} is {} but expected {} (placement failed?)", sp, ss.getBlock(), expected.getBlock());
-            return false; // 影子沒這方塊(放置失敗) → 退回
-        }
+        if (ss.isAir() || ss.getBlock() != expected.getBlock()) return false; // 影子沒這方塊(放置失敗) → 退回
+        // 一律走 useWithoutItem 開 GUI（像 vanilla 不潛行時拿著任何東西點箱子/機器也會開，不是只有空手）。
+        // 潛行+方塊的編輯放置由外層 interactAt 在進這分支前分流，不會走到這。
         BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(sp), Direction.UP, sp, false);
-        ItemStack held = player.getItemInHand(hand);
-        if (!held.isEmpty()) {
-            ss.useItemOn(held, shadow, player, hand, hit);
-        } else {
-            ss.useWithoutItem(shadow, player, hit);
-        }
+        ss.useWithoutItem(shadow, player, hit);
         return true;
     }
 
@@ -737,11 +728,6 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     public InteractionResult interactAt(Player player, Vec3 hitVec, InteractionHand hand) {
         if (contraption == null) return InteractionResult.PASS;
         BlockPos local = pickLocalBlock(player);
-        if (!level().isClientSide) {
-            var pi = local == null ? null : contraption.getBlocks().get(local);
-            com.github.nalamodikk.KoniavacraftMod.LOGGER.info("[ship] interactAt: picked local={} block={}",
-                    local, pi == null ? "null" : pi.state().getBlock());
-        }
         if (local == null) return InteractionResult.PASS; // 指到空隙=船身，不反應
         var info = contraption.getBlocks().get(local);
         if (info == null) return InteractionResult.PASS;
@@ -771,7 +757,10 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         // VM3：箱子/機器等有 BlockEntity 的方塊 → 把互動轉發給「影子維度裡的真 BE」，
         // 開的是真正在運轉的機器/容器 GUI（stillValid mixin 讓跨維度選單不秒關）。
         // 影子不存在(沒 runData)時退回 Phase3 的鏡像容器(只箱子)。
-        if (info.state().getBlock() instanceof EntityBlock) {
+        // 潛行 + 手持方塊 + 停船 = 編輯放置，讓它落到下面的放置分支（不開 GUI），其餘一律開互動方塊的 GUI
+        boolean sneakPlacing = isParked() && player.isSecondaryUseActive()
+                && player.getItemInHand(hand).getItem() instanceof BlockItem;
+        if (info.state().getBlock() instanceof EntityBlock && !sneakPlacing) {
             if (!level().isClientSide && player instanceof ServerPlayer sp) {
                 boolean opened = forwardUseToShadow(sp, local, info.state(), hand); // 影子真 BE 的 GUI
                 if (!opened && isContainer(info.state())) openContainer(sp, local, info); // 退回鏡像容器
@@ -1261,6 +1250,10 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         boolean has = contraption != null;
         buf.writeBoolean(has);
         if (has) buf.writeNbt(contraption.writeNbt(level().registryAccess()));
+        // VM3b：把影子錨點同步給 client，讓 entityMenu 能用影子座標反算 local、從船的 render BE 建機器選單
+        boolean hasAnchor = shadowAnchor != null;
+        buf.writeBoolean(hasAnchor);
+        if (hasAnchor) buf.writeBlockPos(shadowAnchor);
     }
 
     @Override
@@ -1274,5 +1267,24 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
                 refreshDimensions();
             }
         }
+        if (buf.readBoolean()) shadowAnchor = buf.readBlockPos();
+    }
+
+    /**
+     * VM3b（client）：影子維度的 BE pos 反查船上的 render BE。entityMenu 在 client 找不到世界 BE 時用，
+     * 讓機器選單能用對的型別 BE 建構（內容由 server 影子 BE 廣播同步）。pos 在某船影子區域內就回該 local 的 render BE。
+     */
+    @Nullable
+    public static BlockEntity findShadowRenderBE(Player player, BlockPos shadowPos) {
+        // 玩家剛跟船互動才開選單，船一定在身邊；只搜附近，不掃全世界
+        for (ShipEntity ship : player.level().getEntitiesOfClass(ShipEntity.class,
+                player.getBoundingBox().inflate(48.0))) {
+            BlockPos anchor = ship.shadowAnchor;
+            if (anchor == null || ship.contraption == null) continue;
+            BlockPos local = shadowPos.subtract(anchor);
+            if (!ship.contraption.getBlocks().containsKey(local)) continue;
+            return ship.getRenderBlockEntities().get(local);
+        }
+        return null;
     }
 }

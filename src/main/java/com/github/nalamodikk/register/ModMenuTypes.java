@@ -13,6 +13,7 @@ package com.github.nalamodikk.register;
  */
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.space.ship.ShipEntity;
 import com.github.nalamodikk.common.block.blockentity.collector.solarmana.SolarManaCollectorBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.collector.solarmana.SolarManaCollectorMenu;
 import com.github.nalamodikk.common.block.blockentity.skillencoder.SkillEncoderBlockEntity;
@@ -210,9 +211,11 @@ public class ModMenuTypes {
             BlockPos pos = buf.readBlockPos();
             Level level = inv.player.level();
             BlockEntity be = level.getBlockEntity(pos);
+            if (!entityClass.isInstance(be)) be = ShipEntity.findShadowRenderBE(inv.player, pos); // VM3b：船的影子機器
             if (!entityClass.isInstance(be)) {
-                throw new IllegalStateException("Expected %s at %s but found %s".formatted(
-                        entityClass.getSimpleName(), pos, be != null ? be.getClass().getSimpleName() : "null"));
+                KoniavacraftMod.LOGGER.warn("[menu] {} not found at {} client-side; skipping (no crash)",
+                        entityClass.getSimpleName(), pos);
+                return null;
             }
             return constructor.apply(id, entityClass.cast(be));
         };
@@ -226,9 +229,11 @@ public class ModMenuTypes {
             BlockPos pos = buf.readBlockPos();
             Level level = inv.player.level();
             BlockEntity be = level.getBlockEntity(pos);
+            if (!entityClass.isInstance(be)) be = ShipEntity.findShadowRenderBE(inv.player, pos); // VM3b：船的影子機器
             if (!entityClass.isInstance(be)) {
-                throw new IllegalStateException("Expected %s at %s but found %s".formatted(
-                        entityClass.getSimpleName(), pos, be != null ? be.getClass().getSimpleName() : "null"));
+                KoniavacraftMod.LOGGER.warn("[menu] {} not found at {} client-side; skipping (no crash)",
+                        entityClass.getSimpleName(), pos);
+                return null;
             }
             return constructor.apply(id, inv, entityClass.cast(be));
         };
