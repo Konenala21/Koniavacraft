@@ -50,8 +50,8 @@ public class ManaCraftingMenu extends AbstractContainerMenu {
         BlockPos pos = buf.readBlockPos();
         Level level = playerInventory.player.level();
 
-        BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (blockEntity instanceof ManaCraftingTableBlockEntity manaTable) {
+        ManaCraftingTableBlockEntity manaTable = ModMenuTypes.resolveMenuBE(playerInventory, pos, ManaCraftingTableBlockEntity.class);
+        if (manaTable != null) {
             return new ManaCraftingMenu(windowId, playerInventory, manaTable.getItemHandler(),
                     ContainerLevelAccess.create(level, pos), level);
         }

@@ -33,6 +33,7 @@ import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserBl
 import com.github.nalamodikk.common.block.blockentity.mana_infuser.ManaInfuserMenu;
 import com.github.nalamodikk.common.block.blockentity.mana_plate_press.ManaPlatePressBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_plate_press.ManaPlatePressMenu;
+import com.github.nalamodikk.common.block.blockentity.research.ResearchTableBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.research.ResearchTableMenu;
 import com.github.nalamodikk.common.screen.block.shared.FallbackUpgradeMenu;
 import com.github.nalamodikk.common.screen.block.shared.UniversalConfigMenu;
@@ -141,7 +142,7 @@ public class ModMenuTypes {
             registerMenuType("extra_equipment", ExtraEquipmentMenu::new);
 
     public static final DeferredHolder<MenuType<?>, MenuType<ResearchTableMenu>> RESEARCH_TABLE_MENU =
-            registerMenuType("research_table", ResearchTableMenu::new);
+            registerMenuType("research_table", entityMenu(ResearchTableBlockEntity.class, ResearchTableMenu::new));
 
     // === 🚀 飛船組裝台菜單（無物品槽，只同步掃描結果）===
     public static final DeferredHolder<MenuType<?>, MenuType<ShipAssemblyPadMenu>> SHIP_ASSEMBLY_PAD_MENU =
@@ -192,16 +193,8 @@ public class ModMenuTypes {
             BiFunction<Integer, T, M> constructor
     ) {
         return (id, inv, buf) -> {
-            BlockPos pos = buf.readBlockPos();
-            Level level = inv.player.level();
-            BlockEntity be = level.getBlockEntity(pos);
-            if (!entityClass.isInstance(be)) be = ShipEntity.findShadowRenderBE(inv.player, pos); // VM3b：船的影子機器
-            if (!entityClass.isInstance(be)) {
-                KoniavacraftMod.LOGGER.warn("[menu] {} not found at {} client-side; skipping (no crash)",
-                        entityClass.getSimpleName(), pos);
-                return null;
-            }
-            return constructor.apply(id, entityClass.cast(be));
+            T be = resolveMenuBE(inv, buf.readBlockPos(), entityClass);
+            return be == null ? null : constructor.apply(id, be);
         };
     }
 
@@ -210,16 +203,8 @@ public class ModMenuTypes {
             TriFunction<Integer, Inventory, T, M> constructor
     ) {
         return (id, inv, buf) -> {
-            BlockPos pos = buf.readBlockPos();
-            Level level = inv.player.level();
-            BlockEntity be = level.getBlockEntity(pos);
-            if (!entityClass.isInstance(be)) be = ShipEntity.findShadowRenderBE(inv.player, pos); // VM3b：船的影子機器
-            if (!entityClass.isInstance(be)) {
-                KoniavacraftMod.LOGGER.warn("[menu] {} not found at {} client-side; skipping (no crash)",
-                        entityClass.getSimpleName(), pos);
-                return null;
-            }
-            return constructor.apply(id, inv, entityClass.cast(be));
+            T be = resolveMenuBE(inv, buf.readBlockPos(), entityClass);
+            return be == null ? null : constructor.apply(id, inv, be);
         };
     }
 

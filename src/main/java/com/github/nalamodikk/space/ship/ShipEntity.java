@@ -15,6 +15,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
@@ -339,10 +341,24 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         BlockPos sp = shadowAnchor.offset(local);
         BlockState ss = shadow.getBlockState(sp);
         if (ss.isAir() || ss.getBlock() != expected.getBlock()) return false; // 影子沒這方塊(放置失敗) → 退回
-        // 一律走 useWithoutItem 開 GUI（像 vanilla 不潛行時拿著任何東西點箱子/機器也會開，不是只有空手）。
-        // 潛行+方塊的編輯放置由外層 interactAt 在進這分支前分流，不會走到這。
         BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(sp), Direction.UP, sp, false);
-        ss.useWithoutItem(shadow, player, hit);
+        ItemStack held = player.getItemInHand(hand);
+        // 複製 vanilla 的方塊互動順序：很多機器(發電機/充能台...)是用 useItemOn 開選單，不是 useWithoutItem。
+        // 潛行+手持物 → 跳過方塊互動，直接 item.useOn(設定工具之類對機器用)。
+        boolean hasItem = !player.getMainHandItem().isEmpty() || !player.getOffhandItem().isEmpty();
+        boolean sneakWithItem = player.isSecondaryUseActive() && hasItem;
+        if (!sneakWithItem) {
+            ItemInteractionResult ir = ss.useItemOn(held, shadow, player, hand, hit);
+            if (ir.consumesAction()) return true;
+            if (ir == ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION) {
+                if (ss.useWithoutItem(shadow, player, hit).consumesAction()) return true;
+            } else {
+                return true; // SKIP_DEFAULT/FAIL：物品已明確處理，不再開 GUI
+            }
+        }
+        if (!held.isEmpty()) {
+            held.useOn(new UseOnContext(shadow, player, hand, held, hit));
+        }
         return true;
     }
 

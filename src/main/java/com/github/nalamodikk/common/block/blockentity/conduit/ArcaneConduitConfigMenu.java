@@ -39,12 +39,8 @@ public class ArcaneConduitConfigMenu extends AbstractContainerMenu {
 
     private static ArcaneConduitBlockEntity getConduitFromBuf(Inventory playerInventory, FriendlyByteBuf buf) {
         BlockPos pos = buf.readBlockPos();
-        Level level = playerInventory.player.level();
-
-        if (level.getBlockEntity(pos) instanceof ArcaneConduitBlockEntity conduit) {
-            return conduit;
-        }
-
+        ArcaneConduitBlockEntity conduit = ModMenuTypes.resolveMenuBE(playerInventory, pos, ArcaneConduitBlockEntity.class);
+        if (conduit != null) return conduit;
         throw new IllegalStateException("Invalid conduit position: " + pos);
     }
 

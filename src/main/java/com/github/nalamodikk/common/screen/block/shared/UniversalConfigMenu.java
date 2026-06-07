@@ -64,7 +64,7 @@ public class UniversalConfigMenu extends AbstractContainerMenu {
         this.wandItem = ItemStack.EMPTY;
         // 忽略封包中的快照配置，直接從BlockEntity獲取實時配置
 
-        this.blockEntity = playerInventory.player.level().getBlockEntity(pos);
+        this.blockEntity = ModMenuTypes.resolveMenuBE(playerInventory, pos, BlockEntity.class);
         this.player = playerInventory.player;
         this.access = ContainerLevelAccess.create(playerInventory.player.level(), pos);
 
