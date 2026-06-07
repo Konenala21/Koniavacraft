@@ -306,8 +306,54 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             tickLerp(); // server 權威：client 只平滑跟隨 server 廣播的位置，不自己算移動
         } else {
             tickServerMovement(); // server 是唯一真相，依駕駛輸入算移動
+            if ((tickCount & 15) == 0) tickServerMirror(); // VM2：每 16 tick 把影子狀態鏡射回視覺船
         }
         setDeltaMovement(0, 0, 0); // 自己用 setPos 移動，不靠 vanilla 速度
+    }
+
+    // ── VM2：影子(真相)→視覺船(鏡像) 狀態鏡射 ─────────────────────────────────
+    @Nullable
+    private ServerLevel getShadow() {
+        if (shadowAnchor == null || level().isClientSide) return null;
+        var server = level().getServer();
+        return server == null ? null : ShipShadowManager.shadowLevel(server);
+    }
+
+    /** 編輯飛船時把改動也寫進影子（不然下一輪鏡射會把編輯蓋回去；機器網路也要看到新方塊）。 */
+    private void writeToShadow(BlockPos local, BlockState state, @Nullable CompoundTag nbt) {
+        ServerLevel shadow = getShadow();
+        if (shadow == null) return;
+        BlockPos sp = shadowAnchor.offset(local);
+        shadow.setBlock(sp, state, Block.UPDATE_ALL);
+        if (nbt != null) {
+            BlockEntity be = shadow.getBlockEntity(sp);
+            if (be != null) be.loadWithComponents(nbt, shadow.registryAccess());
+        }
+    }
+
+    /** 把影子裡的 blockstate/BE 變化(機器運轉、作物生長、熔爐亮)鏡射回視覺 contraption + 同步 client。 */
+    private void tickServerMirror() {
+        ServerLevel shadow = getShadow();
+        if (shadow == null || contraption == null) return;
+        for (var e : new ArrayList<>(contraption.getBlocks().entrySet())) {
+            BlockPos local = e.getKey();
+            StructureBlockInfo info = e.getValue();
+            BlockPos sp = shadowAnchor.offset(local);
+            BlockState ss = shadow.getBlockState(sp);
+            if (!ss.equals(info.state())) {
+                contraption.setBlockState(local, ss);          // blockstate 變(作物/熔爐亮/機器 active)
+                ShipBlockUpdatePacket.sendToClients(this, local, ss);
+                localCollisionShapeCache = null;               // 形狀可能變(作物長/門開)
+            }
+            if (ss.getBlock() instanceof EntityBlock) {        // BE NBT 鏡射(機器內容/進度)：拆解才保留正確狀態
+                BlockEntity sbe = shadow.getBlockEntity(sp);
+                if (sbe != null) {
+                    CompoundTag tag = sbe.saveWithFullMetadata(shadow.registryAccess());
+                    tag.remove("x"); tag.remove("y"); tag.remove("z");
+                    contraption.setBlockNbt(local, tag);
+                }
+            }
+        }
     }
 
     /**
@@ -748,6 +794,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     private void removeBlockAndSync(BlockPos local) {
         updateContraptionBlock(local, Blocks.AIR.defaultBlockState());
         ShipBlockUpdatePacket.sendToClients(this, local, Blocks.AIR.defaultBlockState());
+        writeToShadow(local, Blocks.AIR.defaultBlockState(), null); // 影子也挖掉（機器網路同步）
     }
 
     /**
@@ -789,6 +836,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     private void placeOne(BlockPos local, BlockState state) {
         updateContraptionBlock(local, state);
         ShipBlockUpdatePacket.sendToClients(this, local, state);
+        writeToShadow(local, state, null); // 影子也放（機器網路同步）
     }
 
     /** 用 vanilla getStateForPlacement 算放置後的 state，方向轉進 local 框。失敗退回 defaultBlockState。 */
@@ -859,6 +907,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         ContainerHelper.saveAllItems(nbt, items, level().registryAccess());
         contraption.setBlockNbt(local, nbt);
         renderBEs = null; // BE 快取作廢（保險）
+        writeToShadow(local, info.state(), nbt); // 影子的箱子也同步（不然鏡射會蓋回去）
     }
 
     private static boolean isToggleable(BlockState s) {
@@ -905,6 +954,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     private void setAndSync(BlockPos local, BlockState ns) {
         updateContraptionBlock(local, ns);
         ShipBlockUpdatePacket.sendToClients(this, local, ns);
+        writeToShadow(local, ns, null); // 影子也切（門開關等）
     }
 
     private void playInteractSound(BlockPos local, SoundEvent sound) {
