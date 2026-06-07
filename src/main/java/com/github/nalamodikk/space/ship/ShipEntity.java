@@ -333,11 +333,12 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
      * VM3：把對船上 BE 方塊的右鍵轉發給影子維度裡的真 BE（開真機器/容器 GUI）。
      * 影子 block 的 use 會 player.openMenu，menu 綁影子 BE；stillValid 由 MenuShipShadowMixin 放行。
      */
-    private void forwardUseToShadow(ServerPlayer player, BlockPos local, InteractionHand hand) {
+    private boolean forwardUseToShadow(ServerPlayer player, BlockPos local, BlockState expected, InteractionHand hand) {
         ServerLevel shadow = getShadow();
-        if (shadow == null) return;
+        if (shadow == null) return false;
         BlockPos sp = shadowAnchor.offset(local);
         BlockState ss = shadow.getBlockState(sp);
+        if (ss.isAir() || ss.getBlock() != expected.getBlock()) return false; // 影子沒這方塊(放置失敗) → 退回
         BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(sp), Direction.UP, sp, false);
         ItemStack held = player.getItemInHand(hand);
         if (!held.isEmpty()) {
@@ -345,6 +346,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         } else {
             ss.useWithoutItem(shadow, player, hit);
         }
+        return true;
     }
 
     /** 編輯飛船時把改動也寫進影子（不然下一輪鏡射會把編輯蓋回去；機器網路也要看到新方塊）。 */
@@ -368,6 +370,8 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             StructureBlockInfo info = e.getValue();
             BlockPos sp = shadowAnchor.offset(local);
             BlockState ss = shadow.getBlockState(sp);
+            // 安全：影子讀到空氣但視覺有方塊 = 影子那格沒載/放置失敗，絕不可把視覺船的方塊鏡射成空氣抹掉
+            if (ss.isAir() && !info.state().isAir()) continue;
             if (!ss.equals(info.state())) {
                 contraption.setBlockState(local, ss);          // blockstate 變(作物/熔爐亮/機器 active)
                 ShipBlockUpdatePacket.sendToClients(this, local, ss);
@@ -758,8 +762,8 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         // 影子不存在(沒 runData)時退回 Phase3 的鏡像容器(只箱子)。
         if (info.state().getBlock() instanceof EntityBlock) {
             if (!level().isClientSide && player instanceof ServerPlayer sp) {
-                if (getShadow() != null) forwardUseToShadow(sp, local, hand);
-                else if (isContainer(info.state())) openContainer(sp, local, info);
+                boolean opened = forwardUseToShadow(sp, local, info.state(), hand); // 影子真 BE 的 GUI
+                if (!opened && isContainer(info.state())) openContainer(sp, local, info); // 退回鏡像容器
             }
             return InteractionResult.sidedSuccess(level().isClientSide);
         }
