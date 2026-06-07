@@ -4,6 +4,7 @@ import com.github.nalamodikk.space.ship.ShipEntity;
 import net.minecraft.client.Camera;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.Minecraft;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.phys.Vec3;
@@ -33,7 +34,11 @@ public abstract class ShipCameraMixin {
         if (mc.player == null || !(mc.player.getVehicle() instanceof ShipEntity ship)) return;
         if (ship.getControllingPassenger() != mc.player) return;
 
-        Vec3 center = new Vec3(ship.getX(), ship.getY() + 1.5, ship.getZ()); // 船中心略上
+        // 用 partialTick 插值位置（跟船渲染同一套），否則相機用 tick 原始位置、船用插值位置 → 每幀錯位抽搐
+        double ix = Mth.lerp(partialTick, ship.xOld, ship.getX());
+        double iy = Mth.lerp(partialTick, ship.yOld, ship.getY());
+        double iz = Mth.lerp(partialTick, ship.zOld, ship.getZ());
+        Vec3 center = new Vec3(ix, iy + 1.5, iz); // 船中心略上（插值）
         Vector3f l = getLookVector();
         Vec3 look = new Vec3(l.x, l.y, l.z);
         Vec3 pos;
