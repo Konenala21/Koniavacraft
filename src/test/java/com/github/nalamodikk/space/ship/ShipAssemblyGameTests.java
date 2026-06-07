@@ -9,6 +9,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
@@ -223,6 +224,34 @@ public class ShipAssemblyGameTests {
     }
 
     /** Phase 3 箱子：用 writeContainerBack 改船上箱子內容 → 拆解後箱子保留新物品（寫回持久化）。 */
+    /** 正常拆解不該誤觸 remove() 的掉落回歸（intentionalDisassembly flag）：拆完地上不該有掉落物。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
+    public static void disassembleDoesNotDropItems(GameTestHelper helper) {
+        ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);
+        helper.setBlock(new BlockPos(4, 2, 4), core());
+        helper.setBlock(new BlockPos(3, 2, 4), filler());
+
+        helper.startSequence()
+                .thenExecute(pad::assembleShip)
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
+                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
+                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
+                            .findFirst().orElse(null);
+                    if (ship == null) { helper.fail("no ship"); return; }
+                    if (!ship.disassemble()) helper.fail("disassemble returned false");
+                })
+                .thenIdle(2)
+                .thenExecute(() -> {
+                    helper.assertBlockPresent(ModBlocks.SHIP_CORE.get(), new BlockPos(4, 2, 4));
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(5);
+                    int drops = helper.getLevel().getEntitiesOfClass(ItemEntity.class, area).size();
+                    if (drops > 0) helper.fail("normal disassembly dropped " + drops + " items (recovery wrongly fired)");
+                })
+                .thenSucceed();
+    }
+
     /** 保險：船被 /kill（KILLED）而非正常拆解時，contraption 方塊應寫回世界、不蒸發。 */
     @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
     public static void killedShipRecoversBlocks(GameTestHelper helper) {
