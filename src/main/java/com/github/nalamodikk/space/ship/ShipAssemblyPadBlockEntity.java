@@ -179,6 +179,16 @@ public class ShipAssemblyPadBlockEntity extends BlockEntity implements MenuProvi
         entity.placeAtShipCenter(core);
         server.addFreshEntity(entity);
 
+        // VM1：把方塊複製進影子維度的固定區域並 force-load，機器/作物在那裡真正 tick。
+        // 視覺船(entity 上的 contraption)是鏡像，影子是真相（VM2 做狀態鏡射回視覺船）。
+        ServerLevel shadow = ShipShadowManager.shadowLevel(server.getServer());
+        if (shadow != null) {
+            BlockPos anchor = ShipShadowManager.get(server.getServer()).allocate(entity.getUUID());
+            entity.setShadowAnchor(anchor);
+            ShipShadowManager.setForceLoad(shadow, anchor, ship.bounds(), true);
+            ShipShadowManager.placeInShadow(shadow, anchor, ship);
+        }
+
         data.set(DATA_COUNT, ship.size());
         data.set(DATA_CORES, 1);
         setStatus(STATUS_LAUNCHED);

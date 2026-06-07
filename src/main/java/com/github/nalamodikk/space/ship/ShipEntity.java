@@ -11,6 +11,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -223,8 +224,23 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         super.remove(reason);
     }
 
+    /** 清掉影子維度裡這台船的方塊 + 解除 force-load + 釋放 slot（拆解/移除時）。 */
+    void clearShadow() {
+        if (shadowAnchor == null || contraption == null || level().isClientSide) return;
+        var server = level().getServer();
+        if (server == null) return;
+        ServerLevel shadow = ShipShadowManager.shadowLevel(server);
+        if (shadow != null) {
+            ShipShadowManager.clearShadow(shadow, shadowAnchor, contraption);
+            ShipShadowManager.setForceLoad(shadow, shadowAnchor, contraption.bounds(), false);
+        }
+        ShipShadowManager.get(server).free(getUUID());
+        shadowAnchor = null;
+    }
+
     /** 異常移除時把 contraption 寫回世界；放不下就掉落方塊與容器物品（寧可掉也不蒸發）。 */
     private void recoverContraptionToWorld() {
+        clearShadow(); // 影子那份也要清，不然 slot 洩漏 + 機器繼續在影子跑
         Rotation rotation = snapRotation(getYRot());
         Vec3 coreWorld = rotatedWorldCorner(0, 0, 0);
         BlockPos target = new BlockPos(
@@ -1004,6 +1020,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         BlockPos target = new BlockPos(
                 Mth.floor(coreWorld.x + 0.5), Mth.floor(coreWorld.y + 0.5), Mth.floor(coreWorld.z + 0.5));
         if (!contraption.addToWorld(level(), target, rotation)) return false;
+        clearShadow(); // 收船：影子那份也清掉 + 釋放 slot
         intentionalDisassembly = true; // 正常拆解：remove() 的保險不要再寫一次
         discard();
         return true;
@@ -1113,6 +1130,10 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             this.contraption = c;
             refreshDimensions();
         }
+        if (tag.contains("ShadowAnchor")) {
+            int[] a = tag.getIntArray("ShadowAnchor");
+            if (a.length == 3) shadowAnchor = new BlockPos(a[0], a[1], a[2]);
+        }
     }
 
     @Override
@@ -1120,7 +1141,14 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         if (contraption != null) {
             tag.put("Ship", contraption.writeNbt(level().registryAccess()));
         }
+        if (shadowAnchor != null) {
+            tag.putIntArray("ShadowAnchor", new int[]{shadowAnchor.getX(), shadowAnchor.getY(), shadowAnchor.getZ()});
+        }
     }
+
+    @Nullable private BlockPos shadowAnchor; // 影子維度裡這台船方塊的錨點（VM1，server-only）
+    public void setShadowAnchor(BlockPos a) { this.shadowAnchor = a; }
+    @Nullable public BlockPos getShadowAnchor() { return shadowAnchor; }
 
     @Override
     public void writeSpawnData(RegistryFriendlyByteBuf buf) {
