@@ -15,6 +15,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -224,6 +225,34 @@ public class ShipAssemblyGameTests {
     }
 
     /** Phase 3 箱子：用 writeContainerBack 改船上箱子內容 → 拆解後箱子保留新物品（寫回持久化）。 */
+    /** 停船編輯：放門要放上下兩半（雙方塊），HALF 正確。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
+    public static void editPlacesDoorBothHalves(GameTestHelper helper) {
+        ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);
+        helper.setBlock(new BlockPos(4, 2, 4), core());
+        helper.setBlock(new BlockPos(3, 2, 4), filler());
+
+        helper.startSequence()
+                .thenExecute(pad::assembleShip)
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
+                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
+                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
+                            .findFirst().orElse(null);
+                    if (ship == null) { helper.fail("no ship"); return; }
+                    ship.placeBlock(new BlockPos(0, 1, 0), Blocks.OAK_DOOR);
+                    var lower = ship.getContraption().getBlocks().get(new BlockPos(0, 1, 0));
+                    var upper = ship.getContraption().getBlocks().get(new BlockPos(0, 2, 0));
+                    if (lower == null || upper == null) { helper.fail("door halves missing"); return; }
+                    if (lower.state().getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) != DoubleBlockHalf.LOWER)
+                        helper.fail("lower half wrong");
+                    if (upper.state().getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) != DoubleBlockHalf.UPPER)
+                        helper.fail("upper half wrong");
+                })
+                .thenSucceed();
+    }
+
     /** 停船編輯：updateContraptionBlock 能加方塊(state≠air)與刪方塊(state=air)，size 跟著變。 */
     @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
     public static void editAddsAndRemovesBlock(GameTestHelper helper) {

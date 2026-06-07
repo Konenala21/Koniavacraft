@@ -592,13 +592,10 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         // 停船編輯：手持方塊 + 指到非互動方塊的面 → 放方塊到相鄰空位（互動方塊優先，所以放在這後面）
         if (isParked() && player.getItemInHand(hand).getItem() instanceof BlockItem bi) {
             BlockPos newLocal = local.relative(pickFace(player));
-            if (!contraption.getBlocks().containsKey(newLocal)) {
+            if (canPlaceAt(newLocal, bi.getBlock())) {
                 if (!level().isClientSide) {
-                    BlockState place = bi.getBlock().defaultBlockState();
-                    updateContraptionBlock(newLocal, place);
-                    ShipBlockUpdatePacket.sendToClients(this, newLocal, place);
+                    placeBlock(newLocal, bi.getBlock());
                     if (!player.getAbilities().instabuild) player.getItemInHand(hand).shrink(1);
-                    playInteractSound(newLocal, place.getSoundType().getPlaceSound());
                 }
                 return InteractionResult.sidedSuccess(level().isClientSide);
             }
@@ -637,8 +634,43 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             }
         }
         playInteractSound(local, info.state().getSoundType().getBreakSound());
+        removeBlockAndSync(local);
+        // 門是雙方塊：另一半也要拆，否則留半截
+        if (info.state().getBlock() instanceof DoorBlock && info.state().hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)) {
+            BlockPos other = info.state().getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == DoubleBlockHalf.LOWER
+                    ? local.above() : local.below();
+            if (contraption.getBlocks().containsKey(other)) removeBlockAndSync(other);
+        }
+    }
+
+    private void removeBlockAndSync(BlockPos local) {
         updateContraptionBlock(local, Blocks.AIR.defaultBlockState());
         ShipBlockUpdatePacket.sendToClients(this, local, Blocks.AIR.defaultBlockState());
+    }
+
+    /** 能不能放：目標位置空；門還要上方也空。 */
+    private boolean canPlaceAt(BlockPos local, Block block) {
+        if (contraption.getBlocks().containsKey(local)) return false;
+        if (block instanceof DoorBlock) return !contraption.getBlocks().containsKey(local.above());
+        return true;
+    }
+
+    /** 放方塊（門放上下兩半）。server 端，含同步+音效。package-visible 給 GameTest。 */
+    void placeBlock(BlockPos local, Block block) {
+        BlockState base = block.defaultBlockState();
+        if (block instanceof DoorBlock) {
+            BlockState lower = base.setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, DoubleBlockHalf.LOWER);
+            BlockState upper = base.setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, DoubleBlockHalf.UPPER);
+            BlockPos up = local.above();
+            updateContraptionBlock(local, lower);
+            updateContraptionBlock(up, upper);
+            ShipBlockUpdatePacket.sendToClients(this, local, lower);
+            ShipBlockUpdatePacket.sendToClients(this, up, upper);
+        } else {
+            updateContraptionBlock(local, base);
+            ShipBlockUpdatePacket.sendToClients(this, local, base);
+        }
+        playInteractSound(local, base.getSoundType().getPlaceSound());
     }
 
     private static boolean isContainer(BlockState s) {
