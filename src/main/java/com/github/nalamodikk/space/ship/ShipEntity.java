@@ -24,6 +24,8 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Container;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.inventory.ChestMenu;
@@ -32,6 +34,7 @@ import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BarrelBlock;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ButtonBlock;
 import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.DoorBlock;
@@ -177,7 +180,14 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
      */
     public void updateContraptionBlock(BlockPos local, BlockState state) {
         if (contraption == null) return;
-        contraption.setBlockState(local, state);
+        // state=air → 移除；已存在 → 換 state（保留 NBT）；不存在 → 新增。涵蓋 Phase2 切狀態 + 停船編輯加/挖
+        if (state.isAir()) {
+            contraption.removeBlock(local);
+        } else if (contraption.getBlocks().containsKey(local)) {
+            contraption.setBlockState(local, state);
+        } else {
+            contraption.addBlock(local, state, null);
+        }
         localCollisionShapeCache = null;
         renderBEs = null;
         if (meshCache instanceof AutoCloseable ac) {
@@ -185,6 +195,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         }
         meshCache = null;
         meshFailed = false;
+        refreshDimensions(); // bounds 可能變了，更新 hitbox
     }
 
     @Override
@@ -578,8 +589,56 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             }
             return InteractionResult.sidedSuccess(level().isClientSide);
         }
+        // 停船編輯：手持方塊 + 指到非互動方塊的面 → 放方塊到相鄰空位（互動方塊優先，所以放在這後面）
+        if (isParked() && player.getItemInHand(hand).getItem() instanceof BlockItem bi) {
+            BlockPos newLocal = local.relative(pickFace(player));
+            if (!contraption.getBlocks().containsKey(newLocal)) {
+                if (!level().isClientSide) {
+                    BlockState place = bi.getBlock().defaultBlockState();
+                    updateContraptionBlock(newLocal, place);
+                    ShipBlockUpdatePacket.sendToClients(this, newLocal, place);
+                    if (!player.getAbilities().instabuild) player.getItemInHand(hand).shrink(1);
+                    playInteractSound(newLocal, place.getSoundType().getPlaceSound());
+                }
+                return InteractionResult.sidedSuccess(level().isClientSide);
+            }
+        }
         // TODO Phase 4：機器 → 虛擬世界 tick
         return InteractionResult.PASS;
+    }
+
+    /** 船是否停著（沒人在駕駛）→ 才允許編輯。 */
+    public boolean isParked() {
+        return getControllingPassenger() == null;
+    }
+
+    /** 左鍵(攻擊)停著的船 = 挖掉指到的方塊（核心不可挖）。不真的扣血。 */
+    @Override
+    public boolean hurt(DamageSource source, float amount) {
+        if (!level().isClientSide && contraption != null
+                && source.getEntity() instanceof Player player && isParked()) {
+            breakAimedBlock(player);
+        }
+        return false;
+    }
+
+    private void breakAimedBlock(Player player) {
+        BlockPos local = pickLocalBlock(player);
+        if (local == null || local.equals(BlockPos.ZERO)) return; // 核心(0,0,0)是錨點，不可挖
+        var info = contraption.getBlocks().get(local);
+        if (info == null) return;
+        if (!player.getAbilities().instabuild) {
+            ItemStack block = new ItemStack(info.state().getBlock().asItem());
+            if (!block.isEmpty()) spawnAtLocation(block);
+            if (info.nbt() != null && info.nbt().contains("Items")) {
+                NonNullList<ItemStack> items = NonNullList.withSize(256, ItemStack.EMPTY);
+                ContainerHelper.loadAllItems(info.nbt(), items, level().registryAccess());
+                for (ItemStack it : items) if (!it.isEmpty()) spawnAtLocation(it);
+            }
+        }
+        playInteractSound(local, info.state().getSoundType().getBreakSound());
+        updateContraptionBlock(local, Blocks.AIR.defaultBlockState());
+        ShipBlockUpdatePacket.sendToClients(this, local, Blocks.AIR.defaultBlockState());
     }
 
     private static boolean isContainer(BlockState s) {
@@ -673,13 +732,17 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     /** 從玩家視線 raycast 找指到的 local 方塊（用 outline 形狀，逐方塊取最近命中）。 */
     @Nullable
-    private BlockPos pickLocalBlock(Player player) {
+    private record Pick(BlockPos local, Direction face) {}
+
+    /** raycast 視線進船的 local 方塊，回傳最近命中的方塊 + 命中面（放方塊要面方向）。 */
+    @Nullable
+    private Pick pickLocal(Player player) {
         if (contraption == null) return null;
         Vec3 eye = player.getEyePosition();
         Vec3 end = eye.add(player.getViewVector(1.0f).scale(6.0));
         Vec3 ls = worldToLocalPoint(eye.x, eye.y, eye.z);
         Vec3 le = worldToLocalPoint(end.x, end.y, end.z);
-        BlockPos best = null;
+        Pick best = null;
         double bestDist = Double.MAX_VALUE;
         for (var e : contraption.getBlocks().entrySet()) {
             BlockPos lp = e.getKey();
@@ -688,10 +751,22 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             BlockHitResult hit = shape.clip(ls, le, lp);
             if (hit != null) {
                 double d = hit.getLocation().distanceToSqr(ls);
-                if (d < bestDist) { bestDist = d; best = lp; }
+                if (d < bestDist) { bestDist = d; best = new Pick(lp, hit.getDirection()); }
             }
         }
         return best;
+    }
+
+    @Nullable
+    private BlockPos pickLocalBlock(Player player) {
+        Pick p = pickLocal(player);
+        return p == null ? null : p.local();
+    }
+
+    /** 命中面方向（放方塊用）；沒命中回 UP 當保底。 */
+    private Direction pickFace(Player player) {
+        Pick p = pickLocal(player);
+        return p == null ? Direction.UP : p.face();
     }
 
     /**

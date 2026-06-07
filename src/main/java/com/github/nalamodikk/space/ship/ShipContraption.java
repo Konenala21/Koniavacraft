@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate.StructureBlockInfo;
 import net.minecraft.world.phys.AABB;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.HashMap;
@@ -220,6 +221,23 @@ public class ShipContraption {
         StructureBlockInfo old = blocks.get(local);
         if (old == null) return;
         blocks.put(local, new StructureBlockInfo(local, old.state(), nbt));
+    }
+
+    /** 加一個新方塊（停船編輯：放方塊）。會擴大 bounds。 */
+    public void addBlock(BlockPos local, BlockState state, @Nullable CompoundTag nbt) {
+        blocks.put(local, new StructureBlockInfo(local, state, nbt));
+        bounds = bounds.minmax(new AABB(local));
+    }
+
+    /** 移除一個方塊（停船編輯：挖方塊）。bounds 重算（可能縮小）。 */
+    public void removeBlock(BlockPos local) {
+        if (blocks.remove(local) != null) recomputeBounds();
+    }
+
+    private void recomputeBounds() {
+        AABB b = new AABB(BlockPos.ZERO);
+        for (BlockPos p : blocks.keySet()) b = b.minmax(new AABB(p));
+        bounds = b;
     }
 
     public int size() { return blocks.size(); }

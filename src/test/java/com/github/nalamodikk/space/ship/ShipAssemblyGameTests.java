@@ -224,6 +224,38 @@ public class ShipAssemblyGameTests {
     }
 
     /** Phase 3 箱子：用 writeContainerBack 改船上箱子內容 → 拆解後箱子保留新物品（寫回持久化）。 */
+    /** 停船編輯：updateContraptionBlock 能加方塊(state≠air)與刪方塊(state=air)，size 跟著變。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
+    public static void editAddsAndRemovesBlock(GameTestHelper helper) {
+        ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);
+        helper.setBlock(new BlockPos(4, 2, 4), core());
+        helper.setBlock(new BlockPos(3, 2, 4), filler());
+
+        helper.startSequence()
+                .thenExecute(pad::assembleShip)
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
+                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
+                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
+                            .findFirst().orElse(null);
+                    if (ship == null) { helper.fail("no ship"); return; }
+                    int before = ship.getContraption().size();
+                    BlockPos newLocal = new BlockPos(0, 1, 0); // 核心上方
+                    ship.updateContraptionBlock(newLocal, Blocks.STONE.defaultBlockState());
+                    if (ship.getContraption().size() != before + 1
+                            || !ship.getContraption().getBlocks().containsKey(newLocal)) {
+                        helper.fail("add block failed"); return;
+                    }
+                    ship.updateContraptionBlock(newLocal, Blocks.AIR.defaultBlockState());
+                    if (ship.getContraption().size() != before
+                            || ship.getContraption().getBlocks().containsKey(newLocal)) {
+                        helper.fail("remove block failed");
+                    }
+                })
+                .thenSucceed();
+    }
+
     /** 正常拆解不該誤觸 remove() 的掉落回歸（intentionalDisassembly flag）：拆完地上不該有掉落物。 */
     @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
     public static void disassembleDoesNotDropItems(GameTestHelper helper) {
