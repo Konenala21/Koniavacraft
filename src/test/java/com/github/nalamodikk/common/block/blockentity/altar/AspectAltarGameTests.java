@@ -33,7 +33,8 @@ import java.util.List;
 @PrefixGameTestTemplate(false)
 public class AspectAltarGameTests {
 
-    private static final String TEMPLATE = "empty";
+    // 16×8×16 模板：祭壇結構大(成形 ±3、升級環 ±7)，用 1×1 的 empty 會跟隔壁測試重疊污染 → flaky。
+    private static final String TEMPLATE = "altar_area";
 
     // altar 核心在模板 (7,3,7)；pillar_bottom 在 y-2=1，pillar_top 在 y-1=2
     private static final BlockPos ALTAR = new BlockPos(7, 3, 7);

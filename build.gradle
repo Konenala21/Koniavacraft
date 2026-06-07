@@ -271,7 +271,11 @@ tasks.register("syncGameTestStructures", Copy) {
 // 生成 altar_area GameTest 模板（15×5×15 空白區域，石頭地板）
 // altar 核心位置 (7,3,7)，柱底 y=1，柱頂 y=2 皆在地板上方
 tasks.register("generateAltarTestStructure") {
-    def outFile = file("run/gameteststructures/koniava/altar_area.nbt")
+    // GameTest 的 StructureUtils.prepareTestStructure 是用 level.getStructureManager().get(loc)，
+    // 也就是 StructureTemplateManager 的 datapack 載入路徑 data/<ns>/structure/<name>.nbt。
+    // run/gameteststructures 那個來源只吃 .snbt 且 namespace 強制為 minecraft，不會載 koniava:altar_area 的二進位 .nbt。
+    // 所以模板必須寫進 src/main/resources/data/koniava/structure/，跟 empty.nbt 一樣當資源載入。
+    def outFile = file("src/main/resources/data/${mod_id}/structure/altar_area.nbt")
     outputs.file(outFile)
     onlyIf { !outFile.exists() }
 
@@ -338,6 +342,13 @@ tasks.register("generateAltarTestStructure") {
     }
 }
 
+// 模板必須在 processResources 之前產生，才會被打包進 gametest 的 resource classpath
+tasks.named("syncGameTestStructures").configure {
+    dependsOn("generateAltarTestStructure")
+}
+tasks.named("processResources").configure {
+    dependsOn("generateAltarTestStructure")
+}
 tasks.named("runGameTestServer").configure {
     dependsOn("syncGameTestStructures")
     dependsOn("generateAltarTestStructure")
