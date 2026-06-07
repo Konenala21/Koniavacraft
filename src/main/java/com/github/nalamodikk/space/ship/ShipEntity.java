@@ -252,9 +252,15 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             if (contraption != null) {
                 for (var e : contraption.getBlocks().entrySet()) {
                     var info = e.getValue();
-                    if (info.nbt() == null || !(info.state().getBlock() instanceof EntityBlock)) continue;
-                    BlockEntity be = BlockEntity.loadStatic(e.getKey(), info.state(), info.nbt(),
-                            level().registryAccess());
+                    if (!(info.state().getBlock() instanceof EntityBlock eb)) continue;
+                    BlockEntity be;
+                    if (info.nbt() != null) {
+                        // 有 NBT（組裝時抓的）：還原內容
+                        be = BlockEntity.loadStatic(e.getKey(), info.state(), info.nbt(), level().registryAccess());
+                    } else {
+                        // 停船編輯新放的 BE 方塊沒 NBT：建一個空 BE 才渲染得出來（例如箱子）
+                        be = eb.newBlockEntity(e.getKey(), info.state());
+                    }
                     if (be != null) {
                         be.setLevel(level());
                         renderBEs.put(e.getKey(), be);
