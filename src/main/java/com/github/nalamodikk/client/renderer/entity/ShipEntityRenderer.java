@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.block.ModelBlockRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderDispatcher;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
@@ -83,12 +84,17 @@ public class ShipEntityRenderer extends EntityRenderer<ShipEntity> {
                 renderStaticPerFrame(entity, c, pose, buffers);
             }
 
-            // BER 方塊（箱子等）：用快取的臨時 BlockEntity 每幀畫
+            // BER 方塊（箱子等）：用快取的臨時 BlockEntity 每幀畫。
+            // 不用 dispatcher.render()，它內部 shouldRender() 拿 BE 的 local pos（靠近原點）跟相機算距離，
+            // 船離原點遠就被距離剔除 → 透明。改直接拿 renderer 用明確光照 render，跳過 shouldRender。
             for (Map.Entry<BlockPos, BlockEntity> e : entity.getRenderBlockEntities().entrySet()) {
                 BlockPos local = e.getKey();
+                BlockEntity be = e.getValue();
+                BlockEntityRenderer<BlockEntity> r = beRenderer.getRenderer(be);
+                if (r == null) continue;
                 pose.pushPose();
                 pose.translate(local.getX(), local.getY(), local.getZ());
-                beRenderer.render(e.getValue(), partialTick, pose, buffers);
+                r.render(be, partialTick, pose, buffers, packedLight, OverlayTexture.NO_OVERLAY);
                 pose.popPose();
             }
             pose.popPose(); // 結束整艘船的 yaw 旋轉
