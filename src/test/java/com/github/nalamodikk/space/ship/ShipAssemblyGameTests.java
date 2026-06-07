@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.Container;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -429,7 +430,7 @@ public class ShipAssemblyGameTests {
                             .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
                             .findFirst().orElse(null);
                     if (ship == null) { helper.fail("no ship"); return; }
-                    ship.remove(net.minecraft.world.entity.Entity.RemovalReason.KILLED); // 模擬 /kill
+                    ship.remove(Entity.RemovalReason.KILLED); // 模擬 /kill
                 })
                 .thenIdle(2)
                 .thenExecute(() -> {
