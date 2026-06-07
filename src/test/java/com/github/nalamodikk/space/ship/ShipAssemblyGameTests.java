@@ -302,16 +302,19 @@ public class ShipAssemblyGameTests {
                     if (ship == null || ship.getShadowAnchor() == null) return; // 無維度(headless) → 跳過
                     ServerLevel shadow = helper.getLevel().getServer().getLevel(ModDimensions.SHIP_SHADOW);
                     if (shadow == null) return;
-                    BlockPos sp = ship.getShadowAnchor().offset(1, 0, 0); // 收集器 local (1,0,0)
+                    // 直接從 contraption 找收集器的真實 local，不猜座標
+                    BlockPos collectorLocal = ship.getContraption().getBlocks().entrySet().stream()
+                            .filter(e -> e.getValue().state().is(ModBlocks.SOLAR_MANA_COLLECTOR.get()))
+                            .map(java.util.Map.Entry::getKey).findFirst().orElse(null);
+                    if (collectorLocal == null) {
+                        helper.fail("collector not in contraption (size=" + ship.getContraption().getBlocks().size() + ")");
+                        return;
+                    }
+                    BlockPos sp = ship.getShadowAnchor().offset(collectorLocal.getX(), collectorLocal.getY(), collectorLocal.getZ());
                     BlockEntity be = shadow.getBlockEntity(sp);
                     if (!(be instanceof SolarManaCollectorBlockEntity solar)) {
-                        // 自我診斷：分清楚是沒組進去/沒放進影子/BE 沒建
-                        int size = ship.getContraption().getBlocks().size();
-                        boolean hasCollectorLocal = ship.getContraption().getBlocks().containsKey(new BlockPos(1, 0, 0));
-                        helper.fail("collector BE missing: contraptionSize=" + size
-                                + " hasCollectorInContraption=" + hasCollectorLocal
-                                + " shadowBlockAt" + sp + "=" + shadow.getBlockState(sp).getBlock()
-                                + " be=" + be + " anchor=" + ship.getShadowAnchor());
+                        helper.fail("collector at local " + collectorLocal + " -> shadow " + sp
+                                + " = " + shadow.getBlockState(sp).getBlock() + " be=" + be);
                         return;
                     }
                     if (solar.getManaStored() <= 0)
