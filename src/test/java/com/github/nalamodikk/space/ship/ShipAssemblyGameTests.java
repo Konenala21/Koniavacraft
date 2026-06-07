@@ -241,7 +241,7 @@ public class ShipAssemblyGameTests {
                             .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
                             .findFirst().orElse(null);
                     if (ship == null) { helper.fail("no ship"); return; }
-                    ship.placeBlock(new BlockPos(0, 1, 0), Blocks.OAK_DOOR);
+                    ship.placeState(new BlockPos(0, 1, 0), Blocks.OAK_DOOR.defaultBlockState());
                     var lower = ship.getContraption().getBlocks().get(new BlockPos(0, 1, 0));
                     var upper = ship.getContraption().getBlocks().get(new BlockPos(0, 2, 0));
                     if (lower == null || upper == null) { helper.fail("door halves missing"); return; }

@@ -26,6 +26,9 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Container;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.block.BedBlock;
+import net.minecraft.world.level.block.state.properties.BedPart;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.inventory.ChestMenu;
@@ -591,13 +594,18 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         }
         // 停船編輯：手持方塊 + 指到非互動方塊的面 → 放方塊到相鄰空位（互動方塊優先，所以放在這後面）
         if (isParked() && player.getItemInHand(hand).getItem() instanceof BlockItem bi) {
-            BlockPos newLocal = local.relative(pickFace(player));
-            if (canPlaceAt(newLocal, bi.getBlock())) {
-                if (!level().isClientSide) {
-                    placeBlock(newLocal, bi.getBlock());
-                    if (!player.getAbilities().instabuild) player.getItemInHand(hand).shrink(1);
+            Pick pick = pickLocal(player);
+            if (pick != null) {
+                BlockPos newLocal = pick.local().relative(pick.face());
+                if (!contraption.getBlocks().containsKey(newLocal)) {
+                    if (!level().isClientSide) {
+                        if (placeBlock(player, hand, pick, newLocal, bi.getBlock())
+                                && !player.getAbilities().instabuild) {
+                            player.getItemInHand(hand).shrink(1);
+                        }
+                    }
+                    return InteractionResult.sidedSuccess(level().isClientSide);
                 }
-                return InteractionResult.sidedSuccess(level().isClientSide);
             }
         }
         // TODO Phase 4：機器 → 虛擬世界 tick
@@ -648,29 +656,69 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         ShipBlockUpdatePacket.sendToClients(this, local, Blocks.AIR.defaultBlockState());
     }
 
-    /** 能不能放：目標位置空；門還要上方也空。 */
-    private boolean canPlaceAt(BlockPos local, Block block) {
-        if (contraption.getBlocks().containsKey(local)) return false;
-        if (block instanceof DoorBlock) return !contraption.getBlocks().containsKey(local.above());
+    /**
+     * 放方塊：用 vanilla getStateForPlacement 算朝向（把你的朝向/點擊面轉進 local 框），多方塊(門/床/
+     * 高植物)放兩格。回傳是否有放。server 端。
+     */
+    boolean placeBlock(Player player, InteractionHand hand, Pick pick, BlockPos local, Block block) {
+        return placeState(local, computePlacementState(player, hand, pick, local, block));
+    }
+
+    /** 把算好的 state 放進 contraption，多方塊(門/高植物上下、床頭腳)放兩格。回傳是否有放。package-visible 給 GameTest。 */
+    boolean placeState(BlockPos local, BlockState state) {
+        Block b = state.getBlock();
+        if (state.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)) { // 門/高植物：上下
+            BlockPos up = local.above();
+            if (contraption.getBlocks().containsKey(up)) return false;
+            placeOne(local, state.setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, DoubleBlockHalf.LOWER));
+            placeOne(up, state.setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, DoubleBlockHalf.UPPER));
+        } else if (b instanceof BedBlock && state.hasProperty(BedBlock.PART)) { // 床：腳 local、頭 FACING 那格
+            BlockPos head = local.relative(state.getValue(BedBlock.FACING));
+            if (contraption.getBlocks().containsKey(head)) return false;
+            placeOne(local, state.setValue(BedBlock.PART, BedPart.FOOT));
+            placeOne(head, state.setValue(BedBlock.PART, BedPart.HEAD));
+        } else {
+            placeOne(local, state);
+        }
+        playInteractSound(local, state.getSoundType().getPlaceSound());
         return true;
     }
 
-    /** 放方塊（門放上下兩半）。server 端，含同步+音效。package-visible 給 GameTest。 */
-    void placeBlock(BlockPos local, Block block) {
-        BlockState base = block.defaultBlockState();
-        if (block instanceof DoorBlock) {
-            BlockState lower = base.setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, DoubleBlockHalf.LOWER);
-            BlockState upper = base.setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, DoubleBlockHalf.UPPER);
-            BlockPos up = local.above();
-            updateContraptionBlock(local, lower);
-            updateContraptionBlock(up, upper);
-            ShipBlockUpdatePacket.sendToClients(this, local, lower);
-            ShipBlockUpdatePacket.sendToClients(this, up, upper);
-        } else {
-            updateContraptionBlock(local, base);
-            ShipBlockUpdatePacket.sendToClients(this, local, base);
-        }
-        playInteractSound(local, base.getSoundType().getPlaceSound());
+    private void placeOne(BlockPos local, BlockState state) {
+        updateContraptionBlock(local, state);
+        ShipBlockUpdatePacket.sendToClients(this, local, state);
+    }
+
+    /** 用 vanilla getStateForPlacement 算放置後的 state，方向轉進 local 框。失敗退回 defaultBlockState。 */
+    private BlockState computePlacementState(Player player, InteractionHand hand, Pick pick, BlockPos local, Block block) {
+        var stack = player.getItemInHand(hand);
+        Direction localFace = worldToLocalDir(pick.face());
+        BlockHitResult hit = new BlockHitResult(pick.hitLocal(), localFace, local, false);
+        BlockPlaceContext ctx = new BlockPlaceContext(level(), player, hand, stack, hit) {
+            @Override public BlockPos getClickedPos() { return local; }
+            @Override public boolean canPlace() { return true; }
+            @Override public boolean replacingClickedOnBlock() { return false; }
+            @Override public Direction getClickedFace() { return localFace; }
+            @Override public Direction getHorizontalDirection() { return worldToLocalDir(player.getDirection()); }
+            @Override public Direction getNearestLookingDirection() { return worldToLocalDir(super.getNearestLookingDirection()); }
+            @Override public Direction[] getNearestLookingDirections() {
+                Direction[] w = super.getNearestLookingDirections();
+                Direction[] l = new Direction[w.length];
+                for (int i = 0; i < w.length; i++) l[i] = worldToLocalDir(w[i]);
+                return l;
+            }
+        };
+        BlockState s = block.getStateForPlacement(ctx);
+        return s != null ? s : block.defaultBlockState();
+    }
+
+    /** 把世界方向轉進船的 local 框（繞 -shipYaw 的 90° 整步）。水平方向才轉，上下不動。 */
+    private Direction worldToLocalDir(Direction d) {
+        if (d.getAxis() == Direction.Axis.Y) return d;
+        int steps = Math.floorMod(Math.round(getYRot() / 90f), 4);
+        Direction r = d;
+        for (int i = 0; i < steps; i++) r = r.getCounterClockWise();
+        return r;
     }
 
     private static boolean isContainer(BlockState s) {
@@ -764,9 +812,9 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     /** 從玩家視線 raycast 找指到的 local 方塊（用 outline 形狀，逐方塊取最近命中）。 */
     @Nullable
-    private record Pick(BlockPos local, Direction face) {}
+    private record Pick(BlockPos local, Direction face, Vec3 hitLocal) {}
 
-    /** raycast 視線進船的 local 方塊，回傳最近命中的方塊 + 命中面（放方塊要面方向）。 */
+    /** raycast 視線進船的 local 方塊，回傳最近命中的方塊 + 命中面 + 命中點(local，放方塊朝向要用)。 */
     @Nullable
     private Pick pickLocal(Player player) {
         if (contraption == null) return null;
@@ -783,7 +831,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             BlockHitResult hit = shape.clip(ls, le, lp);
             if (hit != null) {
                 double d = hit.getLocation().distanceToSqr(ls);
-                if (d < bestDist) { bestDist = d; best = new Pick(lp, hit.getDirection()); }
+                if (d < bestDist) { bestDist = d; best = new Pick(lp, hit.getDirection(), hit.getLocation()); }
             }
         }
         return best;
