@@ -90,26 +90,16 @@ public class ModMenuTypes {
     // === ⚡ 魔力充能台菜單 ===
     public static final DeferredHolder<MenuType<?>, MenuType<ManaChargerMenu>> MANA_CHARGER_MENU =
             registerMenuType("mana_charger", (id, inv, buf) -> {
-                BlockPos pos = buf.readBlockPos();
-                Level level = inv.player.level();
-                BlockEntity be = level.getBlockEntity(pos);
-                if (!(be instanceof ManaChargerBlockEntity charger))
-                    throw new IllegalStateException("Expected ManaChargerBlockEntity at " + pos);
-                return new ManaChargerMenu(id, inv, charger);
+                ManaChargerBlockEntity charger = resolveMenuBE(inv, buf.readBlockPos(), ManaChargerBlockEntity.class);
+                return charger == null ? null : new ManaChargerMenu(id, inv, charger);
             });
 
     // === 🔮 新增：魔力注入機菜單 ===
     public static final DeferredHolder<MenuType<?>, MenuType<ManaInfuserMenu>> MANA_INFUSER =
             registerMenuType("mana_infuser",
                     (id, inv, buf) -> {
-                        BlockPos pos = buf.readBlockPos();
-                        Level level = inv.player.level();
-                        BlockEntity be = level.getBlockEntity(pos);
-                        if (!(be instanceof ManaInfuserBlockEntity infuser)) {
-                            throw new IllegalStateException("Expected ManaInfuserBlockEntity at " + pos + " but found " +
-                                    (be != null ? be.getClass().getSimpleName() : "null"));
-                        }
-                        return new ManaInfuserMenu(id, inv, infuser);
+                        ManaInfuserBlockEntity infuser = resolveMenuBE(inv, buf.readBlockPos(), ManaInfuserBlockEntity.class);
+                        return infuser == null ? null : new ManaInfuserMenu(id, inv, infuser);
                     });
 
     // === 🪄 技能核心編碼台菜單 ===
@@ -121,42 +111,24 @@ public class ModMenuTypes {
     public static final DeferredHolder<MenuType<?>, MenuType<ManaGrinderMenu>> MANA_GRINDER_MENU =
             registerMenuType("mana_grinder",
                     (id, inv, buf) -> {
-                        BlockPos pos = buf.readBlockPos();
-                        Level level = inv.player.level();
-                        BlockEntity be = level.getBlockEntity(pos);
-                        if (!(be instanceof ManaGrinderBlockEntity grinder)) {
-                            throw new IllegalStateException("Expected ManaGrinderBlockEntity at " + pos + " but found " +
-                                    (be != null ? be.getClass().getSimpleName() : "null"));
-                        }
-                        return new ManaGrinderMenu(id, inv, grinder);
+                        ManaGrinderBlockEntity grinder = resolveMenuBE(inv, buf.readBlockPos(), ManaGrinderBlockEntity.class);
+                        return grinder == null ? null : new ManaGrinderMenu(id, inv, grinder);
                     });
 
     // === 魔力部署器菜單 ===
     public static final DeferredHolder<MenuType<?>, MenuType<ManaDeployerMenu>> MANA_DEPLOYER_MENU =
             registerMenuType("mana_deployer",
                     (id, inv, buf) -> {
-                        BlockPos pos = buf.readBlockPos();
-                        Level level = inv.player.level();
-                        BlockEntity be = level.getBlockEntity(pos);
-                        if (!(be instanceof ManaDeployerBlockEntity deployer)) {
-                            throw new IllegalStateException("Expected ManaDeployerBlockEntity at " + pos + " but found " +
-                                    (be != null ? be.getClass().getSimpleName() : "null"));
-                        }
-                        return new ManaDeployerMenu(id, inv, deployer);
+                        ManaDeployerBlockEntity deployer = resolveMenuBE(inv, buf.readBlockPos(), ManaDeployerBlockEntity.class);
+                        return deployer == null ? null : new ManaDeployerMenu(id, inv, deployer);
                     });
 
     // === 🔩 魔力壓板機菜單 ===
     public static final DeferredHolder<MenuType<?>, MenuType<ManaPlatePressMenu>> MANA_PLATE_PRESS_MENU =
             registerMenuType("mana_plate_press",
                     (id, inv, buf) -> {
-                        BlockPos pos = buf.readBlockPos();
-                        Level level = inv.player.level();
-                        BlockEntity be = level.getBlockEntity(pos);
-                        if (!(be instanceof ManaPlatePressBlockEntity press)) {
-                            throw new IllegalStateException("Expected ManaPlatePressBlockEntity at " + pos + " but found " +
-                                    (be != null ? be.getClass().getSimpleName() : "null"));
-                        }
-                        return new ManaPlatePressMenu(id, inv, press);
+                        ManaPlatePressBlockEntity press = resolveMenuBE(inv, buf.readBlockPos(), ManaPlatePressBlockEntity.class);
+                        return press == null ? null : new ManaPlatePressMenu(id, inv, press);
                     });
 
     /**
@@ -187,21 +159,32 @@ public class ModMenuTypes {
         BlockPos pos = extraData.readBlockPos();
         Level level = playerInv.player.level();
 
-        if (!level.isLoaded(pos)) {
-            KoniavacraftMod.LOGGER.warn("UpgradeMenu open failed: chunk at {} not loaded.", pos);
-            return new FallbackUpgradeMenu(id, playerInv);
-
-        }
-
-        BlockEntity be = level.getBlockEntity(pos);
+        BlockEntity be = level.isLoaded(pos) ? level.getBlockEntity(pos) : null;
+        if (!(be instanceof IUpgradeableMachine)) be = ShipEntity.findShadowRenderBE(playerInv.player, pos); // VM3b：船的影子機器
         if (be instanceof IUpgradeableMachine machine) {
             return new UpgradeMenu(id, playerInv, machine.getUpgradeInventory(), machine);
         }
 
-        KoniavacraftMod.LOGGER.warn("UpgradeMenu open failed: BlockEntity at {} is not IUpgradeableMachine.", pos);
+        KoniavacraftMod.LOGGER.warn("UpgradeMenu open failed: no IUpgradeableMachine at {}.", pos);
         return new FallbackUpgradeMenu(id, playerInv);
     }
 
+
+    /**
+     * client 端解析選單的 BE：先在自己世界找；找不到(船的影子機器，影子維度 client 沒有)就反查船的 render BE。
+     * 都找不到回 null(NeoForge 會安靜不開、不 crash)。所有「讀 pos 重找 BE」的選單工廠都該走這個。
+     */
+    @org.jetbrains.annotations.Nullable
+    public static <T extends BlockEntity> T resolveMenuBE(Inventory inv, BlockPos pos, Class<T> clazz) {
+        BlockEntity be = inv.player.level().getBlockEntity(pos);
+        if (!clazz.isInstance(be)) be = ShipEntity.findShadowRenderBE(inv.player, pos); // VM3b：船的影子機器
+        if (!clazz.isInstance(be)) {
+            KoniavacraftMod.LOGGER.warn("[menu] {} not found at {} client-side; skipping (no crash)",
+                    clazz.getSimpleName(), pos);
+            return null;
+        }
+        return clazz.cast(be);
+    }
 
     public static <T extends BlockEntity, M extends AbstractContainerMenu> IContainerFactory<M> entityMenu(
             Class<T> entityClass,
