@@ -9,7 +9,8 @@
     "NoiseGeneratorSettingsMixin",
     "NoiseSettingsAccessor",
     "OverworldBiomeBuilderMixin",
-    "SpaceVoidDamageMixin"
+    "SpaceVoidDamageMixin",
+    "EntityShipCollisionMixin"
   ],
   "client": [
     "client.MinecraftAccessor",

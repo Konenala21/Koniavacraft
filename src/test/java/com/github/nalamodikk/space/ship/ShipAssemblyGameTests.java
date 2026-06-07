@@ -296,6 +296,39 @@ public class ShipAssemblyGameTests {
                 .thenSucceed();
     }
 
+    /** 甲板碰撞地基：箱子落到船方塊上方時，restrictMotion 應把向下移動擋住（站得住）。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
+    public static void deckCollisionStopsFall(GameTestHelper helper) {
+        ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);
+        helper.setBlock(new BlockPos(4, 2, 4), core()); // 單方塊船（核心，full cube 有碰撞）
+
+        helper.startSequence()
+                .thenExecute(pad::assembleShip)
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
+                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
+                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 1)
+                            .findFirst().orElse(null);
+                    if (ship == null) { helper.fail("single-block ship not found"); return; }
+
+                    // 箱子置於船中心正上方（在方塊頂面 y≈ship.getY()+1 之上），向下掉 2 格
+                    Vec3 center = new Vec3(ship.getX(), ship.getY() + 2.5, ship.getZ());
+                    AABB box = AABB.ofSize(center, 0.6, 1.8, 0.6);
+                    Vec3 allowed = ship.restrictMotion(box, new Vec3(0, -2, 0));
+                    if (allowed.y < -1.0)
+                        helper.fail("fall not stopped by deck, allowed.y=" + allowed.y + " (expected near 0)");
+
+                    // 水平撞牆：箱子在方塊側面同高，往方塊方向移動應被擋（X 受限）
+                    Vec3 sideCenter = new Vec3(ship.getX() + 1.2, ship.getY() + 0.5, ship.getZ());
+                    AABB sideBox = AABB.ofSize(sideCenter, 0.6, 1.8, 0.6);
+                    Vec3 sideAllowed = ship.restrictMotion(sideBox, new Vec3(-1.0, 0, 0));
+                    if (sideAllowed.x < -0.95)
+                        helper.fail("wall did not block sideways move, allowed.x=" + sideAllowed.x);
+                })
+                .thenSucceed();
+    }
+
     @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 20)
     public static void gantrySetsBoxHeight(GameTestHelper helper) {
         ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);

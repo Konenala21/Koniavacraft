@@ -5,7 +5,10 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -15,13 +18,18 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.BooleanOp;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.jetbrains.annotations.Nullable;
 
@@ -45,6 +53,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     private static final double ACCEL = 0.1;       // 朝目標速度的 lerp（慣性感）
     private static final float YAW_LERP = 0.15f;   // 船頭轉向駕駛視角的平滑度
     public static final int MAX_DRIVERS = 2;        // 駕駛位數量（離核心最近的 N 張椅子）。其餘椅子=乘客
+    private static final double SEAT_SIT_HEIGHT = 0.0; // 坐進椅子的高度（坐姿臀部還會往上，0.4 浮太高，可微調）
 
     @Nullable private ShipContraption contraption;
 
@@ -54,6 +63,11 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     private final int[] inVertical = new int[MAX_DRIVERS];
     private final float[] inYaw = new float[MAX_DRIVERS];
     private Vec3 shipVel = Vec3.ZERO;
+
+    // 座位指派：乘客 UUID(字串) → 座位 index。同步給 client（positionRider 兩端都要用）。
+    // 點哪張椅子就坐哪張，不再照上船順序。
+    private static final EntityDataAccessor<CompoundTag> DATA_SEATS =
+            SynchedEntityData.defineId(ShipEntity.class, EntityDataSerializers.COMPOUND_TAG);
 
     // client 端平滑跟隨 server 廣播位置用（lerpSteps 在 Entity 是 private 無 getter，自己存一份）
     private int lerpSteps;
@@ -75,9 +89,43 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         this.inYaw[seatIndex] = yaw;
     }
 
-    /** 玩家在第幾個座位（=上船順序），對應 getSeats 的 index。非乘客回 -1。 */
+    /** 玩家坐在第幾張座位（依 DATA_SEATS 指派，對應 getSeats 的 index）。沒指派回上船順序，非乘客回 -1。 */
     public int seatIndexOf(Entity passenger) {
+        CompoundTag tag = getEntityData().get(DATA_SEATS);
+        String key = passenger.getUUID().toString();
+        if (tag.contains(key)) return tag.getInt(key);
         return getPassengers().indexOf(passenger);
+    }
+
+    private void assignSeat(Entity passenger, int seatIndex) {
+        CompoundTag tag = getEntityData().get(DATA_SEATS).copy();
+        tag.putInt(passenger.getUUID().toString(), seatIndex);
+        getEntityData().set(DATA_SEATS, tag);
+    }
+
+    private void unassignSeat(Entity passenger) {
+        CompoundTag tag = getEntityData().get(DATA_SEATS).copy();
+        tag.remove(passenger.getUUID().toString());
+        getEntityData().set(DATA_SEATS, tag);
+    }
+
+    /** 某座位是否已被佔。 */
+    private boolean isSeatOccupied(int seatIndex) {
+        for (Entity p : getPassengers()) if (seatIndexOf(p) == seatIndex) return true;
+        return false;
+    }
+
+    /** 第一個沒被佔的座位 index（找不到回 -1）。 */
+    private int firstFreeSeat() {
+        int n = getSeats().size();
+        for (int i = 0; i < n; i++) if (!isSeatOccupied(i)) return i;
+        return -1;
+    }
+
+    /** 主駕駛座位 = 最小的「有人坐的駕駛位」(index < MAX_DRIVERS)。沒有回 -1。 */
+    private int primaryDriverSeat() {
+        for (int i = 0; i < MAX_DRIVERS; i++) if (isSeatOccupied(i)) return i;
+        return -1;
     }
 
     // client 渲染用：從 contraption NBT 還原的臨時 BlockEntity（箱子等 BER 方塊），建一次快取
@@ -156,40 +204,43 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     }
 
     /**
-     * 船頭在 local 座標的 yaw = 駕駛椅（座位0）的朝向（你坐上去面對的方向）。
-     * 座椅模型坐姿 = FACING 的反向，故 sit-dir = FACING.getOpposite()。沒座椅（核心駕駛）時退回北(yaw180)。
+     * 某張座椅的坐姿方向在 local 座標的 yaw（你坐上去面對的方向 = 視覺椅子開口方向 = FACING）。
+     * 之前用 FACING.getOpposite() 是錯的，害船頭與視覺椅子差 180（駕駛面向椅背=視角反）。非座椅退回北。
      */
-    private float bowLocalYaw() {
-        List<BlockPos> seats = getSeats();
-        if (contraption != null && !seats.isEmpty()) {
-            var info = contraption.getBlocks().get(seats.get(0));
+    private float sitYawLocal(BlockPos seatLocal) {
+        if (contraption != null) {
+            var info = contraption.getBlocks().get(seatLocal);
             if (info != null && info.state().getBlock() instanceof ShipSeatBlock
                     && info.state().hasProperty(ShipSeatBlock.FACING)) {
-                Direction sitDir = info.state().getValue(ShipSeatBlock.FACING).getOpposite();
-                return sitDir.toYRot();
+                return info.state().getValue(ShipSeatBlock.FACING).toYRot();
             }
         }
-        return 180f; // 無座椅後備：船頭=北（理論上沒座椅不會有駕駛，這只是防呆）
+        return 180f;
+    }
+
+    /** 船頭在 local 座標的 yaw = 駕駛椅（座位0）的坐姿方向。沒座椅退回北。 */
+    private float bowLocalYaw() {
+        List<BlockPos> seats = getSeats();
+        return seats.isEmpty() ? 180f : sitYawLocal(seats.get(0));
     }
 
     /** server 端：合併各駕駛位輸入算移動並 setPos/setYRot。位置經 entity tracking 自動廣播給所有 client。 */
     private void tickServerMovement() {
-        int occupiedDrivers = Math.min(MAX_DRIVERS, getPassengers().size());
-        // 空著的駕駛位輸入清零（駕駛離座後殘留輸入不該繼續推船）
-        for (int i = occupiedDrivers; i < MAX_DRIVERS; i++) {
-            inForward[i] = 0; inStrafe[i] = 0; inVertical[i] = 0;
+        // 只有「有人坐的駕駛位」(index<MAX_DRIVERS)才算輸入；空的清零（離座殘留不該推船）
+        for (int i = 0; i < MAX_DRIVERS; i++) {
+            if (!isSeatOccupied(i)) { inForward[i] = 0; inStrafe[i] = 0; inVertical[i] = 0; }
         }
-        // 油門合併：兩個駕駛位的前後/左右/升降相加後夾到 [-1,1]
+        // 油門合併：所有駕駛位的前後/左右/升降相加後夾到 [-1,1]
         float f = 0, s = 0; int v = 0;
-        for (int i = 0; i < occupiedDrivers; i++) { f += inForward[i]; s += inStrafe[i]; v += inVertical[i]; }
+        for (int i = 0; i < MAX_DRIVERS; i++) { f += inForward[i]; s += inStrafe[i]; v += inVertical[i]; }
         f = Mth.clamp(f, -1f, 1f); s = Mth.clamp(s, -1f, 1f); v = Mth.clamp(v, -1, 1);
 
-        // 船頭 = 駕駛椅朝向（你坐上去面對的方向），不再寫死 local -Z，所以可朝任意方位建造。
-        float bowLocal = bowLocalYaw(); // 駕駛椅朝向在 local 座標的 yaw
-        if (occupiedDrivers > 0) {
-            // 主駕駛(座位0)視角定船頭：要讓 bow(local yaw=bowLocal)轉到指向視角，故 shipYaw=look-bowLocal。
-            // 不改組裝（靜止 yaw 仍 0=照建造樣子，因為 bow 也在 local 量）。
-            setYRot(Mth.rotLerp(YAW_LERP, getYRot(), inYaw[0] - bowLocal));
+        // 船頭 = 主駕駛那張椅子的朝向（主駕駛=最小的有人駕駛位，可能是座位1而非座位0）。
+        int primary = primaryDriverSeat();
+        float bowLocal = (primary >= 0) ? sitYawLocal(getSeats().get(primary)) : 180f;
+        if (primary >= 0) {
+            // 主駕駛視角定船頭：要讓 bow(local yaw=bowLocal)轉到指向視角，故 shipYaw=look-bowLocal。
+            setYRot(Mth.rotLerp(YAW_LERP, getYRot(), inYaw[primary] - bowLocal));
         }
         // 移動相對「可見船頭」：bow 的世界 yaw = bowLocal + shipYaw。前進朝船頭、右手為其右側。
         double bowRad = Math.toRadians(bowLocal + getYRot());
@@ -267,6 +318,105 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         return new Vec3(getX() + rx, getY() + oy, getZ() + rz);
     }
 
+    // ── 甲板碰撞（外部實體站上船、跟船走）地基 ───────────────────────────────
+    // 玩家在世界、船方塊在實體 local 框（繞船中心旋轉 yaw）。把玩家轉進 local 框跟「沒旋轉的方塊表」
+    // 做單純逐軸 AABB 碰撞，再轉回世界。只有 yaw 旋轉，玩家盒近似軸對齊（誤差小）。
+
+    @Nullable private VoxelShape localCollisionShapeCache;
+
+    /** contraption 所有方塊的碰撞盒合併成 local 框的一個 VoxelShape（靜態，快取一次）。 */
+    private VoxelShape localCollisionShape() {
+        if (localCollisionShapeCache == null) {
+            VoxelShape acc = Shapes.empty();
+            if (contraption != null) {
+                for (var e : contraption.getBlocks().entrySet()) {
+                    BlockPos lp = e.getKey();
+                    VoxelShape s = e.getValue().state().getCollisionShape(EmptyBlockGetter.INSTANCE, lp);
+                    if (!s.isEmpty()) acc = Shapes.or(acc, s.move(lp.getX(), lp.getY(), lp.getZ()));
+                }
+            }
+            localCollisionShapeCache = acc;
+        }
+        return localCollisionShapeCache;
+    }
+
+    /** 世界座標點 → local 框座標（rotatedWorldPoint 的逆）。 */
+    public Vec3 worldToLocalPoint(double wx, double wy, double wz) {
+        Vec3 c = centerOffset();
+        double dx = wx - getX(), dy = wy - getY(), dz = wz - getZ();
+        double rad = Math.toRadians(-getYRot());
+        double cos = Math.cos(rad), sin = Math.sin(rad);
+        return new Vec3(dx * cos - dz * sin + c.x, dy + c.y, dx * sin + dz * cos + c.z);
+    }
+
+    private Vec3 rotateVec(double x, double y, double z, double deg) {
+        double rad = Math.toRadians(deg);
+        double cos = Math.cos(rad), sin = Math.sin(rad);
+        return new Vec3(x * cos - z * sin, y, x * sin + z * cos);
+    }
+
+    /**
+     * 把世界移動向量依船的方塊碰撞限制（站甲板=Y 撐住、撞牆=X/Z 擋）。回傳限制後的世界移動。
+     * worldBox = 實體移動「前」的世界 AABB。
+     */
+    public Vec3 restrictMotion(AABB worldBox, Vec3 worldMotion) {
+        VoxelShape shape = localCollisionShape();
+        if (shape.isEmpty()) return worldMotion;
+        Vec3 cen = worldBox.getCenter();
+        Vec3 lc = worldToLocalPoint(cen.x, cen.y, cen.z);
+        AABB lb = AABB.ofSize(lc, worldBox.getXsize(), worldBox.getYsize(), worldBox.getZsize());
+        Vec3 lm = rotateVec(worldMotion.x, worldMotion.y, worldMotion.z, -getYRot());
+        double my = lm.y; if (my != 0) my = shape.collide(Direction.Axis.Y, lb, my); lb = lb.move(0, my, 0);
+        double mx = lm.x; if (mx != 0) mx = shape.collide(Direction.Axis.X, lb, mx); lb = lb.move(mx, 0, 0);
+        double mz = lm.z; if (mz != 0) mz = shape.collide(Direction.Axis.Z, lb, mz);
+        return rotateVec(mx, my, mz, getYRot());
+    }
+
+    /** 世界某點(玩家大小的盒)是否卡在船的方塊裡。下船找不會穿模的位置用。 */
+    public boolean isInsideShip(double wx, double wy, double wz) {
+        VoxelShape shape = localCollisionShape();
+        if (shape.isEmpty()) return false;
+        Vec3 lc = worldToLocalPoint(wx, wy, wz);
+        AABB probe = AABB.ofSize(new Vec3(lc.x, lc.y + 0.9, lc.z), 0.6, 1.8, 0.6); // 玩家盒(腳在 wy)
+        return Shapes.joinIsNotEmpty(shape, Shapes.create(probe), BooleanOp.AND);
+    }
+
+    /** 實體是否「站在」這艘船上（腳底正下方有船的方塊）。用來決定要不要 carry。 */
+    public boolean isSupporting(Entity e) {
+        VoxelShape shape = localCollisionShape();
+        if (shape.isEmpty()) return false;
+        AABB b = e.getBoundingBox();
+        Vec3 cen = b.getCenter();
+        Vec3 lc = worldToLocalPoint(cen.x, b.minY - 0.02, cen.z); // 腳底略下方
+        AABB probe = AABB.ofSize(lc, Math.max(b.getXsize(), 0.1), 0.12, Math.max(b.getZsize(), 0.1));
+        return Shapes.joinIsNotEmpty(shape, Shapes.create(probe), BooleanOp.AND);
+    }
+
+    /**
+     * 把站在船上的實體「帶著走」：套用船這 tick 的平移 + 繞船中心的 yaw 旋轉，實體才會跟船一起動。
+     * 用 xOld/yRotO（tick 開頭 setOldPosAndRot 記的上一 tick 值）算這 tick 的位移/轉角。
+     */
+    public void carry(Entity e) {
+        double tdy = getY() - yOld;
+        float dyaw = getYRot() - yRotO;
+        // 水平：實體相對「舊船中心」的位移依 dyaw 旋轉，貼回新船中心（同時涵蓋平移與繞心轉）
+        double relx = e.getX() - xOld, relz = e.getZ() - zOld;
+        double rad = Math.toRadians(dyaw);
+        double cos = Math.cos(rad), sin = Math.sin(rad);
+        double newX = getX() + (relx * cos - relz * sin);
+        double newZ = getZ() + (relx * sin + relz * cos);
+        double newY = e.getY() + tdy;
+        if (newX == e.getX() && newY == e.getY() && newZ == e.getZ() && dyaw == 0) return;
+        e.setPos(newX, newY, newZ);
+        if (dyaw != 0) {
+            e.setYRot(e.getYRot() + dyaw);
+            if (e instanceof LivingEntity living) {
+                living.setYHeadRot(living.getYHeadRot() + dyaw);
+                living.setYBodyRot(living.yBodyRot + dyaw);
+            }
+        }
+    }
+
     /**
      * 船撞地形：逐軸檢查移動後有沒有船方塊會卡進世界固體方塊，會的話該軸歸零（沿牆滑）。
      * 船方塊不在世界裡（在 entity），所以 noCollision 只會撞到真實地形，船自己不互撞。
@@ -322,14 +472,90 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     // ── 騎乘 ────────────────────────────────────────────────────────────────
 
+    /**
+     * 右鍵分流：從玩家視線 raycast 打進船的 local 方塊，看指到哪個方塊再決定行為。
+     * 指到座椅=上船；指到船身其他地方=沒反應（達成「大碰撞箱不互動、座位才上船」）。
+     * Phase 2+ 會在這裡接「指到門/箱子/機器=轉發互動」。
+     */
     @Override
-    public InteractionResult interact(Player player, InteractionHand hand) {
-        if (level().isClientSide) return InteractionResult.sidedSuccess(true);
-        // 右鍵 = 上船（坐進下一個空位，第一個上船=駕駛）。拆解改走組裝台 GUI 的拆解按鈕
-        if (getPassengers().size() < getSeats().size()) {
-            player.startRiding(this);
+    public InteractionResult interactAt(Player player, Vec3 hitVec, InteractionHand hand) {
+        if (contraption == null) return InteractionResult.PASS;
+        BlockPos local = pickLocalBlock(player);
+        if (local == null) return InteractionResult.PASS; // 指到空隙=船身，不反應
+        var info = contraption.getBlocks().get(local);
+        if (info == null) return InteractionResult.PASS;
+
+        if (info.state().getBlock() instanceof ShipSeatBlock) {
+            if (!level().isClientSide) {
+                int clicked = getSeats().indexOf(local);            // 點到的是第幾張椅子
+                int target = (clicked >= 0 && !isSeatOccupied(clicked)) ? clicked : firstFreeSeat();
+                if (target >= 0 && player.startRiding(this)) {
+                    assignSeat(player, target); // 坐到指定座位（不再照上船順序）
+                    if (player instanceof ServerPlayer sp) {
+                        // 上船瞬間視角 snap 到該座位的船頭方向，船不會為了對齊你的視線而甩動。
+                        float bowWorld = sitYawLocal(getSeats().get(target)) + getYRot();
+                        sp.connection.teleport(sp.getX(), sp.getY(), sp.getZ(), bowWorld, sp.getXRot());
+                    }
+                }
+            }
+            return InteractionResult.sidedSuccess(level().isClientSide);
         }
-        return InteractionResult.sidedSuccess(false);
+        // TODO Phase 2+：互動方塊轉發（門/按鈕/拉桿 → 改 blockstate；箱子 → 容器；機器 → 虛擬世界）
+        return InteractionResult.PASS;
+    }
+
+    /** 從玩家視線 raycast 找指到的 local 方塊（用 outline 形狀，逐方塊取最近命中）。 */
+    @Nullable
+    private BlockPos pickLocalBlock(Player player) {
+        if (contraption == null) return null;
+        Vec3 eye = player.getEyePosition();
+        Vec3 end = eye.add(player.getViewVector(1.0f).scale(6.0));
+        Vec3 ls = worldToLocalPoint(eye.x, eye.y, eye.z);
+        Vec3 le = worldToLocalPoint(end.x, end.y, end.z);
+        BlockPos best = null;
+        double bestDist = Double.MAX_VALUE;
+        for (var e : contraption.getBlocks().entrySet()) {
+            BlockPos lp = e.getKey();
+            VoxelShape shape = e.getValue().state().getShape(EmptyBlockGetter.INSTANCE, lp);
+            if (shape.isEmpty()) continue;
+            BlockHitResult hit = shape.clip(ls, le, lp);
+            if (hit != null) {
+                double d = hit.getLocation().distanceToSqr(ls);
+                if (d < bestDist) { bestDist = d; best = lp; }
+            }
+        }
+        return best;
+    }
+
+    /**
+     * 下船位置：出現在自己座位旁（往船右側一格），不再停在船中心(≈核心)。
+     * vanilla 不替玩家呼叫 getDismountLocationForPassenger，所以在 removePassenger 自己擺位。
+     */
+    @Override
+    protected void removePassenger(Entity passenger) {
+        List<BlockPos> seats = getSeats();
+        int idx = seatIndexOf(passenger); // 移除前先取指派的座位 index
+        Vec3 spot = null;
+        if (idx >= 0 && idx < seats.size()) {
+            BlockPos seat = seats.get(idx);
+            Vec3 seatWorld = rotatedWorldPoint(seat.getX() + 0.5, seat.getY(), seat.getZ() + 0.5);
+            // 在座位周圍試幾個方向，挑第一個不卡在船方塊裡的（避免下船穿進牆/船模）
+            double[][] offsets = {{1.2, 0, 0}, {-1.2, 0, 0}, {0, 0, 1.2}, {0, 0, -1.2}, {0, 1.2, 0}};
+            for (double[] o : offsets) {
+                Vec3 side = rotateVec(o[0], o[1], o[2], getYRot());
+                Vec3 cand = new Vec3(seatWorld.x + side.x, seatWorld.y + o[1], seatWorld.z + side.z);
+                if (!isInsideShip(cand.x, cand.y, cand.z)) { spot = cand; break; }
+            }
+            if (spot == null) spot = new Vec3(seatWorld.x, seatWorld.y + 1.5, seatWorld.z); // 都被擋就放上方
+        }
+        super.removePassenger(passenger);
+        if (!level().isClientSide) unassignSeat(passenger); // 清掉座位指派
+        if (spot != null && !level().isClientSide) {
+            passenger.setPos(spot.x, spot.y, spot.z);
+            if (passenger instanceof ServerPlayer sp) {
+                sp.connection.teleport(spot.x, spot.y, spot.z, sp.getYRot(), sp.getXRot());
+            }
+        }
     }
 
     // 預設 Entity.isPickable() 回 false → 點不到實體、interact 不觸發。飛船要可被右鍵
@@ -369,8 +595,13 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     @Nullable
     @Override
     public LivingEntity getControllingPassenger() {
-        // 駕駛 = 坐核心(座位 index 0)那人，也就是第一個上船的 passenger
-        return getFirstPassenger() instanceof Player p ? p : null;
+        // 駕駛 = 坐在最小駕駛位(index<MAX_DRIVERS)的玩家。依實際坐的座位，不再看上船順序。
+        int primary = primaryDriverSeat();
+        if (primary < 0) return null;
+        for (Entity p : getPassengers()) {
+            if (p instanceof Player pl && seatIndexOf(p) == primary) return pl;
+        }
+        return null;
     }
 
     @Override
@@ -381,19 +612,25 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     @Override
     protected void positionRider(Entity passenger, MoveFunction callback) {
         List<BlockPos> seats = getSeats();
-        int idx = getPassengers().indexOf(passenger);
+        if (seats.isEmpty()) return;
+        int idx = seatIndexOf(passenger); // 依指派的座位
         if (idx < 0 || idx >= seats.size()) idx = 0;
         BlockPos seat = seats.get(idx);
-        // 座位水平中心(+0.5)要在旋轉前併入 local，否則 +0.5 偏移不跟船轉，船一轉玩家就被推離座位
-        // （第三人稱看「坐在空氣上」）。Y 不受 yaw 影響，放上方 +1.0 即可。
+        // 座位水平中心(+0.5)要在旋轉前併入 local，否則船一轉乘客被推離座位（第三人稱看「坐在空氣上」）。
+        // 高度放座椅座板高(SEAT_SIT_HEIGHT)，原本 +1.0 是整格頂、會浮在椅子上方。
         Vec3 c = rotatedWorldPoint(seat.getX() + 0.5, seat.getY(), seat.getZ() + 0.5);
-        callback.accept(passenger, c.x, c.y + 1.0, c.z);
-        // 非駕駛乘客的視角跟著船轉（駕駛自己控制視角、船跟著駕駛轉，不強制）
-        if (passenger != getControllingPassenger()) {
-            float dYaw = getYRot() - yRotO;
-            if (dYaw != 0) {
-                passenger.setYRot(passenger.getYRot() + dYaw);
-                if (passenger instanceof LivingEntity living) {
+        callback.accept(passenger, c.x, c.y + SEAT_SIT_HEIGHT, c.z);
+        // 讓坐姿身體面向椅子的坐姿方向（=該座椅 sit-dir + 船 yaw），否則身體用 vanilla 預設方向看起來反。
+        // 只設身體(yBodyRot)不鎖視角：駕駛仍可自由看/操控、乘客頭也能轉。
+        if (passenger instanceof LivingEntity living) {
+            float seatWorldYaw = sitYawLocal(seat) + getYRot();
+            living.setYBodyRot(seatWorldYaw);
+            living.yBodyRotO = seatWorldYaw;
+            // 非駕駛乘客視角也跟著船轉（駕駛自己控制視角、船跟著駕駛轉，不強制）
+            if (passenger != getControllingPassenger()) {
+                float dYaw = getYRot() - yRotO;
+                if (dYaw != 0) {
+                    living.setYRot(living.getYRot() + dYaw);
                     living.setYHeadRot(living.getYHeadRot() + dYaw);
                 }
             }
@@ -437,7 +674,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
-        // M2a 無需同步欄位；contraption 走 complex spawn
+        builder.define(DATA_SEATS, new CompoundTag()); // 座位指派；contraption 走 complex spawn
     }
 
     @Override
