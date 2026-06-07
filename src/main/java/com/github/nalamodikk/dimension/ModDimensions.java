@@ -80,4 +80,25 @@ public class ModDimensions {
 
     public static final ResourceLocation MOON_EFFECTS =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "moon");
+
+    // ── 飛船影子維度（純後台：contraption 方塊真正存放+tick 的隱藏世界，玩家永不進入）────
+    public static final ResourceKey<Level> SHIP_SHADOW = ResourceKey.create(
+            Registries.DIMENSION,
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "ship_shadow")
+    );
+
+    public static final ResourceKey<DimensionType> SHIP_SHADOW_TYPE = ResourceKey.create(
+            Registries.DIMENSION_TYPE,
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "ship_shadow")
+    );
+
+    public static final ResourceKey<Biome> SHIP_SHADOW_BIOME = ResourceKey.create(
+            Registries.BIOME,
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "ship_shadow")
+    );
+
+    public static final ResourceKey<LevelStem> SHIP_SHADOW_STEM = ResourceKey.create(
+            Registries.LEVEL_STEM,
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "ship_shadow")
+    );
 }

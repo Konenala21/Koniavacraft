@@ -73,6 +73,21 @@ public class ModDimensionProvider {
                 .mobSpawnSettings(MobSpawnSettings.EMPTY)
                 .generationSettings(new BiomeGenerationSettings.Builder(placedFeatures, worldCarvers).build())
                 .build());
+
+        // 飛船影子：玩家看不到，無生物。作物靠固定正午天光生長
+        context.register(ModDimensions.SHIP_SHADOW_BIOME, new Biome.BiomeBuilder()
+                .hasPrecipitation(false)
+                .temperature(0.8f)
+                .downfall(0.0f)
+                .specialEffects(new BiomeSpecialEffects.Builder()
+                        .waterColor(0x3f76e4)
+                        .waterFogColor(0x050533)
+                        .fogColor(0xc0d8ff)
+                        .skyColor(0x78a7ff)
+                        .build())
+                .mobSpawnSettings(MobSpawnSettings.EMPTY)
+                .generationSettings(new BiomeGenerationSettings.Builder(placedFeatures, worldCarvers).build())
+                .build());
     }
 
     public static void bootstrapDimensionType(BootstrapContext<DimensionType> context) {
@@ -120,6 +135,23 @@ public class ModDimensionProvider {
                 0.02f,  // ambientLight：夜晚微光不全黑
                 new DimensionType.MonsterSettings(false, false, UniformInt.of(0, 0), 0)
         ));
+
+        // 飛船影子：固定正午 + 天光（作物生長），無頂、不能睡、無怪。玩家永不進入故 effects 隨便用 overworld
+        context.register(ModDimensions.SHIP_SHADOW_TYPE, new DimensionType(
+                OptionalLong.of(6000),  // 固定正午 → 恆定天光，作物會長
+                true,   // hasSkyLight（作物需要光）
+                false,  // hasCeiling
+                false,  // ultraWarm
+                false,  // natural
+                1.0,    // coordinateScale
+                false,  // bedWorks
+                false,  // respawnAnchorWorks
+                0, 256, 256,
+                BlockTags.INFINIBURN_OVERWORLD,
+                BuiltinDimensionTypes.OVERWORLD_EFFECTS,
+                0.0f,   // ambientLight（靠天光）
+                new DimensionType.MonsterSettings(false, false, UniformInt.of(0, 0), 0) // 生怪光等級 0 + biome 無 spawn = 不生怪
+        ));
     }
 
     public static void bootstrapLevelStem(BootstrapContext<LevelStem> context) {
@@ -150,5 +182,11 @@ public class ModDimensionProvider {
         var moonBiomeSource = new net.minecraft.world.level.biome.FixedBiomeSource(moonBiome);
         context.register(ModDimensions.MOON_STEM,
                 new LevelStem(moonType, new com.github.nalamodikk.dimension.MoonChunkGenerator(moonBiomeSource)));
+
+        // 飛船影子：純虛空（不加層），contraption 方塊由程式碼放進去，不靠生成
+        var shadowType  = dimTypes.getOrThrow(ModDimensions.SHIP_SHADOW_TYPE);
+        var shadowBiome = biomes.getOrThrow(ModDimensions.SHIP_SHADOW_BIOME);
+        FlatLevelGeneratorSettings shadowFlat = new FlatLevelGeneratorSettings(Optional.empty(), shadowBiome, List.of());
+        context.register(ModDimensions.SHIP_SHADOW_STEM, new LevelStem(shadowType, new BoundedFlatChunkGenerator(shadowFlat)));
     }
 }
