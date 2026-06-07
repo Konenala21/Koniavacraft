@@ -19,12 +19,21 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.core.NonNullList;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.Container;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.inventory.ChestMenu;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BarrelBlock;
 import net.minecraft.world.level.block.ButtonBlock;
+import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.FenceGateBlock;
@@ -34,6 +43,7 @@ import net.minecraft.world.level.block.TrapDoorBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate.StructureBlockInfo;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.phys.AABB;
@@ -536,8 +546,53 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         if (level().isClientSide && isToggleable(info.state())) {
             return InteractionResult.sidedSuccess(true);
         }
-        // TODO Phase 3+：箱子 → 容器 GUI；機器 → 虛擬世界 tick
+        // Phase 3：箱子/木桶 → 從存的 NBT 開容器 GUI，改動寫回 contraption（拆解保留）
+        if (isContainer(info.state())) {
+            if (!level().isClientSide && player instanceof ServerPlayer sp) {
+                openContainer(sp, local, info);
+            }
+            return InteractionResult.sidedSuccess(level().isClientSide);
+        }
+        // TODO Phase 4：機器 → 虛擬世界 tick
         return InteractionResult.PASS;
+    }
+
+    private static boolean isContainer(BlockState s) {
+        Block b = s.getBlock();
+        return b instanceof ChestBlock || b instanceof BarrelBlock; // v1：單箱 27 格（雙箱當兩個單箱）
+    }
+
+    /** 開船上箱子的 GUI：從 BE NBT 載入物品 → ChestMenu，setChanged 時寫回 contraption NBT。 */
+    private void openContainer(ServerPlayer player, BlockPos local, StructureBlockInfo info) {
+        final int size = 27;
+        CompoundTag nbt = info.nbt() != null ? info.nbt() : new CompoundTag();
+        NonNullList<ItemStack> items = NonNullList.withSize(size, ItemStack.EMPTY);
+        ContainerHelper.loadAllItems(nbt, items, level().registryAccess());
+        SimpleContainer container = new SimpleContainer(size) {
+            @Override
+            public void setChanged() {
+                super.setChanged();
+                writeContainerBack(local, this);
+            }
+        };
+        for (int i = 0; i < size; i++) container.setItem(i, items.get(i));
+        Component title = info.state().getBlock().getName();
+        player.openMenu(new SimpleMenuProvider(
+                (id, inv, p) -> ChestMenu.threeRows(id, inv, container), title));
+    }
+
+    /** 把容器內容寫回 contraption 的 BE NBT（server 端；拆解才保留物品）。 */
+    void writeContainerBack(BlockPos local, Container container) {
+        if (contraption == null) return;
+        var info = contraption.getBlocks().get(local);
+        if (info == null) return;
+        CompoundTag nbt = info.nbt() != null ? info.nbt().copy() : new CompoundTag();
+        int size = container.getContainerSize();
+        NonNullList<ItemStack> items = NonNullList.withSize(size, ItemStack.EMPTY);
+        for (int i = 0; i < size; i++) items.set(i, container.getItem(i));
+        ContainerHelper.saveAllItems(nbt, items, level().registryAccess());
+        contraption.setBlockNbt(local, nbt);
+        renderBEs = null; // BE 快取作廢（保險）
     }
 
     private static boolean isToggleable(BlockState s) {

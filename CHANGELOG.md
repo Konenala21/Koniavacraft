@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Chests and barrels on a spaceship can now be opened and used. Right-click one to open its inventory, take and store items as usual, and the contents are kept when you disassemble the ship. (Double chests are treated as two single chests for now.)
+飛船上的箱子和木桶現在可以打開使用了。右鍵打開它的物品欄、照常拿取存放，拆解飛船後內容物也會保留。（雙箱目前當成兩個單箱處理。）
+
 Doors, trapdoors, fence gates, levers and buttons now work while built into a spaceship. Right-click one to toggle it: doors and trapdoors and fence gates open and close (and you can walk through and the collision updates), levers and buttons click. Note the ship has no redstone wiring, so levers and buttons are cosmetic for now.
 門、活板門、柵欄門、拉桿和按鈕現在組進飛船後可以使用了。右鍵切換：門/活板門/柵欄門會開關（能走過去、碰撞也跟著更新），拉桿/按鈕會按下。注意飛船上沒有紅石線路，所以拉桿/按鈕目前是純視覺。
 
@@ -25,6 +28,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 新增太空維度，包含程序生成的星空天空、物理正確的行星渲染，以及完整太陽系（水星、金星、月球、火星、木星、土星、土衛六、天王星、海王星、冥王星）和比鄰星系雛形（雙星系統）。行星為真實 3D 球體，視角大小隨距離動態縮放。太陽有日冕光暈。進入維度時玩家會出現在地球軌道附近。
 
 ### Developer Notes / 開發者備註
+
+Spaceship interactive blocks Phase 3 (chests/barrels). interactAt opens a container for a clicked ChestBlock/BarrelBlock: openContainer loads the items from the stored BE NBT (ContainerHelper.loadAllItems) into a 27-slot SimpleContainer whose setChanged writes them straight back to the contraption BE NBT (ShipContraption.setBlockNbt) via writeContainerBack, and opens a ChestMenu.threeRows through a SimpleMenuProvider. No custom packet is needed: vanilla syncs the menu to the client, and the contraption NBT only matters server-side for disassembly persistence. Double chests are treated as two independent single chests for now. shipChestEditPersists gametest writes items via writeContainerBack and disassembles to confirm the chest keeps them.
+飛船互動方塊 Phase 3（箱子/木桶）。interactAt 對點到的 ChestBlock/BarrelBlock 開容器：openContainer 從存的 BE NBT 載入物品（ContainerHelper.loadAllItems）到一個 27 格 SimpleContainer，其 setChanged 透過 writeContainerBack 直接把物品寫回 contraption 的 BE NBT（ShipContraption.setBlockNbt），並用 SimpleMenuProvider 開 ChestMenu.threeRows。不需自訂封包：vanilla 會把 menu 同步給 client，contraption NBT 只在 server 端拆解持久化時用。雙箱目前當兩個獨立單箱。shipChestEditPersists gametest 用 writeContainerBack 寫物品再拆解，確認箱子保留。
 
 Spaceship interactive blocks Phase 2 (doors/trapdoors/fence gates/levers/buttons). interactAt now dispatches a clicked toggle block to tryToggleBlock (server): it flips OPEN on doors/trapdoors/fence gates (both door halves) or POWERED on levers/buttons (cosmetic, no contraption redstone), updates the contraption blockstate via ShipContraption.setBlockState, and invalidates the cached local collision shape plus the render mesh/BER caches (ShipEntity.updateContraptionBlock) so the door visually opens and walk-through collision updates. The change is synced to clients with a new S2C ShipBlockUpdatePacket (entity id + local pos + Block.getId state), because the contraption is otherwise only sent once at spawn. A block sound plays at the rotated world position. interactAt returns sidedSuccess on the client for toggleable blocks so the swing animation plays.
 飛船互動方塊 Phase 2（門/活板門/柵欄門/拉桿/按鈕）。interactAt 現在把點到的可切換方塊交給 tryToggleBlock（server）：門/活板門/柵欄門切 OPEN（門連另一半），拉桿/按鈕切 POWERED（純視覺，contraption 無紅石），用 ShipContraption.setBlockState 更新 blockstate，並失效快取的 local 碰撞形狀 + 渲染 mesh/BER 快取（ShipEntity.updateContraptionBlock），門才會視覺打開、穿越碰撞跟著更新。改動用新的 S2C ShipBlockUpdatePacket（entity id + local pos + Block.getId 狀態）同步給 client，因為 contraption 只在 spawn 整包傳一次。在旋轉後的世界位置播方塊音效。interactAt 對可切換方塊在 client 回 sidedSuccess 讓揮手動畫播放。

@@ -215,6 +215,13 @@ public class ShipContraption {
         blocks.put(local, new StructureBlockInfo(local, state, old.nbt()));
     }
 
+    /** 換掉某 local 方塊的 BE NBT（保留位置與 blockstate）。箱子改內容物寫回用，拆解才保留。 */
+    public void setBlockNbt(BlockPos local, CompoundTag nbt) {
+        StructureBlockInfo old = blocks.get(local);
+        if (old == null) return;
+        blocks.put(local, new StructureBlockInfo(local, old.state(), nbt));
+    }
+
     public int size() { return blocks.size(); }
     public BlockPos anchor() { return anchor; }
     public AABB bounds() { return bounds; }

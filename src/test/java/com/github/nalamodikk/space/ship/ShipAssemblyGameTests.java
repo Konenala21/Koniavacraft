@@ -8,6 +8,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
@@ -217,6 +218,40 @@ public class ShipAssemblyGameTests {
                     ItemStack s = restored.getItem(0);
                     if (!s.is(Items.DIAMOND) || s.getCount() != 5)
                         helper.fail("chest contents lost (got " + s + ")");
+                })
+                .thenSucceed();
+    }
+
+    /** Phase 3 箱子：用 writeContainerBack 改船上箱子內容 → 拆解後箱子保留新物品（寫回持久化）。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
+    public static void shipChestEditPersists(GameTestHelper helper) {
+        ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);
+        helper.setBlock(new BlockPos(4, 2, 4), core());
+        helper.setBlock(new BlockPos(3, 2, 4), Blocks.CHEST.defaultBlockState()); // 空箱組裝
+
+        helper.startSequence()
+                .thenExecute(pad::assembleShip)
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
+                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
+                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
+                            .findFirst().orElse(null);
+                    if (ship == null) { helper.fail("no ship"); return; }
+                    // 模擬 GUI 改動：寫回 7 鑽石到箱子（local = 3-4 = -1,0,0）
+                    SimpleContainer c = new SimpleContainer(27);
+                    c.setItem(0, new ItemStack(Items.DIAMOND, 7));
+                    ship.writeContainerBack(new BlockPos(-1, 0, 0), c);
+                    if (!ship.disassemble()) helper.fail("disassemble returned false");
+                })
+                .thenIdle(2)
+                .thenExecute(() -> {
+                    if (!(helper.getBlockEntity(new BlockPos(3, 2, 4)) instanceof Container restored)) {
+                        helper.fail("chest not restored"); return;
+                    }
+                    ItemStack s = restored.getItem(0);
+                    if (!s.is(Items.DIAMOND) || s.getCount() != 7)
+                        helper.fail("written chest contents lost (got " + s + ")");
                 })
                 .thenSucceed();
     }
