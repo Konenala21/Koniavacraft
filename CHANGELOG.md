@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+An assembled spaceship no longer vanishes if its entity is killed or removed. If the ship is destroyed by something other than normal disassembly (a /kill, a crash, an external entity removal), its blocks are written back into the world where it was instead of being lost, and if that spot is blocked the blocks and container contents drop as items. Normal chunk unload and dimension change are unaffected.
+組裝好的飛船在實體被殺掉或移除時不再消失。如果飛船被正常拆解以外的方式摧毀（/kill、崩潰、外部移除實體），它的方塊會寫回它所在的世界位置而不是遺失；若那個位置被擋住，方塊和容器內容會以物品掉落。正常的區塊卸載和維度切換不受影響。
+
 Chests and barrels on a spaceship can now be opened and used. Right-click one to open its inventory, take and store items as usual, and the contents are kept when you disassemble the ship. (Double chests are treated as two single chests for now.)
 飛船上的箱子和木桶現在可以打開使用了。右鍵打開它的物品欄、照常拿取存放，拆解飛船後內容物也會保留。（雙箱目前當成兩個單箱處理。）
 
@@ -28,6 +31,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 新增太空維度，包含程序生成的星空天空、物理正確的行星渲染，以及完整太陽系（水星、金星、月球、火星、木星、土星、土衛六、天王星、海王星、冥王星）和比鄰星系雛形（雙星系統）。行星為真實 3D 球體，視角大小隨距離動態縮放。太陽有日冕光暈。進入維度時玩家會出現在地球軌道附近。
 
 ### Developer Notes / 開發者備註
+
+Spaceship contraption recovery on abnormal entity removal. The whole assembled ship lives only on the entity (blocks were removed from the world at assembly), so losing the entity meant losing everything with no drops. ShipEntity.remove now, when reason.shouldDestroy() (KILLED/DISCARDED) and it is not our intentional disassembly (a flag set in disassemble() before discard()), calls recoverContraptionToWorld: it writes the contraption back at the snapped core world position (same path as disassembly), and if that placement is blocked it drops each block as an item plus any container Items so nothing is silently destroyed. UNLOADED_TO_CHUNK / dimension change do not trigger it (shouldDestroy() is false; the entity is saved/moved). killedShipRecoversBlocks gametest covers it.
+飛船 contraption 在實體異常移除時的救援。整艘組裝好的船只存在實體上（組裝時方塊已從世界移除），所以失去實體=整艘無掉落消失。ShipEntity.remove 現在在 reason.shouldDestroy()（KILLED/DISCARDED）且不是我們正常拆解（disassemble() discard 前設的 flag）時，呼叫 recoverContraptionToWorld：在 snap 後的核心世界位置把 contraption 寫回（與拆解同路徑），放不下就把每個方塊掉成物品加上容器 Items，避免無聲銷毀。區塊卸載/維度切換不觸發（shouldDestroy() 為 false，實體會存檔/搬移）。killedShipRecoversBlocks gametest 蓋。
 
 Spaceship interactive blocks Phase 3 (chests/barrels). interactAt opens a container for a clicked ChestBlock/BarrelBlock: openContainer loads the items from the stored BE NBT (ContainerHelper.loadAllItems) into a 27-slot SimpleContainer whose setChanged writes them straight back to the contraption BE NBT (ShipContraption.setBlockNbt) via writeContainerBack, and opens a ChestMenu.threeRows through a SimpleMenuProvider. No custom packet is needed: vanilla syncs the menu to the client, and the contraption NBT only matters server-side for disassembly persistence. Double chests are treated as two independent single chests for now. shipChestEditPersists gametest writes items via writeContainerBack and disassembles to confirm the chest keeps them.
 飛船互動方塊 Phase 3（箱子/木桶）。interactAt 對點到的 ChestBlock/BarrelBlock 開容器：openContainer 從存的 BE NBT 載入物品（ContainerHelper.loadAllItems）到一個 27 格 SimpleContainer，其 setChanged 透過 writeContainerBack 直接把物品寫回 contraption 的 BE NBT（ShipContraption.setBlockNbt），並用 SimpleMenuProvider 開 ChestMenu.threeRows。不需自訂封包：vanilla 會把 menu 同步給 client，contraption NBT 只在 server 端拆解持久化時用。雙箱目前當兩個獨立單箱。shipChestEditPersists gametest 用 writeContainerBack 寫物品再拆解，確認箱子保留。

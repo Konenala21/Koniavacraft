@@ -223,6 +223,32 @@ public class ShipAssemblyGameTests {
     }
 
     /** Phase 3 箱子：用 writeContainerBack 改船上箱子內容 → 拆解後箱子保留新物品（寫回持久化）。 */
+    /** 保險：船被 /kill（KILLED）而非正常拆解時，contraption 方塊應寫回世界、不蒸發。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
+    public static void killedShipRecoversBlocks(GameTestHelper helper) {
+        ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);
+        helper.setBlock(new BlockPos(4, 2, 4), core());
+        helper.setBlock(new BlockPos(3, 2, 4), filler());
+
+        helper.startSequence()
+                .thenExecute(pad::assembleShip)
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
+                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
+                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
+                            .findFirst().orElse(null);
+                    if (ship == null) { helper.fail("no ship"); return; }
+                    ship.remove(net.minecraft.world.entity.Entity.RemovalReason.KILLED); // 模擬 /kill
+                })
+                .thenIdle(2)
+                .thenExecute(() -> {
+                    helper.assertBlockPresent(ModBlocks.SHIP_CORE.get(), new BlockPos(4, 2, 4));
+                    helper.assertBlockPresent(ModBlocks.MANA_BLOCK.get(), new BlockPos(3, 2, 4));
+                })
+                .thenSucceed();
+    }
+
     @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
     public static void shipChestEditPersists(GameTestHelper helper) {
         ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);

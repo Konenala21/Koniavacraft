@@ -78,6 +78,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     private static final double SEAT_SIT_HEIGHT = 0.0; // 坐進椅子的高度（坐姿臀部還會往上，0.4 浮太高，可微調）
 
     @Nullable private ShipContraption contraption;
+    private boolean intentionalDisassembly; // 正常拆解時 true，讓 remove() 的散架保險不重複寫回
 
     // 駕駛輸入（由 ShipInputPacket 每 tick 設；server 端用）。每個駕駛位一份，tick 時合併。
     private final float[] inForward = new float[MAX_DRIVERS];
@@ -188,12 +189,36 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     @Override
     public void remove(Entity.RemovalReason reason) {
+        // 保險：被 /kill 或非預期 discard（reason.shouldDestroy()=KILLED/DISCARDED）而不是正常拆解時，
+        // 把方塊寫回世界（船散架在原地），不要讓整艘船無聲蒸發。區塊卸載/維度切換不觸發（會存檔/搬移）。
+        if (!level().isClientSide && contraption != null && !intentionalDisassembly && reason.shouldDestroy()) {
+            recoverContraptionToWorld();
+        }
         // 釋放烤好的 VBO（GL 資源）。client 端、render thread 上做
         if (level().isClientSide && meshCache instanceof AutoCloseable ac) {
             try { ac.close(); } catch (Exception ignored) {}
             meshCache = null;
         }
         super.remove(reason);
+    }
+
+    /** 異常移除時把 contraption 寫回世界；放不下就掉落方塊與容器物品（寧可掉也不蒸發）。 */
+    private void recoverContraptionToWorld() {
+        Rotation rotation = snapRotation(getYRot());
+        Vec3 coreWorld = rotatedWorldCorner(0, 0, 0);
+        BlockPos target = new BlockPos(
+                Mth.floor(coreWorld.x + 0.5), Mth.floor(coreWorld.y + 0.5), Mth.floor(coreWorld.z + 0.5));
+        if (contraption.addToWorld(level(), target, rotation)) return;
+        // 被擋：掉落方塊物品 + 容器內容（避免整艘材料消失）
+        for (StructureBlockInfo info : contraption.getBlocks().values()) {
+            ItemStack block = new ItemStack(info.state().getBlock().asItem());
+            if (!block.isEmpty()) spawnAtLocation(block);
+            if (info.nbt() != null && info.nbt().contains("Items")) {
+                NonNullList<ItemStack> items = NonNullList.withSize(256, ItemStack.EMPTY);
+                ContainerHelper.loadAllItems(info.nbt(), items, level().registryAccess());
+                for (ItemStack it : items) if (!it.isEmpty()) spawnAtLocation(it);
+            }
+        }
     }
 
     /**
@@ -719,6 +744,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         BlockPos target = new BlockPos(
                 Mth.floor(coreWorld.x + 0.5), Mth.floor(coreWorld.y + 0.5), Mth.floor(coreWorld.z + 0.5));
         if (!contraption.addToWorld(level(), target, rotation)) return false;
+        intentionalDisassembly = true; // 正常拆解：remove() 的保險不要再寫一次
         discard();
         return true;
     }
