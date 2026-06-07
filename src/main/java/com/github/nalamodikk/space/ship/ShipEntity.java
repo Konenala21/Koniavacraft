@@ -335,10 +335,16 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
      */
     private boolean forwardUseToShadow(ServerPlayer player, BlockPos local, BlockState expected, InteractionHand hand) {
         ServerLevel shadow = getShadow();
-        if (shadow == null) return false;
+        if (shadow == null) {
+            com.github.nalamodikk.KoniavacraftMod.LOGGER.warn("[ship] forwardUse: shadow dimension is NULL (anchor={}, dim not loaded? run runData + restart)", shadowAnchor);
+            return false;
+        }
         BlockPos sp = shadowAnchor.offset(local);
         BlockState ss = shadow.getBlockState(sp);
-        if (ss.isAir() || ss.getBlock() != expected.getBlock()) return false; // 影子沒這方塊(放置失敗) → 退回
+        if (ss.isAir() || ss.getBlock() != expected.getBlock()) {
+            com.github.nalamodikk.KoniavacraftMod.LOGGER.warn("[ship] forwardUse: shadow block at {} is {} but expected {} (placement failed?)", sp, ss.getBlock(), expected.getBlock());
+            return false; // 影子沒這方塊(放置失敗) → 退回
+        }
         BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(sp), Direction.UP, sp, false);
         ItemStack held = player.getItemInHand(hand);
         if (!held.isEmpty()) {

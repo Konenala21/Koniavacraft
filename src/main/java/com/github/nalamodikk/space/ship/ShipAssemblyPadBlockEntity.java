@@ -187,6 +187,13 @@ public class ShipAssemblyPadBlockEntity extends BlockEntity implements MenuProvi
             entity.setShadowAnchor(anchor);
             ShipShadowManager.setForceLoad(shadow, anchor, ship.bounds(), true);
             ShipShadowManager.placeInShadow(shadow, anchor, ship);
+            int placed = (int) ship.getBlocks().keySet().stream()
+                    .filter(lp -> !shadow.getBlockState(anchor.offset(lp)).isAir()).count();
+            com.github.nalamodikk.KoniavacraftMod.LOGGER.info(
+                    "[ship] assembled into shadow at {}: {}/{} blocks present", anchor, placed, ship.size());
+        } else {
+            com.github.nalamodikk.KoniavacraftMod.LOGGER.warn(
+                    "[ship] ship_shadow dimension NOT loaded at assembly (run runData + restart); machines won't tick");
         }
 
         data.set(DATA_COUNT, ship.size());
