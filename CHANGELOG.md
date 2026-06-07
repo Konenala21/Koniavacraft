@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+While piloting a spaceship, F5 now cycles three ship-aware views: first person, a tracking camera behind the ship, and a pulled-back overhead view beside the ship for watching your surroundings. For seeing far away, use a spyglass rather than the external view. (The external camera does not clip against terrain yet, so near the ground it can briefly see through blocks.)
+駕駛飛船時，F5 現在循環三種以飛船為準的視角：第一人稱、跟在船後的追蹤鏡頭、以及拉遠到船旁上方俯瞰、方便觀察四周的視角。要看很遠請用望遠鏡，不靠外部視角硬撐。（外部相機目前不會對地形做遮擋，所以貼近地面時可能短暫看穿方塊。）
+
 Players and mobs no longer phase through a moving ship's walls as easily. If the ship sweeps into you or you clip into a block while it moves, you now get pushed back out instead of passing through. This is a best-effort fix for moving-platform collision; very fast movement may still have small gaps.
 玩家和生物比較不會直接穿過移動中飛船的牆了。如果船掃進你、或你在船移動時卡進方塊，現在會把你推出來而不是直接穿過去。這是移動平台碰撞的盡力補救；非常快的移動可能還是有小破口。
 
@@ -43,6 +46,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 新增太空維度，包含程序生成的星空天空、物理正確的行星渲染，以及完整太陽系（水星、金星、月球、火星、木星、土星、土衛六、天王星、海王星、冥王星）和比鄰星系雛形（雙星系統）。行星為真實 3D 球體，視角大小隨距離動態縮放。太陽有日冕光暈。進入維度時玩家會出現在地球軌道附近。
 
 ### Developer Notes / 開發者備註
+
+Spaceship piloting camera (three views via F5). ShipCameraMixin injects Camera.setup TAIL: when the local player pilots a ShipEntity and the camera is detached (third person), it repositions the camera relative to the ship center along the look vector: behind the ship for THIRD_PERSON_BACK, and pulled-back overhead beside it for THIRD_PERSON_FRONT (the observe view). Vanilla F5 already cycles first/back/front, so no key interception is needed. No terrain clipping yet (camera can clip near ground). Co-exists with the existing CameraMixin (both inject setup TAIL, mutually exclusive conditions). Client mixin, not gametestable; needs runClient.
+飛船駕駛相機（F5 三視角）。ShipCameraMixin 注入 Camera.setup TAIL：當本地玩家駕駛 ShipEntity 且相機是 detached（第三人稱）時，沿視線把相機重定位成相對船中心：THIRD_PERSON_BACK 放船後，THIRD_PERSON_FRONT 拉遠到船旁上方俯瞰（觀察視角）。vanilla F5 本來就循環 first/back/front，所以不用攔截按鍵。尚未對地形 clip（貼地面可能穿牆）。與既有 CameraMixin 共存（都注入 setup TAIL，條件互斥）。client mixin，gametest 測不到，需 runClient。
 
 Spaceship relative-motion collision (proper moving-platform fix). The old split (mixin restricts the entity's own motion + a separate carry that rigidly setPos) let entities phase through a moving ship. ShipEntity.applyContraptionMovement now unifies carry and collision: it transforms the entity into the ship's previous-tick local frame (worldToLocalAt with xOld/yRotO), collides the entity's own motion (un-rotated into local) per axis against the static local shape, then maps the resolved local position back to world through the ship's current-tick transform (localToWorldAt with getX/getYRot), returning carry (translation+rotation) plus the collided walk as one world displacement. The EntityShipCollisionMixin calls it instead of restrictMotion; ShipDeckCarryHandler no longer calls carry (subsumed) and only keeps resolveOverlap as a safety net. Entities outside the ship bounds+1 are untouched. restrictMotion is kept for the deckCollisionStopsFall gametest. Needs in-game verification (frame-math, sign).
 飛船相對運動碰撞（移動平台正解）。舊的拆分（mixin 限制實體自己的移動 + 另外 carry 用 setPos 剛體搬）會讓實體穿過移動中的船。ShipEntity.applyContraptionMovement 現在把 carry 與碰撞合一：把實體轉進船「上一 tick」的 local 框（worldToLocalAt 用 xOld/yRotO），把實體自己的移動（轉進 local）逐軸對靜止 local 形狀碰撞，再把解出的 local 位置用船「這一 tick」的變換（localToWorldAt 用 getX/getYRot）轉回世界，回傳「跟船走（平移+旋轉）+ 撞牆後的走動」合成的一個世界位移。EntityShipCollisionMixin 改呼叫它取代 restrictMotion；ShipDeckCarryHandler 不再呼叫 carry（已併入），只留 resolveOverlap 當保險。船範圍+1 外的實體不接管。restrictMotion 保留給 deckCollisionStopsFall gametest。需實機驗（框架數學、符號）。

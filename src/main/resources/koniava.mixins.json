@@ -22,7 +22,8 @@
     "client.ParticleEngineAddonMixin",
     "client.CameraMixin",
     "client.TitleScreenMixin",
-    "client.LivingEntityRendererMixin"
+    "client.LivingEntityRendererMixin",
+    "client.ShipCameraMixin"
   ],
   "server": [],
   "injectors": {
