@@ -305,7 +305,14 @@ public class ShipAssemblyGameTests {
                     BlockPos sp = ship.getShadowAnchor().offset(1, 0, 0); // 收集器 local (1,0,0)
                     BlockEntity be = shadow.getBlockEntity(sp);
                     if (!(be instanceof SolarManaCollectorBlockEntity solar)) {
-                        helper.fail("collector not ticking in shadow (be=" + be + ")"); return;
+                        // 自我診斷：分清楚是沒組進去/沒放進影子/BE 沒建
+                        int size = ship.getContraption().getBlocks().size();
+                        boolean hasCollectorLocal = ship.getContraption().getBlocks().containsKey(new BlockPos(1, 0, 0));
+                        helper.fail("collector BE missing: contraptionSize=" + size
+                                + " hasCollectorInContraption=" + hasCollectorLocal
+                                + " shadowBlockAt" + sp + "=" + shadow.getBlockState(sp).getBlock()
+                                + " be=" + be + " anchor=" + ship.getShadowAnchor());
+                        return;
                     }
                     if (solar.getManaStored() <= 0)
                         helper.fail("collector produced no mana in shadow (mana=" + solar.getManaStored() + ")");
