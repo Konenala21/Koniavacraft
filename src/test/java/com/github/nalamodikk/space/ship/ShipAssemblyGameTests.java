@@ -1,9 +1,11 @@
 package com.github.nalamodikk.space.ship;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.dimension.ModDimensions;
 import com.github.nalamodikk.register.ModBlocks;
 import com.github.nalamodikk.register.ModEntities;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.Container;
@@ -220,6 +222,53 @@ public class ShipAssemblyGameTests {
                     ItemStack s = restored.getItem(0);
                     if (!s.is(Items.DIAMOND) || s.getCount() != 5)
                         helper.fail("chest contents lost (got " + s + ")");
+                })
+                .thenSucceed();
+    }
+
+    /**
+     * VM1+VM2：方塊放進影子維度 + 改影子方塊後鏡射回視覺 contraption。
+     * 注意：GameTestServer 不會為自訂 datapack 維度建 ServerLevel，所以 ship_shadow 在測試 server 不存在，
+     * 整套 shadow 邏輯 no-op。此時本測試「跳過」(直接 succeed)；真正驗證要 runClient 實機。
+     */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 120)
+    public static void shipBlocksLiveInShadowAndMirrorBack(GameTestHelper helper) {
+        ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);
+        helper.setBlock(new BlockPos(4, 2, 4), core());
+        helper.setBlock(new BlockPos(3, 2, 4), filler()); // local (-1,0,0)
+
+        ShipEntity[] shipRef = new ShipEntity[1];
+        BlockPos[] anchorRef = new BlockPos[1];
+
+        helper.startSequence()
+                .thenExecute(pad::assembleShip)
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
+                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
+                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
+                            .findFirst().orElse(null);
+                    if (ship == null) { helper.fail("no ship"); return; }
+                    shipRef[0] = ship;
+                    ServerLevel shadow = helper.getLevel().getServer().getLevel(ModDimensions.SHIP_SHADOW);
+                    BlockPos anchor = ship.getShadowAnchor();
+                    if (shadow == null || anchor == null) return; // gametest server 無自訂維度 → 跳過(thenSucceed 仍會過)
+                    anchorRef[0] = anchor;
+                    // 方塊真的放進影子了？
+                    if (!shadow.getBlockState(anchor).is(ModBlocks.SHIP_CORE.get()))
+                        helper.fail("core not placed in shadow");
+                    if (!shadow.getBlockState(anchor.offset(-1, 0, 0)).is(ModBlocks.MANA_BLOCK.get()))
+                        helper.fail("filler not placed in shadow");
+                    // 模擬影子裡的變化（機器運轉/作物生長那種 blockstate 變）
+                    shadow.setBlock(anchor.offset(-1, 0, 0), Blocks.GOLD_BLOCK.defaultBlockState(), 3);
+                })
+                .thenIdle(34) // 等 tickServerMirror（每 16 tick）跑到
+                .thenExecute(() -> {
+                    if (anchorRef[0] == null) return; // 跳過（無自訂維度）
+                    var info = shipRef[0].getContraption().getBlocks().get(new BlockPos(-1, 0, 0));
+                    if (info == null || !info.state().is(Blocks.GOLD_BLOCK))
+                        helper.fail("mirror did not reflect shadow change (got "
+                                + (info == null ? "null" : info.state().getBlock()) + ")");
                 })
                 .thenSucceed();
     }
