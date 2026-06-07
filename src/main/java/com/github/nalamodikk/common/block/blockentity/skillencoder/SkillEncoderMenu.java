@@ -77,6 +77,7 @@ public class SkillEncoderMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
+        if (com.github.nalamodikk.space.ship.ShipShadowManager.isShadowBE(blockEntity)) return true; // 飛船影子機器：跨維度放行
         return blockEntity.getLevel() != null
                 && Vec3.atCenterOf(blockEntity.getBlockPos()).distanceToSqr(player.position()) < 64.0;
     }

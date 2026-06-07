@@ -70,6 +70,7 @@ public class ArcaneConduitConfigMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
+        if (com.github.nalamodikk.space.ship.ShipShadowManager.isShadowBE(conduit)) return true; // 飛船影子機器：跨維度放行
         return conduit != null &&
                 conduit.getLevel() != null &&
                 conduit.getLevel().getBlockEntity(conduit.getBlockPos()) == conduit &&

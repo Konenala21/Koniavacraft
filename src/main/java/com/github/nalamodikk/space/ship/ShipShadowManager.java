@@ -45,6 +45,14 @@ public class ShipShadowManager extends SavedData {
         return server.getLevel(ModDimensions.SHIP_SHADOW);
     }
 
+    /**
+     * BE 是否活在飛船影子維度。機器選單的 stillValid 用：影子機器離玩家很遠，距離檢查必失敗 → GUI 秒關；
+     * server 端選單綁的是影子 BE，這裡回 true 直接放行(玩家其實站在視覺船上互動，跨維度是實作細節)。
+     */
+    public static boolean isShadowBE(net.minecraft.world.level.block.entity.BlockEntity be) {
+        return be != null && be.getLevel() != null && be.getLevel().dimension().equals(ModDimensions.SHIP_SHADOW);
+    }
+
     /** 分配（或取回既有）某船的影子錨點。 */
     public BlockPos allocate(UUID shipId) {
         int slot = slots.computeIfAbsent(shipId, k -> nextSlot++);

@@ -118,6 +118,7 @@ public class ManaGrinderMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player pPlayer) {
+        if (com.github.nalamodikk.space.ship.ShipShadowManager.isShadowBE(blockEntity)) return true; // 飛船影子機器：跨維度放行
         return blockEntity.getLevel() != null
             && net.minecraft.world.phys.Vec3.atCenterOf(blockEntity.getBlockPos())
                    .distanceToSqr(pPlayer.position()) < 64.0;
