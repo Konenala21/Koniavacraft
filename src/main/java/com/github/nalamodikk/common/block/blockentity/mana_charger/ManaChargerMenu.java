@@ -1,11 +1,13 @@
 package com.github.nalamodikk.common.block.blockentity.mana_charger;
 
 import com.github.nalamodikk.register.ModMenuTypes;
+import com.github.nalamodikk.space.ship.ShipShadowManager;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.items.SlotItemHandler;
 
 public class ManaChargerMenu extends AbstractContainerMenu {
@@ -68,9 +70,9 @@ public class ManaChargerMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (com.github.nalamodikk.space.ship.ShipShadowManager.isShadowBE(blockEntity)) return true; // 飛船影子機器：跨維度放行
+        if (ShipShadowManager.isShadowBE(blockEntity)) return true; // 飛船影子機器：跨維度放行
         return blockEntity.getLevel() != null
-                && net.minecraft.world.phys.Vec3.atCenterOf(blockEntity.getBlockPos())
+                && Vec3.atCenterOf(blockEntity.getBlockPos())
                         .distanceToSqr(player.position()) < 64.0;
     }
 }

@@ -14,6 +14,7 @@ package com.github.nalamodikk.register;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.space.ship.ShipEntity;
+import org.jetbrains.annotations.Nullable;
 import com.github.nalamodikk.common.block.blockentity.collector.solarmana.SolarManaCollectorBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.collector.solarmana.SolarManaCollectorMenu;
 import com.github.nalamodikk.common.block.blockentity.skillencoder.SkillEncoderBlockEntity;
@@ -174,7 +175,7 @@ public class ModMenuTypes {
      * client 端解析選單的 BE：先在自己世界找；找不到(船的影子機器，影子維度 client 沒有)就反查船的 render BE。
      * 都找不到回 null(NeoForge 會安靜不開、不 crash)。所有「讀 pos 重找 BE」的選單工廠都該走這個。
      */
-    @org.jetbrains.annotations.Nullable
+    @Nullable
     public static <T extends BlockEntity> T resolveMenuBE(Inventory inv, BlockPos pos, Class<T> clazz) {
         BlockEntity be = inv.player.level().getBlockEntity(pos);
         if (!clazz.isInstance(be)) be = ShipEntity.findShadowRenderBE(inv.player, pos); // VM3b：船的影子機器

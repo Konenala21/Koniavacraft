@@ -4,12 +4,14 @@ import com.github.nalamodikk.common.block.blockentity.mana_grinder.sync.ManaGrin
 import com.github.nalamodikk.common.coreapi.recipe.ProcessingRecipe;
 import com.github.nalamodikk.register.ModRecipes;
 import com.github.nalamodikk.register.ModMenuTypes;
+import com.github.nalamodikk.space.ship.ShipShadowManager;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.items.ItemStackHandler;
 import net.neoforged.neoforge.items.SlotItemHandler;
 
@@ -118,9 +120,9 @@ public class ManaGrinderMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player pPlayer) {
-        if (com.github.nalamodikk.space.ship.ShipShadowManager.isShadowBE(blockEntity)) return true; // 飛船影子機器：跨維度放行
+        if (ShipShadowManager.isShadowBE(blockEntity)) return true; // 飛船影子機器：跨維度放行
         return blockEntity.getLevel() != null
-            && net.minecraft.world.phys.Vec3.atCenterOf(blockEntity.getBlockPos())
+            && Vec3.atCenterOf(blockEntity.getBlockPos())
                    .distanceToSqr(pPlayer.position()) < 64.0;
     }
 
