@@ -319,6 +319,24 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         return server == null ? null : ShipShadowManager.shadowLevel(server);
     }
 
+    /**
+     * VM3：把對船上 BE 方塊的右鍵轉發給影子維度裡的真 BE（開真機器/容器 GUI）。
+     * 影子 block 的 use 會 player.openMenu，menu 綁影子 BE；stillValid 由 MenuShipShadowMixin 放行。
+     */
+    private void forwardUseToShadow(ServerPlayer player, BlockPos local, InteractionHand hand) {
+        ServerLevel shadow = getShadow();
+        if (shadow == null) return;
+        BlockPos sp = shadowAnchor.offset(local);
+        BlockState ss = shadow.getBlockState(sp);
+        BlockHitResult hit = new BlockHitResult(Vec3.atCenterOf(sp), Direction.UP, sp, false);
+        ItemStack held = player.getItemInHand(hand);
+        if (!held.isEmpty()) {
+            ss.useItemOn(held, shadow, player, hand, hit);
+        } else {
+            ss.useWithoutItem(shadow, player, hit);
+        }
+    }
+
     /** 編輯飛船時把改動也寫進影子（不然下一輪鏡射會把編輯蓋回去；機器網路也要看到新方塊）。 */
     private void writeToShadow(BlockPos local, BlockState state, @Nullable CompoundTag nbt) {
         ServerLevel shadow = getShadow();
@@ -725,10 +743,13 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         if (level().isClientSide && isToggleable(info.state())) {
             return InteractionResult.sidedSuccess(true);
         }
-        // Phase 3：箱子/木桶 → 從存的 NBT 開容器 GUI，改動寫回 contraption（拆解保留）
-        if (isContainer(info.state())) {
+        // VM3：箱子/機器等有 BlockEntity 的方塊 → 把互動轉發給「影子維度裡的真 BE」，
+        // 開的是真正在運轉的機器/容器 GUI（stillValid mixin 讓跨維度選單不秒關）。
+        // 影子不存在(沒 runData)時退回 Phase3 的鏡像容器(只箱子)。
+        if (info.state().getBlock() instanceof EntityBlock) {
             if (!level().isClientSide && player instanceof ServerPlayer sp) {
-                openContainer(sp, local, info);
+                if (getShadow() != null) forwardUseToShadow(sp, local, hand);
+                else if (isContainer(info.state())) openContainer(sp, local, info);
             }
             return InteractionResult.sidedSuccess(level().isClientSide);
         }
