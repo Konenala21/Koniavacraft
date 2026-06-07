@@ -35,7 +35,8 @@ public class EntityShipCollisionMixin {
         for (ShipEntity ship : ships) {
             if (self.getVehicle() == ship) continue; // 自己駕駛/乘坐的船不互撞（由 positionRider 擺位）
             if (ship.getContraption() == null) continue;
-            m = ship.restrictMotion(box, m);
+            // 相對運動碰撞：跟船走 + 撞牆擋住 合一（取代舊的 restrictMotion + 另外 carry）
+            m = ship.applyContraptionMovement(self, m);
         }
         if (m.x != motion.x || m.y != motion.y || m.z != motion.z) cir.setReturnValue(m);
     }

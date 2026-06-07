@@ -7,8 +7,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
-import java.util.List;
-
 /**
  * 站在飛船甲板上的實體跟著船一起移動/旋轉（carry）。
  * 站立靠 {@link EntityShipCollisionMixin} 的碰撞撐住，但船會動，光靠碰撞人會滑掉；這裡每 tick
@@ -24,18 +22,11 @@ public class ShipDeckCarryHandler {
         if (e instanceof ShipEntity) return;
         if (e.isPassenger()) return; // 坐在座位上的乘客不 carry（positionRider 處理）
 
+        // 跟船走 + 撞牆 已整合進 EntityShipCollisionMixin 的 applyContraptionMovement（相對運動碰撞）。
+        // 這裡只留 resolveOverlap 當保險（極端情況卡進方塊時推出）。
         AABB search = e.getBoundingBox().inflate(0.5);
-        List<ShipEntity> ships = e.level().getEntitiesOfClass(ShipEntity.class, search);
-        if (ships.isEmpty()) return;
-        boolean carried = false;
-        for (ShipEntity ship : ships) {
-            if (ship.getContraption() == null) continue;
-            if (!carried && ship.isSupporting(e)) {
-                ship.carry(e);
-                carried = true; // 一次只被一艘船帶
-            }
-            // 卡進船方塊就推出來（船掃進你 / 你穿牆都靠這個；移動平台碰撞的補救）
-            ship.resolveOverlap(e);
+        for (ShipEntity ship : e.level().getEntitiesOfClass(ShipEntity.class, search)) {
+            if (ship.getContraption() != null) ship.resolveOverlap(e);
         }
     }
 }

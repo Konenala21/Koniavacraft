@@ -463,6 +463,46 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         return rotateVec(mx, my, mz, getYRot());
     }
 
+    /**
+     * 相對運動碰撞（移動平台正解）：把實體轉進船「上一 tick」的 local 框，在那裡對靜止方塊逐軸碰撞它
+     * 自己的移動，再用船「這一 tick」的變換轉回世界。回傳的世界位移 = 跟船走(平移+旋轉) + 撞牆擋住，合一。
+     * 取代舊的「restrictMotion + carry 分開」。實體不在船範圍內則原樣回傳。
+     */
+    public Vec3 applyContraptionMovement(Entity e, Vec3 worldMotion) {
+        VoxelShape shape = localCollisionShape();
+        if (shape.isEmpty()) return worldMotion;
+        AABB box = e.getBoundingBox();
+        Vec3 boxCenter = box.getCenter();
+        // T0 = 上一 tick 變換(xOld/yRotO)，T1 = 這一 tick(getX/getYRot)
+        Vec3 lc = worldToLocalAt(boxCenter.x, boxCenter.y, boxCenter.z, xOld, yOld, zOld, yRotO);
+        AABB lb = AABB.ofSize(lc, box.getXsize(), box.getYsize(), box.getZsize());
+        if (!lb.intersects(contraption.bounds().inflate(1.0))) return worldMotion; // 不在船範圍：不接管
+
+        Vec3 P = e.position();
+        Vec3 L0 = worldToLocalAt(P.x, P.y, P.z, xOld, yOld, zOld, yRotO);
+        Vec3 lm = rotateVec(worldMotion.x, worldMotion.y, worldMotion.z, -yRotO); // 自己的移動轉進 local
+        double my = lm.y; if (my != 0) my = shape.collide(Direction.Axis.Y, lb, my); lb = lb.move(0, my, 0);
+        double mx = lm.x; if (mx != 0) mx = shape.collide(Direction.Axis.X, lb, mx); lb = lb.move(mx, 0, 0);
+        double mz = lm.z; if (mz != 0) mz = shape.collide(Direction.Axis.Z, lb, mz);
+        Vec3 newLocal = L0.add(mx, my, mz);
+        Vec3 newWorld = localToWorldAt(newLocal.x, newLocal.y, newLocal.z, getX(), getY(), getZ(), getYRot());
+        return newWorld.subtract(P);
+    }
+
+    /** 世界點 → 指定變換(pos,yaw)的 local 框。 */
+    private Vec3 worldToLocalAt(double wx, double wy, double wz, double px, double py, double pz, float yaw) {
+        Vec3 c = centerOffset();
+        Vec3 r = rotateVec(wx - px, wy - py, wz - pz, -yaw);
+        return new Vec3(r.x + c.x, r.y + c.y, r.z + c.z);
+    }
+
+    /** local 框 → 指定變換(pos,yaw)的世界點。 */
+    private Vec3 localToWorldAt(double lx, double ly, double lz, double px, double py, double pz, float yaw) {
+        Vec3 c = centerOffset();
+        Vec3 r = rotateVec(lx - c.x, ly - c.y, lz - c.z, yaw);
+        return new Vec3(px + r.x, py + r.y, pz + r.z);
+    }
+
     /** 世界某點(玩家大小的盒)是否卡在船的方塊裡。下船找不會穿模的位置用。 */
     public boolean isInsideShip(double wx, double wy, double wz) {
         VoxelShape shape = localCollisionShape();
