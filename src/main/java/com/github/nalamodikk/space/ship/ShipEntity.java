@@ -466,6 +466,31 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         return Shapes.joinIsNotEmpty(shape, Shapes.create(probe), BooleanOp.AND);
     }
 
+    /**
+     * 把卡進船方塊裡的實體推出來（移動平台碰撞的務實補救：船掃進你 / 你穿進牆 都靠這個推出）。
+     * 在 local 框試 上/水平四向 找最近的脫離方向，轉回世界推。
+     */
+    public void resolveOverlap(Entity e) {
+        VoxelShape shape = localCollisionShape();
+        if (shape.isEmpty()) return;
+        AABB box = e.getBoundingBox();
+        Vec3 cen = box.getCenter();
+        Vec3 lc = worldToLocalPoint(cen.x, cen.y, cen.z);
+        AABB lb = AABB.ofSize(lc, box.getXsize() - 0.05, box.getYsize() - 0.05, box.getZsize() - 0.05);
+        if (!Shapes.joinIsNotEmpty(shape, Shapes.create(lb), BooleanOp.AND)) return; // 沒卡住
+        Direction[] order = {Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST};
+        for (Direction d : order) {
+            for (double dist = 0.05; dist <= 1.3; dist += 0.05) {
+                AABB moved = lb.move(d.getStepX() * dist, d.getStepY() * dist, d.getStepZ() * dist);
+                if (!Shapes.joinIsNotEmpty(shape, Shapes.create(moved), BooleanOp.AND)) {
+                    Vec3 w = rotateVec(d.getStepX() * dist, d.getStepY() * dist, d.getStepZ() * dist, getYRot());
+                    e.setPos(e.getX() + w.x, e.getY() + w.y, e.getZ() + w.z);
+                    return;
+                }
+            }
+        }
+    }
+
     /** 實體是否「站在」這艘船上（腳底正下方有船的方塊）。用來決定要不要 carry。 */
     public boolean isSupporting(Entity e) {
         VoxelShape shape = localCollisionShape();

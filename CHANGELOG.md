@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Players and mobs no longer phase through a moving ship's walls as easily. If the ship sweeps into you or you clip into a block while it moves, you now get pushed back out instead of passing through. This is a best-effort fix for moving-platform collision; very fast movement may still have small gaps.
+玩家和生物比較不會直接穿過移動中飛船的牆了。如果船掃進你、或你在船移動時卡進方塊，現在會把你推出來而不是直接穿過去。這是移動平台碰撞的盡力補救；非常快的移動可能還是有小破口。
+
 Editing a parked spaceship feels more like normal building now: the block you are aiming at gets a selection outline, breaking a block makes the usual break particles, and flying plays a looping engine sound that rises with speed. You also cannot place the core or launch-pad blocks onto a ship, and there is a block count limit so you cannot make one so big it lags.
 編輯停著的飛船現在更像一般蓋方塊：你瞄準的方塊會有選取外框、挖方塊會噴正常的碎裂粒子、飛行時會有隨速度變大的引擎循環音。另外你不能把核心或發射台方塊放到船上，也有方塊數量上限避免做太大卡頓。
 
@@ -40,6 +43,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 新增太空維度，包含程序生成的星空天空、物理正確的行星渲染，以及完整太陽系（水星、金星、月球、火星、木星、土星、土衛六、天王星、海王星、冥王星）和比鄰星系雛形（雙星系統）。行星為真實 3D 球體，視角大小隨距離動態縮放。太陽有日冕光暈。進入維度時玩家會出現在地球軌道附近。
 
 ### Developer Notes / 開發者備註
+
+Spaceship moving-platform overlap push-out. The deck collision mixin handles an entity walking into a parked ship, but a moving ship sweeping into an entity (or fast relative motion) let them phase through. ShipEntity.resolveOverlap transforms the entity box into the ship local frame (slightly deflated), and if it intersects the local collision shape, searches up then the four horizontal directions in small steps for the nearest clear offset, rotates that local push back to world and applies it. ShipDeckCarryHandler now calls resolveOverlap for every nearby non-passenger entity each tick (after carry). This is a reactive push-out, not full relative-motion collision (the proper Create-level fix); very fast motion can still slip.
+飛船移動平台重疊推出。甲板碰撞 mixin 處理實體走進停著的船，但移動中的船掃進實體（或快速相對運動）會穿過去。ShipEntity.resolveOverlap 把實體盒轉進船 local 框（略縮），若與 local 碰撞形狀相交，就往上再水平四向以小步找最近的脫離位移，把該 local 推出轉回世界套用。ShipDeckCarryHandler 現在每 tick 對附近每個非乘客實體呼叫 resolveOverlap（carry 之後）。這是反應式推出，不是完整相對運動碰撞（正解是 Create 級）；非常快的運動仍可能漏。
 
 Spaceship editing polish: selection outline, break particles, fly sound, edit guards. ShipOutlineRenderer (RenderLevelStageEvent.AFTER_TRANSLUCENT_BLOCKS) draws the aimed block's outline shape when mc.crosshairPickEntity is a ShipEntity, using the same rotate-then-translate(-centerOffset) transform as the renderer and forAllEdges into RenderType.lines (LevelRenderer.renderShape is private). ShipEntity.getAimedLocalBlock exposes the picked local pos. updateContraptionBlock spawns block break particles client-side at the rotated world position before removing. ShipFlySoundInstance (AbstractTickableSoundInstance, placeholder MINECART_INSIDE) loops while the local player pilots, with volume/pitch from per-tick position delta (the ship moves by setPos so deltaMovement is zero); ShipControlClientHandler starts it and it self-stops on dismount. placeBlock now rejects structural blocks (core, assembly base/gantry/pad) and enforces ShipContraption.MAX_BLOCKS.
 飛船編輯打磨：選取外框、破壞粒子、飛行音、編輯防呆。ShipOutlineRenderer（RenderLevelStageEvent.AFTER_TRANSLUCENT_BLOCKS）在 mc.crosshairPickEntity 是 ShipEntity 時畫瞄準方塊的外框，用跟渲染器一樣的旋轉+translate(-centerOffset) 變換，forAllEdges 進 RenderType.lines（LevelRenderer.renderShape 是 private）。ShipEntity.getAimedLocalBlock 開放瞄準的 local 位置。updateContraptionBlock 在移除前於旋轉後世界位置噴方塊破壞粒子（client）。ShipFlySoundInstance（AbstractTickableSoundInstance，佔位 MINECART_INSIDE）在本地玩家駕駛時循環，音量/音高依每 tick 位置差（船用 setPos 移動故 deltaMovement=0）；ShipControlClientHandler 啟動它、下船自停。placeBlock 現在擋掉結構方塊（核心、發射台底座/組裝架/組裝台）並套用 ShipContraption.MAX_BLOCKS 上限。

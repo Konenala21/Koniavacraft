@@ -27,12 +27,15 @@ public class ShipDeckCarryHandler {
         AABB search = e.getBoundingBox().inflate(0.5);
         List<ShipEntity> ships = e.level().getEntitiesOfClass(ShipEntity.class, search);
         if (ships.isEmpty()) return;
+        boolean carried = false;
         for (ShipEntity ship : ships) {
             if (ship.getContraption() == null) continue;
-            if (ship.isSupporting(e)) {
+            if (!carried && ship.isSupporting(e)) {
                 ship.carry(e);
-                break; // 一次只被一艘船帶
+                carried = true; // 一次只被一艘船帶
             }
+            // 卡進船方塊就推出來（船掃進你 / 你穿牆都靠這個；移動平台碰撞的補救）
+            ship.resolveOverlap(e);
         }
     }
 }
