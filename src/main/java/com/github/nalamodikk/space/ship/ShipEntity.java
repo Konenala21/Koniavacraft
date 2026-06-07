@@ -216,6 +216,15 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         if (!level().isClientSide && contraption != null && !intentionalDisassembly && reason.shouldDestroy()) {
             recoverContraptionToWorld();
         }
+        // VM4：船卸載/換維度（非銷毀）時，解除影子 force-load 讓機器暫停省效能；方塊保留，重載再開
+        if (!level().isClientSide && !reason.shouldDestroy() && shadowAnchor != null && contraption != null) {
+            var server = level().getServer();
+            if (server != null) {
+                ServerLevel shadow = ShipShadowManager.shadowLevel(server);
+                if (shadow != null) ShipShadowManager.setForceLoad(shadow, shadowAnchor, contraption.bounds(), false);
+            }
+            shadowForceLoaded = false;
+        }
         // 釋放烤好的 VBO（GL 資源）。client 端、render thread 上做
         if (level().isClientSide && meshCache instanceof AutoCloseable ac) {
             try { ac.close(); } catch (Exception ignored) {}
@@ -305,6 +314,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         if (level().isClientSide) {
             tickLerp(); // server 權威：client 只平滑跟隨 server 廣播的位置，不自己算移動
         } else {
+            ensureShadowForceLoaded();                       // VM4：載入後確保影子 force-load（機器才 tick）
             tickServerMovement(); // server 是唯一真相，依駕駛輸入算移動
             if ((tickCount & 15) == 0) tickServerMirror(); // VM2：每 16 tick 把影子狀態鏡射回視覺船
         }
@@ -1218,8 +1228,18 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     }
 
     @Nullable private BlockPos shadowAnchor; // 影子維度裡這台船方塊的錨點（VM1，server-only）
+    private transient boolean shadowForceLoaded; // VM4：本次載入是否已 force-load 影子（重啟/卸載後 reset）
     public void setShadowAnchor(BlockPos a) { this.shadowAnchor = a; }
     @Nullable public BlockPos getShadowAnchor() { return shadowAnchor; }
+
+    /** VM4：船載入後確保影子區域 force-load（機器才會 tick）。組裝時已 force-load，這裡涵蓋重啟/重載。 */
+    private void ensureShadowForceLoaded() {
+        if (shadowForceLoaded || shadowAnchor == null || contraption == null) return;
+        ServerLevel shadow = getShadow();
+        if (shadow == null) return;
+        ShipShadowManager.setForceLoad(shadow, shadowAnchor, contraption.bounds(), true);
+        shadowForceLoaded = true;
+    }
 
     @Override
     public void writeSpawnData(RegistryFriendlyByteBuf buf) {
