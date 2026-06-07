@@ -177,17 +177,19 @@ public class ShipAssemblyPadBlockEntity extends BlockEntity implements MenuProvi
         entity.setContraption(ship);
         // 實體原點放在船中心（hitbox 才貼合），位置依 contraption 算
         entity.placeAtShipCenter(core);
-        server.addFreshEntity(entity);
 
         // VM1：把方塊複製進影子維度的固定區域並 force-load，機器/作物在那裡真正 tick。
         // 視覺船(entity 上的 contraption)是鏡像，影子是真相（VM2 做狀態鏡射回視覺船）。
+        // 重要：anchor 要在 addFreshEntity 前設好，spawn data 才帶得到給 client（VM3b 機器 GUI 靠它反查 render BE）。
         ServerLevel shadow = ShipShadowManager.shadowLevel(server.getServer());
         if (shadow != null) {
             BlockPos anchor = ShipShadowManager.get(server.getServer()).allocate(entity.getUUID());
             entity.setShadowAnchor(anchor);
+            server.addFreshEntity(entity);
             ShipShadowManager.setForceLoad(shadow, anchor, ship.bounds(), true);
             ShipShadowManager.placeInShadow(shadow, anchor, ship);
         } else {
+            server.addFreshEntity(entity);
             com.github.nalamodikk.KoniavacraftMod.LOGGER.warn(
                     "[ship] ship_shadow dimension NOT loaded at assembly (run runData + restart); machines won't tick");
         }
