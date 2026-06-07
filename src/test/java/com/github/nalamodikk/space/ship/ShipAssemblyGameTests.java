@@ -283,7 +283,7 @@ public class ShipAssemblyGameTests {
     public static void shipMachineTicksInShadow(GameTestHelper helper) {
         ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);
         helper.setBlock(new BlockPos(4, 2, 4), core());
-        helper.setBlock(new BlockPos(4, 3, 4), ModBlocks.SOLAR_MANA_COLLECTOR.get().defaultBlockState()); // local (0,1,0)，上方見天
+        helper.setBlock(new BlockPos(5, 2, 4), ModBlocks.SOLAR_MANA_COLLECTOR.get().defaultBlockState()); // local (1,0,0)，同層在組裝盒內、上方見天
 
         ShipEntity[] shipRef = new ShipEntity[1];
         helper.startSequence()
@@ -302,7 +302,7 @@ public class ShipAssemblyGameTests {
                     if (ship == null || ship.getShadowAnchor() == null) return; // 無維度(headless) → 跳過
                     ServerLevel shadow = helper.getLevel().getServer().getLevel(ModDimensions.SHIP_SHADOW);
                     if (shadow == null) return;
-                    BlockPos sp = ship.getShadowAnchor().offset(0, 1, 0); // 收集器 local (0,1,0)
+                    BlockPos sp = ship.getShadowAnchor().offset(1, 0, 0); // 收集器 local (1,0,0)
                     BlockEntity be = shadow.getBlockEntity(sp);
                     if (!(be instanceof SolarManaCollectorBlockEntity solar)) {
                         helper.fail("collector not ticking in shadow (be=" + be + ")"); return;
