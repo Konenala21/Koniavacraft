@@ -3,6 +3,8 @@ package com.github.nalamodikk.space.ship;
 import com.github.nalamodikk.common.network.packet.client.ship.ShipBlockUpdatePacket;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -183,6 +185,11 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
      */
     public void updateContraptionBlock(BlockPos local, BlockState state) {
         if (contraption == null) return;
+        // client：挖掉方塊(state=air)時噴破壞粒子（移除前用舊 state）
+        if (level().isClientSide && state.isAir()) {
+            var old = contraption.getBlocks().get(local);
+            if (old != null && !old.state().isAir()) spawnBreakParticles(local, old.state());
+        }
         // state=air → 移除；已存在 → 換 state（保留 NBT）；不存在 → 新增。涵蓋 Phase2 切狀態 + 停船編輯加/挖
         if (state.isAir()) {
             contraption.removeBlock(local);
@@ -661,7 +668,15 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
      * 高植物)放兩格。回傳是否有放。server 端。
      */
     boolean placeBlock(Player player, InteractionHand hand, Pick pick, BlockPos local, Block block) {
+        if (isStructuralBlock(block)) return false;                 // 核心/發射台方塊不該放上船
+        if (contraption.size() >= ShipContraption.MAX_BLOCKS) return false; // 方塊數上限（渲染/效能）
         return placeState(local, computePlacementState(player, hand, pick, local, block));
+    }
+
+    /** 核心與發射台方塊不可放到船上（會出現怪狀態/重複錨點）。 */
+    private static boolean isStructuralBlock(Block b) {
+        return b instanceof ShipCoreBlock || b instanceof ShipAssemblyBaseBlock
+                || b instanceof ShipAssemblyGantryBlock || b instanceof ShipAssemblyPadBlock;
     }
 
     /** 把算好的 state 放進 contraption，多方塊(門/高植物上下、床頭腳)放兩格。回傳是否有放。package-visible 給 GameTest。 */
@@ -810,6 +825,19 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         level().playSound(null, w.x, w.y, w.z, sound, SoundSource.BLOCKS, 1.0f, 1.0f);
     }
 
+    /** client：挖船上方塊噴碎裂粒子（位置依旋轉算）。 */
+    private void spawnBreakParticles(BlockPos local, BlockState state) {
+        Vec3 c = rotatedWorldPoint(local.getX() + 0.5, local.getY() + 0.5, local.getZ() + 0.5);
+        BlockParticleOption opt = new BlockParticleOption(ParticleTypes.BLOCK, state);
+        for (int i = 0; i < 16; i++) {
+            level().addParticle(opt,
+                    c.x + (random.nextDouble() - 0.5) * 0.7,
+                    c.y + (random.nextDouble() - 0.5) * 0.7,
+                    c.z + (random.nextDouble() - 0.5) * 0.7,
+                    (random.nextDouble() - 0.5) * 0.2, random.nextDouble() * 0.2, (random.nextDouble() - 0.5) * 0.2);
+        }
+    }
+
     /** 從玩家視線 raycast 找指到的 local 方塊（用 outline 形狀，逐方塊取最近命中）。 */
     @Nullable
     private record Pick(BlockPos local, Direction face, Vec3 hitLocal) {}
@@ -841,6 +869,12 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     private BlockPos pickLocalBlock(Player player) {
         Pick p = pickLocal(player);
         return p == null ? null : p.local();
+    }
+
+    /** client 選取外框用：玩家瞄準的 local 方塊（沒指到回 null）。 */
+    @Nullable
+    public BlockPos getAimedLocalBlock(Player player) {
+        return pickLocalBlock(player);
     }
 
     /** 命中面方向（放方塊用）；沒命中回 UP 當保底。 */
