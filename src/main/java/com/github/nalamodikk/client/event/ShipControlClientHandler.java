@@ -1,6 +1,7 @@
 package com.github.nalamodikk.client.event;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.network.packet.server.ship.ShipInputPacket;
 import com.github.nalamodikk.space.ship.ShipEntity;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Options;
@@ -21,14 +22,14 @@ public class ShipControlClientHandler {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null) return;
         if (!(mc.player.getVehicle() instanceof ShipEntity ship)) return;
-        if (ship.getControllingPassenger() != mc.player) return; // 只有駕駛算移動
+        int seat = ship.seatIndexOf(mc.player);
+        if (seat < 0 || seat >= ShipEntity.MAX_DRIVERS) return; // 只有坐駕駛位（前 N 個座位）的人送輸入
 
-        // client 權威：駕駛 client 直接把輸入設到本地船，tick 在這端算移動，vanilla
-        // 再用 MoveVehiclePacket 把位置同步給 server。不用自訂封包。
+        // server 權威：駕駛只送輸入，server 算移動、廣播位置，client 用 lerp 平滑跟隨（不自己預測）。
         Options o = mc.options;
         float forward = (o.keyUp.isDown() ? 1 : 0) - (o.keyDown.isDown() ? 1 : 0);
         float strafe = (o.keyRight.isDown() ? 1 : 0) - (o.keyLeft.isDown() ? 1 : 0);
         int vertical = (o.keyJump.isDown() ? 1 : 0) - (o.keySprint.isDown() ? 1 : 0);
-        ship.setControlInput(forward, strafe, vertical, mc.player.getYRot());
+        ShipInputPacket.sendToServer(forward, strafe, vertical, mc.player.getYRot());
     }
 }

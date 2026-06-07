@@ -4,6 +4,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
@@ -31,7 +33,20 @@ public class ShipSeatBlock extends Block {
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        // 椅子面向放置者看的方向（坐進去=朝前），不要 getOpposite（那會讓椅子朝向放置者=反的）
-        return defaultBlockState().setValue(FACING, context.getHorizontalDirection());
+        // 模型椅背在北面、horizontalBlock 套 (toYRot+180)%360，所以坐姿=FACING 的反向。
+        // 要讓坐姿朝放置者看的方向，FACING 存反向（看北→坐姿北→存 SOUTH）。
+        return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+    }
+
+    // HorizontalDirectionalBlock 預設不會讓 FACING 跟著 rotate/mirror。飛船拆解時方塊要套旋轉，
+    // 沒這兩個覆寫椅子朝向就不會跟船一起轉。
+    @Override
+    protected BlockState rotate(BlockState state, Rotation rotation) {
+        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
+    }
+
+    @Override
+    protected BlockState mirror(BlockState state, Mirror mirror) {
+        return state.rotate(mirror.getRotation(state.getValue(FACING)));
     }
 }

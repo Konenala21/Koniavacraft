@@ -31,7 +31,7 @@ import com.github.nalamodikk.common.network.packet.server.turret.TurretUpgradeSw
 import com.github.nalamodikk.common.network.packet.server.deployer.SetDeployerIntervalPacket;
 import com.github.nalamodikk.common.network.packet.server.ship.ShipAssemblePacket;
 import com.github.nalamodikk.common.network.packet.server.ship.ShipDisassemblePacket;
-import com.github.nalamodikk.common.network.packet.server.ship.ShipMovePacket;
+import com.github.nalamodikk.common.network.packet.server.ship.ShipInputPacket;
 import com.github.nalamodikk.common.network.packet.server.ship.ShipScanPacket;
 import com.github.nalamodikk.common.network.packet.server.deployer.ToggleDeployerEnabledPacket;
 import com.github.nalamodikk.common.network.packet.server.conduit.PriorityUpdatePacket;
@@ -94,7 +94,7 @@ public class ModNetworking {
         ShipScanPacket.registerTo(registrar);
         ShipAssemblePacket.registerTo(registrar);
         ShipDisassemblePacket.registerTo(registrar);
-        ShipMovePacket.registerTo(registrar);
+        ShipInputPacket.registerTo(registrar);
 
         ResearchCompletePacket.registerTo(registrar);
         ResearchAspectPlacePacket.registerTo(registrar);

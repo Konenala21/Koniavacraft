@@ -256,18 +256,19 @@ public class ShipAssemblyGameTests {
     public static void seatsAllowMultiplePassengersOneDriver(GameTestHelper helper) {
         ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);
         helper.setBlock(new BlockPos(4, 2, 4), core());
-        helper.setBlock(new BlockPos(5, 2, 4), seat()); // 1 個座椅 → 共 2 座位（核心+座椅）
+        helper.setBlock(new BlockPos(5, 2, 4), seat()); // 2 張座椅 → 2 座位（核心不再算座位，只當無椅後備）
+        helper.setBlock(new BlockPos(3, 2, 4), seat());
 
         helper.startSequence()
                 .thenExecute(pad::assembleShip)
                 .thenIdle(5)
                 .thenExecute(() -> {
                     AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
-                    // 過濾出本測試的船（core+座椅=2 塊），避開鄰測試殘留的船
+                    // 過濾出本測試的船（core+2 座椅=3 塊），避開鄰測試殘留的船
                     ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
-                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
+                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 3)
                             .findFirst().orElse(null);
-                    if (ship == null) { helper.fail("ship with core+seat not found"); return; }
+                    if (ship == null) { helper.fail("ship with core+2 seats not found"); return; }
                     if (ship.getSeats().size() != 2)
                         helper.fail("expected 2 seats, got " + ship.getSeats().size());
 

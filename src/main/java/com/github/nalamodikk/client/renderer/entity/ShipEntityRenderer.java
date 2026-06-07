@@ -52,12 +52,13 @@ public class ShipEntityRenderer extends EntityRenderer<ShipEntity> {
                        MultiBufferSource buffers, int packedLight) {
         ShipContraption c = entity.getContraption();
         if (c != null) {
-            // 整艘船依 yaw 旋轉（繞核心中心；實體落在核心角落故先 +0.5 到中心再轉）
+            // 實體原點在船中心，繞原點旋轉，再 translate(-centerOffset) 把方塊 local 座標對齊到中心。
+            // 這樣 translate(local) 後的世界位置與 rotatedWorldCorner(local) 一致（碰撞與渲染同步）。
             float shipYaw = entity.getViewYRot(partialTick);
+            var co = entity.centerOffset();
             pose.pushPose();
-            pose.translate(0.5, 0, 0.5);
             pose.mulPose(Axis.YP.rotationDegrees(-shipYaw)); // yaw=0 時不轉（組裝照建造樣子）
-            pose.translate(-0.5, 0, -0.5);
+            pose.translate(-co.x, -co.y, -co.z);
 
             // 靜態方塊：優先用烤好的 VBO（每幀只變換）；烤失敗則退回每幀 tesselate
             boolean drewStatic = false;

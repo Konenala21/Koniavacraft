@@ -1,7 +1,7 @@
 package com.github.nalamodikk.space.ship;
 
-import com.github.nalamodikk.common.network.packet.server.ship.ShipMovePacket;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -44,14 +44,21 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     private static final double MAX_SPEED = 0.4;  // 每 tick 最大速度
     private static final double ACCEL = 0.1;       // 朝目標速度的 lerp（慣性感）
     private static final float YAW_LERP = 0.15f;   // 船頭轉向駕駛視角的平滑度
+    public static final int MAX_DRIVERS = 2;        // 駕駛位數量（離核心最近的 N 張椅子）。其餘椅子=乘客
 
     @Nullable private ShipContraption contraption;
 
-    // 駕駛輸入（由 ShipControlPacket 每 tick 設；server 端用）
-    private float inForward, inStrafe;
-    private int inVertical;
-    private float riderYaw;
+    // 駕駛輸入（由 ShipInputPacket 每 tick 設；server 端用）。每個駕駛位一份，tick 時合併。
+    private final float[] inForward = new float[MAX_DRIVERS];
+    private final float[] inStrafe = new float[MAX_DRIVERS];
+    private final int[] inVertical = new int[MAX_DRIVERS];
+    private final float[] inYaw = new float[MAX_DRIVERS];
     private Vec3 shipVel = Vec3.ZERO;
+
+    // client 端平滑跟隨 server 廣播位置用（lerpSteps 在 Entity 是 private 無 getter，自己存一份）
+    private int lerpSteps;
+    private double lerpX, lerpY, lerpZ;
+    private float lerpYRot, lerpXRot;
 
     public ShipEntity(EntityType<?> type, Level level) {
         super(type, level);
@@ -59,12 +66,18 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         this.setNoGravity(true);   // 飛船不受重力（太空/停在原地）
     }
 
-    /** 由 ShipControlPacket 設定駕駛輸入（forward/strafe ∈ [-1,1]，vertical ∈ {-1,0,1}）。 */
-    public void setControlInput(float forward, float strafe, int vertical, float yaw) {
-        this.inForward = forward;
-        this.inStrafe = strafe;
-        this.inVertical = vertical;
-        this.riderYaw = yaw;
+    /** 設定某個駕駛位(seatIndex ∈ [0,MAX_DRIVERS))的輸入。由 ShipInputPacket 每 tick 從對應駕駛 client 設。 */
+    public void setControlInput(int seatIndex, float forward, float strafe, int vertical, float yaw) {
+        if (seatIndex < 0 || seatIndex >= MAX_DRIVERS) return;
+        this.inForward[seatIndex] = forward;
+        this.inStrafe[seatIndex] = strafe;
+        this.inVertical[seatIndex] = vertical;
+        this.inYaw[seatIndex] = yaw;
+    }
+
+    /** 玩家在第幾個座位（=上船順序），對應 getSeats 的 index。非乘客回 -1。 */
+    public int seatIndexOf(Entity passenger) {
+        return getPassengers().indexOf(passenger);
     }
 
     // client 渲染用：從 contraption NBT 還原的臨時 BlockEntity（箱子等 BER 方塊），建一次快取
@@ -131,49 +144,127 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             discard(); // 沒有 contraption 的飛船無意義
             return;
         }
+        // 記住上一 tick 的位置與角度，渲染對位置/yaw 的 partialTick 插值才不會跟碰撞分家（轉向歪）。
+        this.setOldPosAndRot();
 
-        // client 權威（vanilla 船模型）：只有「駕駛的 client」算移動，順、不抖。
-        // server 端**完全不算移動**（不跟 client 打架=不會分家），位置靠 vanilla
-        // ServerboundMoveVehiclePacket 從駕駛 client 同步給 server，再傳給其他 client。
-        if (isControlledByLocalInstance()) {
-            boolean hasDriver = getControllingPassenger() instanceof Player;
-            if (!hasDriver) {
-                inForward = 0; inStrafe = 0; inVertical = 0;
-            } else {
-                // 船頭平滑轉向駕駛的視角方向（整艘船跟著轉）
-                setYRot(Mth.rotLerp(YAW_LERP, getYRot(), riderYaw));
-            }
-            double rad = Math.toRadians(getYRot()); // 移動相對「船頭」（=船的 yaw）
-            Vec3 forwardDir = new Vec3(-Math.sin(rad), 0, Math.cos(rad));
-            Vec3 rightDir = new Vec3(Math.cos(rad), 0, Math.sin(rad));
-            Vec3 target = forwardDir.scale(inForward).add(rightDir.scale(inStrafe)).add(0, inVertical, 0);
-            if (target.lengthSqr() > 1) target = target.normalize();
-            target = target.scale(MAX_SPEED);
-
-            shipVel = shipVel.add(target.subtract(shipVel).scale(ACCEL));
-            if (shipVel.lengthSqr() < 1e-6) shipVel = Vec3.ZERO;
-            Vec3 allowed = resolveTerrain(shipVel); // 撞地形的軸歸零（會沿牆滑）
-            if (allowed.lengthSqr() > 0) {
-                setPos(getX() + allowed.x, getY() + allowed.y, getZ() + allowed.z);
-            }
-            shipVel = allowed; // 撞到的軸不保留動量
-
-            // 駕駛 client 把位置/yaw 同步給 server（vanilla MoveVehiclePacket 對自訂載具不可靠，
-            // 不同步會造成下船彈回組裝點、拆解無視距離）
-            if (level().isClientSide) {
-                ShipMovePacket.sendToServer(getX(), getY(), getZ(), getYRot());
-            }
+        if (level().isClientSide) {
+            tickLerp(); // server 權威：client 只平滑跟隨 server 廣播的位置，不自己算移動
+        } else {
+            tickServerMovement(); // server 是唯一真相，依駕駛輸入算移動
         }
         setDeltaMovement(0, 0, 0); // 自己用 setPos 移動，不靠 vanilla 速度
     }
 
-    /** 把 local 方塊角落依船 yaw 繞核心中心旋轉後的世界座標（僅 X/Z 平面，Y 不變）。 */
+    /**
+     * 船頭在 local 座標的 yaw = 駕駛椅（座位0）的朝向（你坐上去面對的方向）。
+     * 座椅模型坐姿 = FACING 的反向，故 sit-dir = FACING.getOpposite()。沒座椅（核心駕駛）時退回北(yaw180)。
+     */
+    private float bowLocalYaw() {
+        List<BlockPos> seats = getSeats();
+        if (contraption != null && !seats.isEmpty()) {
+            var info = contraption.getBlocks().get(seats.get(0));
+            if (info != null && info.state().getBlock() instanceof ShipSeatBlock
+                    && info.state().hasProperty(ShipSeatBlock.FACING)) {
+                Direction sitDir = info.state().getValue(ShipSeatBlock.FACING).getOpposite();
+                return sitDir.toYRot();
+            }
+        }
+        return 180f; // 無座椅後備：船頭=北（理論上沒座椅不會有駕駛，這只是防呆）
+    }
+
+    /** server 端：合併各駕駛位輸入算移動並 setPos/setYRot。位置經 entity tracking 自動廣播給所有 client。 */
+    private void tickServerMovement() {
+        int occupiedDrivers = Math.min(MAX_DRIVERS, getPassengers().size());
+        // 空著的駕駛位輸入清零（駕駛離座後殘留輸入不該繼續推船）
+        for (int i = occupiedDrivers; i < MAX_DRIVERS; i++) {
+            inForward[i] = 0; inStrafe[i] = 0; inVertical[i] = 0;
+        }
+        // 油門合併：兩個駕駛位的前後/左右/升降相加後夾到 [-1,1]
+        float f = 0, s = 0; int v = 0;
+        for (int i = 0; i < occupiedDrivers; i++) { f += inForward[i]; s += inStrafe[i]; v += inVertical[i]; }
+        f = Mth.clamp(f, -1f, 1f); s = Mth.clamp(s, -1f, 1f); v = Mth.clamp(v, -1, 1);
+
+        // 船頭 = 駕駛椅朝向（你坐上去面對的方向），不再寫死 local -Z，所以可朝任意方位建造。
+        float bowLocal = bowLocalYaw(); // 駕駛椅朝向在 local 座標的 yaw
+        if (occupiedDrivers > 0) {
+            // 主駕駛(座位0)視角定船頭：要讓 bow(local yaw=bowLocal)轉到指向視角，故 shipYaw=look-bowLocal。
+            // 不改組裝（靜止 yaw 仍 0=照建造樣子，因為 bow 也在 local 量）。
+            setYRot(Mth.rotLerp(YAW_LERP, getYRot(), inYaw[0] - bowLocal));
+        }
+        // 移動相對「可見船頭」：bow 的世界 yaw = bowLocal + shipYaw。前進朝船頭、右手為其右側。
+        double bowRad = Math.toRadians(bowLocal + getYRot());
+        Vec3 forwardDir = new Vec3(-Math.sin(bowRad), 0, Math.cos(bowRad));
+        Vec3 rightDir = new Vec3(-Math.cos(bowRad), 0, -Math.sin(bowRad));
+        Vec3 target = forwardDir.scale(f).add(rightDir.scale(s)).add(0, v, 0);
+        if (target.lengthSqr() > 1) target = target.normalize();
+        target = target.scale(MAX_SPEED);
+
+        shipVel = shipVel.add(target.subtract(shipVel).scale(ACCEL));
+        if (shipVel.lengthSqr() < 1e-6) shipVel = Vec3.ZERO;
+        Vec3 allowed = resolveTerrain(shipVel); // 撞地形的軸歸零（會沿牆滑）
+        if (allowed.lengthSqr() > 0) {
+            setPos(getX() + allowed.x, getY() + allowed.y, getZ() + allowed.z);
+        }
+        shipVel = allowed; // 撞到的軸不保留動量
+    }
+
+    /** client 端：朝 server 廣播的目標位置/yaw 每 tick 步進一步，平滑跟隨（像 vanilla 船）。 */
+    private void tickLerp() {
+        if (lerpSteps > 0) {
+            lerpPositionAndRotationStep(lerpSteps, lerpX, lerpY, lerpZ, lerpYRot, lerpXRot);
+            lerpSteps--;
+        }
+    }
+
+    // server 權威：回 false 讓駕駛 client 不送 vanilla ServerboundMoveVehiclePacket。否則 client 會
+    // 每 tick 把「停在原地的船位置」推給 server，蓋掉 server 算的移動 → 按 WSAD 船動不了。
+    @Override
+    public boolean isControlledByLocalInstance() {
+        return false;
+    }
+
+    // server 經 entity tracking 廣播位置 → client 收到後呼叫此處設定 lerp 目標（Entity.lerpSteps 私有，
+    // 自存一份）。所有 client（含駕駛）都跟隨 server，不再自己預測 → 不抖、不分家、不彈回。
+    @Override
+    public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps) {
+        this.lerpX = x; this.lerpY = y; this.lerpZ = z;
+        this.lerpYRot = yRot; this.lerpXRot = xRot;
+        this.lerpSteps = steps;
+    }
+
+    /**
+     * 實體原點放在「船中心」(X/Z 中心、Y 底)，所以對稱的 EntityDimensions 盒能貼合船。
+     * centerOffset = 從核心(local 原點)到該中心的位移。
+     */
+    public Vec3 centerOffset() {
+        if (contraption == null) return Vec3.ZERO;
+        AABB b = contraption.bounds();
+        return new Vec3((b.minX + b.maxX) / 2.0, b.minY, (b.minZ + b.maxZ) / 2.0);
+    }
+
+    /** 組裝後把實體放到船中心（= 核心 + centerOffset）。 */
+    public void placeAtShipCenter(BlockPos corePos) {
+        Vec3 c = centerOffset();
+        setPos(corePos.getX() + c.x, corePos.getY() + c.y, corePos.getZ() + c.z);
+    }
+
+    /**
+     * 把 local 方塊角落（相對核心）轉成世界座標：先減去 centerOffset（相對船中心），再依 yaw
+     * 繞船中心(=實體位置)旋轉。yaw=0 時 = 實體 + (local - centerOffset) = 核心 + local（原位）。
+     */
     public Vec3 rotatedWorldCorner(int lx, int ly, int lz) {
+        return rotatedWorldPoint(lx, ly, lz);
+    }
+
+    /** 任意 local 點（可含 +0.5 之類的偏移）轉世界座標：偏移會一起繞船中心旋轉，旋轉後才不錯位。 */
+    public Vec3 rotatedWorldPoint(double lx, double ly, double lz) {
+        Vec3 c = centerOffset();
+        double ox = lx - c.x, oy = ly - c.y, oz = lz - c.z;
         double rad = Math.toRadians(getYRot());
         double cos = Math.cos(rad), sin = Math.sin(rad);
-        double rx = lx * cos - lz * sin;
-        double rz = lx * sin + lz * cos;
-        return new Vec3(getX() + rx, getY() + ly, getZ() + rz);
+        double rx = ox * cos - oz * sin;
+        double rz = ox * sin + oz * cos;
+        return new Vec3(getX() + rx, getY() + oy, getZ() + rz);
     }
 
     /**
@@ -211,26 +302,21 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         return false;
     }
 
-    /** 發射台鷹架（底座/組裝架/組裝台/核心/座椅）不算地形，不擋船移動。 */
+    /**
+     * 只有組裝架(gantry)不算地形：船要能從框架往上升起飛，所以穿過 gantry。
+     * 底座/組裝台維持實心（會擋船=玩家預期）。核心/座椅組裝後已從世界移除，不在世界裡，不必列。
+     */
     private static boolean isShipScaffolding(BlockState s) {
-        return s.getBlock() instanceof ShipAssemblyBaseBlock
-                || s.getBlock() instanceof ShipAssemblyGantryBlock
-                || s.getBlock() instanceof ShipAssemblyPadBlock
-                || s.getBlock() instanceof ShipCoreBlock
-                || s.getBlock() instanceof ShipSeatBlock;
+        return s.getBlock() instanceof ShipAssemblyGantryBlock;
     }
 
-    // hitbox：把實體尺寸撐到涵蓋整艘船（getBoundingBox 是 final 不能覆寫，改由 dimensions 決定），
-    // 這樣對船身任何地方右鍵都點得到。EntityDimensions 是以 x/z 為中心、腳底往上的對稱盒，
-    // 核心在角落故取四向最大延伸當半寬（會略大於船，picking 可接受）；核心下方的方塊邊角情況不涵蓋。
+    // hitbox：實體在船中心，所以對稱盒貼合船的實際大小。寬取 footprint 較大邊（方形盒），高=船高。
     @Override
     public EntityDimensions getDimensions(Pose pose) {
         if (contraption == null) return super.getDimensions(pose);
         AABB b = contraption.bounds();
-        double halfW = Math.max(Math.max(Math.abs(b.minX), Math.abs(b.maxX)),
-                Math.max(Math.abs(b.minZ), Math.abs(b.maxZ)));
-        float w = (float) Math.max(halfW * 2, 1.0);
-        float h = (float) Math.max(b.maxY, 1.0);
+        float w = (float) Math.max(Math.max(b.maxX - b.minX, b.maxZ - b.minZ), 1.0);
+        float h = (float) Math.max(b.maxY - b.minY, 1.0);
         return EntityDimensions.scalable(w, h);
     }
 
@@ -252,6 +338,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         return !isRemoved();
     }
 
+
     /**
      * 收船：把 contraption 方塊寫回世界並 discard。船會轉，所以 yaw snap 到最近的 90°，
      * 方塊位置與 blockstate 一起套用該旋轉（不能用任意角度放回方塊）。被擋則不動，回傳 false。
@@ -259,8 +346,10 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     public boolean disassemble() {
         if (level().isClientSide || contraption == null) return false;
         Rotation rotation = snapRotation(getYRot());
+        // 核心(local 0,0,0)的世界位置 = rotatedWorldCorner(0,0,0)，snap 到整數格當寫回錨點
+        Vec3 coreWorld = rotatedWorldCorner(0, 0, 0);
         BlockPos target = new BlockPos(
-                Mth.floor(getX() + 0.5), Mth.floor(getY() + 0.5), Mth.floor(getZ() + 0.5));
+                Mth.floor(coreWorld.x + 0.5), Mth.floor(coreWorld.y + 0.5), Mth.floor(coreWorld.z + 0.5));
         if (!contraption.addToWorld(level(), target, rotation)) return false;
         discard();
         return true;
@@ -295,8 +384,10 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         int idx = getPassengers().indexOf(passenger);
         if (idx < 0 || idx >= seats.size()) idx = 0;
         BlockPos seat = seats.get(idx);
-        Vec3 c = rotatedWorldCorner(seat.getX(), seat.getY(), seat.getZ()); // 座位也跟著船轉
-        callback.accept(passenger, c.x + 0.5, c.y + 1.0, c.z + 0.5);
+        // 座位水平中心(+0.5)要在旋轉前併入 local，否則 +0.5 偏移不跟船轉，船一轉玩家就被推離座位
+        // （第三人稱看「坐在空氣上」）。Y 不受 yaw 影響，放上方 +1.0 即可。
+        Vec3 c = rotatedWorldPoint(seat.getX() + 0.5, seat.getY(), seat.getZ() + 0.5);
+        callback.accept(passenger, c.x, c.y + 1.0, c.z);
         // 非駕駛乘客的視角跟著船轉（駕駛自己控制視角、船跟著駕駛轉，不強制）
         if (passenger != getControllingPassenger()) {
             float dYaw = getYRot() - yRotO;
@@ -309,15 +400,18 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         }
     }
 
-    /** 座位清單（local 座標，確定性順序）：核心(0,0,0) 在 index 0=駕駛，其餘為座椅方塊依座標排序。 */
+    /**
+     * 座位清單（local 座標）：座椅方塊依「離核心距離」排序，前 MAX_DRIVERS 張=駕駛位，其餘=乘客。
+     * 不限總人數。完全沒座椅 → 空清單 → 不能上船/駕駛（要放座椅，或未來的無人駕駛模塊）。
+     */
     public List<BlockPos> getSeats() {
         List<BlockPos> seats = new ArrayList<>();
-        seats.add(BlockPos.ZERO); // 核心 = 駕駛位
         if (contraption != null) {
             contraption.getBlocks().entrySet().stream()
                     .filter(e -> e.getValue().state().getBlock() instanceof ShipSeatBlock)
                     .map(Map.Entry::getKey)
-                    .sorted(Comparator.<BlockPos>comparingInt(BlockPos::getX)
+                    .sorted(Comparator.<BlockPos>comparingDouble(p -> p.distSqr(BlockPos.ZERO))
+                            .thenComparingInt(BlockPos::getX)
                             .thenComparingInt(BlockPos::getY)
                             .thenComparingInt(BlockPos::getZ))
                     .forEach(seats::add);
@@ -334,7 +428,11 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     @Override
     public AABB getBoundingBoxForCulling() {
         if (contraption == null) return super.getBoundingBoxForCulling();
-        return contraption.bounds().move(getX(), getY(), getZ()).inflate(1.0);
+        // bounds() 相對核心；核心世界位置 = 實體位置 - centerOffset
+        Vec3 co = centerOffset();
+        return contraption.bounds()
+                .move(getX() - co.x, getY() - co.y, getZ() - co.z)
+                .inflate(1.0);
     }
 
     @Override

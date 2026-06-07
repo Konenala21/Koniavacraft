@@ -104,7 +104,7 @@ public class ModEntities {
                     EntityType.Builder.<ShipEntity>of(ShipEntity::new, MobCategory.MISC)
                             .sized(1.0F, 1.0F)
                             .clientTrackingRange(16)
-                            .updateInterval(3)
+                            .updateInterval(1) // 玩家駕駛載具：每 tick 廣播位置，client lerp 跟隨最順
                             .build(KoniavacraftMod.MOD_ID + ":ship")
             );
 

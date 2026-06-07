@@ -175,8 +175,8 @@ public class ShipAssemblyPadBlockEntity extends BlockEntity implements MenuProvi
         ship.removeFromWorld(server);
         ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), server);
         entity.setContraption(ship);
-        // 落在核心方塊角落（非 +0.5 中心）：渲染時 translate(localPos) 即與原方塊位置對齊
-        entity.setPos(core.getX(), core.getY(), core.getZ());
+        // 實體原點放在船中心（hitbox 才貼合），位置依 contraption 算
+        entity.placeAtShipCenter(core);
         server.addFreshEntity(entity);
 
         data.set(DATA_COUNT, ship.size());
