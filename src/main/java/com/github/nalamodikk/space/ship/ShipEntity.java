@@ -737,6 +737,11 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     public InteractionResult interactAt(Player player, Vec3 hitVec, InteractionHand hand) {
         if (contraption == null) return InteractionResult.PASS;
         BlockPos local = pickLocalBlock(player);
+        if (!level().isClientSide) {
+            var pi = local == null ? null : contraption.getBlocks().get(local);
+            com.github.nalamodikk.KoniavacraftMod.LOGGER.info("[ship] interactAt: picked local={} block={}",
+                    local, pi == null ? "null" : pi.state().getBlock());
+        }
         if (local == null) return InteractionResult.PASS; // 指到空隙=船身，不反應
         var info = contraption.getBlocks().get(local);
         if (info == null) return InteractionResult.PASS;
