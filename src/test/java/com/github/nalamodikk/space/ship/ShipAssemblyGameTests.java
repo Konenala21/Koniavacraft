@@ -27,6 +27,7 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 飛船組裝台掃描邏輯的 GameTest（純 server 邏輯：底座 footprint、組裝架高度、找核心、
@@ -305,7 +306,7 @@ public class ShipAssemblyGameTests {
                     // 直接從 contraption 找收集器的真實 local，不猜座標
                     BlockPos collectorLocal = ship.getContraption().getBlocks().entrySet().stream()
                             .filter(e -> e.getValue().state().is(ModBlocks.SOLAR_MANA_COLLECTOR.get()))
-                            .map(java.util.Map.Entry::getKey).findFirst().orElse(null);
+                            .map(Map.Entry::getKey).findFirst().orElse(null);
                     if (collectorLocal == null) {
                         helper.fail("collector not in contraption (size=" + ship.getContraption().getBlocks().size() + ")");
                         return;
