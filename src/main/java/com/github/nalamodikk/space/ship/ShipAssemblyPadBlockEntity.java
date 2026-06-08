@@ -177,6 +177,7 @@ public class ShipAssemblyPadBlockEntity extends BlockEntity implements MenuProvi
         entity.setContraption(ship);
         // 實體原點放在船中心（hitbox 才貼合），位置依 contraption 算
         entity.placeAtShipCenter(core);
+        entity.setOldPosAndRot(); // 初始化 xOld 等 = 現位，否則第一 tick 前甲板碰撞用 xOld=0 在錯框算 → 剛組裝穿過去
 
         // VM1：把方塊複製進影子維度的固定區域並 force-load，機器/作物在那裡真正 tick。
         // 視覺船(entity 上的 contraption)是鏡像，影子是真相（VM2 做狀態鏡射回視覺船）。

@@ -341,6 +341,7 @@ public class ShipAssemblyGameTests {
         entity.setContraption(ship);
         BlockPos origin = helper.absolutePos(new BlockPos(4, 2, 4));
         entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
+        entity.setOldPosAndRot(); // 初始化 xOld/yOld/zOld = getX(否則 applyContraptionMovement 用 0 在錯框算)
 
         Player probe = helper.makeMockPlayer(GameType.SURVIVAL);
         // 牆(local x=0)的世界位置 = entity + (0 - centerOffset)。把 probe 放牆 -X 側、Y/Z 對齊牆，朝 +X 走進牆。

@@ -1481,6 +1481,8 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             refreshDimensions();
         }
         if (buf.readBoolean()) shadowAnchor = buf.readBlockPos();
+        // 初始化 xOld/yRotO 等 = 現值，否則第一幀 client 的甲板碰撞用 xOld=0 在錯框算 → 剛 spawn 的船穿過去
+        this.setOldPosAndRot();
     }
 
     /**
