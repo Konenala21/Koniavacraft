@@ -69,8 +69,12 @@ public class ShipEntityRenderer extends EntityRenderer<ShipEntity> {
                         cache = new ShipMeshCache();
                         entity.setMeshCache(cache);
                     }
-                    cache.buildIfNeeded(c, entity.level());
+                    if (cache.buildIfNeeded(c, entity.level())) entity.clearPendingVisualBlocks(); // 烤好接棒
                     cache.draw(pose);
+                    // 剛放、還沒進 VBO 的方塊：每幀先畫(放下去立刻可見，不先透明)
+                    if (!entity.getPendingVisualBlocks().isEmpty()) {
+                        renderBlocksPerFrame(entity, c, entity.getPendingVisualBlocks().keySet(), pose, buffers);
+                    }
                     drewStatic = true;
                 } catch (Exception ex) {
                     KoniavacraftMod.LOGGER.error("[Ship] VBO bake failed, falling back to per-frame", ex);
@@ -104,11 +108,18 @@ public class ShipEntityRenderer extends EntityRenderer<ShipEntity> {
     /** 退回方案：每幀逐方塊 tesselate（VBO 烤失敗時用）。 */
     private void renderStaticPerFrame(ShipEntity entity, ShipContraption c, PoseStack pose,
                                       MultiBufferSource buffers) {
+        renderBlocksPerFrame(entity, c, c.getBlocks().keySet(), pose, buffers);
+    }
+
+    /** 逐方塊 tesselate 指定的一組 local pos（VBO 退回 / 剛放方塊每幀先畫共用）。 */
+    private void renderBlocksPerFrame(ShipEntity entity, ShipContraption c, java.util.Set<BlockPos> positions,
+                                      PoseStack pose, MultiBufferSource buffers) {
         ShipRenderWorld world = new ShipRenderWorld(entity.level(), c);
         ModelBlockRenderer modelRenderer = blockRenderer.getModelRenderer();
-        for (Map.Entry<BlockPos, StructureBlockInfo> e : c.getBlocks().entrySet()) {
-            BlockPos local = e.getKey();
-            BlockState state = e.getValue().state();
+        for (BlockPos local : positions) {
+            StructureBlockInfo info = c.getBlocks().get(local);
+            if (info == null) continue;
+            BlockState state = info.state();
             if (state.isAir() || state.getRenderShape() != RenderShape.MODEL) continue;
             BakedModel model = blockRenderer.getBlockModel(state);
             long seed = state.getSeed(local);

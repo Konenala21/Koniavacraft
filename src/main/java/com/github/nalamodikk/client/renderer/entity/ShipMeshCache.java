@@ -59,10 +59,13 @@ public class ShipMeshCache implements AutoCloseable, ShipMeshHandle {
         dirtyAtMs = System.currentTimeMillis();
     }
 
-    public void buildIfNeeded(ShipContraption c, Level level) {
+    /** @return true 若這次剛把新 VBO 上傳完(供渲染器清掉「每幀先畫的剛放方塊」，接棒給 VBO 不重畫)。 */
+    public boolean buildIfNeeded(ShipContraption c, Level level) {
+        boolean uploaded = false;
         // 1. 背景烤好了 → 在 render thread 上傳並換掉舊 VBO
         if (pending != null && pending.isDone()) {
             uploadPending();
+            uploaded = true;
         }
         // 2. 初次組裝：開始背景烤(期間 buffers 空 = 靜態方塊短暫不顯示，BER 方塊照畫)
         if (!built && pending == null) {
@@ -73,6 +76,7 @@ public class ShipMeshCache implements AutoCloseable, ShipMeshHandle {
             startBake(c, level);
             dirty = false;
         }
+        return uploaded;
     }
 
     /** render thread：快照方塊(避免 worker 讀 live contraption 併發)後丟背景烤。 */

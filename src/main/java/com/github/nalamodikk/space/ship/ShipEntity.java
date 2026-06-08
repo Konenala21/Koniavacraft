@@ -177,6 +177,23 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     // client 渲染用：從 contraption NBT 還原的臨時 BlockEntity（箱子等 BER 方塊），建一次快取
     @Nullable private Map<BlockPos, BlockEntity> renderBEs;
+    // client：剛編輯放的方塊 → 時間戳。VBO 烤好前每幀先畫它們(不然先透明)。超過此時間視為已烤進 VBO。
+    private final Map<BlockPos, Long> pendingVisualBlocks = new HashMap<>();
+    private static final long PENDING_VISUAL_MS = 1500;
+
+    /** client 渲染用：剛放、還沒進 VBO 的方塊(每幀先畫)。順便剪掉過期(已烤進 VBO)的。 */
+    public Map<BlockPos, Long> getPendingVisualBlocks() {
+        if (!pendingVisualBlocks.isEmpty()) {
+            long now = System.currentTimeMillis();
+            pendingVisualBlocks.values().removeIf(t -> now - t > PENDING_VISUAL_MS);
+        }
+        return pendingVisualBlocks;
+    }
+
+    /** VBO 烤好接棒了 → 清掉每幀先畫的集合(不重畫造成 z-fighting)。 */
+    public void clearPendingVisualBlocks() {
+        if (!pendingVisualBlocks.isEmpty()) pendingVisualBlocks.clear();
+    }
     // client 渲染用：靜態方塊烤好的 VBO 快取（型別 Object 避免 server 載入 client 類別）
     @Nullable private Object meshCache;
     private boolean meshFailed;
@@ -216,6 +233,10 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             contraption.setBlockState(local, state);
         } else {
             contraption.addBlock(local, state, null);
+        }
+        // client：剛放的方塊每幀先 tesselate 顯示，避免等 debounce+背景烤(~0.5s)才出現(先透明)。烤好就清。
+        if (level().isClientSide && !state.isAir()) {
+            pendingVisualBlocks.put(local.immutable(), System.currentTimeMillis());
         }
         localCollisionShapeCache = null;
         hullBlocksCache = null;
