@@ -32,6 +32,6 @@ public class ShipControlClientHandler {
         float forward = (o.keyUp.isDown() ? 1 : 0) - (o.keyDown.isDown() ? 1 : 0);
         float strafe = (o.keyRight.isDown() ? 1 : 0) - (o.keyLeft.isDown() ? 1 : 0);
         int vertical = (o.keyJump.isDown() ? 1 : 0) - (o.keySprint.isDown() ? 1 : 0);
-        ShipInputPacket.sendToServer(forward, strafe, vertical, mc.player.getYRot());
+        ShipInputPacket.sendToServer(forward, strafe, vertical, mc.player.getYRot(), mc.player.getXRot());
     }
 }

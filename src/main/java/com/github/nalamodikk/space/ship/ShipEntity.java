@@ -39,6 +39,8 @@ import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.ContainerHelper;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BarrelBlock;
@@ -96,6 +98,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     private final float[] inStrafe = new float[MAX_DRIVERS];
     private final int[] inVertical = new int[MAX_DRIVERS];
     private final float[] inYaw = new float[MAX_DRIVERS];
+    private final float[] inPitch = new float[MAX_DRIVERS]; // 駕駛 look pitch → 船頭俯仰
     private Vec3 shipVel = Vec3.ZERO;
 
     // 座位指派：乘客 UUID(字串) → 座位 index。同步給 client（positionRider 兩端都要用）。
@@ -115,12 +118,13 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     }
 
     /** 設定某個駕駛位(seatIndex ∈ [0,MAX_DRIVERS))的輸入。由 ShipInputPacket 每 tick 從對應駕駛 client 設。 */
-    public void setControlInput(int seatIndex, float forward, float strafe, int vertical, float yaw) {
+    public void setControlInput(int seatIndex, float forward, float strafe, int vertical, float yaw, float pitch) {
         if (seatIndex < 0 || seatIndex >= MAX_DRIVERS) return;
         this.inForward[seatIndex] = forward;
         this.inStrafe[seatIndex] = strafe;
         this.inVertical[seatIndex] = vertical;
         this.inYaw[seatIndex] = yaw;
+        this.inPitch[seatIndex] = pitch;
     }
 
     /** 玩家坐在第幾張座位（依 DATA_SEATS 指派，對應 getSeats 的 index）。沒指派回上船順序，非乘客回 -1。 */
@@ -312,6 +316,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         }
         // 記住上一 tick 的位置與角度，渲染對位置/yaw 的 partialTick 插值才不會跟碰撞分家（轉向歪）。
         this.setOldPosAndRot();
+        this.rollO = this.roll; // roll 不在 vanilla rot，自記上一 tick 供渲染插值
 
         if (level().isClientSide) {
             tickLerp(); // server 權威：client 只平滑跟隨 server 廣播的位置，不自己算移動
@@ -437,13 +442,17 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         int primary = primaryDriverSeat();
         float bowLocal = (primary >= 0) ? sitYawLocal(getSeats().get(primary)) : 180f;
         if (primary >= 0) {
-            // 主駕駛視角定船頭：要讓 bow(local yaw=bowLocal)轉到指向視角，故 shipYaw=look-bowLocal。
+            // 主駕駛視角定船頭：yaw 讓 bow 轉到指向視角；pitch 直接跟駕駛抬/低頭(夾範圍避免翻過頭)。
             setYRot(Mth.rotLerp(YAW_LERP, getYRot(), inYaw[primary] - bowLocal));
+            setXRot(Mth.lerp(YAW_LERP, getXRot(), Mth.clamp(inPitch[primary], -75f, 75f)));
         }
-        // 移動相對「可見船頭」：bow 的世界 yaw = bowLocal + shipYaw。前進朝船頭、右手為其右側。
-        double bowRad = Math.toRadians(bowLocal + getYRot());
-        Vec3 forwardDir = new Vec3(-Math.sin(bowRad), 0, Math.cos(bowRad));
-        Vec3 rightDir = new Vec3(-Math.cos(bowRad), 0, -Math.sin(bowRad));
+        // 前進=船頭(含 pitch)、右=船右(只 pitch 時仍水平)，都用完整姿勢轉 local 軸；上下=世界垂直(跳/疾跑恆定升降)。
+        Quaternionf q = orientation();
+        double bowR = Math.toRadians(bowLocal);
+        Vector3f wf = q.transform(new Vector3f(-(float) Math.sin(bowR), 0, (float) Math.cos(bowR)));
+        Vector3f wr = q.transform(new Vector3f(-(float) Math.cos(bowR), 0, -(float) Math.sin(bowR)));
+        Vec3 forwardDir = new Vec3(wf.x, wf.y, wf.z);
+        Vec3 rightDir = new Vec3(wr.x, wr.y, wr.z);
         Vec3 target = forwardDir.scale(f).add(rightDir.scale(s)).add(0, v, 0);
         if (target.lengthSqr() > 1) target = target.normalize();
         target = target.scale(MAX_SPEED);
@@ -505,15 +514,40 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         return rotatedWorldPoint(lx, ly, lz);
     }
 
-    /** 任意 local 點（可含 +0.5 之類的偏移）轉世界座標：偏移會一起繞船中心旋轉，旋轉後才不錯位。 */
+    // 六面飛行：roll(繞船頭軸)。yaw=getYRot, pitch=getXRot(vanilla 已有), roll 自存(不在 vanilla lerp)。
+    private float roll;
+    public float getRoll() { return roll; }
+    public void setRoll(float r) { this.roll = r; }
+    private float rollO; // 上一 tick，渲染插值用
+
+    /**
+     * 船的完整 3D 姿勢(四元數)。yaw→pitch→roll 內旋順序。pitch=roll=0 時 = 現有純 yaw 旋轉
+     * (rotateY(-yawRad) 已驗算與舊式一致)，所以加俯仰/翻滾不破壞既有水平行為。
+     */
+    public Quaternionf orientation() {
+        return new Quaternionf()
+                .rotateY((float) Math.toRadians(-getYRot()))
+                .rotateX((float) Math.toRadians(getXRot()))
+                .rotateZ((float) Math.toRadians(roll));
+    }
+
+    /** 插值姿勢(渲染用，避免轉動頓)。 */
+    public Quaternionf orientation(float partialTick) {
+        float yaw   = Mth.rotLerp(partialTick, yRotO, getYRot());
+        float pitch = Mth.lerp(partialTick, xRotO, getXRot());
+        float rl    = Mth.lerp(partialTick, rollO, roll);
+        return new Quaternionf()
+                .rotateY((float) Math.toRadians(-yaw))
+                .rotateX((float) Math.toRadians(pitch))
+                .rotateZ((float) Math.toRadians(rl));
+    }
+
+    /** 任意 local 點（可含 +0.5 之類的偏移）轉世界座標：偏移依完整姿勢繞船中心旋轉。 */
     public Vec3 rotatedWorldPoint(double lx, double ly, double lz) {
         Vec3 c = centerOffset();
-        double ox = lx - c.x, oy = ly - c.y, oz = lz - c.z;
-        double rad = Math.toRadians(getYRot());
-        double cos = Math.cos(rad), sin = Math.sin(rad);
-        double rx = ox * cos - oz * sin;
-        double rz = ox * sin + oz * cos;
-        return new Vec3(getX() + rx, getY() + oy, getZ() + rz);
+        Vector3f o = new Vector3f((float) (lx - c.x), (float) (ly - c.y), (float) (lz - c.z));
+        orientation().transform(o);
+        return new Vec3(getX() + o.x, getY() + o.y, getZ() + o.z);
     }
 
     // ── 甲板碰撞（外部實體站上船、跟船走）地基 ───────────────────────────────
@@ -538,13 +572,12 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         return localCollisionShapeCache;
     }
 
-    /** 世界座標點 → local 框座標（rotatedWorldPoint 的逆）。 */
+    /** 世界座標點 → local 框座標（rotatedWorldPoint 的逆：用姿勢的共軛）。 */
     public Vec3 worldToLocalPoint(double wx, double wy, double wz) {
         Vec3 c = centerOffset();
-        double dx = wx - getX(), dy = wy - getY(), dz = wz - getZ();
-        double rad = Math.toRadians(-getYRot());
-        double cos = Math.cos(rad), sin = Math.sin(rad);
-        return new Vec3(dx * cos - dz * sin + c.x, dy + c.y, dx * sin + dz * cos + c.z);
+        Vector3f d = new Vector3f((float) (wx - getX()), (float) (wy - getY()), (float) (wz - getZ()));
+        orientation().conjugate().transform(d);
+        return new Vec3(d.x + c.x, d.y + c.y, d.z + c.z);
     }
 
     private Vec3 rotateVec(double x, double y, double z, double deg) {

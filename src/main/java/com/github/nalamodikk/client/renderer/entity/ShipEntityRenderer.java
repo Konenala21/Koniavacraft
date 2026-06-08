@@ -55,10 +55,9 @@ public class ShipEntityRenderer extends EntityRenderer<ShipEntity> {
         if (c != null) {
             // 實體原點在船中心，繞原點旋轉，再 translate(-centerOffset) 把方塊 local 座標對齊到中心。
             // 這樣 translate(local) 後的世界位置與 rotatedWorldCorner(local) 一致（碰撞與渲染同步）。
-            float shipYaw = entity.getViewYRot(partialTick);
             var co = entity.centerOffset();
             pose.pushPose();
-            pose.mulPose(Axis.YP.rotationDegrees(-shipYaw)); // yaw=0 時不轉（組裝照建造樣子）
+            pose.mulPose(entity.orientation(partialTick)); // 完整 3D 姿勢(yaw+pitch+roll)；pitch=roll=0 時即純 yaw
             pose.translate(-co.x, -co.y, -co.z);
 
             // 靜態方塊：優先用烤好的 VBO（每幀只變換）；烤失敗則退回每幀 tesselate

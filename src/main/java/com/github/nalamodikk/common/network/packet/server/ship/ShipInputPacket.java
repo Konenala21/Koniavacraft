@@ -17,7 +17,7 @@ import net.neoforged.neoforge.network.registration.PayloadRegistrar;
  * server 是唯一真相，依輸入在 tick 算移動，再經 entity tracking 把位置廣播給所有 client（含駕駛），
  * client 端用 lerp 平滑跟隨（不自己預測 → 不抖、不分家）。
  */
-public record ShipInputPacket(float forward, float strafe, int vertical, float yaw) implements CustomPacketPayload {
+public record ShipInputPacket(float forward, float strafe, int vertical, float yaw, float pitch) implements CustomPacketPayload {
 
     public static final Type<ShipInputPacket> TYPE =
             new Type<>(ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "ship_input"));
@@ -28,6 +28,7 @@ public record ShipInputPacket(float forward, float strafe, int vertical, float y
                     ByteBufCodecs.FLOAT, ShipInputPacket::strafe,
                     ByteBufCodecs.VAR_INT, ShipInputPacket::vertical,
                     ByteBufCodecs.FLOAT, ShipInputPacket::yaw,
+                    ByteBufCodecs.FLOAT, ShipInputPacket::pitch,
                     ShipInputPacket::new
             );
 
@@ -45,12 +46,12 @@ public record ShipInputPacket(float forward, float strafe, int vertical, float y
             // 只接受坐在駕駛位（前 MAX_DRIVERS 個座位）的玩家輸入，並依其座位 index 存到對應槽
             int seat = ship.seatIndexOf(player);
             if (seat >= 0 && seat < ShipEntity.MAX_DRIVERS) {
-                ship.setControlInput(seat, packet.forward(), packet.strafe(), packet.vertical(), packet.yaw());
+                ship.setControlInput(seat, packet.forward(), packet.strafe(), packet.vertical(), packet.yaw(), packet.pitch());
             }
         });
     }
 
-    public static void sendToServer(float forward, float strafe, int vertical, float yaw) {
-        PacketDistributor.sendToServer(new ShipInputPacket(forward, strafe, vertical, yaw));
+    public static void sendToServer(float forward, float strafe, int vertical, float yaw, float pitch) {
+        PacketDistributor.sendToServer(new ShipInputPacket(forward, strafe, vertical, yaw, pitch));
     }
 }
