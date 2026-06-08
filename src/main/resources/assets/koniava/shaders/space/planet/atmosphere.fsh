@@ -147,7 +147,17 @@ void main(){
             vec3 cloudSample = texture(uSurface2, uvCloud).rgb;
             if (dot(cloudSample, vec3(1.0)) > 0.001) {
                 float cloudCover = clamp(dot(cloudSample, vec3(0.33)), 0.0, 1.0);
-                surfCol = mix(surfCol, cloudSample, cloudCover * 0.85);
+                // 立體感:雲貼圖亮度當高度場，鄰域差分擾動法線，受 world 太陽方向(uDirToStar)照。
+                // 用「相對平面球法線多朝光多少」當調制(不是絕對光照)→ 不影響整體日夜，只給雲蓬鬆體積。
+                float h0 = cloudCover;
+                float hE = clamp(dot(texture(uSurface2, uvCloud + vec2(0.004, 0.0)).rgb, vec3(0.33)), 0.0, 1.0);
+                float hN = clamp(dot(texture(uSurface2, uvCloud + vec2(0.0, 0.004)).rgb, vec3(0.33)), 0.0, 1.0);
+                vec3  cE = normalize(cross(vec3(0.0, 1.0, 0.0), rnC) + vec3(1e-5));
+                vec3  cN = cross(rnC, cE);
+                vec3  cNormal = normalize(rnC - ((hE - h0) * cE + (hN - h0) * cN) * 6.0);
+                float bump = dot(cNormal, uDirToStar) - dot(rnC, uDirToStar); // 朝光的雲坡 +，背光 -
+                vec3  litCloud = cloudSample * clamp(1.0 + bump * 2.2, 0.35, 1.8);
+                surfCol = mix(surfCol, litCloud, cloudCover * 0.85);
             }
         } else {
             float coarse = fbm(rn * 2.2);
