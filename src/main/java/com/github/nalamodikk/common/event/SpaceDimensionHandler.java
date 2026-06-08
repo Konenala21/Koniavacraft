@@ -49,8 +49,8 @@ public class SpaceDimensionHandler {
             for (PlanetDef p : sys.planets()) {
                 if (p.dimension().equals(event.getFrom())) {
                     Vector3f pos = planetWorldPos(sys, p, tick);
-                    // 偏移到星球外側（不卡進星球），近一點更有「剛離開」的震撼感
-                    float off = p.physicalRadius() * 1.6f + 25f;
+                    // 偏移到星球外側（不卡進星球），靠近一點：剛好在地表外一截，星球填滿視野更震撼。
+                    float off = p.physicalRadius() * 1.15f + 12f;
                     player.teleportTo(pos.x + off, pos.y, pos.z);
                     return;
                 }
