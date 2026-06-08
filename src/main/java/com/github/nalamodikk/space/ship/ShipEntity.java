@@ -678,12 +678,12 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         VoxelShape shape = localCollisionShape();
         if (shape.isEmpty()) return worldMotion;
         AABB box = e.getBoundingBox();
-        Vec3 boxCenter = box.getCenter();
         // T0 = 上一 tick 姿勢(yRotO/xRotO/rollO)，T1 = 這一 tick。用完整姿勢(含 pitch/roll)，碰撞才跟傾斜視覺對齊。
         Quaternionf q0 = orientationOf(yRotO, xRotO, rollO, getBowLocal());
         Quaternionf q1 = orientation();
-        Vec3 lc = worldToLocalAt(boxCenter.x, boxCenter.y, boxCenter.z, xOld, yOld, zOld, q0);
-        AABB lb = AABB.ofSize(lc, box.getXsize(), box.getYsize(), box.getZsize());
+        // 玩家盒 8 角轉進 local 框取外接 AABB：船傾斜時同尺寸盒會偏小、漏抓方塊 → 玩家穿過去。
+        // 外接盒在傾斜時自動放大，保證抓得到甲板(略過度碰撞，但不穿)。直立時 ≈ 原盒。
+        AABB lb = localEnclosingBox(box, xOld, yOld, zOld, q0);
         if (!lb.intersects(contraption.bounds().inflate(1.0))) return worldMotion; // 不在船範圍：不接管
 
         Vec3 P = e.position();
@@ -702,6 +702,25 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         double ry = Math.abs(result.y - worldMotion.y) < 1.0e-4 ? worldMotion.y : result.y;
         double rz = Math.abs(result.z - worldMotion.z) < 1.0e-4 ? worldMotion.z : result.z;
         return new Vec3(rx, ry, rz);
+    }
+
+    /** 把世界軸對齊盒的 8 個角轉進指定姿勢的 local 框，取外接 AABB。傾斜時盒會放大 → 碰撞不漏抓(不穿模)。 */
+    private AABB localEnclosingBox(AABB world, double px, double py, double pz, Quaternionf q) {
+        Vec3 c = centerOffset();
+        Quaternionf inv = q.conjugate(new Quaternionf());
+        double minX = Double.POSITIVE_INFINITY, minY = Double.POSITIVE_INFINITY, minZ = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY, maxZ = Double.NEGATIVE_INFINITY;
+        double[] xs = {world.minX, world.maxX}, ys = {world.minY, world.maxY}, zs = {world.minZ, world.maxZ};
+        Vector3f d = new Vector3f();
+        for (double wx : xs) for (double wy : ys) for (double wz : zs) {
+            d.set((float) (wx - px), (float) (wy - py), (float) (wz - pz));
+            inv.transform(d);
+            double lx = d.x + c.x, ly = d.y + c.y, lz = d.z + c.z;
+            if (lx < minX) minX = lx; if (lx > maxX) maxX = lx;
+            if (ly < minY) minY = ly; if (ly > maxY) maxY = ly;
+            if (lz < minZ) minZ = lz; if (lz > maxZ) maxZ = lz;
+        }
+        return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
     }
 
     /** 世界點 → 指定變換(pos + 姿勢 q)的 local 框。 */
