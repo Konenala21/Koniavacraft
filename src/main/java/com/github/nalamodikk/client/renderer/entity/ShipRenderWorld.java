@@ -25,15 +25,25 @@ import org.jetbrains.annotations.Nullable;
 public class ShipRenderWorld implements BlockAndTintGetter {
 
     private final Level real;
-    private final ShipContraption contraption;
+    private final ShipContraption contraption;            // 同步路徑(per-frame fallback)：讀 live contraption
+    private final java.util.Map<BlockPos, BlockState> snapshot; // 背景烤路徑：讀不可變快照(thread-safe)
 
     public ShipRenderWorld(Level real, ShipContraption contraption) {
         this.real = real;
         this.contraption = contraption;
+        this.snapshot = null;
+    }
+
+    /** 背景執行緒烤 VBO 用：傳入方塊快照(不碰 live contraption，避免併發)。 */
+    public ShipRenderWorld(Level real, java.util.Map<BlockPos, BlockState> snapshot) {
+        this.real = real;
+        this.contraption = null;
+        this.snapshot = snapshot;
     }
 
     @Override
     public BlockState getBlockState(BlockPos pos) {
+        if (snapshot != null) return snapshot.getOrDefault(pos, Blocks.AIR.defaultBlockState());
         StructureBlockInfo info = contraption.getBlocks().get(pos);
         return info != null ? info.state() : Blocks.AIR.defaultBlockState();
     }

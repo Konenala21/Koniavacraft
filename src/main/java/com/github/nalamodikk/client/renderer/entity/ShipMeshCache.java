@@ -8,6 +8,7 @@ import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexBuffer;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
@@ -22,8 +23,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.model.data.ModelData;
 import org.joml.Matrix4f;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * 飛船靜態方塊的「烤一次」快取：把所有 MODEL 方塊用假世界 tesselate 進 VertexBuffer 一次（每個
@@ -35,13 +39,18 @@ import java.util.Map;
  */
 public class ShipMeshCache implements AutoCloseable, ShipMeshHandle {
 
-    // 編輯後不立刻重烤(大船烤整艘會卡)：標記 dirty，停手這麼久才重烤一次。期間沿用舊 VBO(視覺暫時舊)。
+    // 編輯後不立刻重烤：標記 dirty，停手這麼久才重烤一次(debounce)。
     private static final long REBAKE_DELAY_MS = 400;
 
     private final Map<RenderType, VertexBuffer> buffers = new HashMap<>();
     private boolean built = false;
     private boolean dirty = false;
     private long dirtyAtMs = 0;
+    // 背景執行緒烤的結果：tesselate(慢)在 worker 跑，烤好才在 render thread 上傳 GL → 組裝/編輯不卡主執行緒。
+    private CompletableFuture<List<LayerMesh>> pending;
+
+    /** 一層的烤好結果：MeshData 參考著 bytes 的記憶體，上傳前 bytes 不能 close。 */
+    private record LayerMesh(RenderType layer, MeshData mesh, ByteBufferBuilder bytes) {}
 
     /** 編輯時呼叫：不砍 VBO，只標記稍後重烤(debounce)。 */
     @Override
@@ -51,25 +60,35 @@ public class ShipMeshCache implements AutoCloseable, ShipMeshHandle {
     }
 
     public void buildIfNeeded(ShipContraption c, Level level) {
-        if (!built) {
-            bake(c, level);
-            built = true;
-            return;
+        // 1. 背景烤好了 → 在 render thread 上傳並換掉舊 VBO
+        if (pending != null && pending.isDone()) {
+            uploadPending();
         }
-        // dirty 後等 debounce：連續編輯不會每次重烤，停手才烤一次(只一個卡頓而非每方塊一個)。
-        if (dirty && System.currentTimeMillis() - dirtyAtMs >= REBAKE_DELAY_MS) {
-            for (VertexBuffer vb : buffers.values()) vb.close();
-            buffers.clear();
-            bake(c, level);
+        // 2. 初次組裝：開始背景烤(期間 buffers 空 = 靜態方塊短暫不顯示，BER 方塊照畫)
+        if (!built && pending == null) {
+            startBake(c, level);
+        }
+        // 3. 編輯後 debounce 到 → 背景重烤(舊 VBO 續用，烤好才換 → 不閃不卡)
+        if (built && dirty && pending == null && System.currentTimeMillis() - dirtyAtMs >= REBAKE_DELAY_MS) {
+            startBake(c, level);
             dirty = false;
         }
     }
 
-    private void bake(ShipContraption c, Level level) {
-        ShipRenderWorld world = new ShipRenderWorld(level, c);
+    /** render thread：快照方塊(避免 worker 讀 live contraption 併發)後丟背景烤。 */
+    private void startBake(ShipContraption c, Level level) {
+        Map<BlockPos, BlockState> snapshot = new HashMap<>(c.getBlocks().size());
+        for (var e : c.getBlocks().entrySet()) snapshot.put(e.getKey(), e.getValue().state());
+        pending = CompletableFuture.supplyAsync(() -> bakeOffThread(snapshot, level), Util.backgroundExecutor());
+    }
+
+    /** worker thread：純 tesselate(讀不可變快照 + baked model，皆 thread-safe)。不碰 GL。 */
+    private static List<LayerMesh> bakeOffThread(Map<BlockPos, BlockState> snapshot, Level level) {
+        ShipRenderWorld world = new ShipRenderWorld(level, snapshot);
         BlockRenderDispatcher brd = Minecraft.getInstance().getBlockRenderer();
         ModelBlockRenderer mr = brd.getModelRenderer();
         RandomSource random = RandomSource.create();
+        List<LayerMesh> out = new ArrayList<>();
 
         for (RenderType layer : RenderType.chunkBufferLayers()) {
             ByteBufferBuilder bytes = new ByteBufferBuilder(4096);
@@ -77,9 +96,9 @@ public class ShipMeshCache implements AutoCloseable, ShipMeshHandle {
             PoseStack ps = new PoseStack();
             boolean any = false;
 
-            for (var entry : c.getBlocks().entrySet()) {
+            for (var entry : snapshot.entrySet()) {
                 BlockPos local = entry.getKey();
-                BlockState state = entry.getValue().state();
+                BlockState state = entry.getValue();
                 if (state.isAir() || state.getRenderShape() != RenderShape.MODEL) continue;
                 BakedModel model = brd.getBlockModel(state);
                 ModelData md = model.getModelData(world, local, state, ModelData.EMPTY);
@@ -93,15 +112,34 @@ public class ShipMeshCache implements AutoCloseable, ShipMeshHandle {
             }
 
             MeshData mesh = any ? bb.build() : null;
-            if (mesh != null) {
-                VertexBuffer vb = new VertexBuffer(VertexBuffer.Usage.STATIC);
-                vb.bind();
-                vb.upload(mesh);
-                VertexBuffer.unbind();
-                buffers.put(layer, vb);
-            }
-            bytes.close();
+            if (mesh != null) out.add(new LayerMesh(layer, mesh, bytes));
+            else bytes.close();
         }
+        return out;
+    }
+
+    /** render thread：把背景烤好的 mesh 上傳成 VBO，換掉舊的(舊 VBO 撐到這刻才關 → 重烤期間不閃)。 */
+    private void uploadPending() {
+        List<LayerMesh> result;
+        try {
+            result = pending.join();
+        } catch (Exception ex) {
+            pending = null;
+            built = true; // 失敗就維持舊 buffers，別卡死重試
+            return;
+        }
+        pending = null;
+        for (VertexBuffer vb : buffers.values()) vb.close();
+        buffers.clear();
+        for (LayerMesh lm : result) {
+            VertexBuffer vb = new VertexBuffer(VertexBuffer.Usage.STATIC);
+            vb.bind();
+            vb.upload(lm.mesh()); // 上傳並消耗 mesh
+            VertexBuffer.unbind();
+            buffers.put(lm.layer(), vb);
+            lm.bytes().close(); // mesh 已上傳，釋放 native buffer
+        }
+        built = true;
     }
 
     /**
@@ -126,6 +164,13 @@ public class ShipMeshCache implements AutoCloseable, ShipMeshHandle {
 
     @Override
     public void close() {
+        // 還在背景烤就把結果收掉，否則 MeshData/ByteBufferBuilder 的 native 記憶體會漏
+        if (pending != null) {
+            try {
+                for (LayerMesh lm : pending.join()) { lm.mesh().close(); lm.bytes().close(); }
+            } catch (Exception ignored) {}
+            pending = null;
+        }
         for (VertexBuffer vb : buffers.values()) vb.close();
         buffers.clear();
     }
