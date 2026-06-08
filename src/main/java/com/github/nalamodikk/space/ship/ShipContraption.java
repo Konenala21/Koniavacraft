@@ -11,6 +11,7 @@ import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.Rotation;
@@ -177,7 +178,14 @@ public class ShipContraption {
         for (Map.Entry<BlockPos, StructureBlockInfo> e : blocks.entrySet()) {
             BlockPos wp = rotatedTarget(e.getKey(), targetAnchor, rotation);
             StructureBlockInfo info = e.getValue();
-            world.setBlock(wp, info.state().rotate(rotation), Block.UPDATE_ALL);
+            BlockState placed = info.state().rotate(rotation);
+            // 結構方塊(絕大多數)用快 flag：不發鄰居連鎖、不依鄰居重算形狀(contraption 已存好連接狀態)，
+            // 大幅省組裝/拆船的 setBlock 成本(2000 塊 ×UPDATE_ALL 的鄰居+光照連鎖會凍住)。
+            // 機器/管線(EntityBlock，數量少)維持 UPDATE_ALL → 網路照常成形、行為不變。
+            int flags = placed.getBlock() instanceof EntityBlock
+                    ? Block.UPDATE_ALL
+                    : (Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
+            world.setBlock(wp, placed, flags);
             if (info.nbt() != null) {
                 BlockEntity be = world.getBlockEntity(wp);
                 if (be != null) {
