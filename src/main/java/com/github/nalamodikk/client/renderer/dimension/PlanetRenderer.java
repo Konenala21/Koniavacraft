@@ -31,6 +31,7 @@ public class PlanetRenderer {
     private int locColorLight, locColorDark, locHeatColor, locHeatAmount;
     private int locSurface, locHasTexture, locSurface2, locHasTexture2, locNightTex, locHasNight;
     private int locNormalTex, locHasNormal; // 地形法線圖(起伏光照)
+    private int locSpecTex, locHasSpec;     // 海洋 specular(陽光反光)
     private int locRotSpeed, locCloudSpeed, locAlpha;
     private int locRingInner, locRingOuter, locRingTilt, locRingTex;
     private int locOccluderDir, locOccluderCos;
@@ -94,6 +95,9 @@ public class PlanetRenderer {
         locNormalTex = GL20.glGetUniformLocation(programId, "uNormalTex");
         locHasNormal = GL20.glGetUniformLocation(programId, "uHasNormal");
         if (locNormalTex != -1) GL20.glUniform1i(locNormalTex, 3);
+        locSpecTex = GL20.glGetUniformLocation(programId, "uSpecTex");
+        locHasSpec = GL20.glGetUniformLocation(programId, "uHasSpec");
+        if (locSpecTex != -1) GL20.glUniform1i(locSpecTex, 4);
         locRotSpeed   = GL20.glGetUniformLocation(programId, "uRotSpeed");
         locCloudSpeed = GL20.glGetUniformLocation(programId, "uCloudSpeed");
         locAlpha       = GL20.glGetUniformLocation(programId, "uAlpha");
@@ -131,7 +135,7 @@ public class PlanetRenderer {
                                  Vector3f occluderDir, float occluderCos) {
         renderAtmosphere(invProj, invView, gameTime, resW, resH, planetDir, planetDist, angularRadius,
                 dirToStar, planetColor, atmoColor, atmoDensity, atmoHeight, passGlow,
-                textureId, textureId2, nightTexId, rotSpeed, cloudSpeed, alpha, occluderDir, occluderCos, -1);
+                textureId, textureId2, nightTexId, rotSpeed, cloudSpeed, alpha, occluderDir, occluderCos, -1, -1);
     }
 
     public void renderAtmosphere(float[] invProj, float[] invView, float gameTime,
@@ -141,7 +145,7 @@ public class PlanetRenderer {
                                  Vector3f atmoColor, float atmoDensity, float atmoHeight,
                                  boolean passGlow, int textureId, int textureId2, int nightTexId,
                                  float rotSpeed, float cloudSpeed, float alpha,
-                                 Vector3f occluderDir, float occluderCos, int normalTexId) {
+                                 Vector3f occluderDir, float occluderCos, int normalTexId, int specTexId) {
         if (!ready) return;
         setCommon(invProj, invView, gameTime, resW, resH, planetDir, planetDist, angularRadius);
         bindTexture(textureId, textureId2, nightTexId);
@@ -149,6 +153,10 @@ public class PlanetRenderer {
         GL13.glActiveTexture(GL13.GL_TEXTURE0 + 3);
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, normalTexId != -1 ? normalTexId : 0);
         if (locHasNormal != -1) GL20.glUniform1i(locHasNormal, normalTexId != -1 ? 1 : 0);
+        // specular 綁 unit 4
+        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 4);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, specTexId != -1 ? specTexId : 0);
+        if (locHasSpec != -1) GL20.glUniform1i(locHasSpec, specTexId != -1 ? 1 : 0);
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         if (locRotSpeed   != -1) GL20.glUniform1f(locRotSpeed,   rotSpeed);
         if (locCloudSpeed != -1) GL20.glUniform1f(locCloudSpeed, cloudSpeed);

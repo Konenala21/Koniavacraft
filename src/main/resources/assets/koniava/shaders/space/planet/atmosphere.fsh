@@ -21,6 +21,8 @@ uniform sampler2D uSurface2;   // 雲層/大氣疊加貼圖
 uniform sampler2D uNightTex;   // 夜景貼圖（城市燈光）
 uniform sampler2D uNormalTex;  // 地形法線圖（切線空間，起伏光照）
 uniform int       uHasNormal;
+uniform sampler2D uSpecTex;    // 海洋 specular 遮罩（海亮陸暗，陽光鏡面反光）
+uniform int       uHasSpec;
 uniform int   uHasTexture;
 uniform int   uHasTexture2;
 uniform int   uHasNight;
@@ -208,6 +210,16 @@ void main(){
         float softEdge = smoothstep(0.0, R * 0.04, chord);
 
         vec3  col = surfCol * sh + uAtmoColor * edgeAtmo;
+
+        // ── 海洋鏡面反光：specular 圖標出海洋(R 亮)，陽光在海面反射朝鏡頭時形成亮點(Blinn-Phong)──
+        if (uHasSpec == 1 && NdotL > 0.0) {
+            float specMask = texture(uSpecTex, uv).r;
+            if (specMask > 0.01) {
+                vec3  halfV = normalize(lSun - lD);                 // -lD = 朝鏡頭；半向量
+                float glint = pow(max(dot(nLit, halfV), 0.0), 64.0);
+                col += vec3(1.0, 0.95, 0.82) * glint * specMask * NdotL * 1.1; // 暖白陽光反光，限受光面
+            }
+        }
 
         // ── 夜景城市燈光：自發光，純加法疊在暗面（不受光照壓暗）──────
         vec3 nightSample = texture(uNightTex, uv).rgb;

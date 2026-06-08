@@ -123,11 +123,12 @@ public class SpacePlanetManager {
         int earthAtmo  = getTexture("earth_atmo");
         int earthNight = getTexture("earth_night");
         int earthNormal = getTexture("earth_normal");
+        int earthSpec = getTexture("earth_specular");
         atmosphereRenderer.renderAtmosphere(invProj, invView, gameTime, w, h,
             earthDir, 1500f, earthCos, earthToSun,
             new Vector3f(0.18f, 0.42f, 0.68f), new Vector3f(0.35f, 0.62f, 1.0f),
             1.2f, 0.10f, false,
-            earthTex, earthAtmo, earthNight, 0.002f, 0.00216f, 1.0f, null, 1.001f, earthNormal);
+            earthTex, earthAtmo, earthNight, 0.002f, 0.00216f, 1.0f, null, 1.001f, earthNormal, earthSpec);
     }
 
     private static void renderSystem(StarSystem system, Vector3f playerPos, Vector3f camFwd,
@@ -214,6 +215,7 @@ public class SpacePlanetManager {
             final int texId2  = getTexture(planet.id() + "_atmo");
             final int nightId = getTexture(planet.id() + "_night");
             final int normalId = getTexture(planet.id() + "_normal"); // 只地球有，其他回 -1
+            final int specId   = getTexture(planet.id() + "_specular"); // 海洋反光遮罩，只地球有
             final float rotSpeed   = planet.rotSpeedRadPerSec();
             final float cloudSpeed = rotSpeed * 1.08f; // 雲層比地表快 8%
 
@@ -246,7 +248,7 @@ public class SpacePlanetManager {
                         planet.colorA(), planet.colorB(),
                         planet.atmoDensity(), planet.atmoHeight(), false,
                         texId, texId2, nightId, rotSpeed, cloudSpeed, fadeAlpha,
-                        fOccDir, fOccCos, normalId);
+                        fOccDir, fOccCos, normalId, specId);
                 } else {
                     rockyRenderer.renderRocky(invProj, invView, gameTime, w, h,
                         fDir, fDist, fCos, fPlanetLight,
