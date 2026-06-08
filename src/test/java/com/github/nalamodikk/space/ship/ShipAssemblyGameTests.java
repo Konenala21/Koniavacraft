@@ -328,6 +328,32 @@ public class ShipAssemblyGameTests {
     }
 
     /**
+     * 靜止船的水平碰撞：玩家盒朝船的牆走，applyContraptionMovement 應把水平移動擋下。
+     * 直接呼叫(不靠 mock player 走路 flaky)→ 確認「停著船走甲板穿過去」是碰撞邏輯壞還是別處。
+     */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
+    public static void stationaryShipBlocksHorizontalWalk(GameTestHelper helper) {
+        ShipContraption ship = new ShipContraption();
+        BlockState stone = Blocks.STONE.defaultBlockState();
+        // 一面 2x2 牆(local x=0)
+        for (int y = 0; y < 2; y++) for (int z = 0; z < 2; z++) ship.addBlock(new BlockPos(0, y, z), stone, null);
+        ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), helper.getLevel());
+        entity.setContraption(ship);
+        BlockPos origin = helper.absolutePos(new BlockPos(4, 2, 4));
+        entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
+
+        Player probe = helper.makeMockPlayer(GameType.SURVIVAL);
+        // 牆(local x=0)的世界位置 = entity + (0 - centerOffset)。把 probe 放牆 -X 側、Y/Z 對齊牆，朝 +X 走進牆。
+        net.minecraft.world.phys.Vec3 wall = entity.rotatedWorldPoint(0.5, 0.5, 0.5); // 牆中心一格的世界中心
+        probe.setPos(wall.x - 1.2, wall.y - 0.5, wall.z);
+        net.minecraft.world.phys.Vec3 motion = new net.minecraft.world.phys.Vec3(1.0, 0, 0);
+        net.minecraft.world.phys.Vec3 result = entity.applyContraptionMovement(probe, motion);
+        if (result.x > 0.7)
+            helper.fail("stationary ship did not block horizontal walk into wall (motion.x=1.0 -> result.x=" + result.x + ")");
+        helper.succeed();
+    }
+
+    /**
      * 效能量測：組裝的兩個 mass-setBlock 熱點 — addToWorld(= placeInShadow 塞 2000 方塊) 與
      * removeFromWorld 等效(移除 2000 方塊)。組裝凍住若是 server 端，數字會在這裡現形。印 log。
      */
