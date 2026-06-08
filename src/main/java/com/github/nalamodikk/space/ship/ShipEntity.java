@@ -757,7 +757,8 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         float maxStep = (float) e.maxUpStep();
         // 子步進：把這 tick 的移動切 N 小段，每段 連續碰撞+沿面滑+穿入推出。角落「切角」是因為一步斜跨過角點，
         // 小步走會在跨過前先重疊到 → 抓得住。每段後再做穿入解析 pass 把殘餘穿入推回表面。
-        final int N = 4;
+        // 子步數依速度自適應：每步 ~0.35 格，快速墜落(終端速度 ~3.9/tick)才不會一步跨過甲板穿透。
+        final int N = Math.min(16, Math.max(4, (int) Math.ceil(lmv.length() / 0.35)));
         Vec3 sub = lmv.scale(1.0 / N);
         Vec3 collided = Vec3.ZERO;
         for (int s = 0; s < N; s++) {
