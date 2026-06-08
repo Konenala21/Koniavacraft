@@ -593,7 +593,13 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         double mz = lm.z; if (mz != 0) mz = shape.collide(Direction.Axis.Z, lb, mz);
         Vec3 newLocal = L0.add(mx, my, mz);
         Vec3 newWorld = localToWorldAt(newLocal.x, newLocal.y, newLocal.z, getX(), getY(), getZ(), getYRot());
-        return newWorld.subtract(P);
+        Vec3 result = newWorld.subtract(P);
+        // 旋轉 round-trip 在沒實際被擋的軸留下 ~1e-10 epsilon；vanilla Entity.move 用精確 != 判碰撞，
+        // 會把這 epsilon 當成撞牆 → 每 tick 歸零玩家速度 → 走/跳「黏黏的」。差距極小的軸 snap 回 desired。
+        double rx = Math.abs(result.x - worldMotion.x) < 1.0e-4 ? worldMotion.x : result.x;
+        double ry = Math.abs(result.y - worldMotion.y) < 1.0e-4 ? worldMotion.y : result.y;
+        double rz = Math.abs(result.z - worldMotion.z) < 1.0e-4 ? worldMotion.z : result.z;
+        return new Vec3(rx, ry, rz);
     }
 
     /** 世界點 → 指定變換(pos,yaw)的 local 框。 */
