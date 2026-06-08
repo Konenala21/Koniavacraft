@@ -356,7 +356,18 @@ public class ShipAssemblyGameTests {
             helper.getLevel().setBlock(lp.offset(anchor), Blocks.AIR.defaultBlockState(), rmFlags);
         long removeMs = (System.nanoTime() - t1) / 1_000_000;
 
-        KoniavacraftMod.LOGGER.info("[ship-place-perf] blocks={} addToWorld={}ms remove={}ms", count, placeMs, removeMs);
+        // spawn 序列化(把 2000 方塊打包同步給 client)— 組裝時也在這 tick 跑，gametest 可量
+        ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), helper.getLevel());
+        entity.setContraption(ship);
+        net.minecraft.network.RegistryFriendlyByteBuf sbuf = new net.minecraft.network.RegistryFriendlyByteBuf(
+                io.netty.buffer.Unpooled.buffer(), helper.getLevel().registryAccess());
+        long t2 = System.nanoTime();
+        entity.writeSpawnData(sbuf);
+        long serializeMs = (System.nanoTime() - t2) / 1_000_000;
+        int bytes = sbuf.writerIndex();
+
+        KoniavacraftMod.LOGGER.info("[ship-place-perf] blocks={} addToWorld={}ms remove={}ms serialize={}ms ({}KB)",
+                count, placeMs, removeMs, serializeMs, bytes / 1024);
         helper.succeed();
     }
 

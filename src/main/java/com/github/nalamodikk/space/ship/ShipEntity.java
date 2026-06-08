@@ -1426,7 +1426,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     public void writeSpawnData(RegistryFriendlyByteBuf buf) {
         boolean has = contraption != null;
         buf.writeBoolean(has);
-        if (has) buf.writeNbt(contraption.writeNbt(level().registryAccess()));
+        if (has) contraption.writeToBuf(buf); // 直接 buffer 編碼(快+小)，非每方塊 NBT
         // VM3b：把影子錨點同步給 client，讓 entityMenu 能用影子座標反算 local、從船的 render BE 建機器選單
         boolean hasAnchor = shadowAnchor != null;
         buf.writeBoolean(hasAnchor);
@@ -1436,13 +1436,10 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     @Override
     public void readSpawnData(RegistryFriendlyByteBuf buf) {
         if (buf.readBoolean()) {
-            CompoundTag tag = buf.readNbt();
-            if (tag != null) {
-                ShipContraption c = new ShipContraption();
-                c.readNbt(level(), tag);
-                this.contraption = c;
-                refreshDimensions();
-            }
+            ShipContraption c = new ShipContraption();
+            c.readFromBuf(buf);
+            this.contraption = c;
+            refreshDimensions();
         }
         if (buf.readBoolean()) shadowAnchor = buf.readBlockPos();
     }
