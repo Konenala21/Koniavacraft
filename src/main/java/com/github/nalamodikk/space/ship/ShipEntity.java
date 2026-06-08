@@ -713,10 +713,11 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
         Vec3 P = e.position();
         Vec3 L0 = worldToLocalAt(P.x, P.y, P.z, xOld, yOld, zOld, q0);
-        double my = lmv.y; if (my != 0) my = shape.collide(Direction.Axis.Y, lb, my); lb = lb.move(0, my, 0);
-        double mx = lmv.x; if (mx != 0) mx = shape.collide(Direction.Axis.X, lb, mx); lb = lb.move(mx, 0, 0);
-        double mz = lmv.z; if (mz != 0) mz = shape.collide(Direction.Axis.Z, lb, mz);
-        Vec3 newLocal = L0.add(mx, my, mz);
+        // 用 vanilla 的 collideBoundingBox 對船的合併形狀做碰撞(跟 Create 同招)：robust 多形狀碰撞，
+        // 自己刻的逐軸近似在邊角/尖端會漏。傳 List.of(shape) → 只對船形狀碰，world border 在 local 原點附近不觸發。
+        Vec3 lm = new Vec3(lmv.x, lmv.y, lmv.z);
+        Vec3 collided = Entity.collideBoundingBox(e, lm, lb, level(), java.util.List.of(shape));
+        Vec3 newLocal = L0.add(collided.x, collided.y, collided.z);
         Vec3 newWorld = localToWorldAt(newLocal.x, newLocal.y, newLocal.z, getX(), getY(), getZ(), q1);
         Vec3 result = newWorld.subtract(P);
         // 旋轉 round-trip 在沒實際被擋的軸留下 ~1e-10 epsilon；vanilla Entity.move 用精確 != 判碰撞，
