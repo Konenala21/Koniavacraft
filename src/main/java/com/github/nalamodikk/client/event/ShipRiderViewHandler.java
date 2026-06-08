@@ -42,7 +42,7 @@ public final class ShipRiderViewHandler {
         float pitch = ship.getXRot();
         if (roll == 0f && pitch == 0f) return;
         float bodyYaw = Mth.rotLerp(event.getPartialTick(), event.getEntity().yBodyRotO, event.getEntity().yBodyRot);
-        float h = event.getEntity().getBbHeight() * 0.5f;
+        float h = 0.3f; // 坐姿傾斜支點放座位(屁股)附近，不是身體中心：繞中心轉 pitch 會把腳/屁股往前後甩→偏離座位
         PoseStack pose = event.getPoseStack();
         pose.pushPose();
         // 在玩家朝向框內套傾斜(繞身體中心)：進朝向框 → pitch(右軸 X) + roll(前軸 Z) → 出框
