@@ -325,6 +325,54 @@ public class ShipAssemblyGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * 效能量測：程式化建一台接近 MAX_BLOCKS 的實心船，量三個熱點：localCollisionShape 建構(合併 N 個盒)、
+     * resolveTerrain(移動時每 tick 迭代全船算地形碰撞，最可疑)、deck 碰撞查詢。數字印到 log，過慢則 fail。
+     * 不需影子維度，headless 也能跑。
+     */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 200)
+    public static void perfBigShipCollision(GameTestHelper helper) {
+        ShipContraption ship = new ShipContraption();
+        BlockState stone = Blocks.STONE.defaultBlockState();
+        int count = 0;
+        outer:
+        for (int x = -6; x <= 5; x++)
+            for (int y = 0; y < 12; y++)
+                for (int z = -7; z <= 6; z++) {
+                    if (count >= ShipContraption.MAX_BLOCKS) break outer;
+                    ship.addBlock(new BlockPos(x, y, z), stone, null);
+                    count++;
+                }
+        ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), helper.getLevel());
+        entity.setContraption(ship);
+        BlockPos origin = helper.absolutePos(new BlockPos(4, 2, 4));
+        entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
+
+        Player probe = helper.makeMockPlayer(GameType.SURVIVAL);
+        probe.setPos(entity.getX(), entity.getY(), entity.getZ()); // 船中心，碰撞 gate 才會真的跑
+        Vec3 motion = new Vec3(0.3, -0.1, 0.2);
+
+        long t0 = System.nanoTime();
+        entity.applyContraptionMovement(probe, motion);          // 第一次觸發 localCollisionShape 建構
+        long buildUs = (System.nanoTime() - t0) / 1000;
+
+        int n = 200;
+        long t1 = System.nanoTime();
+        for (int i = 0; i < n; i++) entity.resolveTerrain(motion);
+        long terrainUs = (System.nanoTime() - t1) / 1000 / n;
+
+        long t2 = System.nanoTime();
+        for (int i = 0; i < n; i++) entity.applyContraptionMovement(probe, motion);
+        long deckUs = (System.nanoTime() - t2) / 1000 / n;
+
+        KoniavacraftMod.LOGGER.info("[ship-perf] blocks={} shapeBuild={}us resolveTerrain={}us/call deckCollide={}us/call",
+                count, buildUs, terrainUs, deckUs);
+        // 警戒線：一 tick 預算 50ms(20 TPS)；resolveTerrain 每 tick > 5ms 在大船移動時會明顯吃 tick
+        if (terrainUs > 5000)
+            helper.fail("resolveTerrain too slow: " + terrainUs + "us/call (blocks=" + count + ") — 需優化(只用外殼方塊算地形碰撞)");
+        helper.succeed();
+    }
+
     /** Phase 3 箱子：用 writeContainerBack 改船上箱子內容 → 拆解後箱子保留新物品（寫回持久化）。 */
     /** 停船編輯：放門要放上下兩半（雙方塊），HALF 正確。 */
     @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
