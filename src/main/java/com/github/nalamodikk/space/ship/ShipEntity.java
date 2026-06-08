@@ -207,6 +207,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         this.renderBEs = null;   // contraption 換了，BE 快取作廢
         this.meshCache = null;   // 烤好的 VBO 也作廢（contraption 只在 spawn 設一次，實務上不會走到）
         this.localCollisionShapeCache = null;
+        this.collisionListCache = null;
         this.hullBlocksCache = null;
         this.dynamicMirrorCache = null;
         refreshDimensions();     // 依新 contraption 撐大 hitbox
@@ -242,7 +243,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         if (level().isClientSide && !state.isAir()) {
             pendingVisualBlocks.put(local.immutable(), System.currentTimeMillis());
         }
-        localCollisionShapeCache = null;
+        localCollisionShapeCache = null; collisionListCache = null;
         hullBlocksCache = null;
         dynamicMirrorCache = null;
         renderBEs = null;
@@ -452,7 +453,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             if (!ss.equals(info.state())) {
                 contraption.setBlockState(local, ss);          // blockstate 變(作物/熔爐亮/機器 active)
                 ShipBlockUpdatePacket.sendToClients(this, local, ss);
-                localCollisionShapeCache = null;               // 形狀可能變(作物長/門開)
+                localCollisionShapeCache = null; collisionListCache = null; // 形狀可能變(作物長/門開)
             }
             if (ss.getBlock() instanceof EntityBlock) {        // BE NBT 鏡射(機器內容/進度)：拆解才保留正確狀態
                 BlockEntity sbe = shadow.getBlockEntity(sp);
@@ -623,6 +624,14 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     // 做單純逐軸 AABB 碰撞，再轉回世界。只有 yaw 旋轉，玩家盒近似軸對齊（誤差小）。
 
     @Nullable private VoxelShape localCollisionShapeCache;
+    @Nullable private CollisionList collisionListCache; // OBB 碰撞用的方塊盒清單，跟 shape 一起失效(別每 tick 重建)
+
+    private CollisionList collisionList(VoxelShape shape) {
+        if (collisionListCache != null) return collisionListCache;
+        CollisionList list = new CollisionList();
+        shape.forAllBoxes(new CollisionList.Populate(list));
+        return collisionListCache = list;
+    }
 
     /**
      * contraption 所有方塊的碰撞盒合併成 local 框的一個 VoxelShape（靜態，快取一次）。
@@ -720,13 +729,9 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         // 每 tick 把玩家往外推 → 走路抽搐/被慢慢推走。原尺寸盒不過度推。傾斜的精準碰撞留給 OBB(階段3)。
         AABB lb = AABB.ofSize(lbEnclose.getCenter(), box.getXsize(), box.getYsize(), box.getZsize());
         Vec3 lm = new Vec3(lmv.x, lmv.y, lmv.z);
-        // 傾斜(pitch/roll)時甲板/牆是斜的，軸對齊盒對不準 → 穿/陷。走 OBB 連續碰撞(移植自 Create)。
-        // 水平(只 yaw)時甲板是平的，vanilla collideBoundingBox 就 robust，沿用(快、已驗)。
-        boolean tilted = Math.abs(getXRot()) > 0.01f || Math.abs(getRoll()) > 0.01f
-                || Math.abs(xRotO) > 0.01f || Math.abs(rollO) > 0.01f;
-        Vec3 collided = tilted
-                ? obbCollideLocal(e, box, lb, lm, q0, shape)
-                : Entity.collideBoundingBox(e, lm, lb, level(), java.util.List.of(shape));
+        // 一律走 OBB 連續碰撞(移植自 Create)：vanilla collideBoundingBox 是純掃掠，角落會「切角」穿入、
+        // 且進去後不會推出來(逐軸近似的死角)。OBB 的 collisionResponse 能解穿入，傾斜也用同一套。
+        Vec3 collided = obbCollideLocal(e, box, lb, lm, q0, shape);
         Vec3 newLocal = L0.add(collided.x, collided.y, collided.z);
         Vec3 newWorld = localToWorldAt(newLocal.x, newLocal.y, newLocal.z, getX(), getY(), getZ(), q1);
         Vec3 result = newWorld.subtract(P);
@@ -744,14 +749,16 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
      * lmv 已是 local 框的移動。doHorizontalPass=false(Create 對有垂直旋轉的 contraption 就傳 false)。
      */
     private Vec3 obbCollideLocal(Entity e, AABB box, AABB lb, Vec3 lmv, Quaternionf q0, VoxelShape shape) {
-        CollisionList colliders = new CollisionList();
-        shape.forAllBoxes(new CollisionList.Populate(colliders));
+        CollisionList colliders = collisionList(shape); // 快取，不每 tick 重建
+        CollisionList dense = new CollisionList();
         Vec3 extents = new Vec3(box.getXsize() / 2, box.getYsize() / 2, box.getZsize() / 2);
         Matrix3d rot = new Matrix3d().set(q0.conjugate(new Quaternionf()));
         OrientedBB obb = new OrientedBB(lb.getCenter(), extents, rot);
-        ContinuousOBBCollider.CollisionResponse res = ContinuousOBBCollider.collideMany(
-                colliders, new CollisionList(), obb, lmv, (float) e.maxUpStep(), false);
-        // collide-and-slide：移到撞擊點(temporal) + 剩餘移動沿表面滑(去掉法線分量) + 推出穿入(collisionResponse)。
+        float maxStep = (float) e.maxUpStep();
+        // pass 1：連續碰撞 + 沿表面滑(去法線分量)。面/牆擋得住，但角落(三面)會在這 tick 內沿一面滑進去，
+        // collideMany 開頭沒偵測到穿入(那時還沒進去) → 不推出。
+        ContinuousOBBCollider.CollisionResponse res =
+                ContinuousOBBCollider.collideMany(colliders, dense, obb, lmv, maxStep, false);
         double t = res.temporalResponse;
         Vec3 toImpact = lmv.scale(t);
         Vec3 remaining = lmv.scale(1.0 - t);
@@ -760,9 +767,19 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         if (n.lengthSqr() > 1.0e-9) {
             Vec3 nn = n.normalize();
             double into = remaining.dot(nn);
-            if (into < 0) slid = remaining.subtract(nn.scale(into)); // 只去掉「往表面內」的分量，保留沿面滑動
+            if (into < 0) slid = remaining.subtract(nn.scale(into));
         }
-        return toImpact.add(slid).add(res.collisionResponse);
+        Vec3 collided = toImpact.add(slid).add(res.collisionResponse);
+        // pass 2：穿入解析。移到新位置，零移動的 collideMany 拿 collisionResponse(MTV 推出)，把 slide
+        // 造成的角落穿入當場推回表面。迭代幾次(角落要推多軸)。
+        for (int i = 0; i < 3; i++) {
+            obb.setCenter(lb.getCenter().add(collided));
+            ContinuousOBBCollider.CollisionResponse pr =
+                    ContinuousOBBCollider.collideMany(colliders, dense, obb, Vec3.ZERO, 0f, false);
+            if (pr.collisionResponse.lengthSqr() < 1.0e-10) break;
+            collided = collided.add(pr.collisionResponse);
+        }
+        return collided;
     }
 
     /** 把世界軸對齊盒的 8 個角轉進指定姿勢的 local 框，取外接 AABB。傾斜時盒會放大 → 碰撞不漏抓(不穿模)。 */

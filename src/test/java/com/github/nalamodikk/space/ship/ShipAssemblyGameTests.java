@@ -382,6 +382,68 @@ public class ShipAssemblyGameTests {
         helper.succeed();
     }
 
+    /** 診斷：實心 2x2x2 方塊，從多方向(面/下面/角落)靠近，印出碰撞後 |result|(≈1=穿過去, 小=擋住)。upright+傾斜。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
+    public static void diagShipCollisionDirections(GameTestHelper helper) {
+        for (float pitch : new float[] { 0f, 30f }) {
+            ShipContraption ship = new ShipContraption();
+            BlockState stone = Blocks.STONE.defaultBlockState();
+            for (int x = 0; x < 2; x++) for (int y = 0; y < 2; y++) for (int z = 0; z < 2; z++)
+                ship.addBlock(new BlockPos(x, y, z), stone, null);
+            ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), helper.getLevel());
+            entity.setContraption(ship);
+            BlockPos origin = helper.absolutePos(new BlockPos(5, 5, 5));
+            entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
+            entity.setXRot(pitch);
+            entity.setOldPosAndRot();
+            Player probe = helper.makeMockPlayer(GameType.SURVIVAL);
+            String p = "pitch=" + pitch + " ";
+            diag(entity, probe, p + "+Xface", 2.6, 1.0, 1.0, new Vec3(-1, 0, 0));
+            diag(entity, probe, p + "below ", 1.0, -1.5, 1.0, new Vec3(0, 1, 0));
+            diag(entity, probe, p + "top   ", 1.0, 3.5, 1.0, new Vec3(0, -1, 0));
+            diag(entity, probe, p + "corner", 2.6, 2.6, 2.6, new Vec3(-1, -1, -1));
+        }
+        helper.succeed();
+    }
+
+    /** 多 tick realistic 逼近：probe 以 0.25/tick 走向實心方塊角落，最後量離中心距離(太近=真的穿進去)。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
+    public static void diagCornerMultiTick(GameTestHelper helper) {
+        for (float pitch : new float[] { 0f, 30f }) {
+            ShipContraption ship = new ShipContraption();
+            BlockState stone = Blocks.STONE.defaultBlockState();
+            for (int x = 0; x < 2; x++) for (int y = 0; y < 2; y++) for (int z = 0; z < 2; z++)
+                ship.addBlock(new BlockPos(x, y, z), stone, null);
+            ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), helper.getLevel());
+            entity.setContraption(ship);
+            BlockPos origin = helper.absolutePos(new BlockPos(6, 6, 6));
+            entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
+            entity.setXRot(pitch);
+            entity.setOldPosAndRot();
+            Player probe = helper.makeMockPlayer(GameType.SURVIVAL);
+            Vec3 cubeCenter = entity.rotatedWorldPoint(1.0, 1.0, 1.0);
+            Vec3 start = entity.rotatedWorldPoint(3.2, 3.2, 3.2); // 角落外
+            probe.setPos(start.x, start.y - 0.9, start.z);
+            for (int tick = 0; tick < 30; tick++) {
+                Vec3 toward = cubeCenter.subtract(probe.position()).normalize().scale(0.25);
+                Vec3 r = entity.applyContraptionMovement(probe, toward);
+                probe.setPos(probe.getX() + r.x, probe.getY() + r.y, probe.getZ() + r.z);
+            }
+            double dist = probe.position().distanceTo(cubeCenter);
+            KoniavacraftMod.LOGGER.info("[diagMT] pitch=" + pitch + " corner final dist-to-center=" + String.format("%.3f", dist) + " (surface~1.8+, <1.3=penetrated)");
+        }
+        helper.succeed();
+    }
+
+    private static void diag(ShipEntity entity, Player probe, String name, double lx, double ly, double lz, Vec3 localDir) {
+        Vec3 pos = entity.rotatedWorldPoint(lx, ly, lz);
+        probe.setPos(pos.x, pos.y - 0.9, pos.z); // 盒中心放在 local 點
+        Vec3 target = entity.rotatedWorldPoint(lx + localDir.x, ly + localDir.y, lz + localDir.z);
+        Vec3 dir = target.subtract(pos).normalize();
+        Vec3 result = entity.applyContraptionMovement(probe, dir.scale(1.0));
+        KoniavacraftMod.LOGGER.info("[diag] " + name + " |motion|=1.0 -> |result|=" + String.format("%.3f", result.length()));
+    }
+
     /**
      * 效能量測：組裝的兩個 mass-setBlock 熱點 — addToWorld(= placeInShadow 塞 2000 方塊) 與
      * removeFromWorld 等效(移除 2000 方塊)。組裝凍住若是 server 端，數字會在這裡現形。印 log。
