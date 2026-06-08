@@ -30,6 +30,7 @@ public class PlanetRenderer {
     private int locAtmoColor, locAtmoDensity, locAtmoHeight, locPassGlow;
     private int locColorLight, locColorDark, locHeatColor, locHeatAmount;
     private int locSurface, locHasTexture, locSurface2, locHasTexture2, locNightTex, locHasNight;
+    private int locNormalTex, locHasNormal; // 地形法線圖(起伏光照)
     private int locRotSpeed, locCloudSpeed, locAlpha;
     private int locRingInner, locRingOuter, locRingTilt, locRingTex;
     private int locOccluderDir, locOccluderCos;
@@ -90,6 +91,9 @@ public class PlanetRenderer {
         locNightTex  = GL20.glGetUniformLocation(programId, "uNightTex");
         locHasNight  = GL20.glGetUniformLocation(programId, "uHasNight");
         if (locNightTex  != -1) GL20.glUniform1i(locNightTex,  2);
+        locNormalTex = GL20.glGetUniformLocation(programId, "uNormalTex");
+        locHasNormal = GL20.glGetUniformLocation(programId, "uHasNormal");
+        if (locNormalTex != -1) GL20.glUniform1i(locNormalTex, 3);
         locRotSpeed   = GL20.glGetUniformLocation(programId, "uRotSpeed");
         locCloudSpeed = GL20.glGetUniformLocation(programId, "uCloudSpeed");
         locAlpha       = GL20.glGetUniformLocation(programId, "uAlpha");
@@ -116,6 +120,7 @@ public class PlanetRenderer {
         ready = true;
     }
 
+    // 舊簽名(無法線圖)→ 委派，normalTexId=-1（太陽/其他星沿用）
     public void renderAtmosphere(float[] invProj, float[] invView, float gameTime,
                                  float resW, float resH,
                                  Vector3f planetDir, float planetDist, float angularRadius,
@@ -124,9 +129,27 @@ public class PlanetRenderer {
                                  boolean passGlow, int textureId, int textureId2, int nightTexId,
                                  float rotSpeed, float cloudSpeed, float alpha,
                                  Vector3f occluderDir, float occluderCos) {
+        renderAtmosphere(invProj, invView, gameTime, resW, resH, planetDir, planetDist, angularRadius,
+                dirToStar, planetColor, atmoColor, atmoDensity, atmoHeight, passGlow,
+                textureId, textureId2, nightTexId, rotSpeed, cloudSpeed, alpha, occluderDir, occluderCos, -1);
+    }
+
+    public void renderAtmosphere(float[] invProj, float[] invView, float gameTime,
+                                 float resW, float resH,
+                                 Vector3f planetDir, float planetDist, float angularRadius,
+                                 Vector3f dirToStar, Vector3f planetColor,
+                                 Vector3f atmoColor, float atmoDensity, float atmoHeight,
+                                 boolean passGlow, int textureId, int textureId2, int nightTexId,
+                                 float rotSpeed, float cloudSpeed, float alpha,
+                                 Vector3f occluderDir, float occluderCos, int normalTexId) {
         if (!ready) return;
         setCommon(invProj, invView, gameTime, resW, resH, planetDir, planetDist, angularRadius);
         bindTexture(textureId, textureId2, nightTexId);
+        // 法線圖綁 unit 3（沒有就綁 0，避免 sampler 未綁）
+        GL13.glActiveTexture(GL13.GL_TEXTURE0 + 3);
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, normalTexId != -1 ? normalTexId : 0);
+        if (locHasNormal != -1) GL20.glUniform1i(locHasNormal, normalTexId != -1 ? 1 : 0);
+        GL13.glActiveTexture(GL13.GL_TEXTURE0);
         if (locRotSpeed   != -1) GL20.glUniform1f(locRotSpeed,   rotSpeed);
         if (locCloudSpeed != -1) GL20.glUniform1f(locCloudSpeed, cloudSpeed);
         if (locAlpha      != -1) GL20.glUniform1f(locAlpha,      alpha);

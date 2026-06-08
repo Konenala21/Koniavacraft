@@ -19,6 +19,8 @@ uniform float uOccluderCos; // 父行星視角半徑餘弦；1.001=無遮擋    
 uniform sampler2D uSurface;    // 白天/地表貼圖
 uniform sampler2D uSurface2;   // 雲層/大氣疊加貼圖
 uniform sampler2D uNightTex;   // 夜景貼圖（城市燈光）
+uniform sampler2D uNormalTex;  // 地形法線圖（切線空間，起伏光照）
+uniform int       uHasNormal;
 uniform int   uHasTexture;
 uniform int   uHasTexture2;
 uniform int   uHasNight;
@@ -169,9 +171,21 @@ void main(){
             surfCol = mix(dark, light, clamp(detail * 0.5 + 0.5, 0.0, 1.0));
         }
 
+        // ── 地形法線圖：擾動地表法線做起伏光照（山脈/海岸線依太陽角度有明暗陰影）──
+        // 切線框由 n 建(東=cross(up,n)、北=cross(n,東))，法線圖 R/G 是東/北坡度。自轉慢，與 UV(rn)的微小偏差看不出。
+        vec3 nLit = n;
+        if (uHasNormal == 1) {
+            vec3 nmTex = texture(uNormalTex, uv).rgb;
+            if (dot(nmTex, vec3(1.0)) > 0.001) {
+                vec3 east  = normalize(cross(vec3(0.0, 1.0, 0.0), n) + vec3(1e-5));
+                vec3 north = cross(n, east);
+                vec3 nm = nmTex * 2.0 - 1.0;
+                nLit = normalize(n + (nm.x * east + nm.y * north) * 0.55); // 0.55 = 起伏強度
+            }
+        }
         // ── 光照：Gotanda simplified Oren-Nayar（無 acos/tan）──
-        float NdotL = max(dot(n, lSun), 0.0);
-        float nDotV = max(dot(n, -lD), 0.0);
+        float NdotL = max(dot(nLit, lSun), 0.0);
+        float nDotV = max(dot(nLit, -lD), 0.0);
         float rough = 0.85;
         float r2    = rough * rough;
         float A     = 1.0 - 0.5 * r2 / (r2 + 0.33);
