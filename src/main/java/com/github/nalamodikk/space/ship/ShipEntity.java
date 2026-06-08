@@ -640,9 +640,9 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             BlockState st = e.getValue().state();
             VoxelShape cs = st.getCollisionShape(EmptyBlockGetter.INSTANCE, lp);
             if (cs.isEmpty()) {
-                // 機器(EntityBlock)碰撞常依賴 BE，用 EmptyBlockGetter 查到空殼 → 站上去會穿模掉下去。
-                // 補成滿格(機器都是實心方塊)。純裝飾(火把/告示)的空碰撞才真的略過。
-                if (st.getBlock() instanceof EntityBlock) grid.fill(lp.getX() - minX, lp.getY() - minY, lp.getZ() - minZ);
+                // 有些方塊碰撞依賴 BE/Level，用 EmptyBlockGetter 查到空殼 → 站上去穿模掉下去、也指不到。
+                // 任何非空氣方塊(都有渲染)空碰撞就補滿格 = 你看得到的方塊就站得上去。
+                grid.fill(lp.getX() - minX, lp.getY() - minY, lp.getZ() - minZ);
                 continue;
             }
             if (st.isCollisionShapeFullBlock(EmptyBlockGetter.INSTANCE, lp)) {
@@ -1225,7 +1225,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         for (var e : contraption.getBlocks().entrySet()) {
             BlockPos lp = e.getKey();
             VoxelShape shape = e.getValue().state().getShape(EmptyBlockGetter.INSTANCE, lp);
-            if (shape.isEmpty()) continue;
+            if (shape.isEmpty()) shape = Shapes.block(); // 空 outline 也補滿格 → 渲染得出來就指得到
             BlockHitResult hit = shape.clip(ls, le, lp);
             if (hit != null) {
                 double d = hit.getLocation().distanceToSqr(ls);
