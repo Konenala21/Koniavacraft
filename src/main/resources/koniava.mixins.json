@@ -25,7 +25,8 @@
     "client.CameraMixin",
     "client.TitleScreenMixin",
     "client.LivingEntityRendererMixin",
-    "client.ShipCameraMixin"
+    "client.ShipCameraMixin",
+    "client.GameRendererShipPickMixin"
   ],
   "server": [],
   "injectors": {
