@@ -1469,16 +1469,9 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         int idx = seatIndexOf(passenger); // 依指派的座位
         if (idx < 0 || idx >= seats.size()) idx = 0;
         BlockPos seat = seats.get(idx);
-        double slx = seat.getX() + 0.5, sly = seat.getY() + SEAT_SIT_HEIGHT, slz = seat.getZ() + 0.5;
-        Vec3 c;
-        if (passenger == getControllingPassenger()) {
-            // 駕駛：定位只跟「yaw + 平移」，不跟 pitch/roll 繞船中心轉。否則座位離中心遠時，俯仰/側翻會把駕駛
-            // 繞中心畫圓甩走 → 鏡頭暴衝/前後偏移。傾斜的沉浸感由鏡頭 roll/pitch(ShipRiderViewHandler)在原地帶。
-            c = localToWorldAt(slx, sly, slz, getX(), getY(), getZ(), orientationOf(getYRot(), 0f, 0f, getBowLocal()));
-        } else {
-            // 乘客：跟船完整轉(pitch/roll 都跟)，座位水平中心+座高併進 local 再旋轉，傾斜時不偏離座位。
-            c = rotatedWorldPoint(slx, sly, slz);
-        }
+        // 駕駛和乘客都「完整跟船轉」(pitch/roll 都跟)：坐在座位上、船俯仰/側翻時人跟著動，不會浮在空中。
+        // 座位水平中心(+0.5)+座高(SEAT_SIT_HEIGHT)併進 local 再一起旋轉，傾斜時不偏離座位。
+        Vec3 c = rotatedWorldPoint(seat.getX() + 0.5, seat.getY() + SEAT_SIT_HEIGHT, seat.getZ() + 0.5);
         callback.accept(passenger, c.x, c.y, c.z);
         // 讓坐姿身體面向椅子的坐姿方向（=該座椅 sit-dir + 船 yaw），否則身體用 vanilla 預設方向看起來反。
         // 只設身體(yBodyRot)不鎖視角：駕駛仍可自由看/操控、乘客頭也能轉。
