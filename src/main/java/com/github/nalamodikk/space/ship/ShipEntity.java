@@ -184,6 +184,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         this.meshCache = null;   // 烤好的 VBO 也作廢（contraption 只在 spawn 設一次，實務上不會走到）
         this.localCollisionShapeCache = null;
         this.hullBlocksCache = null;
+        this.dynamicMirrorCache = null;
         refreshDimensions();     // 依新 contraption 撐大 hitbox
     }
 
@@ -215,6 +216,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         }
         localCollisionShapeCache = null;
         hullBlocksCache = null;
+        dynamicMirrorCache = null;
         renderBEs = null;
         if (meshCache instanceof AutoCloseable ac) {
             try { ac.close(); } catch (Exception ignored) {}
@@ -388,13 +390,32 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         }
     }
 
+    // 鏡射只需掃「會變」的方塊：機器(EntityBlock，運轉/亮/進度) + 隨機刻(作物生長)。靜態方塊永不變。
+    // 編輯(門/拉桿/放挖)已在 writeToShadow 兩端同寫，不靠鏡射，所以不必納入。快取，加/減方塊才失效。
+    @Nullable private java.util.List<BlockPos> dynamicMirrorCache;
+    private java.util.List<BlockPos> dynamicMirrorBlocks() {
+        if (dynamicMirrorCache == null) {
+            java.util.List<BlockPos> dyn = new java.util.ArrayList<>();
+            if (contraption != null) {
+                for (var e : contraption.getBlocks().entrySet()) {
+                    BlockState st = e.getValue().state();
+                    if (st.getBlock() instanceof EntityBlock || st.isRandomlyTicking()) dyn.add(e.getKey());
+                }
+            }
+            dynamicMirrorCache = dyn;
+        }
+        return dynamicMirrorCache;
+    }
+
     /** 把影子裡的 blockstate/BE 變化(機器運轉、作物生長、熔爐亮)鏡射回視覺 contraption + 同步 client。 */
     private void tickServerMirror() {
         ServerLevel shadow = getShadow();
         if (shadow == null || contraption == null) return;
-        for (var e : new ArrayList<>(contraption.getBlocks().entrySet())) {
-            BlockPos local = e.getKey();
-            StructureBlockInfo info = e.getValue();
+        // 只掃「會變」的方塊(機器 BE / 作物等隨機刻)；靜態石頭外殼永遠不變，不必每 16 tick 掃。
+        // 大船(2048 方塊,大半石頭)從掃全部 → 只掃機器+作物，大幅省 server tick。
+        for (BlockPos local : dynamicMirrorBlocks()) {
+            StructureBlockInfo info = contraption.getBlocks().get(local);
+            if (info == null) continue;
             BlockPos sp = shadowAnchor.offset(local);
             BlockState ss = shadow.getBlockState(sp);
             // 安全：影子讀到空氣但視覺有方塊 = 影子那格沒載/放置失敗，絕不可把視覺船的方塊鏡射成空氣抹掉
