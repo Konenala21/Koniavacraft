@@ -36,9 +36,9 @@ import java.util.Set;
  */
 public class ShipAssemblyPadBlockEntity extends BlockEntity implements MenuProvider {
 
-    public static final int MAX_FOOTPRINT = 32;   // footprint 單邊上限
-    public static final int MAX_HEIGHT = 32;       // 高度上限
-    public static final int MAX_BASE_BLOCKS = 2048;// 底座 flood-fill 上限
+    public static final int MAX_FOOTPRINT = 48;   // footprint 單邊上限
+    public static final int MAX_HEIGHT = 48;       // 高度上限
+    public static final int MAX_BASE_BLOCKS = 2500;// 底座 flood-fill 上限（覆蓋 48×48）
     public static final int DEFAULT_HEIGHT = 8;    // 沒組裝架時的預設高度
 
     // ContainerData：[0]方塊數 [1]核心數 [2]狀態 [3]盒寬X [4]盒高Y [5]盒深Z

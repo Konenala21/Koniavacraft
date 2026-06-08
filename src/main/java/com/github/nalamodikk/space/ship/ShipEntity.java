@@ -87,6 +87,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     private static final double MAX_SPEED = 0.4;  // 每 tick 最大速度
     private static final double ACCEL = 0.1;       // 朝目標速度的 lerp（慣性感）
     private static final float YAW_LERP = 0.15f;   // 船頭轉向駕駛視角的平滑度
+    private static final float ROLL_RATE = 2.5f;   // A/D 翻滾速度（度/tick）
     public static final int MAX_DRIVERS = 2;        // 駕駛位數量（離核心最近的 N 張椅子）。其餘椅子=乘客
     private static final double SEAT_SIT_HEIGHT = 0.0; // 坐進椅子的高度（坐姿臀部還會往上，0.4 浮太高，可微調）
 
@@ -105,6 +106,9 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     // 點哪張椅子就坐哪張，不再照上船順序。
     private static final EntityDataAccessor<CompoundTag> DATA_SEATS =
             SynchedEntityData.defineId(ShipEntity.class, EntityDataSerializers.COMPOUND_TAG);
+    // roll 不在 vanilla 旋轉同步裡，自己用 synched data 傳給 client（六面飛行的翻滾）
+    private static final EntityDataAccessor<Float> DATA_ROLL =
+            SynchedEntityData.defineId(ShipEntity.class, EntityDataSerializers.FLOAT);
 
     // client 端平滑跟隨 server 廣播位置用（lerpSteps 在 Entity 是 private 無 getter，自己存一份）
     private int lerpSteps;
@@ -316,7 +320,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         }
         // 記住上一 tick 的位置與角度，渲染對位置/yaw 的 partialTick 插值才不會跟碰撞分家（轉向歪）。
         this.setOldPosAndRot();
-        this.rollO = this.roll; // roll 不在 vanilla rot，自記上一 tick 供渲染插值
+        this.rollO = getRoll(); // roll 不在 vanilla rot，自記上一 tick 供渲染插值
 
         if (level().isClientSide) {
             tickLerp(); // server 權威：client 只平滑跟隨 server 廣播的位置，不自己算移動
@@ -446,14 +450,14 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             setYRot(Mth.rotLerp(YAW_LERP, getYRot(), inYaw[primary] - bowLocal));
             setXRot(Mth.lerp(YAW_LERP, getXRot(), Mth.clamp(inPitch[primary], -75f, 75f)));
         }
-        // 前進=船頭(含 pitch)、右=船右(只 pitch 時仍水平)，都用完整姿勢轉 local 軸；上下=世界垂直(跳/疾跑恆定升降)。
+        // A/D → 翻滾(roll，繞船頭軸)。換掉側移：看哪轉哪，側移較少用；全姿勢不自動回正。
+        if (primary >= 0 && s != 0f) setRoll(Mth.wrapDegrees(getRoll() + s * ROLL_RATE));
+        // 前進=船頭(含 pitch+roll)，用完整姿勢轉 local 前向；上下=世界垂直(跳/疾跑恆定升降)。
         Quaternionf q = orientation();
         double bowR = Math.toRadians(bowLocal);
         Vector3f wf = q.transform(new Vector3f(-(float) Math.sin(bowR), 0, (float) Math.cos(bowR)));
-        Vector3f wr = q.transform(new Vector3f(-(float) Math.cos(bowR), 0, -(float) Math.sin(bowR)));
         Vec3 forwardDir = new Vec3(wf.x, wf.y, wf.z);
-        Vec3 rightDir = new Vec3(wr.x, wr.y, wr.z);
-        Vec3 target = forwardDir.scale(f).add(rightDir.scale(s)).add(0, v, 0);
+        Vec3 target = forwardDir.scale(f).add(0, v, 0);
         if (target.lengthSqr() > 1) target = target.normalize();
         target = target.scale(MAX_SPEED);
 
@@ -514,10 +518,9 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         return rotatedWorldPoint(lx, ly, lz);
     }
 
-    // 六面飛行：roll(繞船頭軸)。yaw=getYRot, pitch=getXRot(vanilla 已有), roll 自存(不在 vanilla lerp)。
-    private float roll;
-    public float getRoll() { return roll; }
-    public void setRoll(float r) { this.roll = r; }
+    // 六面飛行：roll(繞船頭軸)。yaw=getYRot, pitch=getXRot(vanilla 已有), roll 走 synched data(不在 vanilla lerp)。
+    public float getRoll() { return getEntityData().get(DATA_ROLL); }
+    public void setRoll(float r) { getEntityData().set(DATA_ROLL, r); }
     private float rollO; // 上一 tick，渲染插值用
 
     /**
@@ -528,14 +531,14 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         return new Quaternionf()
                 .rotateY((float) Math.toRadians(-getYRot()))
                 .rotateX((float) Math.toRadians(getXRot()))
-                .rotateZ((float) Math.toRadians(roll));
+                .rotateZ((float) Math.toRadians(getRoll()));
     }
 
     /** 插值姿勢(渲染用，避免轉動頓)。 */
     public Quaternionf orientation(float partialTick) {
         float yaw   = Mth.rotLerp(partialTick, yRotO, getYRot());
         float pitch = Mth.lerp(partialTick, xRotO, getXRot());
-        float rl    = Mth.lerp(partialTick, rollO, roll);
+        float rl    = Mth.rotLerp(partialTick, rollO, getRoll());
         return new Quaternionf()
                 .rotateY((float) Math.toRadians(-yaw))
                 .rotateX((float) Math.toRadians(pitch))
@@ -1260,6 +1263,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     @Override
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         builder.define(DATA_SEATS, new CompoundTag()); // 座位指派；contraption 走 complex spawn
+        builder.define(DATA_ROLL, 0.0f);
     }
 
     @Override

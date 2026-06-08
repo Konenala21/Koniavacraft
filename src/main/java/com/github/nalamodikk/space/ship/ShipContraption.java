@@ -36,7 +36,7 @@ import java.util.Set;
  */
 public class ShipContraption {
 
-    public static final int MAX_BLOCKS = 512; // naive 渲染階段上限；之後烤 buffer + tier 再開大
+    public static final int MAX_BLOCKS = 2048; // VBO 烤好後放大（原 512 是 naive 渲染暫限）；再大要顧碰撞 VoxelShape/鏡射成本
 
     private final Map<BlockPos, StructureBlockInfo> blocks = new HashMap<>();
     private final Map<BlockPos, CompoundTag> updateTags = new HashMap<>();
