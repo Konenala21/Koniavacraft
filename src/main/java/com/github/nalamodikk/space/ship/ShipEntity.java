@@ -111,6 +111,9 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     // roll 不在 vanilla 旋轉同步裡，自己用 synched data 傳給 client（六面飛行的翻滾）
     private static final EntityDataAccessor<Float> DATA_ROLL =
             SynchedEntityData.defineId(ShipEntity.class, EntityDataSerializers.FLOAT);
+    // 船頭在 local 框的 yaw 偏移(駕駛座朝向)。pitch/roll 要繞「船頭相對軸」轉，不然蓋的方向不同 pitch/roll 會反。
+    private static final EntityDataAccessor<Float> DATA_BOW =
+            SynchedEntityData.defineId(ShipEntity.class, EntityDataSerializers.FLOAT);
 
     // client 端平滑跟隨 server 廣播位置用（lerpSteps 在 Entity 是 private 無 getter，自己存一份）
     private int lerpSteps;
@@ -475,6 +478,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             // 主駕駛視角定船頭：yaw 讓 bow 轉到指向視角；pitch 直接跟駕駛抬/低頭(夾範圍避免翻過頭)。
             setYRot(Mth.rotLerp(YAW_LERP, getYRot(), inYaw[primary] - bowLocal));
             setXRot(Mth.lerp(YAW_LERP, getXRot(), Mth.clamp(inPitch[primary], -75f, 75f)));
+            setBowLocal(bowLocal); // pitch/roll 要繞船頭軸轉，把船頭偏移同步給渲染/碰撞
         }
         // A/D → 翻滾(roll，繞船頭軸)。換掉側移：看哪轉哪，側移較少用；全姿勢不自動回正。
         if (primary >= 0 && s != 0f) setRoll(Mth.wrapDegrees(getRoll() + s * ROLL_RATE));
@@ -547,33 +551,37 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     // 六面飛行：roll(繞船頭軸)。yaw=getYRot, pitch=getXRot(vanilla 已有), roll 走 synched data(不在 vanilla lerp)。
     public float getRoll() { return getEntityData().get(DATA_ROLL); }
     public void setRoll(float r) { getEntityData().set(DATA_ROLL, r); }
+    public float getBowLocal() { return getEntityData().get(DATA_BOW); }
+    public void setBowLocal(float b) { getEntityData().set(DATA_BOW, b); }
     private float rollO; // 上一 tick，渲染插值用
 
     /**
-     * 船的完整 3D 姿勢(四元數)。yaw→pitch→roll 內旋順序。pitch=roll=0 時 = 現有純 yaw 旋轉
-     * (rotateY(-yawRad) 已驗算與舊式一致)，所以加俯仰/翻滾不破壞既有水平行為。
+     * 船的完整 3D 姿勢(四元數)。pitch/roll 繞「船頭相對軸」(bow)轉，故蓋的方向不同也一致。
+     * pitch=roll=0 時 bow 抵銷 = 純 yaw 旋轉(rotateY(-yawRad)，與舊式一致)，不破壞既有水平行為。
      */
     public Quaternionf orientation() {
-        return orientationOf(getYRot(), getXRot(), getRoll());
+        return orientationOf(getYRot(), getXRot(), getRoll(), getBowLocal());
     }
 
-    /** 由 yaw/pitch/roll 組四元數(yaw→pitch→roll 內旋)。yaw=getYRot 用 rotateY(-yawRad) 與舊式一致。 */
-    private static Quaternionf orientationOf(float yaw, float pitch, float roll) {
+    /**
+     * 由 yaw/pitch/roll + bow 組四元數。yaw=getYRot=lookYaw-bow，所以 -yaw-bow = -lookYaw。
+     * = rotateY(-lookYaw)·rotateX(pitch)·rotateZ(roll)·rotateY(bow)：尾端 rotateY(bow) 把 local 對齊到船頭框，
+     * 故 pitch/roll 繞船頭相對軸轉(蓋的方向不同也一致)。pitch=roll=0 時 bow 抵銷 = rotateY(-yaw)，與舊式一致。
+     */
+    private static Quaternionf orientationOf(float yaw, float pitch, float roll, float bow) {
         return new Quaternionf()
-                .rotateY((float) Math.toRadians(-yaw))
+                .rotateY((float) Math.toRadians(-yaw - bow))
                 .rotateX((float) Math.toRadians(pitch))
-                .rotateZ((float) Math.toRadians(roll));
+                .rotateZ((float) Math.toRadians(roll))
+                .rotateY((float) Math.toRadians(bow));
     }
 
-    /** 插值姿勢(渲染用，避免轉動頓)。 */
+    /** 插值姿勢(渲染用，避免轉動頓)。bow 穩定不需插值。 */
     public Quaternionf orientation(float partialTick) {
         float yaw   = Mth.rotLerp(partialTick, yRotO, getYRot());
         float pitch = Mth.lerp(partialTick, xRotO, getXRot());
         float rl    = Mth.rotLerp(partialTick, rollO, getRoll());
-        return new Quaternionf()
-                .rotateY((float) Math.toRadians(-yaw))
-                .rotateX((float) Math.toRadians(pitch))
-                .rotateZ((float) Math.toRadians(rl));
+        return orientationOf(yaw, pitch, rl, getBowLocal());
     }
 
     /** 任意 local 點（可含 +0.5 之類的偏移）轉世界座標：偏移依完整姿勢繞船中心旋轉。 */
@@ -666,7 +674,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         AABB box = e.getBoundingBox();
         Vec3 boxCenter = box.getCenter();
         // T0 = 上一 tick 姿勢(yRotO/xRotO/rollO)，T1 = 這一 tick。用完整姿勢(含 pitch/roll)，碰撞才跟傾斜視覺對齊。
-        Quaternionf q0 = orientationOf(yRotO, xRotO, rollO);
+        Quaternionf q0 = orientationOf(yRotO, xRotO, rollO, getBowLocal());
         Quaternionf q1 = orientation();
         Vec3 lc = worldToLocalAt(boxCenter.x, boxCenter.y, boxCenter.z, xOld, yOld, zOld, q0);
         AABB lb = AABB.ofSize(lc, box.getXsize(), box.getYsize(), box.getZsize());
@@ -1338,6 +1346,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     protected void defineSynchedData(SynchedEntityData.Builder builder) {
         builder.define(DATA_SEATS, new CompoundTag()); // 座位指派；contraption 走 complex spawn
         builder.define(DATA_ROLL, 0.0f);
+        builder.define(DATA_BOW, 0.0f);
     }
 
     @Override
