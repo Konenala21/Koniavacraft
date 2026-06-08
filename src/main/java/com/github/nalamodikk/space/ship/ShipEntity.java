@@ -554,10 +554,15 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
      * (rotateY(-yawRad) 已驗算與舊式一致)，所以加俯仰/翻滾不破壞既有水平行為。
      */
     public Quaternionf orientation() {
+        return orientationOf(getYRot(), getXRot(), getRoll());
+    }
+
+    /** 由 yaw/pitch/roll 組四元數(yaw→pitch→roll 內旋)。yaw=getYRot 用 rotateY(-yawRad) 與舊式一致。 */
+    private static Quaternionf orientationOf(float yaw, float pitch, float roll) {
         return new Quaternionf()
-                .rotateY((float) Math.toRadians(-getYRot()))
-                .rotateX((float) Math.toRadians(getXRot()))
-                .rotateZ((float) Math.toRadians(getRoll()));
+                .rotateY((float) Math.toRadians(-yaw))
+                .rotateX((float) Math.toRadians(pitch))
+                .rotateZ((float) Math.toRadians(roll));
     }
 
     /** 插值姿勢(渲染用，避免轉動頓)。 */
@@ -660,19 +665,22 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         if (shape.isEmpty()) return worldMotion;
         AABB box = e.getBoundingBox();
         Vec3 boxCenter = box.getCenter();
-        // T0 = 上一 tick 變換(xOld/yRotO)，T1 = 這一 tick(getX/getYRot)
-        Vec3 lc = worldToLocalAt(boxCenter.x, boxCenter.y, boxCenter.z, xOld, yOld, zOld, yRotO);
+        // T0 = 上一 tick 姿勢(yRotO/xRotO/rollO)，T1 = 這一 tick。用完整姿勢(含 pitch/roll)，碰撞才跟傾斜視覺對齊。
+        Quaternionf q0 = orientationOf(yRotO, xRotO, rollO);
+        Quaternionf q1 = orientation();
+        Vec3 lc = worldToLocalAt(boxCenter.x, boxCenter.y, boxCenter.z, xOld, yOld, zOld, q0);
         AABB lb = AABB.ofSize(lc, box.getXsize(), box.getYsize(), box.getZsize());
         if (!lb.intersects(contraption.bounds().inflate(1.0))) return worldMotion; // 不在船範圍：不接管
 
         Vec3 P = e.position();
-        Vec3 L0 = worldToLocalAt(P.x, P.y, P.z, xOld, yOld, zOld, yRotO);
-        Vec3 lm = rotateVec(worldMotion.x, worldMotion.y, worldMotion.z, -yRotO); // 自己的移動轉進 local
-        double my = lm.y; if (my != 0) my = shape.collide(Direction.Axis.Y, lb, my); lb = lb.move(0, my, 0);
-        double mx = lm.x; if (mx != 0) mx = shape.collide(Direction.Axis.X, lb, mx); lb = lb.move(mx, 0, 0);
-        double mz = lm.z; if (mz != 0) mz = shape.collide(Direction.Axis.Z, lb, mz);
+        Vec3 L0 = worldToLocalAt(P.x, P.y, P.z, xOld, yOld, zOld, q0);
+        Vector3f lmv = q0.conjugate(new Quaternionf()).transform(
+                new Vector3f((float) worldMotion.x, (float) worldMotion.y, (float) worldMotion.z));
+        double my = lmv.y; if (my != 0) my = shape.collide(Direction.Axis.Y, lb, my); lb = lb.move(0, my, 0);
+        double mx = lmv.x; if (mx != 0) mx = shape.collide(Direction.Axis.X, lb, mx); lb = lb.move(mx, 0, 0);
+        double mz = lmv.z; if (mz != 0) mz = shape.collide(Direction.Axis.Z, lb, mz);
         Vec3 newLocal = L0.add(mx, my, mz);
-        Vec3 newWorld = localToWorldAt(newLocal.x, newLocal.y, newLocal.z, getX(), getY(), getZ(), getYRot());
+        Vec3 newWorld = localToWorldAt(newLocal.x, newLocal.y, newLocal.z, getX(), getY(), getZ(), q1);
         Vec3 result = newWorld.subtract(P);
         // 旋轉 round-trip 在沒實際被擋的軸留下 ~1e-10 epsilon；vanilla Entity.move 用精確 != 判碰撞，
         // 會把這 epsilon 當成撞牆 → 每 tick 歸零玩家速度 → 走/跳「黏黏的」。差距極小的軸 snap 回 desired。
@@ -682,17 +690,18 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         return new Vec3(rx, ry, rz);
     }
 
-    /** 世界點 → 指定變換(pos,yaw)的 local 框。 */
-    private Vec3 worldToLocalAt(double wx, double wy, double wz, double px, double py, double pz, float yaw) {
+    /** 世界點 → 指定變換(pos + 姿勢 q)的 local 框。 */
+    private Vec3 worldToLocalAt(double wx, double wy, double wz, double px, double py, double pz, Quaternionf q) {
         Vec3 c = centerOffset();
-        Vec3 r = rotateVec(wx - px, wy - py, wz - pz, -yaw);
+        Vector3f r = q.conjugate(new Quaternionf()).transform(
+                new Vector3f((float) (wx - px), (float) (wy - py), (float) (wz - pz)));
         return new Vec3(r.x + c.x, r.y + c.y, r.z + c.z);
     }
 
-    /** local 框 → 指定變換(pos,yaw)的世界點。 */
-    private Vec3 localToWorldAt(double lx, double ly, double lz, double px, double py, double pz, float yaw) {
+    /** local 框 → 指定變換(pos + 姿勢 q)的世界點。 */
+    private Vec3 localToWorldAt(double lx, double ly, double lz, double px, double py, double pz, Quaternionf q) {
         Vec3 c = centerOffset();
-        Vec3 r = rotateVec(lx - c.x, ly - c.y, lz - c.z, yaw);
+        Vector3f r = q.transform(new Vector3f((float) (lx - c.x), (float) (ly - c.y), (float) (lz - c.z)));
         return new Vec3(px + r.x, py + r.y, pz + r.z);
     }
 
