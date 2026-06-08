@@ -755,29 +755,34 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         Matrix3d rot = new Matrix3d().set(q0.conjugate(new Quaternionf()));
         OrientedBB obb = new OrientedBB(lb.getCenter(), extents, rot);
         float maxStep = (float) e.maxUpStep();
-        // pass 1：連續碰撞 + 沿表面滑(去法線分量)。面/牆擋得住，但角落(三面)會在這 tick 內沿一面滑進去，
-        // collideMany 開頭沒偵測到穿入(那時還沒進去) → 不推出。
-        ContinuousOBBCollider.CollisionResponse res =
-                ContinuousOBBCollider.collideMany(colliders, dense, obb, lmv, maxStep, false);
-        double t = res.temporalResponse;
-        Vec3 toImpact = lmv.scale(t);
-        Vec3 remaining = lmv.scale(1.0 - t);
-        Vec3 slid = remaining;
-        Vec3 n = res.normal;
-        if (n.lengthSqr() > 1.0e-9) {
-            Vec3 nn = n.normalize();
-            double into = remaining.dot(nn);
-            if (into < 0) slid = remaining.subtract(nn.scale(into));
-        }
-        Vec3 collided = toImpact.add(slid).add(res.collisionResponse);
-        // pass 2：穿入解析。移到新位置，零移動的 collideMany 拿 collisionResponse(MTV 推出)，把 slide
-        // 造成的角落穿入當場推回表面。迭代幾次(角落要推多軸)。
-        for (int i = 0; i < 3; i++) {
+        // 子步進：把這 tick 的移動切 N 小段，每段 連續碰撞+沿面滑+穿入推出。角落「切角」是因為一步斜跨過角點，
+        // 小步走會在跨過前先重疊到 → 抓得住。每段後再做穿入解析 pass 把殘餘穿入推回表面。
+        final int N = 4;
+        Vec3 sub = lmv.scale(1.0 / N);
+        Vec3 collided = Vec3.ZERO;
+        for (int s = 0; s < N; s++) {
             obb.setCenter(lb.getCenter().add(collided));
-            ContinuousOBBCollider.CollisionResponse pr =
-                    ContinuousOBBCollider.collideMany(colliders, dense, obb, Vec3.ZERO, 0f, false);
-            if (pr.collisionResponse.lengthSqr() < 1.0e-10) break;
-            collided = collided.add(pr.collisionResponse);
+            ContinuousOBBCollider.CollisionResponse res =
+                    ContinuousOBBCollider.collideMany(colliders, dense, obb, sub, maxStep, false);
+            double t = res.temporalResponse;
+            Vec3 toImpact = sub.scale(t);
+            Vec3 remaining = sub.scale(1.0 - t);
+            Vec3 slid = remaining;
+            Vec3 n = res.normal;
+            if (n.lengthSqr() > 1.0e-9) {
+                Vec3 nn = n.normalize();
+                double into = remaining.dot(nn);
+                if (into < 0) slid = remaining.subtract(nn.scale(into));
+            }
+            collided = collided.add(toImpact).add(slid).add(res.collisionResponse);
+            // 穿入解析：零移動 collideMany 拿 MTV 推出殘餘穿入
+            for (int i = 0; i < 3; i++) {
+                obb.setCenter(lb.getCenter().add(collided));
+                ContinuousOBBCollider.CollisionResponse pr =
+                        ContinuousOBBCollider.collideMany(colliders, dense, obb, Vec3.ZERO, 0f, false);
+                if (pr.collisionResponse.lengthSqr() < 1.0e-10) break;
+                collided = collided.add(pr.collisionResponse);
+            }
         }
         return collided;
     }
