@@ -702,19 +702,20 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         // T0 = 上一 tick 姿勢(yRotO/xRotO/rollO)，T1 = 這一 tick。用完整姿勢(含 pitch/roll)，碰撞才跟傾斜視覺對齊。
         Quaternionf q0 = orientationOf(yRotO, xRotO, rollO, getBowLocal());
         Quaternionf q1 = orientation();
-        // 玩家盒 8 角轉進 local 框取外接 AABB：船傾斜時同尺寸盒會偏小、漏抓方塊 → 玩家穿過去。
-        // 外接盒在傾斜時自動放大，保證抓得到甲板(略過度碰撞，但不穿)。直立時 ≈ 原盒。
-        AABB lb = localEnclosingBox(box, xOld, yOld, zOld, q0);
+        // 外接盒(玩家 8 角轉進 local 取 AABB)只用來「廣相位 gate」(判斷接近船)。傾斜時它會放大不漏。
+        AABB lbEnclose = localEnclosingBox(box, xOld, yOld, zOld, q0);
         Vector3f lmv = q0.conjugate(new Quaternionf()).transform(
                 new Vector3f((float) worldMotion.x, (float) worldMotion.y, (float) worldMotion.z));
         // 用「掃掠盒」(含這 tick 移動)判斷是否接近船：快速摔落時 tick 開始玩家還在船上方 >1 格，
         // 只看當前盒會判定「不在船範圍」直接放行 → 一個 tick 摔穿過去。掃掠盒會碰到甲板 → 正常接管擋住。
-        if (!lb.expandTowards(lmv.x, lmv.y, lmv.z).intersects(contraption.bounds().inflate(1.0))) return worldMotion;
+        if (!lbEnclose.expandTowards(lmv.x, lmv.y, lmv.z).intersects(contraption.bounds().inflate(1.0))) return worldMotion;
 
         Vec3 P = e.position();
         Vec3 L0 = worldToLocalAt(P.x, P.y, P.z, xOld, yOld, zOld, q0);
-        // 用 vanilla 的 collideBoundingBox 對船的合併形狀做碰撞(跟 Create 同招)：robust 多形狀碰撞，
-        // 自己刻的逐軸近似在邊角/尖端會漏。傳 List.of(shape) → 只對船形狀碰，world border 在 local 原點附近不觸發。
+        // 實際碰撞用「玩家原尺寸盒」(放在 local 中心)，不是外接盒：外接盒在 yaw 旋轉時比玩家大(45°大42%)，
+        // 每 tick 把玩家往外推 → 走路抽搐/被慢慢推走。原尺寸盒不過度推。傾斜的精準碰撞留給 OBB(階段3)。
+        AABB lb = AABB.ofSize(lbEnclose.getCenter(), box.getXsize(), box.getYsize(), box.getZsize());
+        // 用 vanilla collideBoundingBox 對船形狀碰撞(跟 Create 同招，robust)。world border 在 local 原點附近不觸發。
         Vec3 lm = new Vec3(lmv.x, lmv.y, lmv.z);
         Vec3 collided = Entity.collideBoundingBox(e, lm, lb, level(), java.util.List.of(shape));
         Vec3 newLocal = L0.add(collided.x, collided.y, collided.z);
