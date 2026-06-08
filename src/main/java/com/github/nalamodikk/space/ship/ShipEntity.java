@@ -905,14 +905,28 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         return s.getBlock() instanceof ShipAssemblyGantryBlock;
     }
 
-    // hitbox：實體在船中心，所以對稱盒貼合船的實際大小。寬取 footprint 較大邊（方形盒），高=船高。
+    // getDimensions 仍給一個合理尺寸(部分 vanilla 邏輯會用)，但真正的 hitbox 由 makeBoundingBox 決定(下方)。
     @Override
     public EntityDimensions getDimensions(Pose pose) {
         if (contraption == null) return super.getDimensions(pose);
         AABB b = contraption.bounds();
-        float w = (float) Math.max(Math.max(b.maxX - b.minX, b.maxZ - b.minZ), 1.0);
+        double xs = b.maxX - b.minX, zs = b.maxZ - b.minZ;
+        float w = (float) Math.max(Math.sqrt(xs * xs + zs * zs), 1.0);
         float h = (float) Math.max(b.maxY - b.minY, 1.0);
         return EntityDimensions.scalable(w, h);
+    }
+
+    // hitbox 用「以船 3D 中心為中心、邊長 = 3D 對角線」的立方體：軸對齊盒在船 yaw/pitch/roll 傾斜時包不住
+    // 旋轉後的角落(實體 AABB 是 pick 與碰撞 mixin 找船的依據) → 點不到駕駛位、角落方塊穿過去。立方體任何姿勢都覆蓋。
+    // (寬鬆只是廣相位；準心真正打哪個方塊由 pickLocal、碰撞由 applyContraptionMovement 的窄相位決定。)
+    @Override
+    protected AABB makeBoundingBox() {
+        if (contraption == null) return super.makeBoundingBox();
+        AABB b = contraption.bounds();
+        double xs = b.maxX - b.minX, ys = b.maxY - b.minY, zs = b.maxZ - b.minZ;
+        double half = Math.max(Math.sqrt(xs * xs + ys * ys + zs * zs), 1.0) / 2.0;
+        double cy = getY() + ys / 2.0; // 實體在船底(minY)，船的垂直中心要 +yspan/2
+        return new AABB(getX() - half, cy - half, getZ() - half, getX() + half, cy + half, getZ() + half);
     }
 
     // ── 騎乘 ────────────────────────────────────────────────────────────────
