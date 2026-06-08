@@ -1,5 +1,6 @@
 package com.github.nalamodikk.common.item.equipment.armor;
 
+import com.github.nalamodikk.client.renderer.armor.ManaAlloyArmorClientExtension;
 import com.github.nalamodikk.common.item.equipment.ManaArmorItem;
 import com.github.nalamodikk.register.ModDataComponents;
 import net.minecraft.ChatFormatting;
@@ -8,8 +9,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public class ManaAlloyLeggingsItem extends ManaArmorItem {
 
@@ -19,6 +22,13 @@ public class ManaAlloyLeggingsItem extends ManaArmorItem {
 
     public ManaAlloyLeggingsItem(Holder<ArmorMaterial> material, Properties properties) {
         super(material, Type.LEGGINGS, BASE_MAX_MANA, BASE_ARMOR, MAX_UPGRADE_SLOTS, properties);
+    }
+
+    /** 用自訂 bedrock 模型取代 vanilla 護腿:回傳空模型隱藏 vanilla,實際模型由 ManaAlloyArmorLayer 畫。 */
+    @Override
+    @SuppressWarnings("removal")
+    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
+        consumer.accept(ManaAlloyArmorClientExtension.INSTANCE);
     }
 
     @Override

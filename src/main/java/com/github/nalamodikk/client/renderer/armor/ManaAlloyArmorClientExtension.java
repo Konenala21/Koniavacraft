@@ -13,10 +13,10 @@ import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 
 /**
- * 魔力合金頭盔的 client 擴充:{@code getHumanoidArmorModel} 回傳一個「空的」HumanoidModel,
- * 讓 vanilla 盔甲層畫不出東西(頭盔被隱藏),真正的新模型由 {@link ManaAlloyArmorLayer} 畫。
+ * 魔力合金盔甲(四件共用)的 client 擴充:{@code getHumanoidArmorModel} 回傳一個「空的」HumanoidModel,
+ * 讓 vanilla 盔甲層畫不出東西(該件被隱藏),真正的新模型由 {@link ManaAlloyArmorLayer} 依槽位畫。
  *
- * (放在 client 套件,只在 item 的 initializeClient 內被引用,不會在伺服端載入。)
+ * (放在 client 套件,只在各 item 的 initializeClient 內被引用,不會在伺服端載入。)
  */
 public final class ManaAlloyArmorClientExtension implements IClientItemExtensions {
 

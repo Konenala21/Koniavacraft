@@ -1,5 +1,6 @@
 package com.github.nalamodikk.common.item.equipment.boots;
 
+import com.github.nalamodikk.client.renderer.armor.ManaAlloyArmorClientExtension;
 import com.github.nalamodikk.common.item.equipment.ManaArmorItem;
 import com.github.nalamodikk.common.item.equipment.armor.ArmorCapacityUpgradeItem;
 import com.github.nalamodikk.common.item.equipment.armor.ArmorDefenseUpgradeItem;
@@ -14,8 +15,10 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.neoforged.neoforge.client.extensions.common.IClientItemExtensions;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public class ManaAlloyBootsItem extends ManaArmorItem {
 
@@ -29,6 +32,13 @@ public class ManaAlloyBootsItem extends ManaArmorItem {
 
     public ManaAlloyBootsItem(Holder<ArmorMaterial> material, Properties properties) {
         super(material, Type.BOOTS, BASE_MAX_MANA, BASE_ARMOR, MAX_UPGRADE_SLOTS, properties);
+    }
+
+    /** 用自訂 bedrock 模型取代 vanilla 靴子:回傳空模型隱藏 vanilla,實際模型由 ManaAlloyArmorLayer 畫。 */
+    @Override
+    @SuppressWarnings("removal")
+    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
+        consumer.accept(ManaAlloyArmorClientExtension.INSTANCE);
     }
 
     // ── ManaArmorItem abstract impl ──────────────────────────────────────────
