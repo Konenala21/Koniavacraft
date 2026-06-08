@@ -355,6 +355,34 @@ public class ShipAssemblyGameTests {
     }
 
     /**
+     * 傾斜船(pitch=30)的牆擋得住朝它走的實體：走 OBB 連續碰撞路徑。直接呼叫 applyContraptionMovement。
+     * 沿「local +X」方向(牆的法線)往牆走，OBB 應把移動大幅擋下(toImpact 後沿面滑掉法線分量)。
+     */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
+    public static void tiltedShipBlocksWalkOBB(GameTestHelper helper) {
+        ShipContraption ship = new ShipContraption();
+        BlockState stone = Blocks.STONE.defaultBlockState();
+        for (int y = 0; y < 2; y++) for (int z = 0; z < 2; z++) ship.addBlock(new BlockPos(0, y, z), stone, null);
+        ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), helper.getLevel());
+        entity.setContraption(ship);
+        BlockPos origin = helper.absolutePos(new BlockPos(4, 3, 4));
+        entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
+        entity.setXRot(30f); // 傾斜 → 走 OBB 路徑
+        entity.setOldPosAndRot();
+
+        Player probe = helper.makeMockPlayer(GameType.SURVIVAL);
+        net.minecraft.world.phys.Vec3 face = entity.rotatedWorldPoint(0.0, 1.0, 1.0);   // local x=0 面中心
+        net.minecraft.world.phys.Vec3 xdir = entity.rotatedWorldPoint(1.0, 1.0, 1.0).subtract(face).normalize(); // local +X 的世界方向
+        net.minecraft.world.phys.Vec3 pc = face.subtract(xdir.scale(0.5)); // probe 中心放面 -X 側 0.5
+        probe.setPos(pc.x, pc.y - 0.9, pc.z); // setPos 用腳底(中心 -0.9)
+        net.minecraft.world.phys.Vec3 motion = xdir.scale(1.0); // 朝牆走
+        net.minecraft.world.phys.Vec3 result = entity.applyContraptionMovement(probe, motion);
+        if (result.length() > 0.7)
+            helper.fail("tilted ship OBB did not block walk into wall (|motion|=1.0 -> |result|=" + result.length() + ")");
+        helper.succeed();
+    }
+
+    /**
      * 效能量測：組裝的兩個 mass-setBlock 熱點 — addToWorld(= placeInShadow 塞 2000 方塊) 與
      * removeFromWorld 等效(移除 2000 方塊)。組裝凍住若是 server 端，數字會在這裡現形。印 log。
      */

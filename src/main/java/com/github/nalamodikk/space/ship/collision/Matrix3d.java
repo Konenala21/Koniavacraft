@@ -16,6 +16,16 @@ public class Matrix3d {
 		return this;
 	}
 
+	// Set this (row-major: transform x' = x*m00 + y*m01 + z*m02) from a JOML quaternion.
+	// JOML Matrix3f is column-major (mCR = column C, row R), so map by transposing the layout.
+	public Matrix3d set(org.joml.Quaternionfc q) {
+		org.joml.Matrix3f j = new org.joml.Matrix3f().set(q);
+		m00 = j.m00; m01 = j.m10; m02 = j.m20;
+		m10 = j.m01; m11 = j.m11; m12 = j.m21;
+		m20 = j.m02; m21 = j.m12; m22 = j.m22;
+		return this;
+	}
+
 	public Matrix3d asXRotation(float radians) {
 		asIdentity();
 		if (radians == 0)

@@ -67,6 +67,10 @@ import net.minecraft.world.phys.shapes.BitSetDiscreteVoxelShape;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import com.github.nalamodikk.space.ship.collision.CollisionList;
+import com.github.nalamodikk.space.ship.collision.ContinuousOBBCollider;
+import com.github.nalamodikk.space.ship.collision.Matrix3d;
+import com.github.nalamodikk.space.ship.collision.OrientedBB;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.jetbrains.annotations.Nullable;
 
@@ -715,9 +719,14 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         // 實際碰撞用「玩家原尺寸盒」(放在 local 中心)，不是外接盒：外接盒在 yaw 旋轉時比玩家大(45°大42%)，
         // 每 tick 把玩家往外推 → 走路抽搐/被慢慢推走。原尺寸盒不過度推。傾斜的精準碰撞留給 OBB(階段3)。
         AABB lb = AABB.ofSize(lbEnclose.getCenter(), box.getXsize(), box.getYsize(), box.getZsize());
-        // 用 vanilla collideBoundingBox 對船形狀碰撞(跟 Create 同招，robust)。world border 在 local 原點附近不觸發。
         Vec3 lm = new Vec3(lmv.x, lmv.y, lmv.z);
-        Vec3 collided = Entity.collideBoundingBox(e, lm, lb, level(), java.util.List.of(shape));
+        // 傾斜(pitch/roll)時甲板/牆是斜的，軸對齊盒對不準 → 穿/陷。走 OBB 連續碰撞(移植自 Create)。
+        // 水平(只 yaw)時甲板是平的，vanilla collideBoundingBox 就 robust，沿用(快、已驗)。
+        boolean tilted = Math.abs(getXRot()) > 0.01f || Math.abs(getRoll()) > 0.01f
+                || Math.abs(xRotO) > 0.01f || Math.abs(rollO) > 0.01f;
+        Vec3 collided = tilted
+                ? obbCollideLocal(e, box, lb, lm, q0, shape)
+                : Entity.collideBoundingBox(e, lm, lb, level(), java.util.List.of(shape));
         Vec3 newLocal = L0.add(collided.x, collided.y, collided.z);
         Vec3 newWorld = localToWorldAt(newLocal.x, newLocal.y, newLocal.z, getX(), getY(), getZ(), q1);
         Vec3 result = newWorld.subtract(P);
@@ -727,6 +736,33 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         double ry = Math.abs(result.y - worldMotion.y) < 1.0e-4 ? worldMotion.y : result.y;
         double rz = Math.abs(result.z - worldMotion.z) < 1.0e-4 ? worldMotion.z : result.z;
         return new Vec3(rx, ry, rz);
+    }
+
+    /**
+     * 傾斜船的 OBB 連續碰撞(用移植自 Create 的 ContinuousOBBCollider)：colliders = 船形狀的軸對齊方塊盒，
+     * OBB = 玩家盒在 local 框被船姿勢逆轉(q0.conjugate)的有向盒。回傳 local 框的碰撞後位移(collide-and-slide)。
+     * lmv 已是 local 框的移動。doHorizontalPass=false(Create 對有垂直旋轉的 contraption 就傳 false)。
+     */
+    private Vec3 obbCollideLocal(Entity e, AABB box, AABB lb, Vec3 lmv, Quaternionf q0, VoxelShape shape) {
+        CollisionList colliders = new CollisionList();
+        shape.forAllBoxes(new CollisionList.Populate(colliders));
+        Vec3 extents = new Vec3(box.getXsize() / 2, box.getYsize() / 2, box.getZsize() / 2);
+        Matrix3d rot = new Matrix3d().set(q0.conjugate(new Quaternionf()));
+        OrientedBB obb = new OrientedBB(lb.getCenter(), extents, rot);
+        ContinuousOBBCollider.CollisionResponse res = ContinuousOBBCollider.collideMany(
+                colliders, new CollisionList(), obb, lmv, (float) e.maxUpStep(), false);
+        // collide-and-slide：移到撞擊點(temporal) + 剩餘移動沿表面滑(去掉法線分量) + 推出穿入(collisionResponse)。
+        double t = res.temporalResponse;
+        Vec3 toImpact = lmv.scale(t);
+        Vec3 remaining = lmv.scale(1.0 - t);
+        Vec3 slid = remaining;
+        Vec3 n = res.normal;
+        if (n.lengthSqr() > 1.0e-9) {
+            Vec3 nn = n.normalize();
+            double into = remaining.dot(nn);
+            if (into < 0) slid = remaining.subtract(nn.scale(into)); // 只去掉「往表面內」的分量，保留沿面滑動
+        }
+        return toImpact.add(slid).add(res.collisionResponse);
     }
 
     /** 把世界軸對齊盒的 8 個角轉進指定姿勢的 local 框，取外接 AABB。傾斜時盒會放大 → 碰撞不漏抓(不穿模)。 */
