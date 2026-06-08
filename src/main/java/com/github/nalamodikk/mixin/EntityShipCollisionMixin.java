@@ -2,6 +2,7 @@ package com.github.nalamodikk.mixin;
 
 import com.github.nalamodikk.space.ship.ShipEntity;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Mixin;
@@ -24,6 +25,9 @@ public class EntityShipCollisionMixin {
     private void koniava$collideWithShips(Vec3 desired, CallbackInfoReturnable<Vec3> cir) {
         Entity self = (Entity) (Object) this;
         if (self instanceof ShipEntity) return; // 船自己不走這套（船的碰撞是 resolveTerrain）
+        // 玩家移動是客戶端權威：只在客戶端對自己的玩家算碰撞。伺服器端再算一次會跟客戶端打架（server input =
+        // client output，又把站好的玩家往上/外推）→ 客戶端站甲板、伺服器彈出去 → desync。Create 也跳過 server 玩家。
+        if (self instanceof Player && !self.level().isClientSide) return;
 
         Vec3 motion = cir.getReturnValue();
         AABB box = self.getBoundingBox();

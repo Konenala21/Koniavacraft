@@ -2,6 +2,7 @@ package com.github.nalamodikk.space.ship;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -21,6 +22,8 @@ public class ShipDeckCarryHandler {
         Entity e = event.getEntity();
         if (e instanceof ShipEntity) return;
         if (e.isPassenger()) return; // 坐在座位上的乘客不 carry（positionRider 處理）
+        // 玩家移動客戶端權威：伺服器端玩家不在這裡推/設 onGround（會跟客戶端打架 → desync）。只客戶端的玩家做。
+        if (e instanceof Player && !e.level().isClientSide) return;
 
         // 跟船走 + 撞牆 已整合進 EntityShipCollisionMixin 的 applyContraptionMovement（相對運動碰撞）。
         // 這裡留 resolveOverlap 當保險（深陷時推出）+ 站甲板時明確設 onGround/清 fallDistance（照 Create）。
