@@ -738,10 +738,10 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         // 每 tick 把玩家往外推 → 走路抽搐/被慢慢推走。原尺寸盒不過度推。傾斜的精準碰撞留給 OBB(階段3)。
         AABB lb = AABB.ofSize(lbEnclose.getCenter(), box.getXsize(), box.getYsize(), box.getZsize());
         Vec3 lm = new Vec3(lmv.x, lmv.y, lmv.z);
-        // 只有「明顯傾斜(>10°)」才走 OBB。微斜(停著的船常帶幾度)當水平用 vanilla collideBoundingBox：
-        // 它的垂直擋住一致(每 tick 都生效)，OBB 在斜甲板上每隔一 tick 才擋 → onGround 跳 → 速度震盪 → 阻力/抽搐。
-        // collideBoundingBox 對樓梯/半磚也 robust、掃掠不 tunnel。OBB 只留給真的大幅傾斜(上不了船那種)。
-        final float TILT_DEG = 10f;
+        // 傾斜船(>2°)走 OBB：collideBoundingBox 處理不了傾斜的「牆」(世界對齊玩家 vs local 框轉過的牆 → 穿)。
+        // 之前提到 10° 是為了避開 OBB 在斜甲板的 onGround 跳；但有了人工重力(重力沿 local-down)後，垂直移動是
+        // 純 local-down → OBB 垂直擋住一致、不跳。只有近乎水平(<2°)才用 collideBoundingBox(對樓梯/半磚 robust)。
+        final float TILT_DEG = 2f;
         boolean tilted = Math.abs(getXRot()) > TILT_DEG || Math.abs(getRoll()) > TILT_DEG
                 || Math.abs(xRotO) > TILT_DEG || Math.abs(rollO) > TILT_DEG;
         Vec3 collided = tilted
