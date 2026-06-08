@@ -617,7 +617,12 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             BlockPos lp = e.getKey();
             BlockState st = e.getValue().state();
             VoxelShape cs = st.getCollisionShape(EmptyBlockGetter.INSTANCE, lp);
-            if (cs.isEmpty()) continue;
+            if (cs.isEmpty()) {
+                // 機器(EntityBlock)碰撞常依賴 BE，用 EmptyBlockGetter 查到空殼 → 站上去會穿模掉下去。
+                // 補成滿格(機器都是實心方塊)。純裝飾(火把/告示)的空碰撞才真的略過。
+                if (st.getBlock() instanceof EntityBlock) grid.fill(lp.getX() - minX, lp.getY() - minY, lp.getZ() - minZ);
+                continue;
+            }
             if (st.isCollisionShapeFullBlock(EmptyBlockGetter.INSTANCE, lp)) {
                 grid.fill(lp.getX() - minX, lp.getY() - minY, lp.getZ() - minZ);
             } else {
@@ -820,22 +825,32 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         for (BlockPos local : hullBlocks()) {
             // 用旋轉後的世界角落（船會轉），碰撞用軸對齊 1x1 近似（夠用，不做 OBB）
             Vec3 c = rotatedWorldCorner(local.getX(), local.getY(), local.getZ());
-            double x0 = c.x + dx, y0 = c.y + dy, z0 = c.z + dz;
-            AABB box = new AABB(x0, y0, z0, x0 + 1, y0 + 1, z0 + 1).deflate(0.06);
-            int minX = Mth.floor(box.minX), maxX = Mth.floor(box.maxX);
-            int minY = Mth.floor(box.minY), maxY = Mth.floor(box.maxY);
-            int minZ = Mth.floor(box.minZ), maxZ = Mth.floor(box.maxZ);
-            for (int bx = minX; bx <= maxX; bx++)
-                for (int by = minY; by <= maxY; by++)
-                    for (int bz = minZ; bz <= maxZ; bz++) {
-                        BlockPos bp = new BlockPos(bx, by, bz);
-                        BlockState s = level().getBlockState(bp);
-                        if (s.isAir() || isShipScaffolding(s)) continue; // 自己的發射台結構不擋船
-                        var shape = s.getCollisionShape(level(), bp);
-                        if (shape.isEmpty()) continue;
-                        if (box.intersects(shape.bounds().move(bx, by, bz))) return true;
-                    }
+            AABB newBox = new AABB(c.x + dx, c.y + dy, c.z + dz, c.x + dx + 1, c.y + dy + 1, c.z + dz + 1).deflate(0.06);
+            if (!boxHitsTerrain(newBox)) continue;
+            // 新位置撞到地形。但若這方塊「現在」就已嵌在地形裡(剛組裝卡地板/嵌進山)，
+            // 不算擋 → 讓船能脫離，否則任何方向都撞、永遠卡死。只擋「本來沒撞、移過去才撞」的真碰撞。
+            AABB curBox = new AABB(c.x, c.y, c.z, c.x + 1, c.y + 1, c.z + 1).deflate(0.06);
+            if (boxHitsTerrain(curBox)) continue;
+            return true;
         }
+        return false;
+    }
+
+    /** 軸對齊盒是否撞到世界實心方塊(忽略自己的發射台結構)。 */
+    private boolean boxHitsTerrain(AABB box) {
+        int minX = Mth.floor(box.minX), maxX = Mth.floor(box.maxX);
+        int minY = Mth.floor(box.minY), maxY = Mth.floor(box.maxY);
+        int minZ = Mth.floor(box.minZ), maxZ = Mth.floor(box.maxZ);
+        for (int bx = minX; bx <= maxX; bx++)
+            for (int by = minY; by <= maxY; by++)
+                for (int bz = minZ; bz <= maxZ; bz++) {
+                    BlockPos bp = new BlockPos(bx, by, bz);
+                    BlockState s = level().getBlockState(bp);
+                    if (s.isAir() || isShipScaffolding(s)) continue; // 自己的發射台結構不擋船
+                    var shape = s.getCollisionShape(level(), bp);
+                    if (shape.isEmpty()) continue;
+                    if (box.intersects(shape.bounds().move(bx, by, bz))) return true;
+                }
         return false;
     }
 
