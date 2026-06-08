@@ -863,6 +863,36 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         }
     }
 
+    /**
+     * 防穿安全網（照 Create savePlayerFromClipping）：從實體腳部四角往「世界下方」射線打船的碰撞形狀，
+     * 找到甲板表面。實體若已穿到表面下(每-tick 碰撞漏抓:漂移/角落/部分方塊)，就拉回表面上、歸零下墜速度。
+     * 這是 catch-all,補碰撞的所有漏洞。回傳是否有拉回。
+     */
+    public boolean snapToDeckSurface(Entity e) {
+        VoxelShape shape = localCollisionShape();
+        if (shape.isEmpty()) return false;
+        AABB box = e.getBoundingBox().deflate(0.2, 0, 0.2); // 縮水平避免邊緣誤判(照 Create deflate 1/4)
+        double up = e.maxUpStep() + 0.5;
+        double feetY = box.minY;
+        double bestSurfaceY = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < 4; i++) {
+            double cx = (i / 2 == 0) ? box.minX : box.maxX;
+            double cz = (i % 2 == 0) ? box.minZ : box.maxZ;
+            Vec3 sL = worldToLocalPoint(cx, feetY + up, cz);   // 腳上方(世界 up)轉進 local
+            Vec3 eL = worldToLocalPoint(cx, feetY - 1.0, cz);  // 腳下方 1 格
+            BlockHitResult hit = shape.clip(sL, eL, BlockPos.ZERO);
+            if (hit == null || hit.getType() == net.minecraft.world.phys.HitResult.Type.MISS) continue;
+            Vec3 hw = rotatedWorldPoint(hit.getLocation().x, hit.getLocation().y, hit.getLocation().z);
+            if (hw.y > bestSurfaceY) bestSurfaceY = hw.y;
+        }
+        if (bestSurfaceY > feetY + 1.0e-3) { // 表面在腳上方 = 穿到下面了 → 拉回
+            e.setPos(e.getX(), bestSurfaceY, e.getZ());
+            if (e.getDeltaMovement().y < 0) e.setDeltaMovement(e.getDeltaMovement().x, 0, e.getDeltaMovement().z);
+            return true;
+        }
+        return false;
+    }
+
     /** 實體是否「站在」這艘船上（腳底正下方有船的方塊）。用來決定要不要 carry。 */
     public boolean isSupporting(Entity e) {
         VoxelShape shape = localCollisionShape();

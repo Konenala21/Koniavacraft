@@ -524,6 +524,29 @@ public class ShipAssemblyGameTests {
         helper.succeed();
     }
 
+    /** 防穿安全網：把 probe 放到甲板下面(穿模)，snapToDeckSurface 應把它拉回表面上。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
+    public static void safetyNetSnapsClippedEntity(GameTestHelper helper) {
+        ShipContraption ship = new ShipContraption();
+        BlockState quartz = Blocks.QUARTZ_BLOCK.defaultBlockState();
+        for (int x = 0; x < 5; x++) for (int z = 0; z < 5; z++) ship.addBlock(new BlockPos(x, 0, z), quartz, null);
+        ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), helper.getLevel());
+        entity.setContraption(ship);
+        BlockPos origin = helper.absolutePos(new BlockPos(2, 3, 2));
+        entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
+        entity.setOldPosAndRot();
+        Player probe = helper.makeMockPlayer(GameType.SURVIVAL);
+        // 甲板 local y=0 方塊頂在 y=1。把 probe 腳放到 y=0.4(穿到甲板裡 0.6)
+        net.minecraft.world.phys.Vec3 deckTop = entity.rotatedWorldPoint(2.5, 1.0, 2.5);
+        net.minecraft.world.phys.Vec3 clipped = entity.rotatedWorldPoint(2.5, 0.4, 2.5);
+        probe.setPos(clipped.x, clipped.y, clipped.z);
+        boolean snapped = entity.snapToDeckSurface(probe);
+        if (!snapped) helper.fail("safety net did not snap a clipped entity");
+        if (Math.abs(probe.getY() - deckTop.y) > 0.1)
+            helper.fail("snapped to wrong Y: probe.y=" + probe.getY() + " expected~" + deckTop.y);
+        helper.succeed();
+    }
+
     /** 純實心甲板(10x10 石英、無洞)中間走來走去含重力，不該墜穿。墜穿=真的走路碰撞 bug。 */
     @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 120)
     public static void solidDeckWalkNoFall(GameTestHelper helper) {

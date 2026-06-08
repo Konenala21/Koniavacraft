@@ -26,14 +26,14 @@ public class ShipDeckCarryHandler {
         if (e instanceof Player && !e.level().isClientSide) return;
 
         // 跟船走 + 撞牆 已整合進 EntityShipCollisionMixin 的 applyContraptionMovement（相對運動碰撞）。
-        // 這裡留 resolveOverlap 當保險（深陷時推出）+ 站甲板時明確設 onGround/清 fallDistance（照 Create）。
+        // 這裡用「防穿安全網」(snapToDeckSurface,照 Create savePlayerFromClipping)當 catch-all:每-tick 碰撞
+        // 漏抓(漂移/角落/部分方塊)時往下射線找甲板、把穿下去的拉回表面。raycast 不像盒推會產生阻力。
         AABB search = e.getBoundingBox().inflate(0.5);
         for (ShipEntity ship : e.level().getEntitiesOfClass(ShipEntity.class, search)) {
             if (ship.getContraption() == null) continue;
-            ship.resolveOverlap(e);
-            // 船方塊不在世界裡，vanilla 不一定把站甲板的實體判成 onGround → 被當「在空中」會飄/有阻力。
-            // 像 Create 一樣在 tick 後明確設(此時 vanilla move 已跑完，不會被蓋)。
-            if (ship.isSupporting(e)) {
+            boolean snapped = ship.snapToDeckSurface(e);
+            // 船方塊不在世界裡，vanilla 不一定把站甲板的實體判 onGround → 被當在空中會飄。在 tick 後明確設(照 Create)。
+            if (snapped || ship.isSupporting(e)) {
                 e.setOnGround(true);
                 e.fallDistance = 0;
             }
