@@ -782,8 +782,10 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         AABB box = e.getBoundingBox();
         Vec3 cen = box.getCenter();
         Vec3 lc = worldToLocalPoint(cen.x, cen.y, cen.z);
-        AABB lb = AABB.ofSize(lc, box.getXsize() - 0.05, box.getYsize() - 0.05, box.getZsize() - 0.05);
-        if (!Shapes.joinIsNotEmpty(shape, Shapes.create(lb), BooleanOp.AND)) return; // 沒卡住
+        // 只用「半尺寸的中心盒」判是否真的深陷方塊：縮 0.05 太貼邊，正常站/走時腳碰甲板就被判卡 →
+        // 每 tick 往上推 → 走路像在水裡有阻力。半尺寸盒只在中心嵌進方塊(真卡死)才觸發，表面接觸不推。
+        AABB lb = AABB.ofSize(lc, box.getXsize() * 0.5, box.getYsize() * 0.5, box.getZsize() * 0.5);
+        if (!Shapes.joinIsNotEmpty(shape, Shapes.create(lb), BooleanOp.AND)) return; // 沒深陷
         Direction[] order = {Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST};
         for (Direction d : order) {
             for (double dist = 0.05; dist <= 1.3; dist += 0.05) {
