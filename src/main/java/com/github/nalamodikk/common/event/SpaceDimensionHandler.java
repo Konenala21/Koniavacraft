@@ -79,8 +79,11 @@ public class SpaceDimensionHandler {
         boolean space = level.dimension().equals(ModDimensions.SPACE);
         boolean moon  = level.dimension().equals(ModDimensions.MOON);
         if (!space && !moon) return;
-        if (level.isRaining() || level.isThundering()) {
-            level.setWeatherParameters(6000, 0, false, false);
+        // 鎖死晴天：連 rainLevel/thunderLevel 的淡入淡出也抓(isRaining 為 false 但 level 還在 fade 時，
+        // 移動快會在區塊邊界閃下雨)。一有任何天氣強度就重設長晴天時間，從根本不讓它下。
+        if (level.isRaining() || level.isThundering()
+                || level.getRainLevel(1.0f) > 0.0f || level.getThunderLevel(1.0f) > 0.0f) {
+            level.setWeatherParameters(1_000_000, 0, false, false);
         }
     }
 

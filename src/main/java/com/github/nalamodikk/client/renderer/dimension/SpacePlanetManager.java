@@ -194,6 +194,9 @@ public class SpacePlanetManager {
             float    dist      = toPlanet.length();
             if (dist < 0.1f) continue;
             Vector3f dir = new Vector3f(toPlanet).normalize();
+            // 日夜方向用「行星→太陽」算，不是玩家→太陽：玩家跟行星在太陽兩側時，玩家相對的太陽方向
+            // 會跟行星相對的相反 → 亮面整個反掉。用行星位置算才物理正確(不管玩家站哪)。
+            final Vector3f fPlanetLight = system.combinedLightDir(tick, planetPos);
 
             float angDeg = (float) Math.toDegrees(Math.atan(planet.physicalRadius() / dist));
             if (angDeg < 0.005f) continue;
@@ -237,21 +240,21 @@ public class SpacePlanetManager {
             bodies.add(new Body(dist, () -> {
                 if (planet.shaderType() == PlanetRenderer.Type.ATMOSPHERE) {
                     atmosphereRenderer.renderAtmosphere(invProj, invView, gameTime, w, h,
-                        fDir, fDist, fCos, sunLight,
+                        fDir, fDist, fCos, fPlanetLight,
                         planet.colorA(), planet.colorB(),
                         planet.atmoDensity(), planet.atmoHeight(), false,
                         texId, texId2, nightId, rotSpeed, cloudSpeed, fadeAlpha,
                         fOccDir, fOccCos);
                 } else {
                     rockyRenderer.renderRocky(invProj, invView, gameTime, w, h,
-                        fDir, fDist, fCos, sunLight,
+                        fDir, fDist, fCos, fPlanetLight,
                         planet.colorA(), planet.colorB(),
                         planet.heatColor(), planet.heatAmount(), texId, fadeAlpha,
                         fOccDir, fOccCos);
                 }
                 if (planet.hasRings() && ringTexId != -1) {
                     ringRenderer.renderRing(invProj, invView, gameTime, w, h,
-                        fDir, fDist, fCos, sunLight,
+                        fDir, fDist, fCos, fPlanetLight,
                         planet.ringInner(), planet.ringOuter(), planet.ringTiltDeg(),
                         ringTexId, fadeAlpha);
                 }
