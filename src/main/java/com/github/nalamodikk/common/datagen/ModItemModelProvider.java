@@ -57,9 +57,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         for (String name : UPGRADE_NAMES) {
             withExistingParent(name, modLoc("item/wand_upgrade"));
         }
-        // 研究系統物品：借用 vanilla 貼圖
+        // 研究筆記：用蕎麥麵的自訂貼圖（item/generated + layer0）
         withExistingParent(ModItems.RESEARCH_NOTE.getId().getPath(),
-                ResourceLocation.withDefaultNamespace("item/paper"));
+                ResourceLocation.parse("item/generated"))
+                .texture("layer0", modLoc("item/research_note"));
         // 訓練假人放置物：使用自訂貼圖
         withExistingParent(ModItems.TRAINING_DUMMY.getId().getPath(),
                 ResourceLocation.parse("item/generated"))
