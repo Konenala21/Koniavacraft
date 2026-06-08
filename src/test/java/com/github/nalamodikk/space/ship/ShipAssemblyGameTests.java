@@ -597,6 +597,46 @@ public class ShipAssemblyGameTests {
                 .thenSucceed();
     }
 
+    /**
+     * 駕駛輸入要讓船動(server 端 tickServerMovement 全路徑)：mock 駕駛坐駕駛位 + setControlInput(上升)，
+     * tick 後船應上升。測「輸入→移動」這條(多人不能動的回歸測試；mock player 蓋 server 端邏輯)。
+     */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 80)
+    public static void driverInputMovesShip(GameTestHelper helper) {
+        ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);
+        helper.setBlock(new BlockPos(4, 2, 4), core());
+        helper.setBlock(new BlockPos(5, 2, 4), seat());
+        java.util.concurrent.atomic.AtomicReference<ShipEntity> shipRef = new java.util.concurrent.atomic.AtomicReference<>();
+        double[] startY = new double[1];
+        helper.startSequence()
+                .thenExecute(pad::assembleShip)
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
+                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
+                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
+                            .findFirst().orElse(null);
+                    if (ship == null) { helper.fail("ship (core+1 seat) not found"); return; }
+                    Player driver = helper.makeMockPlayer(GameType.SURVIVAL);
+                    driver.startRiding(ship, false);
+                    int seat = ship.seatIndexOf(driver);
+                    if (seat < 0 || seat >= ShipEntity.MAX_DRIVERS) {
+                        helper.fail("driver not seated in a driver seat (seat=" + seat + ")"); return;
+                    }
+                    shipRef.set(ship);
+                    startY[0] = ship.getY();
+                    ship.setControlInput(seat, 0f, 0f, 1, 0f, 0f); // 按跳躍 = 上升
+                })
+                .thenIdle(20) // 船每 tick 跑 tickServerMovement，應持續上升
+                .thenExecute(() -> {
+                    ShipEntity ship = shipRef.get();
+                    if (ship == null) { helper.fail("no ship captured"); return; }
+                    double dy = ship.getY() - startY[0];
+                    if (dy < 1.0) helper.fail("driver input did not move the ship up (dy=" + dy + ")");
+                })
+                .thenSucceed();
+    }
+
     /** 甲板碰撞地基：箱子落到船方塊上方時，restrictMotion 應把向下移動擋住（站得住）。 */
     @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
     public static void deckCollisionStopsFall(GameTestHelper helper) {
