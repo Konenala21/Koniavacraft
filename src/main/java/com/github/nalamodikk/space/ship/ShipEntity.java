@@ -705,12 +705,14 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         // 玩家盒 8 角轉進 local 框取外接 AABB：船傾斜時同尺寸盒會偏小、漏抓方塊 → 玩家穿過去。
         // 外接盒在傾斜時自動放大，保證抓得到甲板(略過度碰撞，但不穿)。直立時 ≈ 原盒。
         AABB lb = localEnclosingBox(box, xOld, yOld, zOld, q0);
-        if (!lb.intersects(contraption.bounds().inflate(1.0))) return worldMotion; // 不在船範圍：不接管
+        Vector3f lmv = q0.conjugate(new Quaternionf()).transform(
+                new Vector3f((float) worldMotion.x, (float) worldMotion.y, (float) worldMotion.z));
+        // 用「掃掠盒」(含這 tick 移動)判斷是否接近船：快速摔落時 tick 開始玩家還在船上方 >1 格，
+        // 只看當前盒會判定「不在船範圍」直接放行 → 一個 tick 摔穿過去。掃掠盒會碰到甲板 → 正常接管擋住。
+        if (!lb.expandTowards(lmv.x, lmv.y, lmv.z).intersects(contraption.bounds().inflate(1.0))) return worldMotion;
 
         Vec3 P = e.position();
         Vec3 L0 = worldToLocalAt(P.x, P.y, P.z, xOld, yOld, zOld, q0);
-        Vector3f lmv = q0.conjugate(new Quaternionf()).transform(
-                new Vector3f((float) worldMotion.x, (float) worldMotion.y, (float) worldMotion.z));
         double my = lmv.y; if (my != 0) my = shape.collide(Direction.Axis.Y, lb, my); lb = lb.move(0, my, 0);
         double mx = lmv.x; if (mx != 0) mx = shape.collide(Direction.Axis.X, lb, mx); lb = lb.move(mx, 0, 0);
         double mz = lmv.z; if (mz != 0) mz = shape.collide(Direction.Axis.Z, lb, mz);
