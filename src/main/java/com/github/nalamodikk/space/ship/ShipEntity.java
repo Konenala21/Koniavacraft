@@ -729,9 +729,14 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         // 每 tick 把玩家往外推 → 走路抽搐/被慢慢推走。原尺寸盒不過度推。傾斜的精準碰撞留給 OBB(階段3)。
         AABB lb = AABB.ofSize(lbEnclose.getCenter(), box.getXsize(), box.getYsize(), box.getZsize());
         Vec3 lm = new Vec3(lmv.x, lmv.y, lmv.z);
-        // 一律走 OBB 連續碰撞(移植自 Create)：vanilla collideBoundingBox 是純掃掠，角落會「切角」穿入、
-        // 且進去後不會推出來(逐軸近似的死角)。OBB 的 collisionResponse 能解穿入，傾斜也用同一套。
-        Vec3 collided = obbCollideLocal(e, box, lb, lm, q0, shape);
+        // 水平船(只 yaw)→ vanilla collideBoundingBox：對樓梯/半磚等部分方塊 robust，不會像 OBB 在上面累積
+        // 水平漂移走一走掉下去。傾斜船(pitch/roll)→ OBB(甲板是斜的，軸對齊盒對不準)。角落正對角穿是
+        // measure-zero 極端(兩種方法都有)，換取常見的樓梯走路穩定。
+        boolean tilted = Math.abs(getXRot()) > 0.01f || Math.abs(getRoll()) > 0.01f
+                || Math.abs(xRotO) > 0.01f || Math.abs(rollO) > 0.01f;
+        Vec3 collided = tilted
+                ? obbCollideLocal(e, box, lb, lm, q0, shape)
+                : Entity.collideBoundingBox(e, lm, lb, level(), java.util.List.of(shape));
         Vec3 newLocal = L0.add(collided.x, collided.y, collided.z);
         Vec3 newWorld = localToWorldAt(newLocal.x, newLocal.y, newLocal.z, getX(), getY(), getZ(), q1);
         Vec3 result = newWorld.subtract(P);

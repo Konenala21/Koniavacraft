@@ -484,6 +484,103 @@ public class ShipAssemblyGameTests {
         helper.succeed();
     }
 
+    /** 走路模擬：真船甲板上走來走去(含重力累積)，比較「站上去 vel 歸零 vs 不歸零」會不會墜穿。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 400)
+    public static void realShipWalkSim(GameTestHelper helper) throws Exception {
+        java.nio.file.Path nbtPath = java.nio.file.Path.of("ship_test.nbt");
+        if (!java.nio.file.Files.exists(nbtPath)) { helper.succeed(); return; }
+        net.minecraft.nbt.CompoundTag root = net.minecraft.nbt.NbtIo.readCompressed(nbtPath, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
+        net.minecraft.core.HolderGetter<Block> holders = helper.getLevel().holderLookup(net.minecraft.core.registries.Registries.BLOCK);
+        net.minecraft.nbt.ListTag palette = root.getList("palette", net.minecraft.nbt.Tag.TAG_COMPOUND);
+        BlockState[] states = new BlockState[palette.size()];
+        for (int i = 0; i < palette.size(); i++) states[i] = net.minecraft.nbt.NbtUtils.readBlockState(holders, palette.getCompound(i));
+        net.minecraft.nbt.ListTag blocks = root.getList("blocks", net.minecraft.nbt.Tag.TAG_COMPOUND);
+        ShipContraption ship = new ShipContraption();
+        for (int i = 0; i < blocks.size(); i++) {
+            net.minecraft.nbt.CompoundTag b = blocks.getCompound(i);
+            BlockState st = states[b.getInt("state")];
+            if (st.isAir()) continue;
+            net.minecraft.nbt.ListTag p = b.getList("pos", net.minecraft.nbt.Tag.TAG_INT);
+            ship.addBlock(new BlockPos(p.getInt(0), p.getInt(1), p.getInt(2)), st, b.contains("nbt") ? b.getCompound("nbt") : null);
+        }
+        ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), helper.getLevel());
+        entity.setContraption(ship);
+        BlockPos origin = helper.absolutePos(new BlockPos(2, 2, 2));
+        entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
+        entity.setOldPosAndRot();
+        // 找一塊上方空氣、且四周也有甲板可走的地板(用 y 最高的其中一塊)
+        BlockPos floor = null;
+        for (var e : ship.getBlocks().entrySet()) {
+            BlockPos lp = e.getKey();
+            if (ship.getBlocks().containsKey(lp.above())) continue;
+            if (floor == null || lp.getY() > floor.getY()) floor = lp;
+        }
+        Player probe = helper.makeMockPlayer(GameType.SURVIVAL);
+        net.minecraft.world.phys.Vec3 start = entity.rotatedWorldPoint(floor.getX() + 0.5, floor.getY() + 1.05, floor.getZ() + 0.5);
+        int noReset = walkSim(entity, probe, start, false, 200);
+        int withReset = walkSim(entity, probe, start, true, 200);
+        KoniavacraftMod.LOGGER.info("[walksim] start local=({},{},{}) fellTick noReset={} withReset={} (-1=never fell)",
+                floor.getX(), floor.getY(), floor.getZ(), noReset, withReset);
+        helper.succeed();
+    }
+
+    /** 純實心甲板(10x10 石英、無洞)中間走來走去含重力，不該墜穿。墜穿=真的走路碰撞 bug。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 120)
+    public static void solidDeckWalkNoFall(GameTestHelper helper) {
+        ShipContraption ship = new ShipContraption();
+        BlockState quartz = Blocks.QUARTZ_BLOCK.defaultBlockState();
+        for (int x = 0; x < 10; x++) for (int z = 0; z < 10; z++) ship.addBlock(new BlockPos(x, 0, z), quartz, null);
+        ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), helper.getLevel());
+        entity.setContraption(ship);
+        BlockPos origin = helper.absolutePos(new BlockPos(2, 3, 2));
+        entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
+        entity.setOldPosAndRot();
+        Player probe = helper.makeMockPlayer(GameType.SURVIVAL);
+        net.minecraft.world.phys.Vec3 start = entity.rotatedWorldPoint(5.0, 1.05, 5.0); // 甲板中央
+        int reset = walkSim(entity, probe, start, true, 200);
+        int noReset = walkSim(entity, probe, start, false, 200);
+        KoniavacraftMod.LOGGER.info("[soliddeck] fellTick withReset={} noReset={} (-1=ok)", reset, noReset);
+        if (reset >= 0) helper.fail("walked through SOLID deck (withReset) at tick " + reset);
+        helper.succeed();
+    }
+
+    /** 樓梯甲板(10x10 quartz_stairs)走來走去，不該墜穿。對應用戶船上的樓梯。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 120)
+    public static void stairsDeckWalkNoFall(GameTestHelper helper) {
+        ShipContraption ship = new ShipContraption();
+        BlockState stairs = Blocks.QUARTZ_STAIRS.defaultBlockState();
+        for (int x = 0; x < 10; x++) for (int z = 0; z < 10; z++) ship.addBlock(new BlockPos(x, 0, z), stairs, null);
+        ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), helper.getLevel());
+        entity.setContraption(ship);
+        BlockPos origin = helper.absolutePos(new BlockPos(2, 3, 2));
+        entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
+        entity.setOldPosAndRot();
+        Player probe = helper.makeMockPlayer(GameType.SURVIVAL);
+        net.minecraft.world.phys.Vec3 start = entity.rotatedWorldPoint(5.0, 1.6, 5.0);
+        int reset = walkSim(entity, probe, start, true, 200);
+        KoniavacraftMod.LOGGER.info("[stairsdeck] fellTick withReset={} (-1=ok)", reset);
+        if (reset >= 0) helper.fail("walked through STAIRS deck at tick " + reset);
+        helper.succeed();
+    }
+
+    private static int walkSim(ShipEntity entity, Player probe, net.minecraft.world.phys.Vec3 startWorld, boolean resetVel, int ticks) {
+        probe.setPos(startWorld.x, startWorld.y, startWorld.z);
+        net.minecraft.world.phys.Vec3 vel = net.minecraft.world.phys.Vec3.ZERO;
+        double startLY = entity.worldToLocalPoint(startWorld.x, startWorld.y, startWorld.z).y;
+        for (int t = 0; t < ticks; t++) {
+            double wx = ((t / 15) % 2 == 0) ? 0.15 : -0.15;
+            double wz = ((t / 15) % 4 < 2) ? 0.12 : -0.12;
+            vel = new net.minecraft.world.phys.Vec3(wx, vel.y - 0.08, wz);
+            net.minecraft.world.phys.Vec3 r = entity.applyContraptionMovement(probe, vel);
+            probe.setPos(probe.getX() + r.x, probe.getY() + r.y, probe.getZ() + r.z);
+            boolean grounded = r.y > vel.y + 1.0e-4;
+            if (grounded && resetVel) vel = new net.minecraft.world.phys.Vec3(vel.x, 0, vel.z);
+            double ly = entity.worldToLocalPoint(probe.getX(), probe.getY(), probe.getZ()).y;
+            if (ly < startLY - 2.5) return t;
+        }
+        return -1;
+    }
+
     /** 部分方塊(樓梯)當地板：probe 落下應被樓梯擋住，不該墜穿。對應用戶船上的 quartz_stairs。 */
     @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
     public static void partialBlockStairsStopsFall(GameTestHelper helper) {
