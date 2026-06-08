@@ -52,38 +52,25 @@ public class ManaCraftingMenu extends AbstractContainerMenu {
 
         ManaCraftingTableBlockEntity manaTable = ModMenuTypes.resolveMenuBE(playerInventory, pos, ManaCraftingTableBlockEntity.class);
         if (manaTable != null) {
-            return new ManaCraftingMenu(windowId, playerInventory, manaTable.getItemHandler(),
+            return new ManaCraftingMenu(windowId, playerInventory, manaTable, manaTable.getItemHandler(),
                     ContainerLevelAccess.create(level, pos), level);
         }
 
         // fallback：沒有 block entity
-        return new ManaCraftingMenu(windowId, playerInventory, new ItemStackHandler(TOTAL_SLOTS),
+        return new ManaCraftingMenu(windowId, playerInventory, null, new ItemStackHandler(TOTAL_SLOTS),
                 ContainerLevelAccess.NULL, level);
 
     }
 
 
-    public ManaCraftingMenu(int containerId, Inventory playerInventory, IItemHandler itemHandler, ContainerLevelAccess access, Level level) {
+    public ManaCraftingMenu(int containerId, Inventory playerInventory, ManaCraftingTableBlockEntity blockEntity, IItemHandler itemHandler, ContainerLevelAccess access, Level level) {
         super(ModMenuTypes.MANA_CRAFTING_MENU.get(), containerId);
         this.access = access;
         this.itemHandler = itemHandler;
         this.menuPlayer = playerInventory.player;
-
-        // 初始化 blockEntity 變量
-        this.blockEntity = access.evaluate((world, pos) -> {
-            if (world != null) {
-                BlockEntity entity = world.getBlockEntity(pos);
-                if (entity instanceof ManaCraftingTableBlockEntity) {
-                    return (ManaCraftingTableBlockEntity) entity;
-                }
-            }
-            return null;
-        }).orElse(null);
-
-// 如果 blockEntity 為空，記錄警告日誌
-        if (this.blockEntity == null) {
-           // System.out.println("Warning: ManaCraftingTableBlockEntity could not be found at the specified position");
-        }
+        // 直接用傳入的 BE，不再 access.evaluate 重找：那條在找不到 BE 時 lambda 回 null →
+        // ContainerLevelAccess.create 的 evaluate 用 Optional.of(null) → NPE（船上機器 client 找不到就踩到）。
+        this.blockEntity = blockEntity;
 
         // 設置 3x3 合成槽
         updateResearchLockedState();

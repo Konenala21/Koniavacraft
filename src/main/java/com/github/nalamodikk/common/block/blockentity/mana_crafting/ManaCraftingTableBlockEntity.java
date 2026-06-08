@@ -252,7 +252,7 @@ public class ManaCraftingTableBlockEntity extends BlockEntity implements MenuPro
             return null;
         }
 
-        return new ManaCraftingMenu(id, inv, itemHandler, ContainerLevelAccess.create(level, worldPosition), level);
+        return new ManaCraftingMenu(id, inv, this, itemHandler, ContainerLevelAccess.create(level, worldPosition), level);
     }
 
 
