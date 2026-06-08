@@ -1469,10 +1469,10 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         int idx = seatIndexOf(passenger); // 依指派的座位
         if (idx < 0 || idx >= seats.size()) idx = 0;
         BlockPos seat = seats.get(idx);
-        // 座位水平中心(+0.5)要在旋轉前併入 local，否則船一轉乘客被推離座位（第三人稱看「坐在空氣上」）。
-        // 高度放座椅座板高(SEAT_SIT_HEIGHT)，原本 +1.0 是整格頂、會浮在椅子上方。
-        Vec3 c = rotatedWorldPoint(seat.getX() + 0.5, seat.getY(), seat.getZ() + 0.5);
-        callback.accept(passenger, c.x, c.y + SEAT_SIT_HEIGHT, c.z);
+        // 座位水平中心(+0.5)和座高(SEAT_SIT_HEIGHT)都要在旋轉前併入 local，再一起旋轉。否則船側翻(roll)時座高
+        // 用世界上加 → 乘客被放到「座位+世界上」而非「座位+甲板上」→ 偏離座位。併進 local 後 roll/pitch 都對齊。
+        Vec3 c = rotatedWorldPoint(seat.getX() + 0.5, seat.getY() + SEAT_SIT_HEIGHT, seat.getZ() + 0.5);
+        callback.accept(passenger, c.x, c.y, c.z);
         // 讓坐姿身體面向椅子的坐姿方向（=該座椅 sit-dir + 船 yaw），否則身體用 vanilla 預設方向看起來反。
         // 只設身體(yBodyRot)不鎖視角：駕駛仍可自由看/操控、乘客頭也能轉。
         if (passenger instanceof LivingEntity living) {
