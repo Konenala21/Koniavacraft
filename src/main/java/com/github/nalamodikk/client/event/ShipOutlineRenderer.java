@@ -4,7 +4,6 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.space.ship.ShipEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -54,7 +53,7 @@ public class ShipOutlineRenderer {
         PoseStack pose = event.getPoseStack();
         pose.pushPose();
         pose.translate(ex - camPos.x, ey - camPos.y, ez - camPos.z);
-        pose.mulPose(Axis.YP.rotationDegrees(-ship.getViewYRot(pt)));
+        pose.mulPose(ship.orientation(pt)); // 完整姿勢(含 pitch/roll)，跟方塊渲染一致；舊的 yaw-only 在傾斜時外框會差開
         pose.translate(-co.x, -co.y, -co.z);
 
         MultiBufferSource.BufferSource buf = mc.renderBuffers().bufferSource();
