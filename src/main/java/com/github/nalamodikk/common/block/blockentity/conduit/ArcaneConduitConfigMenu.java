@@ -2,7 +2,7 @@ package com.github.nalamodikk.common.block.blockentity.conduit;
 
 import com.github.nalamodikk.common.utils.capability.IOHandlerUtils;
 import com.github.nalamodikk.register.ModMenuTypes;
-import com.github.nalamodikk.space.ship.ShipShadowManager;
+import net.minecraft.world.Container;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.FriendlyByteBuf;
@@ -67,13 +67,7 @@ public class ArcaneConduitConfigMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (ShipShadowManager.isShadowBE(conduit)) return true; // 飛船影子機器：跨維度放行
-        return conduit != null &&
-                conduit.getLevel() != null &&
-                conduit.getLevel().getBlockEntity(conduit.getBlockPos()) == conduit &&
-                player.distanceToSqr(conduit.getBlockPos().getX() + 0.5,
-                        conduit.getBlockPos().getY() + 0.5,
-                        conduit.getBlockPos().getZ() + 0.5) <= 64;
+        return conduit != null && Container.stillValidBlockEntity(conduit, player); // 標準寫法；影子機器靠 ContainerShipShadowMixin 放行
     }
 
     @Override
