@@ -9,6 +9,7 @@ import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 
 /**
@@ -116,5 +117,18 @@ public class ManaAlloyArmorModel {
     public void renderBoots(PoseStack pose, VertexConsumer buffer, int light, int overlay) {
         rightBoot.render(pose, buffer, light, overlay);
         leftBoot.render(pose, buffer, light, overlay);
+    }
+
+    /**
+     * 第一人稱:把胸甲的手臂 bone 畫在 first-person 手臂上(RenderArmEvent 用)。
+     * 第一人稱手臂是「直下」姿勢、PoseStack 已定位到手臂，所以重設旋轉再畫。
+     * pivot 若實機看起來偏移，調 geo 的 armorRightArm/armorLeftArm bone pivot。
+     */
+    public void renderFirstPersonArm(HumanoidArm side, PoseStack pose, VertexConsumer buffer, int light, int overlay) {
+        ModelPart arm = side == HumanoidArm.RIGHT ? rightArm : leftArm;
+        float rx = arm.xRot, ry = arm.yRot, rz = arm.zRot;
+        arm.xRot = 0; arm.yRot = 0; arm.zRot = 0;
+        arm.render(pose, buffer, light, overlay);
+        arm.xRot = rx; arm.yRot = ry; arm.zRot = rz;
     }
 }
