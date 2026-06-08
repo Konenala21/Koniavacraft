@@ -1,6 +1,7 @@
 package com.github.nalamodikk.client.renderer.entity;
 
 import com.github.nalamodikk.space.ship.ShipContraption;
+import com.github.nalamodikk.space.ship.ShipMeshHandle;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
@@ -32,15 +33,39 @@ import java.util.Map;
  * 光照在烤的當下寫進頂點（來自 ShipRenderWorld，含方塊自身發光），飛船無動態光，靜態即可。
  * BER 方塊（箱子）不在此，仍每幀由 dispatcher 畫。
  */
-public class ShipMeshCache implements AutoCloseable {
+public class ShipMeshCache implements AutoCloseable, ShipMeshHandle {
+
+    // 編輯後不立刻重烤(大船烤整艘會卡)：標記 dirty，停手這麼久才重烤一次。期間沿用舊 VBO(視覺暫時舊)。
+    private static final long REBAKE_DELAY_MS = 400;
 
     private final Map<RenderType, VertexBuffer> buffers = new HashMap<>();
     private boolean built = false;
+    private boolean dirty = false;
+    private long dirtyAtMs = 0;
+
+    /** 編輯時呼叫：不砍 VBO，只標記稍後重烤(debounce)。 */
+    @Override
+    public void markDirty() {
+        dirty = true;
+        dirtyAtMs = System.currentTimeMillis();
+    }
 
     public void buildIfNeeded(ShipContraption c, Level level) {
-        if (built) return;
-        built = true;
+        if (!built) {
+            bake(c, level);
+            built = true;
+            return;
+        }
+        // dirty 後等 debounce：連續編輯不會每次重烤，停手才烤一次(只一個卡頓而非每方塊一個)。
+        if (dirty && System.currentTimeMillis() - dirtyAtMs >= REBAKE_DELAY_MS) {
+            for (VertexBuffer vb : buffers.values()) vb.close();
+            buffers.clear();
+            bake(c, level);
+            dirty = false;
+        }
+    }
 
+    private void bake(ShipContraption c, Level level) {
         ShipRenderWorld world = new ShipRenderWorld(level, c);
         BlockRenderDispatcher brd = Minecraft.getInstance().getBlockRenderer();
         ModelBlockRenderer mr = brd.getModelRenderer();

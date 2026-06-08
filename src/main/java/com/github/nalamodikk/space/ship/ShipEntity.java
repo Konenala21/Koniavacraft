@@ -221,11 +221,12 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         hullBlocksCache = null;
         dynamicMirrorCache = null;
         renderBEs = null;
-        if (meshCache instanceof AutoCloseable ac) {
-            try { ac.close(); } catch (Exception ignored) {}
+        if (meshCache instanceof ShipMeshHandle h) {
+            h.markDirty(); // 保留舊 VBO，debounce 後重烤一次(大船每次編輯都砍重建會卡)
+        } else {
+            meshCache = null; // 還沒建/烤失敗 → 讓渲染器重建
+            meshFailed = false;
         }
-        meshCache = null;
-        meshFailed = false;
         refreshDimensions(); // bounds 可能變了，更新 hitbox
     }
 
