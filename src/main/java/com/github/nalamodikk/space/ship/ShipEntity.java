@@ -712,6 +712,15 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         VoxelShape shape = localCollisionShape();
         if (shape.isEmpty()) return worldMotion;
         AABB box = e.getBoundingBox();
+        // 人工重力 phase 1：站在傾斜船上時，把「世界向下的重力」改成「沿甲板法線垂直插入甲板」。
+        // 世界重力在斜甲板有沿斜面的分量 → 玩家滑(阻力)+ onGround 跳(抽搐)；改成垂直法線就沒有切向分量 →
+        // 不滑、黏甲板、人保持直立(鏡頭/操作不變)。只在明顯傾斜(>1°)且站在船上時做。
+        if (e instanceof Player && worldMotion.y < 0
+                && (Math.abs(getXRot()) > 1f || Math.abs(getRoll()) > 1f) && isSupporting(e)) {
+            Vector3f dd = orientation().transform(new Vector3f(0f, -1f, 0f)); // 甲板法線朝下(垂直插入甲板)
+            double g = -worldMotion.y;
+            worldMotion = new Vec3(worldMotion.x + dd.x * g, dd.y * g, worldMotion.z + dd.z * g);
+        }
         // T0 = 上一 tick 姿勢(yRotO/xRotO/rollO)，T1 = 這一 tick。用完整姿勢(含 pitch/roll)，碰撞才跟傾斜視覺對齊。
         Quaternionf q0 = orientationOf(yRotO, xRotO, rollO, getBowLocal());
         Quaternionf q1 = orientation();
@@ -729,11 +738,12 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         // 每 tick 把玩家往外推 → 走路抽搐/被慢慢推走。原尺寸盒不過度推。傾斜的精準碰撞留給 OBB(階段3)。
         AABB lb = AABB.ofSize(lbEnclose.getCenter(), box.getXsize(), box.getYsize(), box.getZsize());
         Vec3 lm = new Vec3(lmv.x, lmv.y, lmv.z);
-        // 水平船(只 yaw)→ vanilla collideBoundingBox：對樓梯/半磚等部分方塊 robust，不會像 OBB 在上面累積
-        // 水平漂移走一走掉下去。傾斜船(pitch/roll)→ OBB(甲板是斜的，軸對齊盒對不準)。角落正對角穿是
-        // measure-zero 極端(兩種方法都有)，換取常見的樓梯走路穩定。
-        boolean tilted = Math.abs(getXRot()) > 0.01f || Math.abs(getRoll()) > 0.01f
-                || Math.abs(xRotO) > 0.01f || Math.abs(rollO) > 0.01f;
+        // 只有「明顯傾斜(>10°)」才走 OBB。微斜(停著的船常帶幾度)當水平用 vanilla collideBoundingBox：
+        // 它的垂直擋住一致(每 tick 都生效)，OBB 在斜甲板上每隔一 tick 才擋 → onGround 跳 → 速度震盪 → 阻力/抽搐。
+        // collideBoundingBox 對樓梯/半磚也 robust、掃掠不 tunnel。OBB 只留給真的大幅傾斜(上不了船那種)。
+        final float TILT_DEG = 10f;
+        boolean tilted = Math.abs(getXRot()) > TILT_DEG || Math.abs(getRoll()) > TILT_DEG
+                || Math.abs(xRotO) > TILT_DEG || Math.abs(rollO) > TILT_DEG;
         Vec3 collided = tilted
                 ? obbCollideLocal(e, box, lb, lm, q0, shape)
                 : Entity.collideBoundingBox(e, lm, lb, level(), java.util.List.of(shape));
@@ -872,7 +882,9 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         VoxelShape shape = localCollisionShape();
         if (shape.isEmpty()) return false;
         AABB box = e.getBoundingBox().deflate(0.2, 0, 0.2); // 縮水平避免邊緣誤判(照 Create deflate 1/4)
-        double up = e.maxUpStep() + 0.5;
+        // 射線從腳上方 0.5 起(不是 maxStep+0.5)：太高會掃到腳邊/上方的牆方塊、把人往上彈 → 抽搐。
+        // 只涵蓋「這 tick 可能穿入的深度」。每-tick 穿入 < 0.5。
+        double up = 0.5;
         double feetY = box.minY;
         double bestSurfaceY = Double.NEGATIVE_INFINITY;
         for (int i = 0; i < 4; i++) {
@@ -885,7 +897,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             Vec3 hw = rotatedWorldPoint(hit.getLocation().x, hit.getLocation().y, hit.getLocation().z);
             if (hw.y > bestSurfaceY) bestSurfaceY = hw.y;
         }
-        if (bestSurfaceY > feetY + 1.0e-3) { // 表面在腳上方 = 穿到下面了 → 拉回
+        if (bestSurfaceY > feetY + 0.1) { // 表面明顯在腳上方(>0.1)=真穿入才拉；微沉不管(否則每 tick 拉=阻力)
             e.setPos(e.getX(), bestSurfaceY, e.getZ());
             if (e.getDeltaMovement().y < 0) e.setDeltaMovement(e.getDeltaMovement().x, 0, e.getDeltaMovement().z);
             return true;
@@ -899,8 +911,9 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         if (shape.isEmpty()) return false;
         AABB b = e.getBoundingBox();
         Vec3 cen = b.getCenter();
-        Vec3 lc = worldToLocalPoint(cen.x, b.minY - 0.02, cen.z); // 腳底略下方
-        AABB probe = AABB.ofSize(lc, Math.max(b.getXsize(), 0.1), 0.12, Math.max(b.getZsize(), 0.1));
+        // 查腳下 0.5 內有沒有船方塊(放寬：太緊的話傾斜/微浮一點就判沒站在船上 → 人工重力/onGround 失效)。
+        Vec3 lc = worldToLocalPoint(cen.x, b.minY - 0.25, cen.z);
+        AABB probe = AABB.ofSize(lc, Math.max(b.getXsize(), 0.1), 0.5, Math.max(b.getZsize(), 0.1));
         return Shapes.joinIsNotEmpty(shape, Shapes.create(probe), BooleanOp.AND);
     }
 

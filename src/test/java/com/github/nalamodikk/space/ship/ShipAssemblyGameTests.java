@@ -536,9 +536,9 @@ public class ShipAssemblyGameTests {
         entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
         entity.setOldPosAndRot();
         Player probe = helper.makeMockPlayer(GameType.SURVIVAL);
-        // 甲板 local y=0 方塊頂在 y=1。把 probe 腳放到 y=0.4(穿到甲板裡 0.6)
+        // 甲板 local y=0 方塊頂在 y=1。把 probe 腳放到 y=0.7(穿到甲板裡 0.3,真實每-tick 穿入量)
         net.minecraft.world.phys.Vec3 deckTop = entity.rotatedWorldPoint(2.5, 1.0, 2.5);
-        net.minecraft.world.phys.Vec3 clipped = entity.rotatedWorldPoint(2.5, 0.4, 2.5);
+        net.minecraft.world.phys.Vec3 clipped = entity.rotatedWorldPoint(2.5, 0.7, 2.5);
         probe.setPos(clipped.x, clipped.y, clipped.z);
         boolean snapped = entity.snapToDeckSurface(probe);
         if (!snapped) helper.fail("safety net did not snap a clipped entity");
@@ -583,6 +583,36 @@ public class ShipAssemblyGameTests {
         int reset = walkSim(entity, probe, start, true, 200);
         KoniavacraftMod.LOGGER.info("[stairsdeck] fellTick withReset={} (-1=ok)", reset);
         if (reset >= 0) helper.fail("walked through STAIRS deck at tick " + reset);
+        helper.succeed();
+    }
+
+    /** 人工重力 phase 1：傾斜 20° 甲板上只有重力(不走)，玩家不該沿斜面滑走(重力沿甲板法線垂直插入)。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 120)
+    public static void tiltedDeckNoSlide(GameTestHelper helper) {
+        ShipContraption ship = new ShipContraption();
+        BlockState quartz = Blocks.QUARTZ_BLOCK.defaultBlockState();
+        for (int x = 0; x < 8; x++) for (int z = 0; z < 8; z++) ship.addBlock(new BlockPos(x, 0, z), quartz, null);
+        ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), helper.getLevel());
+        entity.setContraption(ship);
+        BlockPos origin = helper.absolutePos(new BlockPos(4, 4, 4));
+        entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
+        entity.setXRot(20f); // 傾斜 20°
+        entity.setOldPosAndRot();
+        Player probe = helper.makeMockPlayer(GameType.SURVIVAL);
+        net.minecraft.world.phys.Vec3 start = entity.rotatedWorldPoint(4.0, 1.05, 4.0);
+        probe.setPos(start.x, start.y, start.z);
+        net.minecraft.world.phys.Vec3 startL = entity.worldToLocalPoint(start.x, start.y, start.z);
+        net.minecraft.world.phys.Vec3 vel = net.minecraft.world.phys.Vec3.ZERO;
+        for (int t = 0; t < 80; t++) {
+            vel = new net.minecraft.world.phys.Vec3(vel.x, vel.y - 0.08, vel.z); // 只有重力，不走
+            net.minecraft.world.phys.Vec3 r = entity.applyContraptionMovement(probe, vel);
+            probe.setPos(probe.getX() + r.x, probe.getY() + r.y, probe.getZ() + r.z);
+            if (r.y > vel.y + 1.0e-4) vel = net.minecraft.world.phys.Vec3.ZERO; // 被甲板擋住=站住，歸零
+        }
+        net.minecraft.world.phys.Vec3 endL = entity.worldToLocalPoint(probe.getX(), probe.getBoundingBox().minY, probe.getZ());
+        double drift = Math.hypot(endL.x - startL.x, endL.z - startL.z);
+        KoniavacraftMod.LOGGER.info("[tiltslide] drift={} (small=黏住, 大=滑走)", String.format("%.2f", drift));
+        if (drift > 1.5) helper.fail("slid down tilted deck: local drift=" + drift);
         helper.succeed();
     }
 
