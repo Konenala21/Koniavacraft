@@ -17,7 +17,9 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
@@ -323,6 +325,39 @@ public class ShipAssemblyGameTests {
                         helper.fail("collector produced no mana in shadow (mana=" + solar.getManaStored() + ")");
                 })
                 .thenSucceed();
+    }
+
+    /**
+     * 效能量測：組裝的兩個 mass-setBlock 熱點 — addToWorld(= placeInShadow 塞 2000 方塊) 與
+     * removeFromWorld 等效(移除 2000 方塊)。組裝凍住若是 server 端，數字會在這裡現形。印 log。
+     */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 200)
+    public static void perfBigShipPlacement(GameTestHelper helper) {
+        ShipContraption ship = new ShipContraption();
+        BlockState stone = Blocks.STONE.defaultBlockState();
+        int count = 0;
+        outer:
+        for (int x = -6; x <= 5; x++)
+            for (int y = 0; y < 12; y++)
+                for (int z = -7; z <= 6; z++) {
+                    if (count >= ShipContraption.MAX_BLOCKS) break outer;
+                    ship.addBlock(new BlockPos(x, y, z), stone, null);
+                    count++;
+                }
+        BlockPos anchor = helper.absolutePos(new BlockPos(4, 2, 4)).above(24); // 空氣區，addToWorld 才放得下
+
+        long t0 = System.nanoTime();
+        ship.addToWorld(helper.getLevel(), anchor, Rotation.NONE);       // = placeInShadow 的核心
+        long placeMs = (System.nanoTime() - t0) / 1_000_000;
+
+        long t1 = System.nanoTime();
+        int rmFlags = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;   // = removeFromWorld 的快 flag
+        for (BlockPos lp : ship.getBlocks().keySet())
+            helper.getLevel().setBlock(lp.offset(anchor), Blocks.AIR.defaultBlockState(), rmFlags);
+        long removeMs = (System.nanoTime() - t1) / 1_000_000;
+
+        KoniavacraftMod.LOGGER.info("[ship-place-perf] blocks={} addToWorld={}ms remove={}ms", count, placeMs, removeMs);
+        helper.succeed();
     }
 
     /**
