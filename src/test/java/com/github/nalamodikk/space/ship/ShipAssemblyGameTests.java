@@ -819,6 +819,34 @@ public class ShipAssemblyGameTests {
         helper.succeed();
     }
 
+    /** 掉落物(ItemEntity)該停在船甲板上,不穿過去(否則撿不到,因為真身掉到船下面)。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 120)
+    public static void itemRestsOnDeck(GameTestHelper helper) {
+        ShipContraption ship = new ShipContraption();
+        for (int x = 0; x < 6; x++) for (int z = 0; z < 6; z++)
+            ship.addBlock(new BlockPos(x, 0, z), Blocks.QUARTZ_BLOCK.defaultBlockState(), null);
+        ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), helper.getLevel());
+        entity.setContraption(ship);
+        BlockPos origin = helper.absolutePos(new BlockPos(4, 4, 4));
+        entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
+        entity.setOldPosAndRot();
+        net.minecraft.world.entity.item.ItemEntity item = new net.minecraft.world.entity.item.ItemEntity(
+                helper.getLevel(), 0, 0, 0, new ItemStack(Items.DIAMOND));
+        net.minecraft.world.phys.Vec3 start = entity.rotatedWorldPoint(3.0, 2.5, 3.0); // 甲板上方
+        item.setPos(start.x, start.y, start.z);
+        net.minecraft.world.phys.Vec3 vel = net.minecraft.world.phys.Vec3.ZERO;
+        for (int t = 0; t < 60; t++) {
+            vel = new net.minecraft.world.phys.Vec3(vel.x, vel.y - 0.04, vel.z); // 物品重力 ~0.04
+            net.minecraft.world.phys.Vec3 r = entity.applyContraptionMovement(item, vel);
+            item.setPos(item.getX() + r.x, item.getY() + r.y, item.getZ() + r.z);
+            if (r.y > vel.y + 1.0e-4) vel = new net.minecraft.world.phys.Vec3(vel.x, 0, vel.z);
+        }
+        double ly = entity.worldToLocalPoint(item.getX(), item.getBoundingBox().minY, item.getZ()).y;
+        KoniavacraftMod.LOGGER.info("[itemdeck] localY={} (該~1=停甲板上, <0.5=穿過掉到船下)", String.format("%.2f", ly));
+        if (ly < 0.5) helper.fail("item fell through the deck (lands under the ship, can't be picked up): localY=" + ly);
+        helper.succeed();
+    }
+
     private static int walkSim(ShipEntity entity, Player probe, net.minecraft.world.phys.Vec3 startWorld, boolean resetVel, int ticks) {
         probe.setPos(startWorld.x, startWorld.y, startWorld.z);
         net.minecraft.world.phys.Vec3 vel = net.minecraft.world.phys.Vec3.ZERO;
