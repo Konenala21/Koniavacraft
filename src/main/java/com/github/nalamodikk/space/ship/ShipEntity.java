@@ -72,11 +72,6 @@ import com.github.nalamodikk.space.ship.collision.ContinuousOBBCollider;
 import com.github.nalamodikk.space.ship.collision.Matrix3d;
 import com.github.nalamodikk.space.ship.collision.OrientedBB;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
-import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
-import com.github.nalamodikk.KoniavacraftMod;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -112,17 +107,6 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         return out;
     }
 
-    @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID)
-    public static final class ShipRegistry {
-        @SubscribeEvent
-        public static void onJoin(EntityJoinLevelEvent e) {
-            if (e.getEntity() instanceof ShipEntity s) ALL_SHIPS.add(s);
-        }
-        @SubscribeEvent
-        public static void onLeave(EntityLeaveLevelEvent e) {
-            if (e.getEntity() instanceof ShipEntity s) ALL_SHIPS.remove(s);
-        }
-    }
 
     private static final double MAX_SPEED = 0.4;  // 每 tick 最大速度
     private static final double ACCEL = 0.1;       // 朝目標速度的 lerp（慣性感）
@@ -292,6 +276,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     @Override
     public void remove(Entity.RemovalReason reason) {
+        ALL_SHIPS.remove(this);
         // 保險：被 /kill 或非預期 discard（reason.shouldDestroy()=KILLED/DISCARDED）而不是正常拆解時，
         // 把方塊寫回世界（船散架在原地），不要讓整艘船無聲蒸發。區塊卸載/維度切換不觸發（會存檔/搬移）。
         if (!level().isClientSide && contraption != null && !intentionalDisassembly && reason.shouldDestroy()) {
@@ -385,6 +370,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     @Override
     public void tick() {
         super.tick();
+        ALL_SHIPS.add(this); // 自註冊到全船清單(不靠事件、每 tick 確保在內；nearbyShips 會過濾 contraption==null)
         if (!level().isClientSide && contraption == null) {
             discard(); // 沒有 contraption 的飛船無意義
             return;
