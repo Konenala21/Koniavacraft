@@ -8,6 +8,7 @@ import com.github.nalamodikk.register.ModEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.state.properties.ChestType;
 import net.minecraft.gametest.framework.GameTest;
@@ -187,6 +188,28 @@ public class ShipAssemblyGameTests {
                     helper.assertBlockPresent(Blocks.AIR, new BlockPos(5, 2, 5)); // 斜接方塊被組進船=從世界移除
                 })
                 .thenSucceed();
+    }
+
+    /** interactWithPick(client 準心 pick)放方塊:指到 (2,1,2) 上面 → 放到 (2,2,2)。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
+    public static void shipInteractWithPickPlacesBlock(GameTestHelper helper) {
+        ShipContraption ship = new ShipContraption();
+        ship.addBlock(new BlockPos(0, 0, 0), Blocks.QUARTZ_BLOCK.defaultBlockState(), null);
+        ship.addBlock(new BlockPos(2, 1, 2), Blocks.QUARTZ_BLOCK.defaultBlockState(), null);
+        ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), helper.getLevel());
+        entity.setContraption(ship);
+        BlockPos origin = helper.absolutePos(new BlockPos(4, 4, 4));
+        entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
+        entity.setOldPosAndRot();
+        Player player = helper.makeMockPlayer(GameType.CREATIVE);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Blocks.OAK_PLANKS.asItem()));
+
+        ShipEntity.Pick pick = new ShipEntity.Pick(new BlockPos(2, 1, 2), Direction.UP,
+                Vec3.atCenterOf(new BlockPos(2, 1, 2)).add(0, 0.5, 0)); // 指到 (2,1,2) 上面
+        entity.interactWithPick(player, InteractionHand.MAIN_HAND, pick);
+        if (!ship.getBlocks().containsKey(new BlockPos(2, 2, 2)))
+            helper.fail("interactWithPick did not place the block above the aimed face");
+        helper.succeed();
     }
 
     /** breakLocalBlock 挖指定的 local 方塊會從 contraption 移除;核心(0,0,0)不可挖。 */

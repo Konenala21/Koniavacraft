@@ -1150,8 +1150,15 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
      */
     @Override
     public InteractionResult interactAt(Player player, Vec3 hitVec, InteractionHand hand) {
-        if (contraption == null) return InteractionResult.PASS;
-        BlockPos local = pickLocalBlock(player);
+        // server fallback:自己 raycast。正常路徑是 client 攔截、發 ShipInteractPacket 帶準心 pick → interactWithPick,
+        // 這樣 server 不用延遲的玩家位置 raycast,放置/開容器/上船跟 client 準心一致。
+        return interactWithPick(player, hand, pickLocal(player));
+    }
+
+    /** interactAt 的本體,但用指定的 pick。client 透過 ShipInteractPacket 傳準心 pick,server 不自己 raycast。 */
+    public InteractionResult interactWithPick(Player player, InteractionHand hand, @Nullable Pick pick) {
+        if (contraption == null || pick == null) return InteractionResult.PASS;
+        BlockPos local = pick.local();
         if (local == null) return InteractionResult.PASS; // 指到空隙=船身，不反應
         var info = contraption.getBlocks().get(local);
         if (info == null) return InteractionResult.PASS;
@@ -1198,18 +1205,15 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         }
         // 停船編輯：手持方塊 + 指到非互動方塊的面 → 放方塊到相鄰空位（互動方塊優先，所以放在這後面）
         if (isParked() && player.getItemInHand(hand).getItem() instanceof BlockItem bi) {
-            Pick pick = pickLocal(player);
-            if (pick != null) {
-                BlockPos newLocal = pick.local().relative(pick.face());
-                if (!contraption.getBlocks().containsKey(newLocal)) {
-                    if (!level().isClientSide) {
-                        if (placeBlock(player, hand, pick, newLocal, bi.getBlock())
-                                && !player.getAbilities().instabuild) {
-                            player.getItemInHand(hand).shrink(1);
-                        }
+            BlockPos newLocal = pick.local().relative(pick.face());
+            if (!contraption.getBlocks().containsKey(newLocal)) {
+                if (!level().isClientSide) {
+                    if (placeBlock(player, hand, pick, newLocal, bi.getBlock())
+                            && !player.getAbilities().instabuild) {
+                        player.getItemInHand(hand).shrink(1);
                     }
-                    return InteractionResult.sidedSuccess(level().isClientSide);
                 }
+                return InteractionResult.sidedSuccess(level().isClientSide);
             }
         }
         // TODO Phase 4：機器 → 虛擬世界 tick
@@ -1462,7 +1466,13 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     /** 從玩家視線 raycast 找指到的 local 方塊（用 outline 形狀，逐方塊取最近命中）。 */
     @Nullable
-    private record Pick(BlockPos local, Direction face, Vec3 hitLocal) {}
+    public record Pick(BlockPos local, Direction face, Vec3 hitLocal) {}
+
+    /** Client 算準心瞄準的 pick(local+面+hit),透過 ShipInteractPacket 傳給 server,讓互動跟準心一致。 */
+    @Nullable
+    public Pick clientPick(Player player) {
+        return pickLocal(player);
+    }
 
     /** raycast 視線進船的 local 方塊，回傳最近命中的方塊 + 命中面 + 命中點(local，放方塊朝向要用)。 */
     @Nullable

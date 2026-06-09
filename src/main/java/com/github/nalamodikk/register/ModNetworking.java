@@ -99,6 +99,7 @@ public class ModNetworking {
         ShipBlockUpdatePacket.registerTo(registrar);
         com.github.nalamodikk.common.network.packet.client.ship.ShipBlockEntityDataPacket.registerTo(registrar);
         com.github.nalamodikk.common.network.packet.server.ship.ShipBreakBlockPacket.registerTo(registrar);
+        com.github.nalamodikk.common.network.packet.server.ship.ShipInteractPacket.registerTo(registrar);
 
         ResearchCompletePacket.registerTo(registrar);
         ResearchAspectPlacePacket.registerTo(registrar);
