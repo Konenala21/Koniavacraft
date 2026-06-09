@@ -60,10 +60,19 @@ public record ConfigDirectionBatchUpdatePacket(
     public static void handle(ConfigDirectionBatchUpdatePacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
-                Level level = player.level();
-                if (net.minecraft.world.phys.Vec3.atCenterOf(packet.pos())
-                        .distanceToSqr(player.position()) > 64.0) return;
-                BlockEntity be = level.getBlockEntity(packet.pos());
+                // 船機器 BE 在影子維度：優先用開著的設定選單的 BE(=影子 BE)，不然 raw 查 player.level()+距離檢查會擋掉。
+                BlockEntity be;
+                Level level;
+                if (player.containerMenu instanceof com.github.nalamodikk.common.screen.block.shared.UniversalConfigMenu menu
+                        && menu.getBlockEntity() != null) {
+                    be = menu.getBlockEntity();
+                    level = be.getLevel();
+                } else {
+                    level = player.level();
+                    if (net.minecraft.world.phys.Vec3.atCenterOf(packet.pos())
+                            .distanceToSqr(player.position()) > 64.0) return;
+                    be = level.getBlockEntity(packet.pos());
+                }
 
                 if (be instanceof IConfigurableBlock configurable) {
                     boolean hasChanges = false;

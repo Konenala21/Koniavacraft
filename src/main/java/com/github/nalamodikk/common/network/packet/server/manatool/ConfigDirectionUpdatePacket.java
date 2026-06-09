@@ -52,10 +52,20 @@ public record ConfigDirectionUpdatePacket(BlockPos pos, Direction direction, IOH
     public static void handle(ConfigDirectionUpdatePacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer player) {
-                Level level = player.level();
-                if (net.minecraft.world.phys.Vec3.atCenterOf(packet.pos())
-                        .distanceToSqr(player.position()) > 64.0) return;
-                BlockEntity be = level.getBlockEntity(packet.pos());
+                // 船上的機器 BE 在影子維度：優先用玩家開著的設定選單的 BE(=影子 BE)。直接查 player.level()(主世界)
+                // 拿不到、而且影子座標離玩家很遠、距離檢查也會擋掉 → config 永遠存不進去。
+                BlockEntity be;
+                Level level;
+                if (player.containerMenu instanceof com.github.nalamodikk.common.screen.block.shared.UniversalConfigMenu menu
+                        && menu.getBlockEntity() != null) {
+                    be = menu.getBlockEntity();
+                    level = be.getLevel();
+                } else {
+                    level = player.level();
+                    if (net.minecraft.world.phys.Vec3.atCenterOf(packet.pos())
+                            .distanceToSqr(player.position()) > 64.0) return;
+                    be = level.getBlockEntity(packet.pos());
+                }
 
                 if (be instanceof IConfigurableBlock configurable) {
                     // ✅ 若內容沒變，就直接略過處理（防止多次封包）
