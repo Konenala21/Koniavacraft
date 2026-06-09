@@ -10,6 +10,7 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
@@ -41,9 +42,13 @@ public record ShipBreakBlockPacket(int entityId, BlockPos localPos) implements C
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
             Entity e = player.level().getEntity(packet.entityId());
-            if (e instanceof ShipEntity ship && ship.isParked()
-                    && ship.distanceToSqr(player) <= 64.0) { // 範圍防作弊(船 hitbox 大,放寬到 8 格內)
-                ship.breakLocalBlock(player, packet.localPos());
+            if (e instanceof ShipEntity ship && ship.isParked()) {
+                // 範圍防作弊:算到「被挖的方塊本身」的距離,不是船原點(大船的方塊離原點很遠 → 用原點會誤擋)。
+                BlockPos lp = packet.localPos();
+                Vec3 blockWorld = ship.rotatedWorldPoint(lp.getX() + 0.5, lp.getY() + 0.5, lp.getZ() + 0.5);
+                if (blockWorld.distanceToSqr(player.position()) <= 64.0) { // 8 格內
+                    ship.breakLocalBlock(player, lp);
+                }
             }
         });
     }

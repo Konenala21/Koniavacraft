@@ -55,10 +55,15 @@ public record ShipInteractPacket(int entityId, BlockPos local, int faceIndex, Ve
         context.enqueueWork(() -> {
             if (!(context.player() instanceof ServerPlayer player)) return;
             Entity e = player.level().getEntity(packet.entityId());
-            if (e instanceof ShipEntity ship && ship.distanceToSqr(player) <= 64.0) {
-                InteractionHand hand = packet.offHand() ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
-                Direction face = Direction.from3DDataValue(packet.faceIndex());
-                ship.interactWithPick(player, hand, new ShipEntity.Pick(packet.local(), face, packet.hit()));
+            if (e instanceof ShipEntity ship) {
+                // 範圍防作弊:算到被互動的方塊本身,不是船原點(大船的方塊離原點很遠 → 用原點會誤擋)。
+                BlockPos lp = packet.local();
+                Vec3 blockWorld = ship.rotatedWorldPoint(lp.getX() + 0.5, lp.getY() + 0.5, lp.getZ() + 0.5);
+                if (blockWorld.distanceToSqr(player.position()) <= 64.0) { // 8 格內
+                    InteractionHand hand = packet.offHand() ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+                    Direction face = Direction.from3DDataValue(packet.faceIndex());
+                    ship.interactWithPick(player, hand, new ShipEntity.Pick(lp, face, packet.hit()));
+                }
             }
         });
     }
