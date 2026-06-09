@@ -720,15 +720,9 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         VoxelShape shape = localCollisionShape();
         if (shape.isEmpty()) return worldMotion;
         AABB box = e.getBoundingBox();
-        // 人工重力 phase 1：站在傾斜船上時，把「世界向下的重力」改成「沿甲板法線垂直插入甲板」。
-        // 世界重力在斜甲板有沿斜面的分量 → 玩家滑(阻力)+ onGround 跳(抽搐)；改成垂直法線就沒有切向分量 →
-        // 不滑、黏甲板、人保持直立(鏡頭/操作不變)。只在明顯傾斜(>1°)且站在船上時做。
-        if (e instanceof Player && worldMotion.y < 0
-                && (Math.abs(getXRot()) > 1f || Math.abs(getRoll()) > 1f) && isSupporting(e)) {
-            Vector3f dd = orientation().transform(new Vector3f(0f, -1f, 0f)); // 甲板法線朝下(垂直插入甲板)
-            double g = -worldMotion.y;
-            worldMotion = new Vec3(worldMotion.x + dd.x * g, dd.y * g, worldMotion.z + dd.z * g);
-        }
+        // (曾試過「人工重力 phase 1」把重力沿甲板法線重導向防滑，但它在停著的微斜船上造成上下彈跳(抽搐/陷下去)。
+        //  實測：站甲板 onGround 會把下墜速度歸零，重力不累積，5° 滑移只 0.02 格，根本不需要重導向。已移除。
+        //  真正大幅傾斜要防滑是 phase 2/3(deck-is-down)的事，不是這個半套。)
         // T0 = 上一 tick 姿勢(yRotO/xRotO/rollO)，T1 = 這一 tick。用完整姿勢(含 pitch/roll)，碰撞才跟傾斜視覺對齊。
         Quaternionf q0 = orientationOf(yRotO, xRotO, rollO, getBowLocal());
         Quaternionf q1 = orientation();

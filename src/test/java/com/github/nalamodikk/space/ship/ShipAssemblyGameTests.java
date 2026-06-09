@@ -586,7 +586,8 @@ public class ShipAssemblyGameTests {
         helper.succeed();
     }
 
-    /** 人工重力 phase 1：傾斜 20° 甲板上只有重力(不走)，玩家不該沿斜面滑走(重力沿甲板法線垂直插入)。 */
+    /** 微斜(5°)甲板上站著(只重力，grounded 歸零)：滑移應該很小。停著的船常帶幾度，這驗證它不會慢慢溜走。
+     *  (大幅傾斜的防滑是 phase 2/3 deck-is-down 的事；之前的「人工重力 redirect」會造成抽搐已移除。) */
     @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 120)
     public static void tiltedDeckNoSlide(GameTestHelper helper) {
         ShipContraption ship = new ShipContraption();
@@ -596,7 +597,7 @@ public class ShipAssemblyGameTests {
         entity.setContraption(ship);
         BlockPos origin = helper.absolutePos(new BlockPos(4, 4, 4));
         entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
-        entity.setXRot(20f); // 傾斜 20°
+        entity.setXRot(5f); // 微斜 5°(停著的船常帶幾度)
         entity.setOldPosAndRot();
         Player probe = helper.makeMockPlayer(GameType.SURVIVAL);
         net.minecraft.world.phys.Vec3 start = entity.rotatedWorldPoint(4.0, 1.05, 4.0);
@@ -611,8 +612,50 @@ public class ShipAssemblyGameTests {
         }
         net.minecraft.world.phys.Vec3 endL = entity.worldToLocalPoint(probe.getX(), probe.getBoundingBox().minY, probe.getZ());
         double drift = Math.hypot(endL.x - startL.x, endL.z - startL.z);
-        KoniavacraftMod.LOGGER.info("[tiltslide] drift={} (small=黏住, 大=滑走)", String.format("%.2f", drift));
-        if (drift > 1.5) helper.fail("slid down tilted deck: local drift=" + drift);
+        KoniavacraftMod.LOGGER.info("[tiltslide] drift={} (5° 微斜，應該很小)", String.format("%.2f", drift));
+        if (drift > 1.0) helper.fail("slid too much on a mild 5deg deck: local drift=" + drift);
+        helper.succeed();
+    }
+
+    /** 量「停著的微斜(5°)甲板上走路」的手感：腳底 local Y 該穩在甲板頂(1.0)，水平該等於輸入(不被吃)。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 120)
+    public static void tiltedDeckWalkFeel(GameTestHelper helper) {
+        ShipContraption ship = new ShipContraption();
+        BlockState quartz = Blocks.QUARTZ_BLOCK.defaultBlockState();
+        for (int x = 0; x < 10; x++) for (int z = 0; z < 4; z++) ship.addBlock(new BlockPos(x, 0, z), quartz, null);
+        ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), helper.getLevel());
+        entity.setContraption(ship);
+        BlockPos origin = helper.absolutePos(new BlockPos(4, 4, 4));
+        entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
+        entity.setXRot(5f); // 5° → 走 OBB(跟用戶停著的微斜船同路徑)
+        entity.setOldPosAndRot();
+        Player probe = helper.makeMockPlayer(GameType.SURVIVAL);
+        net.minecraft.world.phys.Vec3 start = entity.rotatedWorldPoint(1.0, 1.0, 2.0);
+        probe.setPos(start.x, start.y, start.z);
+        net.minecraft.world.phys.Vec3 vel = net.minecraft.world.phys.Vec3.ZERO;
+        StringBuilder trace = new StringBuilder();
+        double totalIn = 0, totalOut = 0, minLY = 99, maxLY = -99;
+        for (int t = 0; t < 45; t++) {
+            double wx = 0.13; // 固定往 +X 走
+            vel = new net.minecraft.world.phys.Vec3(wx, vel.y - 0.08, 0);
+            net.minecraft.world.phys.Vec3 r = entity.applyContraptionMovement(probe, vel);
+            probe.setPos(probe.getX() + r.x, probe.getY() + r.y, probe.getZ() + r.z);
+            if (r.y > vel.y + 1.0e-4) vel = new net.minecraft.world.phys.Vec3(vel.x, 0, vel.z);
+            double ly = entity.worldToLocalPoint(probe.getX(), probe.getBoundingBox().minY, probe.getZ()).y;
+            if (t >= 8) { // 跳過落地前幾 tick
+                minLY = Math.min(minLY, ly); maxLY = Math.max(maxLY, ly);
+                totalIn += wx; totalOut += Math.hypot(r.x, r.z);
+                if (t % 3 == 0) trace.append(String.format("%.2f ", ly));
+            }
+        }
+        double zDrift = entity.worldToLocalPoint(probe.getX(), probe.getBoundingBox().minY, probe.getZ()).z
+                - entity.worldToLocalPoint(start.x, start.y, start.z).z;
+        KoniavacraftMod.LOGGER.info("[walkfeel] sinkRange={} (越大越陷/抖) horizOut/In={} (越小越阻力) zSlide={} (沿傾斜方向滑移) LYtrace={}",
+                String.format("%.3f", maxLY - minLY), String.format("%.2f", totalOut / totalIn),
+                String.format("%.2f", zDrift), trace.toString().trim());
+        // 防回歸：腳底別大幅上下彈(抽搐)、水平別被吃(阻力)。曾經的「人工重力」會讓 sinkRange 飆到 ~0.1+ 來回跳。
+        if (maxLY - minLY > 0.3) helper.fail("walking bobs up/down too much (twitch): sinkRange=" + (maxLY - minLY));
+        if (totalOut / totalIn < 0.85) helper.fail("walking horizontally resisted: out/in=" + (totalOut / totalIn));
         helper.succeed();
     }
 
