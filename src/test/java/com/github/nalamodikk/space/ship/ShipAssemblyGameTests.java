@@ -6,7 +6,10 @@ import com.github.nalamodikk.dimension.ModDimensions;
 import com.github.nalamodikk.register.ModBlocks;
 import com.github.nalamodikk.register.ModEntities;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.level.block.state.properties.ChestType;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.Container;
@@ -184,6 +187,29 @@ public class ShipAssemblyGameTests {
                     helper.assertBlockPresent(Blocks.AIR, new BlockPos(5, 2, 5)); // 斜接方塊被組進船=從世界移除
                 })
                 .thenSucceed();
+    }
+
+    /** 在船上放兩個相鄰的箱子(同 facing)該連成 double(一 LEFT 一 RIGHT)，否則開起來是兩個單箱(27)。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
+    public static void shipPlacedChestsConnect(GameTestHelper helper) {
+        ShipContraption ship = new ShipContraption();
+        for (int x = 0; x < 6; x++) for (int z = 0; z < 4; z++)
+            ship.addBlock(new BlockPos(x, 0, z), Blocks.QUARTZ_BLOCK.defaultBlockState(), null);
+        ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), helper.getLevel());
+        entity.setContraption(ship);
+        BlockPos origin = helper.absolutePos(new BlockPos(4, 4, 4));
+        entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
+        entity.setOldPosAndRot();
+        Direction f = Direction.NORTH;
+        // 先放 (3,1,1)，再放它西邊的 (2,1,1)。面 NORTH 時 (3,1,1) 在 (2,1,1) 的 clockwise(EAST) → 新的=LEFT、夥伴=RIGHT
+        entity.placeState(new BlockPos(3, 1, 1), Blocks.CHEST.defaultBlockState().setValue(ChestBlock.FACING, f));
+        entity.placeState(new BlockPos(2, 1, 1), Blocks.CHEST.defaultBlockState().setValue(ChestBlock.FACING, f));
+        ChestType ta = ship.getBlocks().get(new BlockPos(2, 1, 1)).state().getValue(ChestBlock.TYPE);
+        ChestType tb = ship.getBlocks().get(new BlockPos(3, 1, 1)).state().getValue(ChestBlock.TYPE);
+        KoniavacraftMod.LOGGER.info("[shipchestplace] a={} b={} (該一 LEFT 一 RIGHT，SINGLE=沒連)", ta, tb);
+        if (ta == ChestType.SINGLE || tb == ChestType.SINGLE)
+            helper.fail("ship-placed adjacent chests stayed SINGLE (open as 27 not 54): " + ta + "/" + tb);
+        helper.succeed();
     }
 
     @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
