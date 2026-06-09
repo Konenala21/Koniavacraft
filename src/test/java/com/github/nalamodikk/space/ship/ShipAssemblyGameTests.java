@@ -189,6 +189,29 @@ public class ShipAssemblyGameTests {
                 .thenSucceed();
     }
 
+    /** breakLocalBlock 挖指定的 local 方塊會從 contraption 移除;核心(0,0,0)不可挖。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
+    public static void shipBreakLocalBlockRemovesIt(GameTestHelper helper) {
+        ShipContraption ship = new ShipContraption();
+        ship.addBlock(new BlockPos(0, 0, 0), Blocks.QUARTZ_BLOCK.defaultBlockState(), null); // 核心位
+        ship.addBlock(new BlockPos(2, 1, 2), Blocks.OAK_PLANKS.defaultBlockState(), null);
+        ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), helper.getLevel());
+        entity.setContraption(ship);
+        BlockPos origin = helper.absolutePos(new BlockPos(4, 4, 4));
+        entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
+        entity.setOldPosAndRot();
+        Player player = helper.makeMockPlayer(GameType.CREATIVE); // instabuild → 不掉落,簡化
+
+        entity.breakLocalBlock(player, new BlockPos(2, 1, 2));
+        if (ship.getBlocks().containsKey(new BlockPos(2, 1, 2)))
+            helper.fail("breakLocalBlock did not remove the block");
+
+        entity.breakLocalBlock(player, BlockPos.ZERO); // 核心
+        if (!ship.getBlocks().containsKey(BlockPos.ZERO))
+            helper.fail("ship core (0,0,0) must not be breakable");
+        helper.succeed();
+    }
+
     /** 在船上放兩個相鄰的箱子(同 facing)該連成 double(一 LEFT 一 RIGHT)，否則開起來是兩個單箱(27)。 */
     @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
     public static void shipPlacedChestsConnect(GameTestHelper helper) {

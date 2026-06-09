@@ -1221,18 +1221,16 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         return getControllingPassenger() == null;
     }
 
-    /** 左鍵(攻擊)停著的船 = 挖掉指到的方塊（核心不可挖）。不真的扣血。 */
+    /** 不受傷。左鍵挖停著的船的方塊改由 client 發 ShipBreakBlockPacket 處理(準心一致,不用 server raycast 延遲位置)。 */
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        if (!level().isClientSide && contraption != null
-                && source.getEntity() instanceof Player player && isParked()) {
-            breakAimedBlock(player);
-        }
         return false;
     }
 
-    private void breakAimedBlock(Player player) {
-        BlockPos local = pickLocalBlock(player);
+    /** 挖飛船上指定的 local 方塊(掉落 + 拆同步 + 門另一半)。哪一格由 client 的 ShipBreakBlockPacket 指定,
+     *  跟 client 準心一致;不在 server 自己 raycast(會用到延遲的玩家位置 → 挖到別格)。 */
+    public void breakLocalBlock(Player player, BlockPos local) {
+        if (contraption == null) return;
         if (local == null || local.equals(BlockPos.ZERO)) return; // 核心(0,0,0)是錨點，不可挖
         var info = contraption.getBlocks().get(local);
         if (info == null) return;
