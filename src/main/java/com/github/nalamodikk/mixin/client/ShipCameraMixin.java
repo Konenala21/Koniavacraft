@@ -25,14 +25,25 @@ public abstract class ShipCameraMixin {
 
     @Shadow protected abstract void setPosition(Vec3 pos);
     @Shadow public abstract Vector3f getLookVector();
+    @Shadow public abstract Vec3 getPosition();
 
     @Inject(method = "setup", at = @At("TAIL"))
     private void koniava$shipCamera(BlockGetter level, Entity entity, boolean detached, boolean mirror,
                                     float partialTick, CallbackInfo ci) {
-        if (!detached) return; // 第一人稱不動
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || !(mc.player.getVehicle() instanceof ShipEntity ship)) return;
         if (ship.getControllingPassenger() != mc.player) return;
+
+        if (!detached) {
+            // 第一人稱：vanilla 把眼睛放在「座位 + 世界上 × eyeHeight」。船傾斜時座位的「上」是斜的，世界上的眼睛
+            // 就浮在斜座位正上方而偏位。改成沿「船的上」偏移 eyeHeight → 眼睛待在座艙裡跟著斜，不偏離座位。
+            Vector3f up = ship.orientation(partialTick).transform(new Vector3f(0f, 1f, 0f));
+            if (Math.abs(up.x) > 1.0e-4 || Math.abs(up.z) > 1.0e-4) { // 只在傾斜時動
+                double eyeH = mc.player.getEyeHeight();
+                setPosition(getPosition().add(up.x * eyeH, (up.y - 1.0) * eyeH, up.z * eyeH));
+            }
+            return;
+        }
 
         // 用 partialTick 插值位置（跟船渲染同一套），否則相機用 tick 原始位置、船用插值位置 → 每幀錯位抽搐
         double ix = Mth.lerp(partialTick, ship.xOld, ship.getX());
