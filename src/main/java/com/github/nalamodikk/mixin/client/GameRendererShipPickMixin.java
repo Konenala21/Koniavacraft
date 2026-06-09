@@ -13,7 +13,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.Optional;
 
 /**
  * 大實體 pick 盲區補強：vanilla 的準心實體 pick 用「玩家 reach 附近的小搜尋盒」找實體，但飛船很大卻只登記在
@@ -33,7 +32,6 @@ public class GameRendererShipPickMixin {
         double reach = mc.player.blockInteractionRange();
         Vec3 eye = cam.getEyePosition(partialTicks);
         Vec3 look = cam.getViewVector(partialTicks);
-        Vec3 end = eye.add(look.x * reach, look.y * reach, look.z * reach);
 
         // vanilla 已算出的命中距離(沒命中就用 reach)；只在飛船比它更近時才覆蓋。
         double bestDistSqr = (mc.hitResult != null && mc.hitResult.getType() != HitResult.Type.MISS)
@@ -44,13 +42,16 @@ public class GameRendererShipPickMixin {
         Vec3 bestHit = null;
         for (ShipEntity ship : ShipEntity.nearbyShips(mc.level, search)) {
             if (ship == cam.getVehicle()) continue;
-            Optional<Vec3> clip = ship.getBoundingBox().clip(eye, end);
-            if (clip.isEmpty()) continue;
-            double d = clip.get().distanceToSqr(eye);
+            // 用「實際方塊射線」(getAimedLocalBlock)，不要 clip 船的 cube bb：站在船上=在 cube 內，從盒子內 clip 回傳空 →
+            // 點不到。射線打到的本地方塊存在 = 準心對著船方塊 → 選它。命中點用該方塊世界中心算距離。
+            net.minecraft.core.BlockPos aimed = ship.getAimedLocalBlock(mc.player);
+            if (aimed == null) continue;
+            Vec3 hitWorld = ship.rotatedWorldPoint(aimed.getX() + 0.5, aimed.getY() + 0.5, aimed.getZ() + 0.5);
+            double d = hitWorld.distanceToSqr(eye);
             if (d < bestDistSqr) {
                 bestDistSqr = d;
                 best = ship;
-                bestHit = clip.get();
+                bestHit = hitWorld;
             }
         }
         if (best != null) {

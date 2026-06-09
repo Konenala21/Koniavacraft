@@ -713,7 +713,7 @@ public class ShipAssemblyGameTests {
         entity.setContraption(ship);
         BlockPos origin = helper.absolutePos(new BlockPos(4, 4, 4));
         entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
-        entity.setXRot(5f); // 5° → 走 OBB(跟用戶停著的微斜船同路徑)
+        // 直立(用戶的船 tilted=false)→ collideBoundingBox + 推出路徑，量這條的阻力
         entity.setOldPosAndRot();
         Player probe = helper.makeMockPlayer(GameType.SURVIVAL);
         net.minecraft.world.phys.Vec3 start = entity.rotatedWorldPoint(1.0, 1.0, 2.0);
