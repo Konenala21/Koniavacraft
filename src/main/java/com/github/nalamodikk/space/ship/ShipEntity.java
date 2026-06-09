@@ -1,6 +1,7 @@
 package com.github.nalamodikk.space.ship;
 
 import com.github.nalamodikk.common.network.packet.client.ship.ShipBlockUpdatePacket;
+import com.github.nalamodikk.common.item.tool.StructureBuildWandItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
@@ -283,6 +284,39 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
                 }
             }
         }
+    }
+
+    /** 結構杖等工具透過 forwardUseToShadow 在影子裡新蓋的方塊(祭壇柱子/底座/升級環)不在 contraption →
+     *  掃 center(local 祭壇)±radius，把「影子有、視覺船沒有或不同」的方塊收進 contraption + 發給 client。
+     *  一次性(杖少用)，範圍掃可接受。server 端呼叫。 */
+    private void syncNewShadowBlocksToContraption(BlockPos center, int radius) {
+        ServerLevel shadow = getShadow();
+        if (shadow == null || contraption == null) {
+            com.github.nalamodikk.KoniavacraftMod.LOGGER.info("[shipwand] no shadow/contraption, skip");
+            return;
+        }
+        int n = 0;
+        for (BlockPos p : BlockPos.betweenClosed(center.offset(-radius, -radius, -radius), center.offset(radius, radius, radius))) {
+            BlockPos shadowPos = shadowAnchor.offset(p);
+            BlockState ss = shadow.getBlockState(shadowPos);
+            var info = contraption.getBlocks().get(p);
+            BlockState cur = info != null ? info.state() : Blocks.AIR.defaultBlockState();
+            if (ss.isAir() || ss.equals(cur)) continue; // 影子空 / 沒變 → 跳過
+            BlockPos lp = p.immutable();
+            updateContraptionBlock(lp, ss); // 加進 contraption + 發 state 封包 + 失效碰撞/mesh 快取 + refreshDimensions
+            if (ss.getBlock() instanceof EntityBlock) {
+                BlockEntity sbe = shadow.getBlockEntity(shadowPos);
+                if (sbe != null) {
+                    CompoundTag nbt = sbe.saveWithFullMetadata(shadow.registryAccess());
+                    nbt.remove("x"); nbt.remove("y"); nbt.remove("z");
+                    contraption.setBlockNbt(lp, nbt);
+                    com.github.nalamodikk.common.network.packet.client.ship.ShipBlockEntityDataPacket
+                            .sendToClients(this, lp, nbt);
+                }
+            }
+            n++;
+        }
+        com.github.nalamodikk.KoniavacraftMod.LOGGER.info("[shipwand] synced {} new blocks from shadow to ship (0=杖沒蓋成/沒跑)", n);
     }
 
     @Override
@@ -1152,6 +1186,11 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         if (info.state().getBlock() instanceof EntityBlock && !sneakPlacing) {
             if (!level().isClientSide && player instanceof ServerPlayer sp) {
                 boolean opened = forwardUseToShadow(sp, local, info.state(), hand); // 影子真 BE 的 GUI
+                // 結構杖在影子裡蓋出了祭壇柱子/底座/升級環(forwardUseToShadow 跑了 wand.useOn)，
+                // 但那些是影子的新方塊、不在 contraption 裡 → 掃祭壇周圍(最大偏移 13)把新方塊收回視覺船。
+                if (sp.getItemInHand(hand).getItem() instanceof StructureBuildWandItem) {
+                    syncNewShadowBlocksToContraption(local, 14);
+                }
                 if (!opened && isContainer(info.state())) openContainer(sp, local, info); // 退回鏡像容器
             }
             return InteractionResult.sidedSuccess(level().isClientSide);
