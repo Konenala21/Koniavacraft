@@ -780,7 +780,10 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         Vec3 extents = new Vec3(box.getXsize() / 2, box.getYsize() / 2, box.getZsize() / 2);
         Matrix3d rot = new Matrix3d().set(q0.conjugate(new Quaternionf()));
         OrientedBB obb = new OrientedBB(lb.getCenter(), extents, rot);
-        float maxStep = (float) e.maxUpStep();
+        // maxStep=0：OBB 的 step-up 會把「微斜的斜面」當成一連串小台階一直往上踩 → 重力拉下 → 站著上下彈(抽搐)，
+        // 低角度(3~5°)最明顯。飛船甲板用不到 step-up(連續斜面靠 collide-and-slide 走得上去，不是離散台階)，
+        // 關掉它抽搐全消(tiltsweep 各角度 bob=0)且 110 gametest 全過(牆/樓梯/穿入推出都不靠它)。
+        float maxStep = 0f;
         // 子步進：把這 tick 的移動切 N 小段，每段 連續碰撞+沿面滑+穿入推出。角落「切角」是因為一步斜跨過角點，
         // 小步走會在跨過前先重疊到 → 抓得住。每段後再做穿入解析 pass 把殘餘穿入推回表面。
         // 子步數依速度自適應：每步 ~0.35 格，快速墜落(終端速度 ~3.9/tick)才不會一步跨過甲板穿透。
