@@ -586,6 +586,39 @@ public class ShipAssemblyGameTests {
         helper.succeed();
     }
 
+    /** 掃描各傾斜角:量站在甲板上(只重力、grounded 歸零)60 tick 的滑移量 + 是否還在甲板上。回答「極度傾斜會怎樣」。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 200)
+    public static void tiltAngleSweep(GameTestHelper helper) {
+        for (float deg : new float[]{5, 20, 45, 70, 85}) {
+            ShipContraption ship = new ShipContraption();
+            BlockState quartz = Blocks.QUARTZ_BLOCK.defaultBlockState();
+            for (int x = 0; x < 10; x++) for (int z = 0; z < 10; z++) ship.addBlock(new BlockPos(x, 0, z), quartz, null);
+            ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), helper.getLevel());
+            entity.setContraption(ship);
+            BlockPos origin = helper.absolutePos(new BlockPos(4, 4, 4));
+            entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
+            entity.setXRot(deg);
+            entity.setOldPosAndRot();
+            Player probe = helper.makeMockPlayer(GameType.SURVIVAL);
+            net.minecraft.world.phys.Vec3 start = entity.rotatedWorldPoint(5.0, 1.0, 5.0);
+            probe.setPos(start.x, start.y, start.z);
+            net.minecraft.world.phys.Vec3 startL = entity.worldToLocalPoint(start.x, start.y, start.z);
+            net.minecraft.world.phys.Vec3 vel = net.minecraft.world.phys.Vec3.ZERO;
+            for (int t = 0; t < 60; t++) {
+                vel = new net.minecraft.world.phys.Vec3(vel.x, vel.y - 0.08, vel.z);
+                net.minecraft.world.phys.Vec3 r = entity.applyContraptionMovement(probe, vel);
+                probe.setPos(probe.getX() + r.x, probe.getY() + r.y, probe.getZ() + r.z);
+                if (r.y > vel.y + 1.0e-4) vel = new net.minecraft.world.phys.Vec3(vel.x, 0, vel.z);
+            }
+            net.minecraft.world.phys.Vec3 endL = entity.worldToLocalPoint(probe.getX(), probe.getBoundingBox().minY, probe.getZ());
+            double slide = Math.hypot(endL.x - startL.x, endL.z - startL.z);
+            boolean onDeck = endL.y > 0.5 && endL.y < 2.0; // 甲板頂 local y=1，還在附近=沒掉
+            KoniavacraftMod.LOGGER.info("[tiltsweep] {}deg slide={} endLocalY={} stillOnDeck={}",
+                    (int) deg, String.format("%.2f", slide), String.format("%.2f", endL.y), onDeck);
+        }
+        helper.succeed();
+    }
+
     /** 微斜(5°)甲板上站著(只重力，grounded 歸零)：滑移應該很小。停著的船常帶幾度，這驗證它不會慢慢溜走。
      *  (大幅傾斜的防滑是 phase 2/3 deck-is-down 的事；之前的「人工重力 redirect」會造成抽搐已移除。) */
     @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 120)
