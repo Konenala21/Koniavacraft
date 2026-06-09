@@ -745,6 +745,37 @@ public class ShipAssemblyGameTests {
         helper.succeed();
     }
 
+    /** 微傾(1.5°，走 collideBoundingBox)走路時 result 的水平軸該對齊輸入(snap 抓住甲板法線歸零的洩漏)，
+     *  否則 result.x≠輸入 → vanilla move 每 tick 歸零水平速度 = 走路阻力。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 120)
+    public static void nearUprightWalkNoVelKill(GameTestHelper helper) {
+        ShipContraption ship = new ShipContraption();
+        BlockState quartz = Blocks.QUARTZ_BLOCK.defaultBlockState();
+        for (int x = 0; x < 10; x++) for (int z = 0; z < 6; z++) ship.addBlock(new BlockPos(x, 0, z), quartz, null);
+        ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), helper.getLevel());
+        entity.setContraption(ship);
+        BlockPos origin = helper.absolutePos(new BlockPos(4, 4, 4));
+        entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
+        entity.setXRot(1.5f); // 微傾(<2° → collideBoundingBox)，重現洩漏
+        entity.setOldPosAndRot();
+        Player probe = helper.makeMockPlayer(GameType.SURVIVAL);
+        net.minecraft.world.phys.Vec3 start = entity.rotatedWorldPoint(5.0, 1.0, 3.0);
+        probe.setPos(start.x, start.y, start.z);
+        net.minecraft.world.phys.Vec3 vel = net.minecraft.world.phys.Vec3.ZERO;
+        int kills = 0;
+        for (int t = 0; t < 40; t++) {
+            double wx = 0.13, wz = 0.05;
+            vel = new net.minecraft.world.phys.Vec3(wx, vel.y - 0.08, wz);
+            net.minecraft.world.phys.Vec3 r = entity.applyContraptionMovement(probe, vel);
+            probe.setPos(probe.getX() + r.x, probe.getY() + r.y, probe.getZ() + r.z);
+            if (r.y > vel.y + 1.0e-4) vel = new net.minecraft.world.phys.Vec3(vel.x, 0, vel.z);
+            if (t >= 8 && (Math.abs(r.x - wx) > 1.0e-6 || Math.abs(r.z - wz) > 1.0e-6)) kills++; // 水平沒對齊=vanilla殺速度
+        }
+        KoniavacraftMod.LOGGER.info("[velkill] kills={}/32 (0=沒阻力，>0=vanilla每tick殺水平速度)", kills);
+        if (kills > 0) helper.fail("vanilla would zero horizontal velocity " + kills + " ticks (walking resistance)");
+        helper.succeed();
+    }
+
     private static int walkSim(ShipEntity entity, Player probe, net.minecraft.world.phys.Vec3 startWorld, boolean resetVel, int ticks) {
         probe.setPos(startWorld.x, startWorld.y, startWorld.z);
         net.minecraft.world.phys.Vec3 vel = net.minecraft.world.phys.Vec3.ZERO;

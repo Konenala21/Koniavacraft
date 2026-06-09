@@ -760,9 +760,12 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         Vec3 result = newWorld.subtract(P);
         // 旋轉 round-trip 在沒實際被擋的軸留下 ~1e-10 epsilon；vanilla Entity.move 用精確 != 判碰撞，
         // 會把這 epsilon 當成撞牆 → 每 tick 歸零玩家速度 → 走/跳「黏黏的」。差距極小的軸 snap 回 desired。
-        double rx = Math.abs(result.x - worldMotion.x) < 1.0e-4 ? worldMotion.x : result.x;
+        // 水平容差放寬到 0.005：微傾斜的船(<2° 走 collideBoundingBox)把 local-Y 歸零會洩漏到世界 X/Z ~0.003，
+        // 容差太小會讓 result.x≠輸入 → vanilla move 每 tick 歸零水平速度 = 走路阻力。真撞牆的減速 >>0.005 不受影響。
+        // Y 維持嚴格(1e-4)：甲板擋住下墜本來就該讓 vanilla 判垂直碰撞、歸零下墜速度。
+        double rx = Math.abs(result.x - worldMotion.x) < 5.0e-3 ? worldMotion.x : result.x;
         double ry = Math.abs(result.y - worldMotion.y) < 1.0e-4 ? worldMotion.y : result.y;
-        double rz = Math.abs(result.z - worldMotion.z) < 1.0e-4 ? worldMotion.z : result.z;
+        double rz = Math.abs(result.z - worldMotion.z) < 5.0e-3 ? worldMotion.z : result.z;
         return new Vec3(rx, ry, rz);
     }
 
