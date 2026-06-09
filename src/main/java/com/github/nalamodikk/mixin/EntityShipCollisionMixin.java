@@ -31,11 +31,9 @@ public class EntityShipCollisionMixin {
 
         Vec3 motion = cir.getReturnValue();
         AABB box = self.getBoundingBox();
-        // 大實體坑：飛船很大但只登記在「中心那一格 section」，getEntitiesOfClass 用 section 找，玩家走到離中心
-        // 遠的甲板(不同 section)就查不到船(雖然船 bb 蓋到玩家) → 完全沒碰撞、像沒方塊直接穿。搜尋盒放大到
-        // 涵蓋最大船(footprint/height 48 → 3D 對角線半徑 ~42)的中心，才找得到。實際碰撞由 applyContraptionMovement 的 gate 過濾。
-        AABB search = box.expandTowards(motion).inflate(48.0);
-        List<ShipEntity> ships = self.level().getEntitiesOfClass(ShipEntity.class, search);
+        // 大實體坑：飛船只登記在「中心那一格 section」，getEntitiesOfClass 用 section 找，長船尾端(離中心遠)就查不到
+        // → 沒碰撞像穿方塊。改用 ShipEntity 全船清單直接比 bb(跟船大小/位置無關)。實際碰撞由 applyContraptionMovement gate 過濾。
+        List<ShipEntity> ships = ShipEntity.nearbyShips(self.level(), box.expandTowards(motion));
         if (ships.isEmpty()) return;
 
         Vec3 m = motion;

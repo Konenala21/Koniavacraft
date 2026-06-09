@@ -27,11 +27,8 @@ public class ShipDeckCarryHandler {
 
         // 跟船走 + 撞牆碰撞已整合進 EntityShipCollisionMixin 的 applyContraptionMovement。大實體查找修好後碰撞本身
         // 就抓得到船，不再需要「往下射線拉回」的安全網(它會在室內把人往上拉穿天花板)。這裡只負責站甲板時設 onGround。
-        // inflate 48：大實體坑,飛船只登記在中心 section,小搜尋盒在遠甲板找不到船(同 EntityShipCollisionMixin)。
-        AABB search = e.getBoundingBox().inflate(48.0);
-        for (ShipEntity ship : e.level().getEntitiesOfClass(ShipEntity.class, search)) {
-            if (ship.getContraption() == null) continue;
-            if (!ship.getBoundingBox().intersects(e.getBoundingBox().inflate(0.5))) continue; // 廣相位放大後，這裡用真 bb 收窄
+        // 用全船清單(不靠 section)找,長船尾端也找得到(同 EntityShipCollisionMixin)。
+        for (ShipEntity ship : ShipEntity.nearbyShips(e.level(), e.getBoundingBox().inflate(0.5))) {
             // 船方塊不在世界裡，vanilla 不一定把站甲板的實體判 onGround → 被當在空中會飄。在 tick 後明確設(照 Create)。
             if (ship.isSupporting(e)) {
                 e.setOnGround(true);

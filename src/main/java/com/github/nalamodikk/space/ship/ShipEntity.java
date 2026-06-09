@@ -72,6 +72,11 @@ import com.github.nalamodikk.space.ship.collision.ContinuousOBBCollider;
 import com.github.nalamodikk.space.ship.collision.Matrix3d;
 import com.github.nalamodikk.space.ship.collision.OrientedBB;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
+import com.github.nalamodikk.KoniavacraftMod;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -79,6 +84,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 飛船實體：承載一個 ShipContraption（一組方塊），組裝後方塊從世界移除、改由這個實體渲染/移動。
@@ -89,6 +96,33 @@ import java.util.Map;
  * contraption 透過 IEntityWithComplexSpawn 在 spawn 時整包傳到 client（M2b 渲染要用）。
  */
 public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
+
+    // 全飛船清單(不靠 section 查找)。大實體只登記在「中心那一格 section」，getEntitiesOfClass 用 section 找，
+    // 玩家走到離中心遠的甲板(長船尾端)就查不到船 → 沒碰撞(抽搐)/點不到方塊。改維護所有 ShipEntity 直接比 bb，
+    // 跟船大小/玩家位置無關。船很少(O(船數))。由 EntityJoin/LeaveLevelEvent 維護，兩端各自有自己的實體集合(用 level 過濾)。
+    private static final Set<ShipEntity> ALL_SHIPS = ConcurrentHashMap.newKeySet();
+
+    /** 找出 bb 與 box 相交的所有飛船(已過濾 level / removed / 無 contraption)。取代會漏長船的 getEntitiesOfClass。 */
+    public static List<ShipEntity> nearbyShips(Level level, AABB box) {
+        List<ShipEntity> out = new ArrayList<>();
+        for (ShipEntity s : ALL_SHIPS) {
+            if (s.level() != level || s.isRemoved() || s.getContraption() == null) continue;
+            if (s.getBoundingBox().intersects(box)) out.add(s);
+        }
+        return out;
+    }
+
+    @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID)
+    public static final class ShipRegistry {
+        @SubscribeEvent
+        public static void onJoin(EntityJoinLevelEvent e) {
+            if (e.getEntity() instanceof ShipEntity s) ALL_SHIPS.add(s);
+        }
+        @SubscribeEvent
+        public static void onLeave(EntityLeaveLevelEvent e) {
+            if (e.getEntity() instanceof ShipEntity s) ALL_SHIPS.remove(s);
+        }
+    }
 
     private static final double MAX_SPEED = 0.4;  // 每 tick 最大速度
     private static final double ACCEL = 0.1;       // 朝目標速度的 lerp（慣性感）

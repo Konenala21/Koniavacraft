@@ -39,11 +39,11 @@ public class GameRendererShipPickMixin {
         double bestDistSqr = (mc.hitResult != null && mc.hitResult.getType() != HitResult.Type.MISS)
                 ? mc.hitResult.getLocation().distanceToSqr(eye) : reach * reach;
 
-        AABB search = cam.getBoundingBox().expandTowards(look.scale(reach)).inflate(48.0);
+        AABB search = cam.getBoundingBox().expandTowards(look.scale(reach));
         ShipEntity best = null;
         Vec3 bestHit = null;
-        for (ShipEntity ship : mc.level.getEntitiesOfClass(ShipEntity.class, search)) {
-            if (ship.getContraption() == null || ship == cam.getVehicle()) continue;
+        for (ShipEntity ship : ShipEntity.nearbyShips(mc.level, search)) {
+            if (ship == cam.getVehicle()) continue;
             Optional<Vec3> clip = ship.getBoundingBox().clip(eye, end);
             if (clip.isEmpty()) continue;
             double d = clip.get().distanceToSqr(eye);
