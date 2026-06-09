@@ -97,6 +97,7 @@ public class ModNetworking {
         ShipDisassemblePacket.registerTo(registrar);
         ShipInputPacket.registerTo(registrar);
         ShipBlockUpdatePacket.registerTo(registrar);
+        com.github.nalamodikk.common.network.packet.client.ship.ShipBlockEntityDataPacket.registerTo(registrar);
 
         ResearchCompletePacket.registerTo(registrar);
         ResearchAspectPlacePacket.registerTo(registrar);

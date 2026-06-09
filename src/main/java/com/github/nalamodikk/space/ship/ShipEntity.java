@@ -267,6 +267,24 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         refreshDimensions(); // bounds 可能變了，更新 hitbox
     }
 
+    /** Client：收到影子鏡射過來的 BE NBT(物品底座的 item / 機器內容)→ 更新 contraption NBT + 只重建那一格的
+     *  render BE(不整批 renderBEs=null 重建,太貴)。BER 之後就拿得到新 item 畫出漂浮物品。 */
+    public void updateContraptionBlockEntityData(BlockPos local, CompoundTag nbt) {
+        if (contraption == null) return;
+        contraption.setBlockNbt(local, nbt);
+        if (renderBEs != null && level() != null) {
+            var info = contraption.getBlocks().get(local);
+            if (info != null && info.state().getBlock() instanceof EntityBlock) {
+                BlockEntity be = BlockEntity.loadStatic(local, info.state(), nbt, level().registryAccess());
+                if (be != null) {
+                    be.setLevel(renderWorld != null ? renderWorld : level());
+                    renderBEs.put(local, be);
+                    if (renderWorld != null) renderWorld.setBlockEntity(be);
+                }
+            }
+        }
+    }
+
     @Override
     public void remove(Entity.RemovalReason reason) {
         // 保險：被 /kill 或非預期 discard（reason.shouldDestroy()=KILLED/DISCARDED）而不是正常拆解時，
@@ -474,12 +492,16 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
                 ShipBlockUpdatePacket.sendToClients(this, local, ss);
                 localCollisionShapeCache = null; collisionListCache = null; // 形狀可能變(作物長/門開)
             }
-            if (ss.getBlock() instanceof EntityBlock) {        // BE NBT 鏡射(機器內容/進度)：拆解才保留正確狀態
+            if (ss.getBlock() instanceof EntityBlock) {        // BE NBT 鏡射(機器內容/進度/物品底座 item)
                 BlockEntity sbe = shadow.getBlockEntity(sp);
                 if (sbe != null) {
                     CompoundTag tag = sbe.saveWithFullMetadata(shadow.registryAccess());
                     tag.remove("x"); tag.remove("y"); tag.remove("z");
-                    contraption.setBlockNbt(local, tag);
+                    if (!tag.equals(info.nbt())) { // 變了才寫 + 發給 client(否則 client render BE 拿不到新 item → BER 不畫漂浮物品)
+                        contraption.setBlockNbt(local, tag);
+                        com.github.nalamodikk.common.network.packet.client.ship.ShipBlockEntityDataPacket
+                                .sendToClients(this, local, tag);
+                    }
                 }
             }
         }
