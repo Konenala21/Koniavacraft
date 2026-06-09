@@ -168,6 +168,24 @@ public class ShipAssemblyGameTests {
                 .thenSucceed();
     }
 
+    /** 斜對角接的方塊(只共用一條邊、非面相鄰)該被組進船(26 連通)。6 連通會斷在斜接處 → count 只有 1。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
+    public static void assembleDiagonalConnection(GameTestHelper helper) {
+        ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);
+        helper.setBlock(new BlockPos(4, 2, 4), core());
+        helper.setBlock(new BlockPos(5, 2, 5), filler()); // 只靠斜對角(共用邊)接核心 → 6 連通會斷、26 才收
+        helper.startSequence()
+                .thenExecute(pad::assembleShip)
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    expect(helper, pad, ShipAssemblyPadBlockEntity.DATA_STATUS,
+                            ShipAssemblyPadBlockEntity.STATUS_LAUNCHED, "status");
+                    expect(helper, pad, ShipAssemblyPadBlockEntity.DATA_COUNT, 2, "count(斜接的該收進來=2)");
+                    helper.assertBlockPresent(Blocks.AIR, new BlockPos(5, 2, 5)); // 斜接方塊被組進船=從世界移除
+                })
+                .thenSucceed();
+    }
+
     @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
     public static void disassembleReturnsBlocksAndRemovesEntity(GameTestHelper helper) {
         ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);

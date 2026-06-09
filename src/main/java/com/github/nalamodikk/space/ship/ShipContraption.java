@@ -75,10 +75,14 @@ public class ShipContraption {
             addBlock(world, pos);
             if (blocks.size() > MAX_BLOCKS) return false;
 
-            for (Direction d : Direction.values()) {
-                BlockPos np = pos.relative(d);
-                if (!visited.contains(np) && inBox(np, boxMin, boxMax)) frontier.add(np);
-            }
+            // 26 連通(面+邊+角):斜對角接的方塊也算連通，組裝不會在斜接處斷開。
+            for (int dx = -1; dx <= 1; dx++)
+                for (int dy = -1; dy <= 1; dy++)
+                    for (int dz = -1; dz <= 1; dz++) {
+                        if (dx == 0 && dy == 0 && dz == 0) continue;
+                        BlockPos np = pos.offset(dx, dy, dz);
+                        if (!visited.contains(np) && inBox(np, boxMin, boxMax)) frontier.add(np);
+                    }
         }
         return !blocks.isEmpty();
     }
