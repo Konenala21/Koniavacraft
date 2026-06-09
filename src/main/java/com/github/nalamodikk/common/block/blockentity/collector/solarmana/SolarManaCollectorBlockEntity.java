@@ -237,18 +237,7 @@ import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
         private void handleManaOutput(ServerLevel server) {
             boolean didOutput = OutputHandler.tryOutput(server, worldPosition, manaStorage, null, ioMap, manaCaches, energyCaches, OutputHandler.getBaseManaOutputPerTick());
 
-            // 診斷邏輯
-            if (!didOutput && !hasLoggedOutputFailure) {
-                hasLoggedOutputFailure = true;
-                LOGGER.debug("Solar collector output stalled at {}. mana={}/{}", worldPosition, manaStorage.getManaStored(), manaStorage.getMaxManaStored());
-            }
-
             if (didOutput) {
-                if (hasLoggedOutputFailure) {
-                    hasLoggedOutputFailure = false;
-                    LOGGER.debug("Solar collector output recovered at {}.", worldPosition);
-                }
-
                 // 魔力值變化，通知更新
                 level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
                 setChanged();
@@ -265,8 +254,6 @@ import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
                     2, 0.2, 0.1, 0.2, 0.0
             );
         }
-        // 🆕 添加輸出失敗標記
-        private boolean hasLoggedOutputFailure = false;
 
 
         //是否可以發電方法 - 使用高度圖的極速穩定方案

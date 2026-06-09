@@ -64,8 +64,6 @@ public class SolarUpgradeManager {
                             collector.getBlockState(),
                             3
                     );
-
-                    LOGGER.debug("🔄 升級物品變化，立即同步: 位置={}", collector.getBlockPos());
                 }
             }
         };

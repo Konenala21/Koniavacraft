@@ -536,8 +536,6 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
             if (level != null && !level.isClientSide) {
                 level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
             }
-
-            LOGGER.debug("Conduit at {} upgraded to tier: {}", worldPosition, newTier.getSerializedName());
         }
     }
 
