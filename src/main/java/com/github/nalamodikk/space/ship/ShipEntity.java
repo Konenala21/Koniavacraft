@@ -687,6 +687,11 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         return orientationOf(yaw, pitch, rl, getBowLocal());
     }
 
+    /** 插值後的 roll(渲染/鏡頭用)。鏡頭 roll 跟玩家傾斜要用這個,不能用 getRoll() tick 值,否則 20Hz 跳、船卻 60Hz 平滑轉 → 抖。 */
+    public float getRoll(float partialTick) {
+        return Mth.rotLerp(partialTick, rollO, getRoll());
+    }
+
     /** 任意 local 點（可含 +0.5 之類的偏移）轉世界座標：偏移依完整姿勢繞船中心旋轉。 */
     public Vec3 rotatedWorldPoint(double lx, double ly, double lz) {
         Vec3 c = centerOffset();

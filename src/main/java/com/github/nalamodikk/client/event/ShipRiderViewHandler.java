@@ -31,15 +31,16 @@ public final class ShipRiderViewHandler {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || !(mc.player.getVehicle() instanceof ShipEntity ship)) return;
         // 船的 roll 直接當畫面 roll；pitch 不套到鏡頭(會跟滑鼠視角打架)，只讓船頭俯仰由視角自己帶。
-        event.setRoll((float) (event.getRoll() + ship.getRoll()));
+        // 用插值 roll(getRoll(partialTick))，不是 getRoll() tick 值,否則鏡頭 20Hz 跳、船 60Hz 平滑轉 → 抖。
+        event.setRoll((float) (event.getRoll() + ship.getRoll((float) event.getPartialTick())));
     }
 
     @SubscribeEvent
     public static void onRenderPlayerPre(RenderPlayerEvent.Pre event) {
         Entity v = event.getEntity().getVehicle();
         if (!(v instanceof ShipEntity ship)) return;
-        float roll = ship.getRoll();
-        float pitch = ship.getXRot();
+        float roll = ship.getRoll(event.getPartialTick());   // 插值,跟船 render 一致 → 玩家模型不抖
+        float pitch = ship.getViewXRot(event.getPartialTick());
         if (roll == 0f && pitch == 0f) return;
         float bodyYaw = Mth.rotLerp(event.getPartialTick(), event.getEntity().yBodyRotO, event.getEntity().yBodyRot);
         float h = 0.0f; // 傾斜支點放腳底(座位接觸點)：繞腳轉，腳留在座位上、只身體傾，不偏離渲染的座位
@@ -58,7 +59,8 @@ public final class ShipRiderViewHandler {
     public static void onRenderPlayerPost(RenderPlayerEvent.Post event) {
         Entity v = event.getEntity().getVehicle();
         if (!(v instanceof ShipEntity ship)) return;
-        if (ship.getRoll() == 0f && ship.getXRot() == 0f) return;
+        // 條件要跟 Pre 一致(同 partialTick 插值),否則 Pre push 了、Post 沒 pop → pose stack 失衡。
+        if (ship.getRoll(event.getPartialTick()) == 0f && ship.getViewXRot(event.getPartialTick()) == 0f) return;
         event.getPoseStack().popPose();
     }
 }
