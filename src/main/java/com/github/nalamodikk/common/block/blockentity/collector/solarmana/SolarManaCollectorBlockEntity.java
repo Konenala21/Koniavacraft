@@ -240,7 +240,7 @@ import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
             // 診斷邏輯
             if (!didOutput && !hasLoggedOutputFailure) {
                 hasLoggedOutputFailure = true;
-                LOGGER.warn("Solar collector output stalled at {}. mana={}/{}", worldPosition, manaStorage.getManaStored(), manaStorage.getMaxManaStored());
+                LOGGER.debug("Solar collector output stalled at {}. mana={}/{}", worldPosition, manaStorage.getManaStored(), manaStorage.getMaxManaStored());
             }
 
             if (didOutput) {
