@@ -50,13 +50,15 @@ public abstract class ShipCameraMixin {
         double iy = Mth.lerp(partialTick, ship.yOld, ship.getY());
         double iz = Mth.lerp(partialTick, ship.zOld, ship.getZ());
         // 鏡頭距離依船大小拉遠：小船維持原本 7/8 格，大船退到看得見整艘。
-        double size = ship.getContraption() != null
-                ? Math.max(Math.max(ship.getContraption().bounds().getXsize(),
-                                    ship.getContraption().bounds().getYsize()),
-                           ship.getContraption().bounds().getZsize())
-                : 6.0;
-        double back  = Mth.clamp(size * 1.1, 7.0, 70.0);
-        double front = Mth.clamp(size * 1.2, 8.0, 80.0);
+        double size = 6.0; // 最長邊：中心抬高用
+        double diag = 6.0; // 對角線：鏡頭距離用(船俯仰/側翻後對角線朝鏡頭、比最長邊長,不夠遠就超出畫面)
+        if (ship.getContraption() != null) {
+            var b = ship.getContraption().bounds();
+            size = Math.max(Math.max(b.getXsize(), b.getYsize()), b.getZsize());
+            diag = Math.sqrt(b.getXsize() * b.getXsize() + b.getYsize() * b.getYsize() + b.getZsize() * b.getZsize());
+        }
+        double back  = Mth.clamp(diag * 0.8, 7.0, 70.0);
+        double front = Mth.clamp(diag * 0.9, 8.0, 80.0);
         Vec3 center = new Vec3(ix, iy + 1.5 + size * 0.15, iz); // 船中心略上（大船抬高，框得住）
         Vector3f l = getLookVector();
         Vec3 look = new Vec3(l.x, l.y, l.z);
