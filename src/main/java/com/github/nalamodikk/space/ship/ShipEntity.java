@@ -746,9 +746,15 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         final float TILT_DEG = 2f;
         boolean tilted = Math.abs(getXRot()) > TILT_DEG || Math.abs(getRoll()) > TILT_DEG
                 || Math.abs(xRotO) > TILT_DEG || Math.abs(rollO) > TILT_DEG;
-        Vec3 collided = tilted
-                ? obbCollideLocal(e, box, lb, lm, q0, shape)
-                : Entity.collideBoundingBox(e, lm, lb, level(), java.util.List.of(shape));
+        Vec3 collided;
+        if (tilted) {
+            collided = obbCollideLocal(e, box, lb, lm, q0, shape); // OBB 已含穿入推出
+        } else {
+            // 直立:collideBoundingBox 對樓梯/半磚 robust，但「不會把已重疊的盒子推出」(從外面走進牆會直接穿)。
+            // 補一個零移動 MTV 推出 pass：只在玩家已穿進方塊時才推(沒穿入=collisionResponse 0=不動，不影響正常走/站)。
+            collided = Entity.collideBoundingBox(e, lm, lb, level(), java.util.List.of(shape));
+            collided = pushOutPenetration(lb, collided, shape, q0, box);
+        }
         Vec3 newLocal = L0.add(collided.x, collided.y, collided.z);
         Vec3 newWorld = localToWorldAt(newLocal.x, newLocal.y, newLocal.z, getX(), getY(), getZ(), q1);
         Vec3 result = newWorld.subtract(P);
@@ -801,6 +807,25 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
                 if (pr.collisionResponse.lengthSqr() < 1.0e-10) break;
                 collided = collided.add(pr.collisionResponse);
             }
+        }
+        return collided;
+    }
+
+    /** 零移動 MTV 推出:把已穿進船方塊的盒子推回最近表面。collideBoundingBox 不推已重疊的盒子(從船外走進牆 →
+     *  gate 延遲讓人先穿入 → 之後 collideBoundingBox 對「已重疊」沒表面可擋 → 直接穿過去)，這個補上。
+     *  只在真的穿入時推(collisionResponse=0=沒穿入=不動)，所以不影響正常走/站(不會浮、不抖)。 */
+    private Vec3 pushOutPenetration(AABB lb, Vec3 collided, VoxelShape shape, Quaternionf q0, AABB box) {
+        CollisionList colliders = collisionList(shape);
+        CollisionList dense = new CollisionList();
+        Vec3 extents = new Vec3(box.getXsize() / 2, box.getYsize() / 2, box.getZsize() / 2);
+        Matrix3d rot = new Matrix3d().set(q0.conjugate(new Quaternionf()));
+        OrientedBB obb = new OrientedBB(lb.getCenter(), extents, rot);
+        for (int i = 0; i < 4; i++) {
+            obb.setCenter(lb.getCenter().add(collided));
+            ContinuousOBBCollider.CollisionResponse pr =
+                    ContinuousOBBCollider.collideMany(colliders, dense, obb, Vec3.ZERO, 0f, false);
+            if (pr.collisionResponse.lengthSqr() < 1.0e-10) break;
+            collided = collided.add(pr.collisionResponse);
         }
         return collided;
     }

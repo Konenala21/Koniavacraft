@@ -586,6 +586,59 @@ public class ShipAssemblyGameTests {
         helper.succeed();
     }
 
+    /** 牆/天花板碰撞:水平面(upright 船)走進牆、跳上天花板，該被擋。診斷「船內穿天花板/外面穿進來」。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 120)
+    public static void roomWallCeilingBlocks(GameTestHelper helper) {
+        ShipContraption ship = new ShipContraption();
+        BlockState quartz = Blocks.QUARTZ_BLOCK.defaultBlockState();
+        // 房間：地板 y=0、x=5 一道牆(y=1..3)、天花板 y=4
+        for (int x = 0; x < 8; x++) for (int z = 0; z < 4; z++) ship.addBlock(new BlockPos(x, 0, z), quartz, null);
+        for (int y = 1; y <= 3; y++) for (int z = 0; z < 4; z++) ship.addBlock(new BlockPos(5, y, z), quartz, null);
+        for (int x = 0; x < 8; x++) for (int z = 0; z < 4; z++) ship.addBlock(new BlockPos(x, 4, z), quartz, null);
+        ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), helper.getLevel());
+        entity.setContraption(ship);
+        BlockPos origin = helper.absolutePos(new BlockPos(4, 4, 4));
+        entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
+        entity.setOldPosAndRot(); // upright(yaw=pitch=roll=0)→ collideBoundingBox，跟用戶直立船同路徑
+
+        // 1) 重現 in-game:玩家「已經穿進牆裡」(從外面走進來、gate 延遲所致)，牆在 x=5(方塊 5..6)，
+        //    玩家中心放 5.3(盒 5.0..5.6 已重疊牆)，往 +X 走。該被往外推到 x<5，不該往上爬穿過去。
+        Player probe = helper.makeMockPlayer(GameType.SURVIVAL);
+        net.minecraft.world.phys.Vec3 s1 = entity.rotatedWorldPoint(5.3, 1.0, 2.0);
+        probe.setPos(s1.x, s1.y, s1.z);
+        net.minecraft.world.phys.Vec3 vel = net.minecraft.world.phys.Vec3.ZERO;
+        double maxFeetY1 = -99;
+        for (int t = 0; t < 40; t++) {
+            vel = new net.minecraft.world.phys.Vec3(0.2, 0, 0); // 純水平往牆深處
+            net.minecraft.world.phys.Vec3 r = entity.applyContraptionMovement(probe, vel);
+            probe.setPos(probe.getX() + r.x, probe.getY() + r.y, probe.getZ() + r.z);
+            maxFeetY1 = Math.max(maxFeetY1, entity.worldToLocalPoint(probe.getX(), probe.getBoundingBox().minY, probe.getZ()).y);
+        }
+        double wallX = entity.worldToLocalPoint(probe.getX(), probe.getBoundingBox().minY, probe.getZ()).x;
+        KoniavacraftMod.LOGGER.info("[penetrate] startX=5.3 endX={} maxFeetY={} (X該<5被推出；X>6=穿過；FeetY飆=往上爬)",
+                String.format("%.2f", wallX), String.format("%.2f", maxFeetY1));
+
+        // 2) 跳上天花板:從地板 y=1 往上跳，天花板 y=4(底在 local y=4)，腳不該越過 ~3(頭頂 1.8→撞 4)
+        net.minecraft.world.phys.Vec3 s2 = entity.rotatedWorldPoint(2.0, 1.0, 2.0);
+        probe.setPos(s2.x, s2.y, s2.z);
+        vel = new net.minecraft.world.phys.Vec3(0, 0.5, 0); // 往上衝
+        double maxFeetY = -99;
+        for (int t = 0; t < 40; t++) {
+            vel = new net.minecraft.world.phys.Vec3(0, vel.y - 0.08, 0);
+            net.minecraft.world.phys.Vec3 r = entity.applyContraptionMovement(probe, vel);
+            probe.setPos(probe.getX() + r.x, probe.getY() + r.y, probe.getZ() + r.z);
+            double fy = entity.worldToLocalPoint(probe.getX(), probe.getBoundingBox().minY, probe.getZ()).y;
+            maxFeetY = Math.max(maxFeetY, fy);
+        }
+
+        KoniavacraftMod.LOGGER.info("[room] wallStopX={} (該<4.9，>5=穿牆) maxFeetY={} (該<2.3，越大=穿天花板)",
+                String.format("%.2f", wallX), String.format("%.2f", maxFeetY));
+        // penetrate 案:起點 5.3(已穿入)，被推出該 <5；爬上去(maxFeetY1 飆)或穿過(wallX>6)=壞
+        if (wallX > 5.5) helper.fail("penetrating box NOT pushed out / passed through: localX=" + wallX);
+        if (maxFeetY > 2.5) helper.fail("jumped THROUGH the ceiling: feetLocalY=" + maxFeetY);
+        helper.succeed();
+    }
+
     /** 掃描各傾斜角:量站在甲板上(只重力、grounded 歸零)60 tick 的滑移量 + 是否還在甲板上。回答「極度傾斜會怎樣」。 */
     @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 200)
     public static void tiltAngleSweep(GameTestHelper helper) {
