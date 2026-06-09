@@ -79,8 +79,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 飛船實體：承載一個 ShipContraption（一組方塊），組裝後方塊從世界移除、改由這個實體渲染/移動。
@@ -92,19 +90,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
-    // 全飛船清單(不靠 section 查找)。大實體只登記在「中心那一格 section」，getEntitiesOfClass 用 section 找，
-    // 玩家走到離中心遠的甲板(長船尾端)就查不到船 → 沒碰撞(抽搐)/點不到方塊。改維護所有 ShipEntity 直接比 bb，
-    // 跟船大小/玩家位置無關。船很少(O(船數))。由 EntityJoin/LeaveLevelEvent 維護，兩端各自有自己的實體集合(用 level 過濾)。
-    private static final Set<ShipEntity> ALL_SHIPS = ConcurrentHashMap.newKeySet();
-
-    /** 找出 bb 與 box 相交的所有飛船(已過濾 level / removed / 無 contraption)。取代會漏長船的 getEntitiesOfClass。 */
+    /** 找出 box 附近的飛船。用 level 自己的實體查詢(per-level 正確：client 查詢只回 client 的船，不會像共用
+     *  static registry 在單機把 server 的船混進來/被 level 濾掉)。inflate 大(128)解決長船：船只登記在中心 section，
+     *  玩家走到離 anchor 遠的尾端時搜尋盒要夠大才涵蓋到 anchor 那格。細部相交由呼叫端自己判。 */
     public static List<ShipEntity> nearbyShips(Level level, AABB box) {
-        List<ShipEntity> out = new ArrayList<>();
-        for (ShipEntity s : ALL_SHIPS) {
-            if (s.level() != level || s.isRemoved() || s.getContraption() == null) continue;
-            if (s.getBoundingBox().intersects(box)) out.add(s);
-        }
-        return out;
+        return level.getEntitiesOfClass(ShipEntity.class, box.inflate(128.0), s -> s.getContraption() != null);
     }
 
 
@@ -276,7 +266,6 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     @Override
     public void remove(Entity.RemovalReason reason) {
-        ALL_SHIPS.remove(this);
         // 保險：被 /kill 或非預期 discard（reason.shouldDestroy()=KILLED/DISCARDED）而不是正常拆解時，
         // 把方塊寫回世界（船散架在原地），不要讓整艘船無聲蒸發。區塊卸載/維度切換不觸發（會存檔/搬移）。
         if (!level().isClientSide && contraption != null && !intentionalDisassembly && reason.shouldDestroy()) {
@@ -370,7 +359,6 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     @Override
     public void tick() {
         super.tick();
-        ALL_SHIPS.add(this); // 自註冊到全船清單(不靠事件、每 tick 確保在內；nearbyShips 會過濾 contraption==null)
         if (!level().isClientSide && contraption == null) {
             discard(); // 沒有 contraption 的飛船無意義
             return;
