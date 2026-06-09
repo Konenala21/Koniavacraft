@@ -303,7 +303,8 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             BlockState cur = info != null ? info.state() : Blocks.AIR.defaultBlockState();
             if (ss.isAir() || ss.equals(cur)) continue; // 影子空 / 沒變 → 跳過
             BlockPos lp = p.immutable();
-            updateContraptionBlock(lp, ss); // 加進 contraption + 發 state 封包 + 失效碰撞/mesh 快取 + refreshDimensions
+            updateContraptionBlock(lp, ss);                 // server 本地:加進 contraption + 失效碰撞/mesh 快取 + refreshDimensions
+            ShipBlockUpdatePacket.sendToClients(this, lp, ss); // 客戶端:沒這個 client 看不到方塊(只有 server 有 → 拆解才出現)
             if (ss.getBlock() instanceof EntityBlock) {
                 BlockEntity sbe = shadow.getBlockEntity(shadowPos);
                 if (sbe != null) {
