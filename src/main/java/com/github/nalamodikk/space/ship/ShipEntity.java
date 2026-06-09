@@ -71,6 +71,7 @@ import com.github.nalamodikk.space.ship.collision.CollisionList;
 import com.github.nalamodikk.space.ship.collision.ContinuousOBBCollider;
 import com.github.nalamodikk.space.ship.collision.Matrix3d;
 import com.github.nalamodikk.space.ship.collision.OrientedBB;
+import com.github.nalamodikk.space.ship.virtualworld.VirtualRenderWorld;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.jetbrains.annotations.Nullable;
 
@@ -189,6 +190,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     // client 渲染用：從 contraption NBT 還原的臨時 BlockEntity（箱子等 BER 方塊），建一次快取
     @Nullable private Map<BlockPos, BlockEntity> renderBEs;
+    @Nullable private VirtualRenderWorld renderWorld; // BER 查方塊的假 Level
     // client：剛編輯放的方塊 → 時間戳。VBO 烤好前每幀先畫它們(不然先透明)。超過此時間視為已烤進 VBO。
     private final Map<BlockPos, Long> pendingVisualBlocks = new HashMap<>();
     private static final long PENDING_VISUAL_MS = 1500;
@@ -329,23 +331,31 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     public Map<BlockPos, BlockEntity> getRenderBlockEntities() {
         if (renderBEs == null) {
             renderBEs = new HashMap<>();
-            if (contraption != null) {
+            if (contraption != null && level() != null) {
+                // 假 Level：放進所有 contraption 方塊的 blockstate + EntityBlock 的 BE。BER 渲染時會查
+                // level.getBlockState/getBlockEntity(鄰居)驗方塊/做箱子 double 合併 → 必須回 contraption 的方塊，
+                // 不是主世界(船方塊已從主世界移除)。否則自訂 BER 不畫、箱子畫成單箱。
+                renderWorld = new VirtualRenderWorld(level(), level().getMinBuildHeight(), level().getHeight(),
+                        net.minecraft.core.Vec3i.ZERO, () -> {});
+                for (var e : contraption.getBlocks().entrySet()) {
+                    renderWorld.setBlock(e.getKey(), e.getValue().state(), 3);
+                }
                 for (var e : contraption.getBlocks().entrySet()) {
                     var info = e.getValue();
                     if (!(info.state().getBlock() instanceof EntityBlock eb)) continue;
                     BlockEntity be;
                     if (info.nbt() != null) {
-                        // 有 NBT（組裝時抓的）：還原內容
                         be = BlockEntity.loadStatic(e.getKey(), info.state(), info.nbt(), level().registryAccess());
                     } else {
-                        // 停船編輯新放的 BE 方塊沒 NBT：建一個空 BE 才渲染得出來（例如箱子）
                         be = eb.newBlockEntity(e.getKey(), info.state());
                     }
                     if (be != null) {
-                        be.setLevel(level());
+                        be.setLevel(renderWorld); // BER 查的 level = 假 Level，不是主世界
+                        renderWorld.setBlockEntity(be);
                         renderBEs.put(e.getKey(), be);
                     }
                 }
+                renderWorld.runLightEngine();
             }
         }
         return renderBEs;
