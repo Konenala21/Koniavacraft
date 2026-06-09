@@ -1,7 +1,9 @@
 package com.github.nalamodikk.common.item.wand.core;
 
-import com.github.nalamodikk.common.block.blockentity.altar.AltarGeometry;
 import com.github.nalamodikk.common.block.blockentity.altar.AspectAltarBlockEntity;
+import com.github.nalamodikk.common.item.tool.structure.WandStructure;
+import com.github.nalamodikk.common.item.tool.structure.WandStructureBuilder;
+import com.github.nalamodikk.common.item.tool.structure.WandStructures;
 import com.github.nalamodikk.common.item.wand.WandCoreData;
 import com.github.nalamodikk.common.item.wand.WandRodItem;
 import com.github.nalamodikk.common.item.wand.upgrade.WandUpgradeBehavior;
@@ -14,10 +16,8 @@ import com.github.nalamodikk.common.network.packet.client.BlockHighlightPacket;
 import com.github.nalamodikk.common.network.packet.server.manatool.ManaUpdatePacket;
 import com.github.nalamodikk.common.utils.capability.CapabilityUtils;
 import com.github.nalamodikk.common.utils.data.CodecsLibrary;
-import com.github.nalamodikk.register.ModBlocks;
 import com.github.nalamodikk.register.ModDataComponents;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Vec3i;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -29,7 +29,6 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
@@ -234,89 +233,21 @@ public enum WandCoreBehavior {
             Player player = ctx.getPlayer();
             if (player == null) return InteractionResult.PASS;
 
-            BlockPos altarPos = ctx.getClickedPos();
-            BlockEntity be = level.getBlockEntity(altarPos);
-            if (!(be instanceof AspectAltarBlockEntity altar)) return InteractionResult.PASS;
+            BlockPos pos = ctx.getClickedPos();
+            BlockState clicked = level.getBlockState(pos);
+            BlockEntity be = level.getBlockEntity(pos);
+            WandStructure structure = WandStructures.findMatching(clicked, be);
+            if (structure == null) return InteractionResult.PASS;
 
             int stored = wand.getOrDefault(ModDataComponents.MANA_STORED, 0);
             if (stored <= 0) return InteractionResult.FAIL;
             if (level.isClientSide) return InteractionResult.SUCCESS;
 
-            List<BlockPos> missingPillar   = new ArrayList<>();
-            List<BlockPos> missingPedestal = new ArrayList<>();
-            List<BlockPos> blocked         = new ArrayList<>();
-            collectAltarPositions(level, altarPos, altar, missingPillar, missingPedestal, blocked);
-
-            if (!blocked.isEmpty()) {
-                if (player instanceof ServerPlayer sp)
-                    BlockHighlightPacket.sendToPlayer(sp, blocked, 1);
-                player.displayClientMessage(
-                        Component.translatable("message.koniava.build_wand.blocked", blocked.size()), true);
-                return InteractionResult.SUCCESS;
-            }
-
-            if (missingPillar.isEmpty() && missingPedestal.isEmpty()) {
-                altar.refreshUpgradeTier();
-                Component msg;
-                if (!altar.isFormed()) {
-                    msg = Component.translatable("message.koniava.build_wand.ready_to_form");
-                } else if (altar.getUpgradeTier() >= AltarGeometry.ALL_RINGS.size()) {
-                    msg = Component.translatable("message.koniava.build_wand.all_rings_done",
-                            AltarGeometry.ALL_RINGS.size());
-                } else {
-                    msg = Component.translatable("message.koniava.build_wand.ring_ready",
-                            altar.getUpgradeTier() + 1);
-                }
-                player.displayClientMessage(msg, true);
-                return InteractionResult.SUCCESS;
-            }
-
-            int mana = stored;
-            int placed = 0;
-            List<BlockPos> stillMissing = new ArrayList<>();
-
-            for (BlockPos pos : missingPillar) {
-                if (mana < MANA_PER_BLOCK) { stillMissing.add(pos); continue; }
-                if (player.isCreative()) {
-                    level.setBlock(pos, ModBlocks.MANA_BLOCK.get().defaultBlockState(), 3);
-                    placed++; mana -= MANA_PER_BLOCK;
-                } else {
-                    int slot = findInInventory(player, ModBlocks.MANA_BLOCK.get().asItem());
-                    if (slot >= 0) {
-                        level.setBlock(pos, ModBlocks.MANA_BLOCK.get().defaultBlockState(), 3);
-                        player.getInventory().getItem(slot).shrink(1);
-                        placed++; mana -= MANA_PER_BLOCK;
-                    } else { stillMissing.add(pos); }
-                }
-            }
-
-            for (BlockPos pos : missingPedestal) {
-                if (mana < MANA_PER_BLOCK) { stillMissing.add(pos); continue; }
-                if (player.isCreative()) {
-                    level.setBlock(pos, ModBlocks.ASPECT_PEDESTAL.get().defaultBlockState(), 3);
-                    placed++; mana -= MANA_PER_BLOCK;
-                } else {
-                    int slot = findInInventory(player, ModBlocks.ASPECT_PEDESTAL.get().asItem());
-                    if (slot >= 0) {
-                        level.setBlock(pos, ModBlocks.ASPECT_PEDESTAL.get().defaultBlockState(), 3);
-                        player.getInventory().getItem(slot).shrink(1);
-                        placed++; mana -= MANA_PER_BLOCK;
-                    } else { stillMissing.add(pos); }
-                }
-            }
-
-            if (!stillMissing.isEmpty() && player instanceof ServerPlayer sp)
-                BlockHighlightPacket.sendToPlayer(sp, stillMissing, 0);
-
-            if (placed > 0) {
-                altar.refreshUpgradeTier();
-                wand.set(ModDataComponents.MANA_STORED, mana);
-            }
-
-            player.displayClientMessage(
-                    Component.translatable("message.koniava.build_wand.placed",
-                            placed, placed + stillMissing.size()), true);
-            return InteractionResult.SUCCESS;
+            // 跟獨立結構杖共用 build loop,差別:每塊扣 MANA_PER_BLOCK 魔力,扣完就停。
+            WandStructureBuilder.BuildOutcome out =
+                    WandStructureBuilder.build(level, pos, player, be, structure, MANA_PER_BLOCK, stored);
+            if (out.budgetUsed() > 0) wand.set(ModDataComponents.MANA_STORED, stored - out.budgetUsed());
+            return out.result();
         }
 
         @Override
@@ -354,65 +285,6 @@ public enum WandCoreBehavior {
         @Override
         public int getColor() { return 0xFFEE7722; } // 橘
     };
-
-    // ── 結構建造核心 helper methods ───────────────────────────────────────────
-
-    private static void collectAltarPositions(Level level, BlockPos altarPos, AspectAltarBlockEntity altar,
-                                               List<BlockPos> missingPillar, List<BlockPos> missingPedestal,
-                                               List<BlockPos> blocked) {
-        if (!altar.isFormed()) {
-            checkPillarPositions(level, altarPos, AltarGeometry.PILLAR_BOTTOM, missingPillar, blocked);
-            checkPillarPositions(level, altarPos, AltarGeometry.PILLAR_TOP,   missingPillar, blocked);
-            checkPedestalPositions(level, altarPos, AltarGeometry.PEDESTAL_OFFSETS, missingPedestal, blocked);
-        } else {
-            int nextTier = altar.getUpgradeTier() + 1;
-            if (nextTier <= AltarGeometry.ALL_RINGS.size()) {
-                checkRingPositions(level, altarPos, AltarGeometry.ALL_RINGS.get(nextTier - 1),
-                        missingPillar, blocked);
-            }
-        }
-    }
-
-    private static void checkPillarPositions(Level level, BlockPos altarPos, List<Vec3i> offsets,
-                                              List<BlockPos> missing, List<BlockPos> blocked) {
-        for (Vec3i offset : offsets) {
-            BlockPos p = altarPos.offset(offset);
-            BlockState s = level.getBlockState(p);
-            if (s.is(ModBlocks.MANA_BLOCK.get()) || s.is(ModBlocks.ALTAR_PILLAR.get())) continue;
-            if (s.isAir() || s.canBeReplaced()) missing.add(p);
-            else blocked.add(p);
-        }
-    }
-
-    private static void checkPedestalPositions(Level level, BlockPos altarPos, List<Vec3i> offsets,
-                                                List<BlockPos> missing, List<BlockPos> blocked) {
-        for (Vec3i offset : offsets) {
-            BlockPos p = altarPos.offset(offset);
-            BlockState s = level.getBlockState(p);
-            if (s.is(ModBlocks.ASPECT_PEDESTAL.get())) continue;
-            if (s.isAir() || s.canBeReplaced()) missing.add(p);
-            else blocked.add(p);
-        }
-    }
-
-    private static void checkRingPositions(Level level, BlockPos altarPos, List<Vec3i> offsets,
-                                            List<BlockPos> missing, List<BlockPos> blocked) {
-        for (Vec3i offset : offsets) {
-            BlockPos p = altarPos.offset(offset);
-            BlockState s = level.getBlockState(p);
-            if (s.is(ModBlocks.MANA_BLOCK.get()) || s.is(ModBlocks.RESONANCE_RING.get())) continue;
-            if (s.isAir() || s.canBeReplaced()) missing.add(p);
-            else blocked.add(p);
-        }
-    }
-
-    private static int findInInventory(Player player, Item item) {
-        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-            ItemStack s = player.getInventory().getItem(i);
-            if (!s.isEmpty() && s.is(item)) return i;
-        }
-        return -1;
-    }
 
     // ── Abstract declarations ─────────────────────────────────────────────────
 
