@@ -556,6 +556,7 @@
   "screen.koniava.ship_control.throttle": "油門：%s%%",
   "screen.koniava.ship_control.fuel": "燃料：%1$s / %2$s",
   "screen.koniava.ship_control.engines": "引擎：%s",
+  "message.koniava.fuel_tank.level": "燃料：%1$s / %2$s",
   "block.koniava.magic_ore": "魔法礦",
   "block.koniava.deepslate_magic_ore": "深板岩魔法礦",
   "block.koniava.mana_generator": "魔力發電機",

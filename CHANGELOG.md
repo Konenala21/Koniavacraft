@@ -9,6 +9,9 @@ All notable changes to this project will be documented in this file.
 Right-click a spaceship's core to open its control panel: a throttle slider to set your cruise throttle, plus fuel and engine readouts. The panel's throttle, the in-flight scroll wheel and the HUD all stay in sync.
 右鍵飛船核心會打開控制台：油門滑桿（設巡航油門）加上燃料和引擎讀數。面板的油門、飛行中的滾輪、HUD 三者都同步。
 
+The flight HUD is now two upright bars on the left edge (throttle and fuel) instead of a bar at the bottom. Right-click a single fuel tank to see its own fuel level.
+飛行 HUD 改成螢幕左側兩條直立 bar（油門和燃料），不再是底部那條。右鍵單一燃料槽可以看它自己的燃料量。
+
 Spaceships now fly on fuel. Engines set the top speed (more engines, faster), the mana fuel tanks hold the fuel, and flying drains it (twice as fast while you are accelerating; hovering in place uses none). Scroll while driving to set the throttle from 0% to 100%: more throttle is faster but burns more fuel, so you can carry many engines and still cruise slowly to save fuel. A small HUD shows your throttle, engine count and fuel. Run dry and the ship coasts to a stop; refill the tanks from the ship's own mana network (a generator into the tanks).
 飛船現在要靠燃料飛。引擎決定速度上限（引擎越多越快），魔力燃料槽儲存燃料，飛行會消耗（加速時消耗加倍；原地停滯不耗）。駕駛時滾動滑鼠滾輪調整油門 0%～100%：油門越大越快但越耗，所以你可以裝很多引擎卻開慢一點省燃料。小 HUD 會顯示油門、引擎數和燃料。燃料用完船會慣性飄停；用船上自己的魔力網路（發電機接到燃料槽）補給。
 
