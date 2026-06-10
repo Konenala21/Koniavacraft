@@ -1,11 +1,15 @@
 package com.github.nalamodikk.space.ship;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.block.blockentity.altar.AspectAltarBlock;
+import com.github.nalamodikk.common.block.blockentity.altar.AspectAltarBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.collector.solarmana.SolarManaCollectorBlockEntity;
 import com.github.nalamodikk.dimension.ModDimensions;
+import com.github.nalamodikk.register.ModBlockEntities;
 import com.github.nalamodikk.register.ModBlocks;
 import com.github.nalamodikk.register.ModEntities;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
@@ -209,6 +213,41 @@ public class ShipAssemblyGameTests {
         entity.interactWithPick(player, InteractionHand.MAIN_HAND, pick);
         if (!ship.getBlocks().containsKey(new BlockPos(2, 2, 2)))
             helper.fail("interactWithPick did not place the block above the aimed face");
+        helper.succeed();
+    }
+
+    /** 組裝捕捉的成形祭壇(帶真實 BE NBT)該能用 breakLocalBlock 打掉,跟編輯放的一樣。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
+    public static void shipBreakCapturedFormedAltar(GameTestHelper helper) {
+        ShipContraption ship = new ShipContraption();
+        ship.addBlock(new BlockPos(0, 0, 0), Blocks.QUARTZ_BLOCK.defaultBlockState(), null);
+        BlockState formed = ModBlocks.ASPECT_ALTAR.get().defaultBlockState().setValue(AspectAltarBlock.FORMED, true);
+        // 模擬「組裝前放好、被捕捉」的狀態:真實 BE 存出來的 NBT
+        AspectAltarBlockEntity be = ModBlockEntities.ASPECT_ALTAR_BE.get().create(new BlockPos(2, 1, 2), formed);
+        be.setLevel(helper.getLevel());
+        CompoundTag nbt = be.saveWithFullMetadata(helper.getLevel().registryAccess());
+        nbt.remove("x"); nbt.remove("y"); nbt.remove("z");
+        ship.addBlock(new BlockPos(2, 1, 2), formed, nbt);
+
+        ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), helper.getLevel());
+        entity.setContraption(ship);
+        BlockPos origin = helper.absolutePos(new BlockPos(8, 5, 8));
+        entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
+        entity.setOldPosAndRot();
+        Player player = helper.makeMockPlayer(GameType.SURVIVAL); // 非 instabuild → 掉落邏輯也跑
+
+        // pick:玩家站祭壇上方往下看 → 準心該瞄到 (2,1,2)(打不到的話 client 就送不出 break 封包)
+        net.minecraft.world.phys.Vec3 aw = entity.rotatedWorldPoint(2.5, 1.5, 2.5);
+        player.setPos(aw.x, aw.y + 2.5, aw.z);
+        player.setXRot(90f); player.setYRot(0f);
+        player.setOldPosAndRot();
+        BlockPos aimed = entity.getAimedLocalBlock(player);
+        if (aimed == null || !aimed.equals(new BlockPos(2, 1, 2)))
+            helper.fail("formed altar not pickable (getAimedLocalBlock=" + aimed + ")");
+
+        entity.breakLocalBlock(player, new BlockPos(2, 1, 2));
+        if (ship.getBlocks().containsKey(new BlockPos(2, 1, 2)))
+            helper.fail("captured formed altar (with NBT) not removed by breakLocalBlock");
         helper.succeed();
     }
 
