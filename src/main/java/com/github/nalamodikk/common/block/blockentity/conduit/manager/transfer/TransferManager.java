@@ -175,8 +175,6 @@ public class TransferManager {
                 && isCircularPath(targetDir)) {
             suppressedCircularBlocks++;
             if (currentTick - lastCircularLogTick >= CIRCULAR_LOG_INTERVAL_TICKS) {
-                LOGGER.debug("Blocked short-loop conduit path to {} (blocked {} times in last {} ticks)",
-                        targetDir, suppressedCircularBlocks, CIRCULAR_LOG_INTERVAL_TICKS);
                 lastCircularLogTick = currentTick;
                 suppressedCircularBlocks = 0;
             }
@@ -266,11 +264,9 @@ public class TransferManager {
                 updateTransferState(targetDir, actualReceived, currentTick, true);
 
             } else {
-                LOGGER.debug("Transfer simulation failed: tried {}, got {}", transferAmount, simulated);
                 updateTransferState(targetDir, 0, currentTick, false);
             }
         } else {
-            LOGGER.debug("No mana handler found at {}", neighborPos);
             updateTransferState(targetDir, 0, currentTick, false);
         }
     }
@@ -298,8 +294,6 @@ public class TransferManager {
 
         if (!canReceiveAtNeighbor || !canSendFromMe ||
                 neighborIOType == IOHandlerUtils.IOType.DISABLED) {
-            LOGGER.debug("Transfer blocked: me={}, neighbor={}, canSend={}, canReceive={}",
-                    myIOType, neighborIOType, canSendFromMe, canReceiveAtNeighbor);
             return false;
         }
 
@@ -461,7 +455,6 @@ public class TransferManager {
      */
     public void clearPathHistory() {
         recentTransferPath.clear();
-        LOGGER.debug("Transfer path history cleared");
     }
 
     /**

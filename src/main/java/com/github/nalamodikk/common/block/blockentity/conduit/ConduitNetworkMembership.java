@@ -55,20 +55,17 @@ final class ConduitNetworkMembership {
     private void createNew() {
         conduit.virtualNetwork = new VirtualNetwork();
         conduit.virtualNetwork.addConduit(conduit);
-        ArcaneConduitBlockEntity.LOGGER.debug("Created new virtual network at {}", conduit.getBlockPos());
     }
 
     private void join(VirtualNetwork network) {
         conduit.virtualNetwork = network;
         network.addConduit(conduit);
-        ArcaneConduitBlockEntity.LOGGER.debug("Joined virtual network at {}", conduit.getBlockPos());
     }
 
     void leave() {
         if (conduit.virtualNetwork != null) {
             conduit.virtualNetwork.removeConduit(conduit.getBlockPos());
             conduit.virtualNetwork = null;
-            ArcaneConduitBlockEntity.LOGGER.debug("Left virtual network at {}", conduit.getBlockPos());
         }
     }
 
@@ -112,7 +109,6 @@ final class ConduitNetworkMembership {
             // 解決分批載入時容量尚未完全展開導致首次恢復被截斷的問題。
             if (savedMana > conduit.virtualNetwork.getTotalManaStored()) {
                 conduit.virtualNetwork.setTotalManaStored(savedMana);
-                ArcaneConduitBlockEntity.LOGGER.debug("Restored virtual network mana: {} at {}", savedMana, conduit.getBlockPos());
             }
 
             needsNetworkRestore = false;

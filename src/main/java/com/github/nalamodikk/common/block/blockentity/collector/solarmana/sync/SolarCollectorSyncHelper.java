@@ -76,8 +76,6 @@ public class SolarCollectorSyncHelper implements ISyncHelper {
 
         // 🔍 調試：狀態變化時輸出（DEBUG 級別）
         if (oldGenerating != this.isGenerating) {
-            LOGGER.debug("🔄 SyncHelper 狀態變化: {} -> {}, isDaytime={}, mana={}/{}",
-                    oldGenerating, this.isGenerating, this.isDaytime, this.manaStored, this.maxMana);
         }
     }
     
