@@ -551,6 +551,8 @@
   "screen.koniava.ship_assembly_pad.status.no_fuel_tank": "需要至少 1 個魔力燃料槽",
   "block.koniava.mana_engine": "魔力引擎",
   "block.koniava.mana_fuel_tank": "魔力燃料槽",
+  "hud.koniava.ship.throttle": "油門 %1$s · 引擎 %2$s",
+  "hud.koniava.ship.fuel": "燃料 %1$s / %2$s",
   "block.koniava.magic_ore": "魔法礦",
   "block.koniava.deepslate_magic_ore": "深板岩魔法礦",
   "block.koniava.mana_generator": "魔力發電機",

@@ -546,6 +546,8 @@
   "screen.koniava.ship_assembly_pad.status.no_fuel_tank": "Need at least 1 mana fuel tank",
   "block.koniava.mana_engine": "Mana Engine",
   "block.koniava.mana_fuel_tank": "Mana Fuel Tank",
+  "hud.koniava.ship.throttle": "Throttle %1$s · Engines %2$s",
+  "hud.koniava.ship.fuel": "Fuel %1$s / %2$s",
   "block.koniava.magic_ore": "Magic Ore",
   "block.koniava.deepslate_magic_ore": "Deepslate Magic Ore",
   "block.koniava.mana_generator": "Mana Generator",

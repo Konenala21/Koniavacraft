@@ -32,6 +32,7 @@ import com.github.nalamodikk.common.network.packet.server.deployer.SetDeployerIn
 import com.github.nalamodikk.common.network.packet.server.ship.ShipAssemblePacket;
 import com.github.nalamodikk.common.network.packet.server.ship.ShipDisassemblePacket;
 import com.github.nalamodikk.common.network.packet.server.ship.ShipInputPacket;
+import com.github.nalamodikk.common.network.packet.server.ship.ShipThrottlePacket;
 import com.github.nalamodikk.common.network.packet.server.ship.ShipScanPacket;
 import com.github.nalamodikk.common.network.packet.client.ship.ShipBlockUpdatePacket;
 import com.github.nalamodikk.common.network.packet.server.deployer.ToggleDeployerEnabledPacket;
@@ -96,6 +97,7 @@ public class ModNetworking {
         ShipAssemblePacket.registerTo(registrar);
         ShipDisassemblePacket.registerTo(registrar);
         ShipInputPacket.registerTo(registrar);
+        ShipThrottlePacket.registerTo(registrar);
         ShipBlockUpdatePacket.registerTo(registrar);
         com.github.nalamodikk.common.network.packet.client.ship.ShipBlockEntityDataPacket.registerTo(registrar);
         com.github.nalamodikk.common.network.packet.server.ship.ShipBreakBlockPacket.registerTo(registrar);

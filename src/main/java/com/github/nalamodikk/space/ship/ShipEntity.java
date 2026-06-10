@@ -4,6 +4,7 @@ import com.github.nalamodikk.common.network.packet.client.ship.ShipBlockUpdatePa
 import com.github.nalamodikk.common.block.blockentity.altar.AltarGeometry;
 import com.github.nalamodikk.common.item.tool.StructureBuildWandItem;
 import com.github.nalamodikk.register.ModBlocks;
+import com.github.nalamodikk.common.capability.mana.ManaAction;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -132,11 +133,24 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     // 船頭在 local 框的 yaw 偏移(駕駛座朝向)。pitch/roll 要繞「船頭相對軸」轉，不然蓋的方向不同 pitch/roll 會反。
     private static final EntityDataAccessor<Float> DATA_BOW =
             SynchedEntityData.defineId(ShipEntity.class, EntityDataSerializers.FLOAT);
+    // 油門 0~1：玩家調，實際速度 = 引擎決定的上限 × 油門。同步給 client(HUD + 之後客戶端顯示)。
+    private static final EntityDataAccessor<Float> DATA_THROTTLE =
+            SynchedEntityData.defineId(ShipEntity.class, EntityDataSerializers.FLOAT);
+    // 目前總燃料(影子各燃料槽魔力和)。server 算、同步給 client 畫 HUD(client 沒影子查不到)。
+    private static final EntityDataAccessor<Integer> DATA_FUEL =
+            SynchedEntityData.defineId(ShipEntity.class, EntityDataSerializers.INT);
 
     // client 端平滑跟隨 server 廣播位置用（lerpSteps 在 Entity 是 private 無 getter，自己存一份）
     private int lerpSteps;
     private double lerpX, lerpY, lerpZ;
     private float lerpYRot, lerpXRot;
+
+    // 燃料/引擎(1b)：引擎數=速度上限、燃料槽 local=飛行時抽魔力的對象。contraption 變動時 recomputeFuelSystem() 重算。
+    private int engineCount = 0;
+    private final java.util.List<BlockPos> fuelTankLocals = new java.util.ArrayList<>();
+    private static final double SPEED_PER_ENGINE = 0.12; // 每引擎貢獻的每 tick 速度上限
+    private static final double SPEED_CAP = 1.0;          // 速度上限絕對天花板
+    private static final int FUEL_PER_MOVE = 10;          // 移動時每 tick 基礎耗魔力(滿油門);加速 ×2;隨油門縮放
 
     public ShipEntity(EntityType<?> type, Level level) {
         super(type, level);
@@ -225,6 +239,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         this.collisionListCache = null;
         this.hullBlocksCache = null;
         this.dynamicMirrorCache = null;
+        recomputeFuelSystem();   // 引擎數/燃料槽
         refreshDimensions();     // 依新 contraption 撐大 hitbox
     }
 
@@ -268,6 +283,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             meshCache = null; // 還沒建/烤失敗 → 讓渲染器重建
             meshFailed = false;
         }
+        recomputeFuelSystem();  // 加/挖到引擎或燃料槽會改變速度上限/燃料容量
         refreshDimensions(); // bounds 可能變了，更新 hitbox
     }
 
@@ -619,7 +635,12 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         Vec3 forwardDir = new Vec3(wf.x, wf.y, wf.z);
         Vec3 target = forwardDir.scale(f).add(0, v, 0);
         if (target.lengthSqr() > 1) target = target.normalize();
-        target = target.scale(MAX_SPEED);
+        // 速度上限 = 引擎數決定，× 玩家油門。沒燃料 → 推不動(maxSpeed=0)，靠慣性飄停。
+        int fuel = getFuel();
+        getEntityData().set(DATA_FUEL, fuel); // 同步給 client 畫 HUD
+        boolean hasFuel = fuel > 0;
+        double maxSpeed = hasFuel ? Math.min(engineCount * SPEED_PER_ENGINE, SPEED_CAP) * getThrottle() : 0.0;
+        target = target.scale(maxSpeed);
 
         shipVel = shipVel.add(target.subtract(shipVel).scale(ACCEL));
         if (shipVel.lengthSqr() < 1e-6) shipVel = Vec3.ZERO;
@@ -628,6 +649,12 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             setPos(getX() + allowed.x, getY() + allowed.y, getZ() + allowed.z);
         }
         shipVel = allowed; // 撞到的軸不保留動量
+
+        // 燃料消耗：移動才耗(停滯不耗)、加速(有前進/升降輸入)×2、隨油門縮放。抽乾下一 tick getFuel()=0 → 推不動。
+        if (hasFuel && shipVel.lengthSqr() > 1e-6) {
+            boolean accelerating = (f != 0f || v != 0);
+            drainFuel((int) Math.ceil(FUEL_PER_MOVE * getThrottle() * (accelerating ? 2 : 1)));
+        }
     }
 
     /** client 端：朝 server 廣播的目標位置/yaw 每 tick 步進一步，平滑跟隨（像 vanilla 船）。 */
@@ -683,6 +710,50 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     public void setRoll(float r) { getEntityData().set(DATA_ROLL, r); }
     public float getBowLocal() { return getEntityData().get(DATA_BOW); }
     public void setBowLocal(float b) { getEntityData().set(DATA_BOW, b); }
+
+    // ── 燃料/引擎(1b) ──────────────────────────────────────────────────────────
+    public float getThrottle() { return getEntityData().get(DATA_THROTTLE); }
+    public void setThrottle(float t) { getEntityData().set(DATA_THROTTLE, Mth.clamp(t, 0f, 1f)); }
+    public int getEngineCount() { return engineCount; }
+    /** HUD 用：同步過來的目前燃料(server 算)。 */
+    public int getDisplayFuel() { return getEntityData().get(DATA_FUEL); }
+    /** HUD 用：總燃料容量 = 燃料槽數 × 單槽容量(client 端 fuelTankLocals 在 readSpawnData 算好)。 */
+    public int getMaxFuel() { return fuelTankLocals.size() * ManaFuelTankBlockEntity.CAPACITY; }
+
+    /** contraption 變動時重算引擎數 + 燃料槽 local（速度上限/燃料抽取靠這兩個）。 */
+    private void recomputeFuelSystem() {
+        engineCount = 0;
+        fuelTankLocals.clear();
+        if (contraption == null) return;
+        for (var e : contraption.getBlocks().entrySet()) {
+            Block b = e.getValue().state().getBlock();
+            if (b instanceof ManaEngineBlock) engineCount++;
+            else if (b instanceof ManaFuelTankBlock) fuelTankLocals.add(e.getKey());
+        }
+    }
+
+    /** 目前總燃料 = 影子裡各燃料槽的魔力總和。沒影子(gametest)回 0。 */
+    public int getFuel() {
+        ServerLevel shadow = getShadow();
+        if (shadow == null || shadowAnchor == null) return 0;
+        int total = 0;
+        for (BlockPos lp : fuelTankLocals) {
+            if (shadow.getBlockEntity(shadowAnchor.offset(lp)) instanceof ManaFuelTankBlockEntity tank)
+                total += tank.getManaStorage().getManaStored();
+        }
+        return total;
+    }
+
+    /** 從影子的燃料槽抽 amount 魔力（飛行消耗）。逐槽抽到夠為止。 */
+    private void drainFuel(int amount) {
+        ServerLevel shadow = getShadow();
+        if (shadow == null || shadowAnchor == null || amount <= 0) return;
+        for (BlockPos lp : fuelTankLocals) {
+            if (amount <= 0) break;
+            if (shadow.getBlockEntity(shadowAnchor.offset(lp)) instanceof ManaFuelTankBlockEntity tank)
+                amount -= tank.getManaStorage().extractMana(amount, ManaAction.EXECUTE);
+        }
+    }
     private float rollO; // 上一 tick，渲染插值用
 
     /**
@@ -1700,6 +1771,8 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         builder.define(DATA_SEATS, new CompoundTag()); // 座位指派；contraption 走 complex spawn
         builder.define(DATA_ROLL, 0.0f);
         builder.define(DATA_BOW, 0.0f);
+        builder.define(DATA_THROTTLE, 1.0f); // 預設滿油門
+        builder.define(DATA_FUEL, 0);
     }
 
     @Override
@@ -1708,6 +1781,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             ShipContraption c = new ShipContraption();
             c.readNbt(level(), tag.getCompound("Ship"));
             this.contraption = c;
+            recomputeFuelSystem();
             refreshDimensions();
         }
         if (tag.contains("ShadowAnchor")) {
@@ -1757,6 +1831,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             ShipContraption c = new ShipContraption();
             c.readFromBuf(buf);
             this.contraption = c;
+            recomputeFuelSystem();
             refreshDimensions();
         }
         if (buf.readBoolean()) shadowAnchor = buf.readBlockPos();
