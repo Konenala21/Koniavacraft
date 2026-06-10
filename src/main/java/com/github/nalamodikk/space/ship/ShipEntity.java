@@ -1160,9 +1160,10 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
      */
     @Override
     public InteractionResult interactAt(Player player, Vec3 hitVec, InteractionHand hand) {
-        // server fallback:自己 raycast。正常路徑是 client 攔截、發 ShipInteractPacket 帶準心 pick → interactWithPick,
-        // 這樣 server 不用延遲的玩家位置 raycast,放置/開容器/上船跟 client 準心一致。
-        return interactWithPick(player, hand, pickLocal(player));
+        // 互動全走 client EntityInteractSpecific → ShipInteractPacket → interactWithPick(準心 pick)。
+        // 這裡 server 端不再自己做:client 的 cancel 偶爾擋不住 vanilla 這條,會跟封包雙重觸發
+        //(基座物品放了又被 useWithoutItem 拿走、門開了又關)。PASS = 不做,封包是唯一互動路徑。
+        return InteractionResult.PASS;
     }
 
     /** interactAt 的本體,但用指定的 pick。client 透過 ShipInteractPacket 傳準心 pick,server 不自己 raycast。 */
