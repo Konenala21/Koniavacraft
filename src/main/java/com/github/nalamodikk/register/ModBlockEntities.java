@@ -9,6 +9,7 @@ import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitBlock
 import com.github.nalamodikk.common.block.blockentity.mana_charger.ManaChargerBlockEntity;
 import com.github.nalamodikk.space.ship.ShipAssemblyPadBlockEntity;
 import com.github.nalamodikk.space.ship.ManaFuelTankBlockEntity;
+import com.github.nalamodikk.space.ship.ManaWarpInputBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_crafting.ManaCraftingTableBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_deployer.ManaDeployerBlockEntity;
 import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorBlockEntity;
@@ -89,6 +90,9 @@ public class ModBlockEntities {
 
     public static final Supplier<BlockEntityType<ManaFuelTankBlockEntity>> MANA_FUEL_TANK_BE =
             register("mana_fuel_tank", ManaFuelTankBlockEntity::new, ModBlocks.MANA_FUEL_TANK);
+
+    public static final Supplier<BlockEntityType<ManaWarpInputBlockEntity>> MANA_WARP_INPUT_BE =
+            register("mana_warp_input", ManaWarpInputBlockEntity::new, ModBlocks.MANA_WARP_INPUT);
 
     public static final Supplier<BlockEntityType<ManaGrinderBlockEntity>> MANA_GRINDER_BE =
             register("mana_grinder", ManaGrinderBlockEntity::new, ModBlocks.MANA_GRINDER);

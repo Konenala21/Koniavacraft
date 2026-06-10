@@ -76,6 +76,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(ModBlocks.MANA_ENGINE.get())
                 .add(ModBlocks.MANA_FUEL_TANK.get())
                 .add(ModBlocks.MANA_WARP_ENGINE.get())
+                .add(ModBlocks.MANA_WARP_INPUT.get())
                 .add(ModBlocks.MANA_ALLOY_BLOCK.get());
 
         this.tag(BlockTags.MINEABLE_WITH_SHOVEL)

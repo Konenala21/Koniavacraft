@@ -43,6 +43,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.MANA_ENGINE);
         blockWithItem(ModBlocks.MANA_FUEL_TANK);
         blockWithItem(ModBlocks.MANA_WARP_ENGINE);
+        blockWithItem(ModBlocks.MANA_WARP_INPUT);
         blockWithItem(ModBlocks.MANA_ALLOY_BLOCK);
         blockWithItem(ModBlocks.SHIP_ASSEMBLY_BASE);
         blockWithItem(ModBlocks.SHIP_ASSEMBLY_GANTRY);

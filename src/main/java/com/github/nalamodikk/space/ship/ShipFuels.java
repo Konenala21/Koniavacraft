@@ -2,6 +2,8 @@ package com.github.nalamodikk.space.ship;
 
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 
 /**
  * 飛船燃料分級的能量換算。固態 tier：任何爐子燃料都能當燃料(energy = 燃燒 tick × FUEL_K)，
@@ -18,5 +20,14 @@ public final class ShipFuels {
         if (stack.isEmpty()) return 0;
         int burn = stack.getBurnTime(RecipeType.SMELTING);
         return burn <= 0 ? 0 : burn * FUEL_K;
+    }
+
+    /**
+     * 這個流體每 mb 值多少能量；不是燃料回 0。給輸入方塊吃流體燃料用。
+     * 目前只認熔岩(120/mb，對齊熔岩桶換算)；未來新流體燃料在這裡加。
+     */
+    public static int fluidEnergyOf(Fluid fluid) {
+        if (fluid == Fluids.LAVA || fluid == Fluids.FLOWING_LAVA) return 120;
+        return 0;
     }
 }

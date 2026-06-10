@@ -136,6 +136,14 @@ public class ModCapabilities {
         event.registerBlockEntity(MANA, ModBlockEntities.MANA_FUEL_TANK_BE.get(),
                 (be, side) -> new RestrictedManaHandler(be.getManaStorage(), true, false));
 
+        // 曲速輸入方塊：魔力(INPUT,網路灌能量) + 物品槽(燃料物品) + 流體槽(燃料流體)
+        event.registerBlockEntity(MANA, ModBlockEntities.MANA_WARP_INPUT_BE.get(),
+                (be, side) -> new RestrictedManaHandler(be.getEnergy(), true, false));
+        event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.MANA_WARP_INPUT_BE.get(),
+                (be, side) -> be.getItems());
+        event.registerBlockEntity(Capabilities.FluidHandler.BLOCK, ModBlockEntities.MANA_WARP_INPUT_BE.get(),
+                (be, side) -> be.getFluidTank());
+
         // 本源基座：物品槽
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.ASPECT_PEDESTAL_BE.get(),
                 (be, side) -> be.getItemHandler());

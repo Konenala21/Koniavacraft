@@ -29,6 +29,7 @@ import com.github.nalamodikk.space.ship.ShipCoreBlock;
 import com.github.nalamodikk.space.ship.ShipSeatBlock;
 import com.github.nalamodikk.space.ship.ManaEngineBlock;
 import com.github.nalamodikk.space.ship.ManaWarpEngineBlock;
+import com.github.nalamodikk.space.ship.ManaWarpInputBlock;
 import com.github.nalamodikk.space.ship.ManaFuelTankBlock;
 import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.item.BlockItem;
@@ -252,10 +253,14 @@ public class ModBlocks {
             () -> new ManaFuelTankBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL)
                     .strength(3.0f).sound(SoundType.METAL).requiresCorrectToolForDrops()));
 
-    // ── 曲速引擎（T2 高速 tier，在場時上限 200→600，吃燃料兇）─────────────
+    // ── 曲速引擎核心 + 輸入方塊（多方塊「曲速大結構」的部件，先不開放單獨用）─────
     public static final DeferredBlock<ManaWarpEngineBlock> MANA_WARP_ENGINE = registerBlock("mana_warp_engine",
             () -> new ManaWarpEngineBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE)
                     .strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().lightLevel(s -> 6)));
+
+    public static final DeferredBlock<ManaWarpInputBlock> MANA_WARP_INPUT = registerBlock("mana_warp_input",
+            () -> new ManaWarpInputBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_CYAN)
+                    .strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().lightLevel(s -> 4)));
 
     // ── 飛船組裝台（控制台，右鍵開 GUI 掃描/組裝）───────────────────────
     public static final DeferredBlock<ShipAssemblyPadBlock> SHIP_ASSEMBLY_PAD = registerBlock("ship_assembly_pad",
