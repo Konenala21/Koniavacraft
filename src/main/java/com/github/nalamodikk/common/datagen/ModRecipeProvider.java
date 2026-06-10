@@ -343,6 +343,18 @@ public class ModRecipeProvider extends RecipeProvider {
                 .requires(ModBlocks.MANA_BLOCK.get())
                 .unlockedBy("has_mana_block", has(ModBlocks.MANA_BLOCK.get()))
                 .save(output, "mana_ingot_from_block");
+
+        // 魔力合金錠 ↔ 魔力合金方塊
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.MANA_ALLOY_BLOCK.get())
+                .pattern("SSS").pattern("SSS").pattern("SSS")
+                .define('S', ModItems.MANA_ALLOY_INGOT.get())
+                .unlockedBy("has_mana_alloy_ingot", has(ModItems.MANA_ALLOY_INGOT.get()))
+                .save(output, "mana_alloy_block_from_ingots");
+
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.MANA_ALLOY_INGOT.get(), 9)
+                .requires(ModBlocks.MANA_ALLOY_BLOCK.get())
+                .unlockedBy("has_mana_alloy_block", has(ModBlocks.MANA_ALLOY_BLOCK.get()))
+                .save(output, "mana_alloy_ingot_from_block");
     }
 
 

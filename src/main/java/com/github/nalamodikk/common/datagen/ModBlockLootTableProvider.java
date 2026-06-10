@@ -99,6 +99,7 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         dropSelf(ModBlocks.MANA_ENGINE.get());          // 飛船魔力引擎
         dropSelf(ModBlocks.MANA_FUEL_TANK.get());       // 飛船魔力燃料槽
         dropSelf(ModBlocks.MANA_WARP_ENGINE.get());     // 飛船曲速引擎
+        dropSelf(ModBlocks.MANA_ALLOY_BLOCK.get());     // 魔力合金方塊
         dropSelf(ModBlocks.MANA_GENERATOR.get());       // 魔力發電機
         dropSelf(ModBlocks.SOLAR_MANA_COLLECTOR.get()); // 太陽能魔力收集器
         dropSelf(ModBlocks.BASIC_ARCANE_CONDUIT.get()); // 🆕 基礎奧術導管

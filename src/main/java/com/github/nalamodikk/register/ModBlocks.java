@@ -54,6 +54,11 @@ public class ModBlocks {
     public static final DeferredBlock<Block> MANA_BLOCK =
             registerBlock("mana_block", () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)));
 
+    // 魔力合金方塊（9 魔力合金錠合成）：高階建材 + 曲速引擎結構的外殼材料
+    public static final DeferredBlock<Block> MANA_ALLOY_BLOCK =
+            registerBlock("mana_alloy_block", () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+                    .mapColor(MapColor.COLOR_CYAN).requiresCorrectToolForDrops()));
+
     // ── 月球方塊 ─────────────────────────────────────────────────────────
     // 月壤（表層細塵，灰白，鏟挖）
     public static final DeferredBlock<Block> MOON_REGOLITH =
