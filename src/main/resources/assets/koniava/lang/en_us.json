@@ -552,6 +552,8 @@
   "screen.koniava.ship_control.fuel": "Fuel: %1$s / %2$s",
   "screen.koniava.ship_control.engines": "Engines: %s",
   "message.koniava.fuel_tank.level": "Fuel: %1$s / %2$s",
+  "message.koniava.fuel_tank.full": "Tank is full",
+  "message.koniava.fuel_tank.refueled": "Refueled x%1$s : %2$s / %3$s",
   "block.koniava.magic_ore": "Magic Ore",
   "block.koniava.deepslate_magic_ore": "Deepslate Magic Ore",
   "block.koniava.mana_generator": "Mana Generator",
