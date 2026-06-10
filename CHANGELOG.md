@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Breaking a block on a spaceship (such as a formed altar) now removes it for good. Previously a removed block could linger as a "ghost": you could not target or break it, it came back after a restart, and it dropped back into the world when you disassembled the ship.
+在飛船上破壞方塊（例如已成形的祭壇）現在會真的移除。以前被移除的方塊可能變成「殘影」：瞄不到、打不掉、重啟後又出現，拆解飛船時還會掉回世界裡。
+
 Mining, placing and using blocks on a parked ship (breaking, placing a block, opening a container or machine, boarding a seat, toggling a door) now act on exactly the block under your crosshair, even while walking: the action is taken from where your client is aiming instead of a separate server-side raycast that lagged behind your movement and sometimes hit a different block.
 在停著飛船上挖、放、用方塊（挖掉、放方塊、開容器或機器、上船座位、開門）現在都精準作用在準心對著的那一格，連走動時也是：作用的是你客戶端準心瞄準的格，不再是伺服器另外算、會落後你移動而有時作用到別格的射線。
 
@@ -97,6 +100,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 新增太空維度，包含程序生成的星空天空、物理正確的行星渲染，以及完整太陽系（水星、金星、月球、火星、木星、土星、土衛六、天王星、海王星、冥王星）和比鄰星系雛形（雙星系統）。行星為真實 3D 球體，視角大小隨距離動態縮放。太陽有日冕光暈。進入維度時玩家會出現在地球軌道附近。
 
 ### Developer Notes / 開發者備註
+
+tickServerMirror previously skipped any cell where the shadow read air but the contraption still held a block, to avoid wiping visual blocks when the shadow chunk had not loaded. Because the shadow region is force-loaded, that condition actually means the block was removed shadow-side (structure deform, machine, or a prior break), so skipping left a ghost: the contraption kept a block with no backing BE, the client rendered it (e.g. the formed-altar BER), pick/break found nothing, it survived save/load, and disassembly wrote it back to the world. Now it only protects when the chunk is not loaded (hasChunkAt guard); a loaded-but-air cell syncs the removal via updateContraptionBlock + ShipBlockUpdatePacket.
+tickServerMirror 以前只要「影子讀到空氣但 contraption 還有方塊」就 skip，避免影子區塊沒載入時誤抹視覺方塊。但影子區域是 force-load 的，這個條件其實代表那格被影子端移除了（結構 deform、機器、或先前的破壞），所以 skip 會留下殘影：contraption 留著沒有實 BE 的方塊，客戶端照畫（例如成形祭壇的 BER），pick/break 找不到，存讀檔後還在，拆解時又寫回世界。現在只在區塊沒載入時保護（hasChunkAt 守衛）；區塊載入著卻是空氣就用 updateContraptionBlock + ShipBlockUpdatePacket 同步移除。
 
 Parked-ship interactions are now client-authoritative so they match the crosshair. Breaking: ShipEntity.hurt is a no-op and a client AttackEntityEvent sends ShipBreakBlockPacket with getAimedLocalBlock; the server runs the refactored public breakLocalBlock(player, local) on the received position (range-checked). Right-click (place / open container or machine / board seat / toggle): interactAt is refactored to interactWithPick(player, hand, pick); a client EntityInteractSpecific handler runs interactWithPick locally (all effects are isClientSide-guarded, so it is side-effect-free and only reports whether it would interact) and, if so, sends ShipInteractPacket (local + face + hit) and cancels the vanilla interaction, while non-interactions pass through; the server runs interactWithPick with the received pick. Neither path re-raycasts with the network-lagged server-side player position. Pick is now public.
 停著飛船的互動改成 client 權威、跟準心一致。挖：ShipEntity.hurt 變 no-op，client 的 AttackEntityEvent 用 getAimedLocalBlock 發 ShipBreakBlockPacket，server 對收到的座標（有範圍檢查）跑公開 breakLocalBlock(player, local)。右鍵（放方塊 / 開容器或機器 / 上船座位 / 切換門）：interactAt 重構成 interactWithPick(player, hand, pick)，client 的 EntityInteractSpecific 在本地跑一次 interactWithPick（所有效果都有 isClientSide 守衛 → 無副作用，只看會不會互動），會互動才發 ShipInteractPacket（local + 面 + 命中）並取消 vanilla 互動、不互動則放行，server 用收到的 pick 跑 interactWithPick。兩條路都不再用有網路延遲的伺服器端玩家位置 raycast。Pick 改公開。
