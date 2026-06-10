@@ -1,8 +1,10 @@
 package com.github.nalamodikk.space.ship;
 
 import com.github.nalamodikk.common.network.packet.client.ship.ShipBlockUpdatePacket;
+import com.github.nalamodikk.common.block.blockentity.altar.AltarGeometry;
 import com.github.nalamodikk.common.item.tool.StructureBuildWandItem;
 import com.github.nalamodikk.register.ModBlocks;
+import net.minecraft.core.Vec3i;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.BlockParticleOption;
@@ -302,13 +304,8 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             BlockState ss = shadow.getBlockState(shadowPos);
             var info = contraption.getBlocks().get(p);
             BlockState cur = info != null ? info.state() : Blocks.AIR.defaultBlockState();
-            if (ss.isAir()) continue;                       // 影子空 → 跳過
+            if (ss.isAir() || ss.equals(cur)) continue;     // 影子空 / 沒變 → 跳過
             BlockPos lp = p.immutable();
-            // 祭壇成形/升級會把就地的 mana_block 換成柱子/環(非 EntityBlock → 不在 dynamicMirror)。這些位置即使
-            // 現在跟影子一致也要納入 structureMirror,否則之後就地轉換鏡射不到、視覺停在 mana_block。
-            if (ss.is(ModBlocks.MANA_BLOCK.get()) || ss.is(ModBlocks.ALTAR_PILLAR.get()) || ss.is(ModBlocks.RESONANCE_RING.get()))
-                structureMirror.add(lp);
-            if (ss.equals(cur)) continue;                   // 已一致 → 不用更新/發包(但上面該納入鏡射的已納入)
             updateContraptionBlock(lp, ss);                 // server 本地:加進 contraption + 失效碰撞/mesh 快取 + refreshDimensions
             ShipBlockUpdatePacket.sendToClients(this, lp, ss); // 客戶端:沒這個 client 看不到方塊(只有 server 有 → 拆解才出現)
             structureMirror.add(lp);                        // 持久鏡射:祭壇成形/升級會把這些(非 EntityBlock)換成 resonance_ring 等,要持續同步
@@ -558,6 +555,16 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
                                 .sendToClients(this, local, tag);
                     }
                 }
+            }
+            // 祭壇核心(EntityBlock)在影子端成形/升級時，會就地把角落 mana_block 換成 altar_pillar、把環換成 resonance_ring
+            // (兩者都不是 EntityBlock，不會自己進 dynamicMirror)。核心被鏡射到這裡時，把它的柱子/環位置納入 structureMirror，
+            // 下一輪鏡射就把這些轉換結果同步到視覺船(否則船上柱子停在 mana_block 的樣子)。
+            if (ss.is(ModBlocks.ASPECT_ALTAR.get())) {
+                boolean added = false;
+                for (Vec3i off : AltarGeometry.PILLAR_OFFSETS) added |= structureMirror.add(local.offset(off));
+                for (List<Vec3i> ring : AltarGeometry.ALL_RINGS)
+                    for (Vec3i off : ring) added |= structureMirror.add(local.offset(off));
+                if (added) dynamicMirrorCache = null; // 有新追蹤位置 → 失效快取，下輪 dynamicMirrorBlocks 才掃得到柱子/環
             }
         }
     }
