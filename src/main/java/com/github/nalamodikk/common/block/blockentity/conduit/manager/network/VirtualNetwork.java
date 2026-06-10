@@ -23,12 +23,10 @@ public class VirtualNetwork {
     private final Map<BlockPos, Integer> conduitCapacities = new HashMap<>();
 
     public VirtualNetwork() {
-        LOGGER.debug("Created virtual network");
     }
 
     public void setTotalManaStored(int amount) {
         sharedManaPool.setMana(Math.max(0, Math.min(amount, sharedManaPool.getMaxManaStored())));
-        LOGGER.debug("Virtual network mana set to: {}", sharedManaPool.getManaStored());
     }
 
     public int getMaxManaStored() {
@@ -40,10 +38,6 @@ public class VirtualNetwork {
     }
 
     public void logNetworkInfo() {
-        LOGGER.debug("Virtual Network — Mana: {}/{}, Conduits: {}",
-                sharedManaPool.getManaStored(),
-                sharedManaPool.getMaxManaStored(),
-                connectedConduits.size());
     }
 
     /**
@@ -66,8 +60,6 @@ public class VirtualNetwork {
             conduit.setBufferMana(0);
         }
 
-        LOGGER.debug("Added conduit {} (tier cap: {}). Network: {}/{}",
-                pos, tierCapacity, sharedManaPool.getManaStored(), sharedManaPool.getMaxManaStored());
     }
 
     /**
@@ -91,8 +83,6 @@ public class VirtualNetwork {
             sharedManaPool.setCapacity(newMax);
         }
 
-        LOGGER.debug("Removed conduit {} from network. Remaining: {}, cap: {}",
-                pos, connectedConduits.size(), sharedManaPool.getMaxManaStored());
     }
 
     /**
@@ -104,8 +94,6 @@ public class VirtualNetwork {
         conduitCapacities.put(pos, newCapacity);
         int newTotal = sharedManaPool.getMaxManaStored() - oldCapacity + newCapacity;
         sharedManaPool.setCapacity(Math.max(0, newTotal));
-        LOGGER.debug("Conduit {} tier upgraded: cap {} -> {}. Network max: {}",
-                pos, oldCapacity, newCapacity, sharedManaPool.getMaxManaStored());
     }
 
     public int extractManaFromNetwork(int maxExtract, ManaAction action) {

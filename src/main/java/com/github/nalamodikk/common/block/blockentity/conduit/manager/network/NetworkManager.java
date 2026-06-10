@@ -101,8 +101,6 @@ public class NetworkManager {
         if (isScanning) {
             suppressedCount++;
             if (currentTick - lastLogTick > LOG_INTERVAL) {
-                LOGGER.debug("Concurrent scan attempts: {} times in last 30s at {}",
-                        suppressedCount, conduit.getBlockPos());
                 lastLogTick = currentTick;
                 suppressedCount = 0;
             }
@@ -233,8 +231,6 @@ public class NetworkManager {
         cacheManager.setSharedCache(endpoints);
         cacheManager.setSharedNetworkNodes(networkNodes);
 
-        LOGGER.debug("Network scan completed for {} - found {} endpoints",
-                conduit.getBlockPos(), endpoints.size());
     }
 
     /**
@@ -357,7 +353,6 @@ public class NetworkManager {
         // 標記需要重新掃描
         networkDirty = true;
 
-        LOGGER.debug("Network state reset for conduit at {}", conduit.getBlockPos());
     }
 
     /**
@@ -404,11 +399,9 @@ public class NetworkManager {
             }
 
             if (!invalidDirections.isEmpty()) {
-                LOGGER.debug("Passive cleanup removed {} invalid references", invalidDirections.size());
             }
 
         } catch (Exception e) {
-            LOGGER.debug("Error during passive cleanup: {}", e.getMessage());
         }
     }
 

@@ -162,8 +162,6 @@ import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
                 lastSyncedOverworld = isOverworld();
                 updateSyncedSkyFlags((ServerLevel) level);
 
-                LOGGER.debug("Solar collector generating state changed: {} -> {}, canGenerate={}, hasSpace={}",
-                        oldGenerating, this.generating, canGenerate, hasSpace);
             }
         }
 
@@ -427,8 +425,6 @@ import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
 
             // 如果不一致，強制同步
             if (actualSpeed != syncSpeed || actualEff != syncEff) {
-                LOGGER.debug("🔄 檢測到升級數據不一致，強制同步: 實際速度={}, 同步速度={}, 實際效率={}, 同步效率={}",
-                        actualSpeed, syncSpeed, actualEff, syncEff);
 
                 syncHelper.syncFrom(this);
                 level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
@@ -474,11 +470,8 @@ import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
                 // 🆕 通知客戶端更新
                 serverLevel.scheduleTick(worldPosition, getBlockState().getBlock(), 1);
 
-                LOGGER.debug("Solar collector server load complete at {}. generating={}, canGenerate={}",
-                        worldPosition, generating, canGenerate());
             } else if (level != null && level.isClientSide()) {
                 // 🆕 客戶端載入時的日誌
-                LOGGER.debug("Solar collector client load complete at {}.", worldPosition);
             }
         }
 
@@ -498,8 +491,6 @@ import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
                 BlockPos targetPos = worldPosition.relative(dir);
                 Direction inputSide = dir.getOpposite();
 
-                LOGGER.debug("Initializing capability cache. direction={}, targetPos={}, inputSide={}",
-                        dir, targetPos, inputSide);
 
                 manaCaches.put(dir, BlockCapabilityCache.create(
                         ModCapabilities.MANA,
@@ -508,7 +499,6 @@ import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
                         inputSide,
                         () -> !this.isRemoved(),
                         () -> {
-                            LOGGER.debug("Mana capability cache invalidated for direction={}", dir);
                         }
                 ));
 
@@ -519,12 +509,10 @@ import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
                         inputSide,
                         () -> !this.isRemoved(),
                         () -> {
-                            LOGGER.debug("Energy capability cache invalidated for direction={}", dir);
                         }
                 ));
             }
 
-            LOGGER.debug("Solar collector capability caches initialized at {}.", worldPosition);
         }
         // === 🔧 升級系統接口 ===
 
@@ -602,7 +590,6 @@ import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
             // 🔧 包含所有需要同步的數據
             saveAdditional(tag, registries);
 
-            LOGGER.debug("🌐 伺服器準備同步標籤: 位置={}, 升級數據已包含", worldPosition);
             return tag;
         }
 
@@ -616,7 +603,6 @@ import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
             // 🔧 載入所有同步的數據
             loadAdditional(tag, registries);
 
-            LOGGER.debug("🌐 客戶端收到同步標籤: 位置={}, 升級數據已更新", worldPosition);
         }
 
         /**
@@ -637,7 +623,6 @@ import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
             CompoundTag tag = pkt.getTag();
             if (tag != null) {
                 handleUpdateTag(tag, registries);
-                LOGGER.debug("🌐 客戶端處理數據封包: 位置={}", worldPosition);
             }
         }
 

@@ -318,7 +318,6 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
 
     // === 🆕 簡化的鄰居變化處理 ===
     public void onNeighborChanged() {
-        LOGGER.debug("Neighbor changed for conduit at {}", worldPosition);
 
         // 委派給網路管理器
         networkManager.onNeighborChanged();
@@ -340,13 +339,11 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
             }
         }
 
-        LOGGER.debug("Network state reset for conduit at {}", worldPosition);
     }
 
     // === 🆕 簡化的移除處理 ===
     @Override
     public void setRemoved() {
-        LOGGER.debug("Removing conduit at {}", worldPosition);
 
         try {
             networkMembership.leave();
@@ -357,7 +354,6 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
             // ✅ 性能優化：清理靜態 map 中的條目，防止內存洩漏
             conduitTickOffsets.remove(worldPosition);
 
-            LOGGER.debug("Conduit removed successfully: {}", worldPosition);
         } catch (Exception e) {
             LOGGER.error("Error during cleanup: {}", e.getMessage());
         }
@@ -452,7 +448,6 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
         // 1. 網路剛建立（第一次保存）
         if (lastLoggedMana == -1) {
             if (KoniavacraftMod.IS_DEV) {
-                LOGGER.debug("💾 虛擬網路已建立，魔力: {}, 連接數: {}", currentMana, conduitCount);
             }
 
             lastLoggedMana = currentMana;
@@ -463,7 +458,6 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
         // 2. 連接數變化（網路拓撲改變）
         if (conduitCount != lastLoggedConduitCount) {
             if (KoniavacraftMod.IS_DEV) {
-                LOGGER.debug("Virtual network conduit count changed: {} -> {}, mana={}", lastLoggedConduitCount, conduitCount, currentMana);
             }
             lastLoggedConduitCount = conduitCount;
             lastLoggedMana = currentMana;
@@ -474,8 +468,6 @@ public class ArcaneConduitBlockEntity extends BlockEntity implements IUnifiedMan
         if (Math.abs(currentMana - lastLoggedMana) > 2000) {
             if (KoniavacraftMod.IS_DEV) {
 
-                LOGGER.debug("Virtual network mana changed significantly: {} -> {}, conduits={}",
-                    lastLoggedMana, currentMana, conduitCount);
         }
             lastLoggedMana = currentMana;
             return;
