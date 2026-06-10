@@ -156,20 +156,22 @@ public class ShipAssemblyPadBlockEntity extends BlockEntity implements MenuProvi
     }
 
     /** 組裝出航：算盒 → 組裝 → 移除世界方塊 → 生成 ShipEntity（server 端）。 */
-    public void assembleShip() {
-        if (!(level instanceof ServerLevel server)) return;
-        if (!computeBox()) return;
+    /** 回傳組裝出的船（測試可直接拿，不必靠不可靠的範圍搜尋）；任何失敗回 null。 */
+    @org.jetbrains.annotations.Nullable
+    public ShipEntity assembleShip() {
+        if (!(level instanceof ServerLevel server)) return null;
+        if (!computeBox()) return null;
 
         int[] cc = new int[1];
         BlockPos core = findSingleCore(cc);
-        if (cc[0] == 0) { data.set(DATA_CORES, 0); setStatus(STATUS_NO_CORE); return; }
-        if (cc[0] > 1)  { data.set(DATA_CORES, cc[0]); setStatus(STATUS_MULTI_CORE); return; }
+        if (cc[0] == 0) { data.set(DATA_CORES, 0); setStatus(STATUS_NO_CORE); return null; }
+        if (cc[0] > 1)  { data.set(DATA_CORES, cc[0]); setStatus(STATUS_MULTI_CORE); return null; }
 
         ShipContraption ship = new ShipContraption();
         if (!ship.assemble(server, core, boxMin, boxMax)) {
             data.set(DATA_CORES, 1);
             setStatus(STATUS_FAILED);
-            return;
+            return null;
         }
 
         ship.removeFromWorld(server);
@@ -198,6 +200,7 @@ public class ShipAssemblyPadBlockEntity extends BlockEntity implements MenuProvi
         data.set(DATA_COUNT, ship.size());
         data.set(DATA_CORES, 1);
         setStatus(STATUS_LAUNCHED);
+        return entity;
     }
 
     private void setNoBox(int status) {

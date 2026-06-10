@@ -1258,16 +1258,13 @@ public class ShipAssemblyGameTests {
         helper.setBlock(new BlockPos(5, 2, 4), seat()); // 2 張座椅 → 2 座位（核心不再算座位，只當無椅後備）
         helper.setBlock(new BlockPos(3, 2, 4), seat());
 
+        ShipEntity[] holder = new ShipEntity[1];
         helper.startSequence()
-                .thenExecute(pad::assembleShip)
+                .thenExecute(() -> holder[0] = pad.assembleShip()) // 直接拿組出來的船；範圍搜尋對「實體」不可靠(船會跨測試殘留 → flaky)
                 .thenIdle(5)
                 .thenExecute(() -> {
-                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
-                    // 過濾出本測試的船（core+2 座椅=3 塊「且」剛好 2 座位），避開鄰測試殘留的 3 塊船(它們 0 座位 → 之前偶爾被撈到造成 flaky)
-                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
-                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 3 && s.getSeats().size() == 2)
-                            .findFirst().orElse(null);
-                    if (ship == null) { helper.fail("ship with core+2 seats not found"); return; }
+                    ShipEntity ship = holder[0];
+                    if (ship == null) { helper.fail("assembleShip returned null"); return; }
                     if (ship.getSeats().size() != 2)
                         helper.fail("expected 2 seats, got " + ship.getSeats().size());
 
