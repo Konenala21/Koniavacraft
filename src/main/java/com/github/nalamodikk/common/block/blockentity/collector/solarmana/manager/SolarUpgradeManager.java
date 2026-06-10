@@ -68,7 +68,6 @@ public class SolarUpgradeManager {
             }
         };
 
-        LOGGER.debug("🌞 太陽能升級管理器已初始化，槽位數: {}", UPGRADE_SLOT_COUNT);
     }
 
     // === ⚡ 公開接口（主類調用）===
@@ -286,9 +285,6 @@ public class SolarUpgradeManager {
                 markEffectsDirty(); // 重新計算效果
 
                 // 🔍 調試日誌
-                LOGGER.debug("🌞 載入升級管理器: 槽位數 {}, 升級物品數 {}",
-                        UPGRADE_SLOT_COUNT,
-                        upgrades.getAll().stream().mapToInt(stack -> stack.isEmpty() ? 0 : 1).sum());
             }
         } catch (Exception e) {
             LOGGER.error("Failed to load solar upgrade manager.", e);

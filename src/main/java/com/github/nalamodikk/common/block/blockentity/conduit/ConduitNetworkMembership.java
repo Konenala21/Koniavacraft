@@ -99,7 +99,6 @@ final class ConduitNetworkMembership {
         }
 
         needsNetworkRestore = true;
-        ArcaneConduitBlockEntity.LOGGER.debug("Queued virtual network mana restore: {}", tag.getInt("VirtualNetworkMana"));
     }
 
     /** onLoad 時若有暫存的還原資料且網路已建立，套用之。 */

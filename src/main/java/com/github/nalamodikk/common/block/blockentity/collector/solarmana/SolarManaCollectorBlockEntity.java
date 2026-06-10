@@ -96,7 +96,6 @@ import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
                     ioMap.put(dir, IOHandlerUtils.IOType.DISABLED);
                 }
             }
-            LOGGER.debug("🌞 太陽能收集器初始化：位置 {}", pos);
         }
 
 
@@ -398,8 +397,6 @@ import com.github.nalamodikk.common.utils.upgrade.UpgradeInventory;
                     syncHelper.syncFrom(this);
                 }
 
-                LOGGER.debug("Loaded solar mana collector at {} with mana {} and upgrade data.",
-                        worldPosition, manaStorage.getManaStored());
 
             } catch (Exception e) {
                 LOGGER.error("Failed to load solar mana collector at {}", worldPosition, e);

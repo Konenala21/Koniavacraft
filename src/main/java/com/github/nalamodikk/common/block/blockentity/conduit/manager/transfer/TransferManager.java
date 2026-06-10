@@ -305,7 +305,6 @@ public class TransferManager {
 
         // 檢查鄰居是否有空間
         if (neighborConduit.getManaStored() >= neighborConduit.getMaxManaStored()) {
-            LOGGER.debug("Transfer skipped: neighbor conduit is full");
             return false;
         }
 
