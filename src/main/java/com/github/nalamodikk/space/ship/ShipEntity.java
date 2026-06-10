@@ -149,8 +149,8 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     private int engineCount = 0;
     private final java.util.List<BlockPos> fuelTankLocals = new java.util.ArrayList<>();
     private static final double SPEED_PER_ENGINE = 0.12; // 每引擎貢獻的每 tick 速度上限
-    private static final double SPEED_CAP = 1.0;          // 速度上限絕對天花板
-    private static final int FUEL_PER_MOVE = 10;          // 移動時每 tick 基礎耗魔力(滿油門);加速 ×2;隨油門縮放
+    private static final double SPEED_CAP = 2.0;          // 速度上限天花板(碰撞已子步進防穿牆,可再調高;太高 chunk 載入會吃力)
+    private static final int FUEL_PER_ENGINE_MOVE = 12;   // 移動時「每引擎」每 tick 耗魔力(滿油門);加速 ×2;隨油門縮放。引擎越多越快也越耗
 
     public ShipEntity(EntityType<?> type, Level level) {
         super(type, level);
@@ -256,10 +256,12 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
      */
     public void updateContraptionBlock(BlockPos local, BlockState state) {
         if (contraption == null) return;
+        // 舊方塊(改之前)：給粒子用，也判斷要不要重算燃料系統(只有動到引擎/燃料槽才掃)
+        var oldInfo = contraption.getBlocks().get(local);
+        Block oldBlock = oldInfo != null ? oldInfo.state().getBlock() : null;
         // client：挖掉方塊(state=air)時噴破壞粒子（移除前用舊 state）
-        if (level().isClientSide && state.isAir()) {
-            var old = contraption.getBlocks().get(local);
-            if (old != null && !old.state().isAir()) spawnBreakParticles(local, old.state());
+        if (level().isClientSide && state.isAir() && oldInfo != null && !oldInfo.state().isAir()) {
+            spawnBreakParticles(local, oldInfo.state());
         }
         // state=air → 移除；已存在 → 換 state（保留 NBT）；不存在 → 新增。涵蓋 Phase2 切狀態 + 停船編輯加/挖
         if (state.isAir()) {
@@ -283,7 +285,14 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             meshCache = null; // 還沒建/烤失敗 → 讓渲染器重建
             meshFailed = false;
         }
-        recomputeFuelSystem();  // 加/挖到引擎或燃料槽會改變速度上限/燃料容量
+        // 增量更新引擎數/燃料槽，不掃全船 → 大量放引擎/燃料槽逐個放也不卡(每次 O(1))。
+        // 全船掃描只在組裝/載入(recomputeFuelSystem)做一次；這裡只調整這一格的差異。
+        Block newBlock = state.getBlock();
+        boolean oldEngine = oldBlock instanceof ManaEngineBlock, newEngine = newBlock instanceof ManaEngineBlock;
+        if (oldEngine != newEngine) engineCount += newEngine ? 1 : -1;
+        boolean oldTank = oldBlock instanceof ManaFuelTankBlock, newTank = newBlock instanceof ManaFuelTankBlock;
+        if (oldTank && !newTank) fuelTankLocals.remove(local);
+        else if (newTank && !oldTank) fuelTankLocals.add(local.immutable());
         refreshDimensions(); // bounds 可能變了，更新 hitbox
     }
 
@@ -653,7 +662,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         // 燃料消耗：移動才耗(停滯不耗)、加速(有前進/升降輸入)×2、隨油門縮放。抽乾下一 tick getFuel()=0 → 推不動。
         if (hasFuel && shipVel.lengthSqr() > 1e-6) {
             boolean accelerating = (f != 0f || v != 0);
-            drainFuel((int) Math.ceil(FUEL_PER_MOVE * getThrottle() * (accelerating ? 2 : 1)));
+            drainFuel((int) Math.ceil(FUEL_PER_ENGINE_MOVE * engineCount * getThrottle() * (accelerating ? 2 : 1)));
         }
     }
 
@@ -1152,10 +1161,23 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
      */
     Vec3 resolveTerrain(Vec3 move) { // package-visible 給 GameTest 直接測碰撞
         if (contraption == null) return move;
-        double mx = move.x != 0 && blockedBy(move.x, 0, 0) ? 0 : move.x;
-        double my = move.y != 0 && blockedBy(0, move.y, 0) ? 0 : move.y;
-        double mz = move.z != 0 && blockedBy(0, 0, move.z) ? 0 : move.z;
-        return new Vec3(mx, my, mz);
+        // 子步進：高速(>~0.5格/tick)時 blockedBy 只看目的地會穿過薄牆。切成 ≤0.5 格的小段逐段擋(per-axis 沿牆滑)。
+        // ≤0.5 格走原本單段邏輯，保住既有碰撞 gametest 的行為。
+        int steps = (int) Math.ceil(move.length() / 0.5);
+        if (steps <= 1) {
+            double mx = move.x != 0 && blockedBy(move.x, 0, 0) ? 0 : move.x;
+            double my = move.y != 0 && blockedBy(0, move.y, 0) ? 0 : move.y;
+            double mz = move.z != 0 && blockedBy(0, 0, move.z) ? 0 : move.z;
+            return new Vec3(mx, my, mz);
+        }
+        double ax = 0, ay = 0, az = 0;
+        double sx = move.x / steps, sy = move.y / steps, sz = move.z / steps;
+        for (int i = 0; i < steps; i++) {
+            if (sx != 0 && !blockedBy(ax + sx, ay, az)) ax += sx;
+            if (sy != 0 && !blockedBy(ax, ay + sy, az)) ay += sy;
+            if (sz != 0 && !blockedBy(ax, ay, az + sz)) az += sz;
+        }
+        return new Vec3(ax, ay, az);
     }
 
     // 地形碰撞只需檢查外殼方塊：被其他船方塊六面全包的內部方塊，不可能比外殼先撞到世界地形。

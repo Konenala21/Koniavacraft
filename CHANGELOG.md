@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Spaceship flight rebalanced: fuel now burns faster and scales with engine count (more engines mean more speed but more fuel), and the speed cap is raised so extra engines keep helping (up to about 16). Editing a large ship no longer stutters as it grows.
+飛船飛行重新平衡：燃料消耗變快、且隨引擎數放大（引擎越多越快也越耗），速度上限提高，所以多裝引擎還是有用（約到 16 顆）。編輯大船不再越蓋越卡。
+
 Right-click a spaceship's core to open its control panel: a throttle slider to set your cruise throttle, plus fuel and engine readouts. The panel's throttle, the in-flight scroll wheel and the HUD all stay in sync.
 右鍵飛船核心會打開控制台：油門滑桿（設巡航油門）加上燃料和引擎讀數。面板的油門、飛行中的滾輪、HUD 三者都同步。
 
@@ -118,6 +121,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 新增太空維度，包含程序生成的星空天空、物理正確的行星渲染，以及完整太陽系（水星、金星、月球、火星、木星、土星、土衛六、天王星、海王星、冥王星）和比鄰星系雛形（雙星系統）。行星為真實 3D 球體，視角大小隨距離動態縮放。太陽有日冕光暈。進入維度時玩家會出現在地球軌道附近。
 
 ### Developer Notes / 開發者備註
+
+Spaceship flight tuning + edit-perf fix. resolveTerrain now sub-steps (<=0.5 block/step, per-axis slide) so the ship can't tunnel thin terrain above ~1 block/tick; SPEED_CAP raised 1.0 -> 2.0 (now collision-safe at higher speeds). Flight consumption = FUEL_PER_ENGINE_MOVE(12) * engineCount * throttle * (accel?2:1) (was a flat FUEL_PER_MOVE, too low). engineCount + fuelTankLocals are now updated incrementally in updateContraptionBlock (O(1) per edit) instead of a full-contraption recomputeFuelSystem on every block change, which was the editing lag (worst with many engines/tanks); the full scan runs only on assembly/load (setContraption / readAdditionalSaveData / readSpawnData).
+飛船飛行調校 + 編輯效能修。resolveTerrain 改子步進（每步 ≤0.5 格、per-axis 沿牆滑），船在 >~1 格/tick 也不會穿薄牆；SPEED_CAP 從 1.0 提到 2.0（高速下碰撞安全）。飛行消耗 = FUEL_PER_ENGINE_MOVE(12) × engineCount × 油門 × (加速?2:1)（原本是太低的固定 FUEL_PER_MOVE）。engineCount + fuelTankLocals 改在 updateContraptionBlock 增量更新（每次編輯 O(1)），不再每次改方塊都 recomputeFuelSystem 掃全船，那是編輯卡頓主因（引擎/燃料槽越多越卡）；全船掃描只在組裝/載入（setContraption / readAdditionalSaveData / readSpawnData）跑一次。
 
 Fuel/engine Phase 1c. ShipControlScreen (client Screen, no menu) is opened from the client onInteractShip when the picked contraption block is the ShipCoreBlock (main hand, not sneaking): a throttle AbstractSliderButton plus fuel/engine text reading the synced ship data. ShipThrottlePacket now carries the ship id (VAR_INT) so the same packet serves the in-flight scroll wheel and the standing panel; the server resolves the ship by id and accepts the change from a driver-seat rider or any player within 64 blocks. ShipThrottleClientHandler updated to pass ship.getId().
 燃料/引擎 Phase 1c。ShipControlScreen（client Screen，無 menu）由 client onInteractShip 在指到的 contraption 方塊是 ShipCoreBlock 時開（主手、非潛行）：油門 AbstractSliderButton + 讀同步船資料的燃料/引擎文字。ShipThrottlePacket 現在帶船 id（VAR_INT），所以同一條封包同時服務飛行中滾輪與站著開的面板；server 用 id 找船，接受駕駛位乘客或 64 格內任何玩家的調整。ShipThrottleClientHandler 改傳 ship.getId()。
