@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Assembling a spaceship now needs a Mana Engine and a Mana Fuel Tank in addition to the core; the pad tells you which is missing. This is the first step of the fuel/engine system (engines will set the top speed, fuel tanks store the mana fuel; flight fuel use and throttle come next).
+組裝飛船現在除了核心，還需要魔力引擎和魔力燃料槽，組裝台會提示缺哪個。這是燃料/引擎系統的第一步（引擎決定速度上限、燃料槽儲存魔力燃料；飛行耗燃料和油門是下一步）。
+
 Chests on a spaceship now play their lid open/close animation when you open and close them, just like chests in the world.
 飛船上的箱子現在開關時會有開蓋/收蓋動畫，跟世界上的箱子一樣。
 
@@ -106,6 +109,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 新增太空維度，包含程序生成的星空天空、物理正確的行星渲染，以及完整太陽系（水星、金星、月球、火星、木星、土星、土衛六、天王星、海王星、冥王星）和比鄰星系雛形（雙星系統）。行星為真實 3D 球體，視角大小隨距離動態縮放。太陽有日冕光暈。進入維度時玩家會出現在地球軌道附近。
 
 ### Developer Notes / 開發者備註
+
+Fuel/engine Phase 1a: new ManaEngineBlock (plain block, counted at assembly to cap speed later) and ManaFuelTankBlock + ManaFuelTankBlockEntity (mana storage via IUnifiedManaHandler, registered INPUT-only so the ship's mana network can fill it; flight will drain it directly). ShipAssemblyPadBlockEntity.scan/assembleShip now validate the required skeleton (core + >=1 engine + >=1 fuel tank) with STATUS_NO_ENGINE / STATUS_NO_FUEL_TANK (mapped in ShipAssemblyPadScreen + lang). Assembly gametests' setupBaseAndPad now places the skeleton at local (0,0,-1)/(0,1,-1) so existing test ships pass validation; affected count/size assertions bumped by 2. Full plan in 太空系統.md "燃料/引擎系統 — Phase 1 實作計畫". Textures are placeholder (run runData for blockstates/models/loot/tags).
+燃料/引擎 Phase 1a：新增 ManaEngineBlock（單純方塊，組裝時計數，之後決定速度上限）與 ManaFuelTankBlock + ManaFuelTankBlockEntity（魔力儲存，走 IUnifiedManaHandler，註冊成 INPUT only 讓船上魔力網路能填；飛行時由 ShipEntity 直接抽）。ShipAssemblyPadBlockEntity 的 scan/assembleShip 現在驗證必要骨架（核心 + ≥1 引擎 + ≥1 燃料槽），用 STATUS_NO_ENGINE / STATUS_NO_FUEL_TANK（ShipAssemblyPadScreen + lang 對應）。組裝 gametest 的 setupBaseAndPad 在 local (0,0,-1)/(0,1,-1) 放骨架讓既有測試船過驗證；受影響的 count/size 斷言 +2。完整計畫在 太空系統.md。材質先佔位（要跑 runData 出 blockstate/model/loot/tag）。
 
 Ship chests' real BEs live in the shadow dimension and the visible ship's render BEs are not ticked, so the lid never animated. New client ShipChestAnimator tracks the opened ship chest (set from onInteractShip when the picked block is a ChestBlock and it is not a sneak-place edit) and each client tick drives that render BE chest's lid (triggerEvent(1, open) + ChestBlockEntity.lidAnimateTick); ChestRenderer already reads getOpenNess. It closes when the container screen closes, with a ~1.5s safety timeout if a screen never appears (mis-trigger guard).
 船箱子的真身在影子維度、視覺船的 render BE 不被 tick，所以蓋子從不動畫。新增 client 的 ShipChestAnimator 記下開啟的船箱（onInteractShip 在指到 ChestBlock 且非潛行放方塊編輯時設定），每 client tick 推進該 render BE 箱子的蓋子（triggerEvent(1, 開) + ChestBlockEntity.lidAnimateTick）；ChestRenderer 本來就讀 getOpenNess。容器畫面關了就收蓋，畫面始終沒出現則 ~1.5s 後自動收蓋（誤觸發保險）。

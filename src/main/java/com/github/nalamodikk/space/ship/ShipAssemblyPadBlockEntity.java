@@ -57,6 +57,8 @@ public class ShipAssemblyPadBlockEntity extends BlockEntity implements MenuProvi
     public static final int STATUS_NO_BASE = 5;     // 旁邊沒有相連的組裝底座
     public static final int STATUS_TOO_BIG = 6;     // 底座超過 footprint 上限
     public static final int STATUS_LAUNCHED = 7;    // 已組裝出航（方塊變成飛船實體）
+    public static final int STATUS_NO_ENGINE = 8;   // 缺魔力引擎（必要骨架）
+    public static final int STATUS_NO_FUEL_TANK = 9;// 缺魔力燃料槽（必要骨架）
 
     private final ContainerData data = new SimpleContainerData(6);
 
@@ -152,6 +154,10 @@ public class ShipAssemblyPadBlockEntity extends BlockEntity implements MenuProvi
         boolean ok = ship.assemble(level, core, boxMin, boxMax);
         data.set(DATA_COUNT, ok ? ship.size() : 0);
         data.set(DATA_CORES, 1);
+        if (ok) { // 預覽也驗必要骨架：缺引擎/燃料槽先提示，免得按了組裝才知道
+            if (ship.getBlocks().values().stream().noneMatch(i -> i.state().getBlock() instanceof ManaEngineBlock)) { setStatus(STATUS_NO_ENGINE); return; }
+            if (ship.getBlocks().values().stream().noneMatch(i -> i.state().getBlock() instanceof ManaFuelTankBlock)) { setStatus(STATUS_NO_FUEL_TANK); return; }
+        }
         setStatus(ok ? STATUS_OK : STATUS_FAILED);
     }
 
@@ -172,6 +178,14 @@ public class ShipAssemblyPadBlockEntity extends BlockEntity implements MenuProvi
             data.set(DATA_CORES, 1);
             setStatus(STATUS_FAILED);
             return null;
+        }
+
+        // 必要骨架驗證：核心 + ≥1 魔力引擎 + ≥1 魔力燃料槽。缺了不出航。
+        if (ship.getBlocks().values().stream().noneMatch(i -> i.state().getBlock() instanceof ManaEngineBlock)) {
+            data.set(DATA_CORES, 1); setStatus(STATUS_NO_ENGINE); return null;
+        }
+        if (ship.getBlocks().values().stream().noneMatch(i -> i.state().getBlock() instanceof ManaFuelTankBlock)) {
+            data.set(DATA_CORES, 1); setStatus(STATUS_NO_FUEL_TANK); return null;
         }
 
         ship.removeFromWorld(server);

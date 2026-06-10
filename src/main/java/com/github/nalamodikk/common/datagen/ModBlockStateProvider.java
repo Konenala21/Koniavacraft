@@ -40,6 +40,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // 飛船方塊（cubeAll，貼圖在 block/ship_*.png）
         blockWithItem(ModBlocks.SHIP_CORE);
         blockWithItem(ModBlocks.SHIP_ASSEMBLY_PAD);
+        blockWithItem(ModBlocks.MANA_ENGINE);
+        blockWithItem(ModBlocks.MANA_FUEL_TANK);
         blockWithItem(ModBlocks.SHIP_ASSEMBLY_BASE);
         blockWithItem(ModBlocks.SHIP_ASSEMBLY_GANTRY);
         shipSeatModel(); // 椅子造型（座板 + 椅背），非整塊

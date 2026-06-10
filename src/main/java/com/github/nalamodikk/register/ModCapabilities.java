@@ -132,6 +132,10 @@ public class ModCapabilities {
         event.registerBlockEntity(MANA, ModBlockEntities.ASPECT_ALTAR_BE.get(),
                 (be, side) -> new RestrictedManaHandler(be.getManaStorage(), true, false));
 
+        // 飛船魔力燃料槽：INPUT only（接船上魔力網路補給；引擎飛行時由 ShipEntity 直接抽 storage）
+        event.registerBlockEntity(MANA, ModBlockEntities.MANA_FUEL_TANK_BE.get(),
+                (be, side) -> new RestrictedManaHandler(be.getManaStorage(), true, false));
+
         // 本源基座：物品槽
         event.registerBlockEntity(Capabilities.ItemHandler.BLOCK, ModBlockEntities.ASPECT_PEDESTAL_BE.get(),
                 (be, side) -> be.getItemHandler());

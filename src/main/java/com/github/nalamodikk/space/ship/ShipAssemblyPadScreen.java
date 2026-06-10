@@ -78,6 +78,8 @@ public class ShipAssemblyPadScreen extends AbstractContainerScreen<ShipAssemblyP
             case ShipAssemblyPadBlockEntity.STATUS_NO_BASE -> "no_base";
             case ShipAssemblyPadBlockEntity.STATUS_TOO_BIG -> "too_big";
             case ShipAssemblyPadBlockEntity.STATUS_LAUNCHED -> "launched";
+            case ShipAssemblyPadBlockEntity.STATUS_NO_ENGINE -> "no_engine";
+            case ShipAssemblyPadBlockEntity.STATUS_NO_FUEL_TANK -> "no_fuel_tank";
             default -> "idle";
         };
         return Component.translatable("screen.koniava.ship_assembly_pad.status." + key);

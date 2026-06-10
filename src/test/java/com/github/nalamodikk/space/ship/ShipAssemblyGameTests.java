@@ -58,6 +58,8 @@ public class ShipAssemblyGameTests {
     private static BlockState core()   { return ModBlocks.SHIP_CORE.get().defaultBlockState(); }
     private static BlockState filler() { return ModBlocks.MANA_BLOCK.get().defaultBlockState(); }
     private static BlockState seat()   { return ModBlocks.SHIP_SEAT.get().defaultBlockState(); }
+    private static BlockState engine() { return ModBlocks.MANA_ENGINE.get().defaultBlockState(); }
+    private static BlockState fuelTank() { return ModBlocks.MANA_FUEL_TANK.get().defaultBlockState(); }
 
     /** 鋪 3x3 底座（x∈[3,5], z∈[3,5], y=1）+ 西側放組裝台 (2,1,4)。 */
     private static ShipAssemblyPadBlockEntity setupBaseAndPad(GameTestHelper helper) {
@@ -71,6 +73,10 @@ public class ShipAssemblyGameTests {
             for (int z = 3; z <= 5; z++)
                 helper.setBlock(new BlockPos(x, 1, z), base());
         helper.setBlock(new BlockPos(2, 1, 4), pad());
+        // 必要骨架：每艘測試船在核心(4,2,4)的 -z 側自動有引擎+燃料槽，過組裝的骨架驗證。
+        // 放 (4,2,3)+(4,3,3)（local (0,0,-1)/(0,1,-1)）= 沒有測試用到的格，避免撞到放門((0,1,0)/(0,2,0)) / +z 延伸((4,2,5)) 等。
+        helper.setBlock(new BlockPos(4, 2, 3), engine());
+        helper.setBlock(new BlockPos(4, 3, 3), fuelTank());
         var be = helper.getBlockEntity(new BlockPos(2, 1, 4));
         if (!(be instanceof ShipAssemblyPadBlockEntity pad)) {
             helper.fail("ship assembly pad BE not found");
@@ -119,7 +125,7 @@ public class ShipAssemblyGameTests {
         expect(helper, pad, ShipAssemblyPadBlockEntity.DATA_STATUS,
                 ShipAssemblyPadBlockEntity.STATUS_OK, "status");
         expect(helper, pad, ShipAssemblyPadBlockEntity.DATA_CORES, 1, "cores");
-        expect(helper, pad, ShipAssemblyPadBlockEntity.DATA_COUNT, 3, "count");
+        expect(helper, pad, ShipAssemblyPadBlockEntity.DATA_COUNT, 5, "count");
         helper.succeed();
     }
 
@@ -132,7 +138,7 @@ public class ShipAssemblyGameTests {
         helper.setBlock(new BlockPos(6, 2, 4), filler()); // 盒外
         pad.scan();
         // 只抓到核心 + (5,2,4) = 2 塊，(6,2,4) 在盒外被擋
-        expect(helper, pad, ShipAssemblyPadBlockEntity.DATA_COUNT, 2, "count (box edge)");
+        expect(helper, pad, ShipAssemblyPadBlockEntity.DATA_COUNT, 4, "count (box edge)");
         expect(helper, pad, ShipAssemblyPadBlockEntity.DATA_STATUS,
                 ShipAssemblyPadBlockEntity.STATUS_OK, "status");
         helper.succeed();
@@ -163,12 +169,12 @@ public class ShipAssemblyGameTests {
                 .thenExecute(() -> {
                     expect(helper, pad, ShipAssemblyPadBlockEntity.DATA_STATUS,
                             ShipAssemblyPadBlockEntity.STATUS_LAUNCHED, "status");
-                    expect(helper, pad, ShipAssemblyPadBlockEntity.DATA_COUNT, 3, "count");
+                    expect(helper, pad, ShipAssemblyPadBlockEntity.DATA_COUNT, 5, "count");
                     helper.assertBlockPresent(Blocks.AIR, new BlockPos(4, 2, 4));
                     helper.assertBlockPresent(Blocks.AIR, new BlockPos(3, 2, 4));
                     helper.assertBlockPresent(Blocks.AIR, new BlockPos(5, 2, 4));
-                    if (h[0] == null || h[0].getContraption() == null || h[0].getContraption().size() != 3)
-                        helper.fail("ship entity with 3 blocks not spawned");
+                    if (h[0] == null || h[0].getContraption() == null || h[0].getContraption().size() != 5) // 3 自有 + 2 骨架
+                        helper.fail("ship entity with expected blocks not spawned");
                 })
                 .thenSucceed();
     }
@@ -185,7 +191,7 @@ public class ShipAssemblyGameTests {
                 .thenExecute(() -> {
                     expect(helper, pad, ShipAssemblyPadBlockEntity.DATA_STATUS,
                             ShipAssemblyPadBlockEntity.STATUS_LAUNCHED, "status");
-                    expect(helper, pad, ShipAssemblyPadBlockEntity.DATA_COUNT, 2, "count(斜接的該收進來=2)");
+                    expect(helper, pad, ShipAssemblyPadBlockEntity.DATA_COUNT, 4, "count(斜接的該收進來,+骨架=4)");
                     helper.assertBlockPresent(Blocks.AIR, new BlockPos(5, 2, 5)); // 斜接方塊被組進船=從世界移除
                 })
                 .thenSucceed();
@@ -369,7 +375,7 @@ public class ShipAssemblyGameTests {
                 .thenExecute(() -> {
                     AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
                     ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
-                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
+                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 4)
                             .findFirst().orElse(null);
                     if (ship == null) { helper.fail("no ship"); return; }
                     shipRef[0] = ship;
@@ -1073,7 +1079,7 @@ public class ShipAssemblyGameTests {
                 .thenExecute(() -> {
                     AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
                     ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
-                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
+                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 4)
                             .findFirst().orElse(null);
                     if (ship == null) { helper.fail("no ship"); return; }
                     ship.placeState(new BlockPos(0, 1, 0), Blocks.OAK_DOOR.defaultBlockState());
@@ -1101,7 +1107,7 @@ public class ShipAssemblyGameTests {
                 .thenExecute(() -> {
                     AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
                     ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
-                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
+                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 4)
                             .findFirst().orElse(null);
                     if (ship == null) { helper.fail("no ship"); return; }
                     int before = ship.getContraption().size();
@@ -1210,7 +1216,7 @@ public class ShipAssemblyGameTests {
                 .thenExecute(() -> {
                     AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
                     ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
-                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
+                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 4)
                             .findFirst().orElse(null);
                     if (ship == null) { helper.fail("no ship"); return; }
                     double startZ = ship.getZ();
@@ -1283,7 +1289,7 @@ public class ShipAssemblyGameTests {
                 .thenExecute(() -> {
                     AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
                     ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
-                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 1)
+                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 3)
                             .findFirst().orElse(null);
                     if (ship == null) { helper.fail("single-block ship not found"); return; }
 
@@ -1317,7 +1323,7 @@ public class ShipAssemblyGameTests {
                 .thenExecute(() -> {
                     AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
                     ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
-                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
+                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 4)
                             .findFirst().orElse(null);
                     if (ship == null) { helper.fail("core+trapdoor ship not found"); return; }
                     BlockPos local = new BlockPos(1, 0, 0); // 活板門相對核心錨點
