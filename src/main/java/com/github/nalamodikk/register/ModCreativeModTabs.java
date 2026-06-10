@@ -103,8 +103,7 @@ public class ModCreativeModTabs {
                                 ModItems.ITEMS.getEntries().forEach(item -> {
                                     if (item.get() instanceof BlockItem blockItem) {
                                         String path = blockItem.getBlock().builtInRegistryHolder().key().location().getPath();
-                                        if ("arcane_conduit".equals(path) || "altar_pillar".equals(path) || "resonance_ring".equals(path)
-                                                || "mana_warp_engine".equals(path) || "mana_warp_input".equals(path)) { // 曲速大結構部件,先不開放
+                                        if ("arcane_conduit".equals(path) || "altar_pillar".equals(path) || "resonance_ring".equals(path)) {
                                             return;
                                         }
 
