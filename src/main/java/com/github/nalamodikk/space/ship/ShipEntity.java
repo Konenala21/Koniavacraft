@@ -148,8 +148,8 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     // 燃料/引擎(1b)：引擎數=速度上限、燃料槽 local=飛行時抽魔力的對象。contraption 變動時 recomputeFuelSystem() 重算。
     private int engineCount = 0;
     private final java.util.List<BlockPos> fuelTankLocals = new java.util.ArrayList<>();
-    private static final double SPEED_PER_ENGINE = 0.12; // 每引擎貢獻的每 tick 速度上限
-    private static final double SPEED_CAP = 2.0;          // 速度上限天花板(碰撞已子步進防穿牆,可再調高;太高 chunk 載入會吃力)
+    private static final double SPEED_PER_ENGINE = 0.2;  // 每引擎貢獻的每 tick 速度上限(20 b/s=1.0/tick;~50 引擎到頂 200)
+    private static final double SPEED_CAP = 10.0;         // 天花板 10.0/tick=200 b/s(一般引擎極限)。再快要未來「曲速引擎」tier。碰撞已子步進防穿牆;這麼快只適合高空/太空,貼地面 chunk 載入跟不上會穿插
     private static final int FUEL_PER_ENGINE_MOVE = 12;   // 移動時「每引擎」每 tick 耗魔力(滿油門);加速 ×2;隨油門縮放。引擎越多越快也越耗
 
     public ShipEntity(EntityType<?> type, Level level) {
