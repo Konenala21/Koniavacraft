@@ -305,6 +305,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             BlockPos lp = p.immutable();
             updateContraptionBlock(lp, ss);                 // server 本地:加進 contraption + 失效碰撞/mesh 快取 + refreshDimensions
             ShipBlockUpdatePacket.sendToClients(this, lp, ss); // 客戶端:沒這個 client 看不到方塊(只有 server 有 → 拆解才出現)
+            structureMirror.add(lp);                        // 持久鏡射:祭壇成形/升級會把這些(非 EntityBlock)換成 resonance_ring 等,要持續同步
             if (ss.getBlock() instanceof EntityBlock) {
                 BlockEntity sbe = shadow.getBlockEntity(shadowPos);
                 if (sbe != null) {
@@ -495,13 +496,17 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     // 鏡射只需掃「會變」的方塊：機器(EntityBlock，運轉/亮/進度) + 隨機刻(作物生長)。靜態方塊永不變。
     // 編輯(門/拉桿/放挖)已在 writeToShadow 兩端同寫，不靠鏡射，所以不必納入。快取，加/減方塊才失效。
     @Nullable private java.util.List<BlockPos> dynamicMirrorCache;
+    // 杖蓋的結構方塊(柱子/環)即使不是 EntityBlock 也要每 tick 鏡射:祭壇成形/升級會把 mana_block 換成
+    // resonance_ring 等,那是非 EntityBlock 的方塊替換,不在這集合就不會同步回視覺船。
+    private final java.util.Set<BlockPos> structureMirror = new java.util.HashSet<>();
     private java.util.List<BlockPos> dynamicMirrorBlocks() {
         if (dynamicMirrorCache == null) {
             java.util.List<BlockPos> dyn = new java.util.ArrayList<>();
             if (contraption != null) {
                 for (var e : contraption.getBlocks().entrySet()) {
                     BlockState st = e.getValue().state();
-                    if (st.getBlock() instanceof EntityBlock || st.isRandomlyTicking()) dyn.add(e.getKey());
+                    if (st.getBlock() instanceof EntityBlock || st.isRandomlyTicking()
+                            || structureMirror.contains(e.getKey())) dyn.add(e.getKey());
                 }
             }
             dynamicMirrorCache = dyn;
