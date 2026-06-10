@@ -61,7 +61,7 @@ public class ShipAssemblyGameTests {
 
     /** 鋪 3x3 底座（x∈[3,5], z∈[3,5], y=1）+ 西側放組裝台 (2,1,4)。 */
     private static ShipAssemblyPadBlockEntity setupBaseAndPad(GameTestHelper helper) {
-        // 先清空建造區：收船測試用 world.setBlock 寫回的方塊不被 gametest 追蹤清理，
+        // 清空建造區：收船測試用 world.setBlock 寫回的方塊不被 gametest 追蹤清理，
         // 會殘留污染後續測試的盒，導致 scan 多算。每個測試開頭清乾淨。
         for (int x = 2; x <= 8; x++)
             for (int y = 2; y <= 7; y++)
@@ -156,8 +156,9 @@ public class ShipAssemblyGameTests {
         helper.setBlock(new BlockPos(3, 2, 4), filler());
         helper.setBlock(new BlockPos(5, 2, 4), filler());
 
+        ShipEntity[] h = new ShipEntity[1];
         helper.startSequence()
-                .thenExecute(pad::assembleShip)
+                .thenExecute(() -> h[0] = pad.assembleShip())
                 .thenIdle(5) // addFreshEntity 下一 tick 才進世界（多測試負載下拉長保險）
                 .thenExecute(() -> {
                     expect(helper, pad, ShipAssemblyPadBlockEntity.DATA_STATUS,
@@ -166,12 +167,8 @@ public class ShipAssemblyGameTests {
                     helper.assertBlockPresent(Blocks.AIR, new BlockPos(4, 2, 4));
                     helper.assertBlockPresent(Blocks.AIR, new BlockPos(3, 2, 4));
                     helper.assertBlockPresent(Blocks.AIR, new BlockPos(5, 2, 4));
-                    // 直接查 level 的飛船實體，過濾出本測試的船（3 塊），避開鄰測試殘留
-                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
-                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
-                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 3)
-                            .findFirst().orElse(null);
-                    if (ship == null) helper.fail("ship entity with 3 blocks not spawned");
+                    if (h[0] == null || h[0].getContraption() == null || h[0].getContraption().size() != 3)
+                        helper.fail("ship entity with 3 blocks not spawned");
                 })
                 .thenSucceed();
     }
@@ -303,23 +300,18 @@ public class ShipAssemblyGameTests {
         helper.setBlock(new BlockPos(4, 2, 4), core());
         helper.setBlock(new BlockPos(3, 2, 4), filler());
 
+        ShipEntity[] h = new ShipEntity[1];
         helper.startSequence()
-                .thenExecute(pad::assembleShip)
-                .thenIdle(5)
                 .thenExecute(() -> {
-                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
-                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
-                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
-                            .findFirst().orElse(null);
-                    if (ship == null) { helper.fail("no ship to disassemble"); return; }
-                    if (!ship.disassemble()) helper.fail("disassemble returned false");
+                    h[0] = pad.assembleShip();                                  // 拿自己的船，不靠範圍搜尋(會抓到鄰格)
+                    if (h[0] == null) helper.fail("assembleShip returned null");
+                    else if (!h[0].disassemble()) helper.fail("disassemble returned false"); // 立刻拆，不給它飄
                 })
                 .thenIdle(2)
                 .thenExecute(() -> {
                     helper.assertBlockPresent(ModBlocks.SHIP_CORE.get(), new BlockPos(4, 2, 4));
                     helper.assertBlockPresent(ModBlocks.MANA_BLOCK.get(), new BlockPos(3, 2, 4));
-                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
-                    if (!helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).isEmpty())
+                    if (h[0] != null && !h[0].isRemoved())
                         helper.fail("ship entity not removed after disassemble");
                 })
                 .thenSucceed();
@@ -337,16 +329,12 @@ public class ShipAssemblyGameTests {
             return;
         }
 
+        ShipEntity[] h = new ShipEntity[1];
         helper.startSequence()
-                .thenExecute(pad::assembleShip)
-                .thenIdle(5)
                 .thenExecute(() -> {
-                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
-                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
-                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
-                            .findFirst().orElse(null);
-                    if (ship == null) { helper.fail("no ship"); return; }
-                    if (!ship.disassemble()) helper.fail("disassemble returned false");
+                    h[0] = pad.assembleShip();
+                    if (h[0] == null) helper.fail("assembleShip returned null");
+                    else if (!h[0].disassemble()) helper.fail("disassemble returned false");
                 })
                 .thenIdle(2)
                 .thenExecute(() -> {
@@ -1139,16 +1127,12 @@ public class ShipAssemblyGameTests {
         helper.setBlock(new BlockPos(4, 2, 4), core());
         helper.setBlock(new BlockPos(3, 2, 4), filler());
 
+        ShipEntity[] h = new ShipEntity[1];
         helper.startSequence()
-                .thenExecute(pad::assembleShip)
-                .thenIdle(5)
                 .thenExecute(() -> {
-                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
-                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
-                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
-                            .findFirst().orElse(null);
-                    if (ship == null) { helper.fail("no ship"); return; }
-                    if (!ship.disassemble()) helper.fail("disassemble returned false");
+                    h[0] = pad.assembleShip();
+                    if (h[0] == null) helper.fail("assembleShip returned null");
+                    else if (!h[0].disassemble()) helper.fail("disassemble returned false");
                 })
                 .thenIdle(2)
                 .thenExecute(() -> {
@@ -1167,16 +1151,12 @@ public class ShipAssemblyGameTests {
         helper.setBlock(new BlockPos(4, 2, 4), core());
         helper.setBlock(new BlockPos(3, 2, 4), filler());
 
+        ShipEntity[] h = new ShipEntity[1];
         helper.startSequence()
-                .thenExecute(pad::assembleShip)
-                .thenIdle(5)
                 .thenExecute(() -> {
-                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
-                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
-                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
-                            .findFirst().orElse(null);
-                    if (ship == null) { helper.fail("no ship"); return; }
-                    ship.remove(Entity.RemovalReason.KILLED); // 模擬 /kill
+                    h[0] = pad.assembleShip();
+                    if (h[0] == null) helper.fail("assembleShip returned null");
+                    else h[0].remove(Entity.RemovalReason.KILLED); // 立刻模擬 /kill,不給它飄到鄰格
                 })
                 .thenIdle(2)
                 .thenExecute(() -> {
@@ -1192,20 +1172,16 @@ public class ShipAssemblyGameTests {
         helper.setBlock(new BlockPos(4, 2, 4), core());
         helper.setBlock(new BlockPos(3, 2, 4), Blocks.CHEST.defaultBlockState()); // 空箱組裝
 
+        ShipEntity[] h = new ShipEntity[1];
         helper.startSequence()
-                .thenExecute(pad::assembleShip)
-                .thenIdle(5)
                 .thenExecute(() -> {
-                    AABB area = new AABB(helper.absolutePos(new BlockPos(4, 2, 4))).inflate(4);
-                    ShipEntity ship = helper.getLevel().getEntitiesOfClass(ShipEntity.class, area).stream()
-                            .filter(s -> s.getContraption() != null && s.getContraption().size() == 2)
-                            .findFirst().orElse(null);
-                    if (ship == null) { helper.fail("no ship"); return; }
+                    h[0] = pad.assembleShip();
+                    if (h[0] == null) { helper.fail("assembleShip returned null"); return; }
                     // 模擬 GUI 改動：寫回 7 鑽石到箱子（local = 3-4 = -1,0,0）
                     SimpleContainer c = new SimpleContainer(27);
                     c.setItem(0, new ItemStack(Items.DIAMOND, 7));
-                    ship.writeContainerBack(new BlockPos(-1, 0, 0), c);
-                    if (!ship.disassemble()) helper.fail("disassemble returned false");
+                    h[0].writeContainerBack(new BlockPos(-1, 0, 0), c);
+                    if (!h[0].disassemble()) helper.fail("disassemble returned false");
                 })
                 .thenIdle(2)
                 .thenExecute(() -> {

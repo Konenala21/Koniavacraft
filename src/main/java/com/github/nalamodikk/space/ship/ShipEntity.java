@@ -329,13 +329,14 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     @Override
     public void remove(Entity.RemovalReason reason) {
-        // 保險：被 /kill 或非預期 discard（reason.shouldDestroy()=KILLED/DISCARDED）而不是正常拆解時，
-        // 把方塊寫回世界（船散架在原地），不要讓整艘船無聲蒸發。區塊卸載/維度切換不觸發（會存檔/搬移）。
-        if (!level().isClientSide && contraption != null && !intentionalDisassembly && reason.shouldDestroy()) {
+        // 保險：被 /kill（KILLED）而非正常拆解時，把方塊寫回世界（船散架在原地），不要讓整艘船無聲蒸發。
+        // DISCARDED 是「靜默移除」(vanilla 語意=不掉落，例如指令/清理/gametest 框架收尾)，不寫回，否則會把核心灑回原地污染。
+        // 區塊卸載/維度切換也不觸發（會存檔/搬移）。
+        if (!level().isClientSide && contraption != null && !intentionalDisassembly && reason == Entity.RemovalReason.KILLED) {
             recoverContraptionToWorld();
         }
-        // VM4：船卸載/換維度（非銷毀）時，解除影子 force-load 讓機器暫停省效能；方塊保留，重載再開
-        if (!level().isClientSide && !reason.shouldDestroy() && shadowAnchor != null && contraption != null) {
+        // VM4：船被移除但非 KILLED 回收（卸載/換維度/靜默 discard）時，解除影子 force-load 讓機器暫停省效能；方塊保留，重載再開
+        if (!level().isClientSide && reason != Entity.RemovalReason.KILLED && shadowAnchor != null && contraption != null) {
             var server = level().getServer();
             if (server != null) {
                 ServerLevel shadow = ShipShadowManager.shadowLevel(server);
