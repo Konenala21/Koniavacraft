@@ -43,7 +43,8 @@ public final class ShipBlockBreakHandler {
     public static void onInteractShip(PlayerInteractEvent.EntityInteractSpecific event) {
         if (!(event.getTarget() instanceof ShipEntity ship)) return;
         Player player = event.getEntity();
-        if (!player.level().isClientSide || !ship.isParked()) return;
+        // 不檢查 isParked:開門/開箱/機器/上船座位 飛行中也能用,只有「放方塊編輯」要停船(interactWithPick 內部自己 gate)。
+        if (!player.level().isClientSide) return;
         ShipEntity.Pick pick = ship.clientPick(player);
         if (pick == null) return;
         InteractionResult result = ship.interactWithPick(player, event.getHand(), pick);
