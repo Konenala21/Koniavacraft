@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Chests on a spaceship now play their lid open/close animation when you open and close them, just like chests in the world.
+飛船上的箱子現在開關時會有開蓋/收蓋動畫，跟世界上的箱子一樣。
+
 Forming or upgrading an altar built on a spaceship now updates how it looks on the ship: when the altar forms, the corner mana blocks turn into its pillars (and rings) on the visible ship instead of staying as plain mana blocks. This happens automatically at formation, no extra step needed.
 在飛船上組成或升級祭壇現在會更新船上的外觀：祭壇一成形，角落的魔力方塊就會在看得到的船上變成柱子（和環），不再停留在魔力方塊的樣子。成形當下自動同步，不需要額外動作。
 
@@ -103,6 +106,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 新增太空維度，包含程序生成的星空天空、物理正確的行星渲染，以及完整太陽系（水星、金星、月球、火星、木星、土星、土衛六、天王星、海王星、冥王星）和比鄰星系雛形（雙星系統）。行星為真實 3D 球體，視角大小隨距離動態縮放。太陽有日冕光暈。進入維度時玩家會出現在地球軌道附近。
 
 ### Developer Notes / 開發者備註
+
+Ship chests' real BEs live in the shadow dimension and the visible ship's render BEs are not ticked, so the lid never animated. New client ShipChestAnimator tracks the opened ship chest (set from onInteractShip when the picked block is a ChestBlock and it is not a sneak-place edit) and each client tick drives that render BE chest's lid (triggerEvent(1, open) + ChestBlockEntity.lidAnimateTick); ChestRenderer already reads getOpenNess. It closes when the container screen closes, with a ~1.5s safety timeout if a screen never appears (mis-trigger guard).
+船箱子的真身在影子維度、視覺船的 render BE 不被 tick，所以蓋子從不動畫。新增 client 的 ShipChestAnimator 記下開啟的船箱（onInteractShip 在指到 ChestBlock 且非潛行放方塊編輯時設定），每 client tick 推進該 render BE 箱子的蓋子（triggerEvent(1, 開) + ChestBlockEntity.lidAnimateTick）；ChestRenderer 本來就讀 getOpenNess。容器畫面關了就收蓋，畫面始終沒出現則 ~1.5s 後自動收蓋（誤觸發保險）。
 
 ShipEntity.remove() now writes its blocks back to the world only on KILLED, not on every destroying RemovalReason. DISCARDED is a silent removal (commands, cleanup, gametest teardown) and, per vanilla loot semantics, should not spill: recovering on DISCARDED let stray ships drop cores back into the world and cross-contaminate neighbouring gametests. ShipAssemblyPadBlockEntity.assembleShip() now returns the spawned ShipEntity (null on failure); the assembly/recovery gametests take that ship and act on it immediately instead of an inflate-4 entity search, which was unreliable because ship entities persist across gametests and drift. With both, the suite is stable across repeated runs.
 ShipEntity.remove() 現在只在 KILLED 時把方塊寫回世界，不再對所有「銷毀」RemovalReason 都寫。DISCARDED 是靜默移除（指令/清理/gametest 收尾），依 vanilla 掉落語意不該灑方塊：在 DISCARDED 也回收會讓殘留的船把核心掉回世界、交叉污染相鄰 gametest。ShipAssemblyPadBlockEntity.assembleShip() 現在回傳生成的 ShipEntity（失敗為 null）；組裝/收船 gametest 改拿這艘船並立刻動作，不再用 inflate-4 實體搜尋（船實體會跨 gametest 殘留 + 飄移，搜尋不可靠）。兩者一起讓測試套件連跑都穩定。

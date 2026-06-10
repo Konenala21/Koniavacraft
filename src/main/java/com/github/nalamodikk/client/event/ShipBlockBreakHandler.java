@@ -8,6 +8,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.level.block.ChestBlock;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -53,5 +55,11 @@ public final class ShipBlockBreakHandler {
                 pick.face().get3DDataValue(), pick.hitLocal(), event.getHand() == InteractionHand.OFF_HAND));
         event.setCanceled(true);
         event.setCancellationResult(result);
+        // 開箱動畫:非「潛行放方塊編輯」且指到的是箱子 → 記下讓 client 推開蓋(船箱真身在影子、render BE 不 tick → 預設沒動畫)
+        boolean sneakPlacing = ship.isParked() && player.isSecondaryUseActive()
+                && player.getItemInHand(event.getHand()).getItem() instanceof BlockItem;
+        var info = ship.getContraption() != null ? ship.getContraption().getBlocks().get(pick.local()) : null;
+        if (!sneakPlacing && info != null && info.state().getBlock() instanceof ChestBlock)
+            ShipChestAnimator.notifyOpened(ship, pick.local());
     }
 }
