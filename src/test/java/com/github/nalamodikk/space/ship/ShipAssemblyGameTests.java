@@ -37,8 +37,10 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import net.minecraft.core.Vec3i;
 
 /**
  * 飛船組裝台掃描邏輯的 GameTest（純 server 邏輯：底座 footprint、組裝架高度、找核心、
@@ -1348,6 +1350,30 @@ public class ShipAssemblyGameTests {
         helper.setBlock(new BlockPos(4, 2, 4), core());
         pad.scan();
         expect(helper, pad, ShipAssemblyPadBlockEntity.DATA_BOX_H, 3, "boxH (gantry)");
+        helper.succeed();
+    }
+
+    /** 曲速 3×4×3 沙漏結構偵測：完整=1、缺殼=0、頸部塞東西=0。純邏輯,直接測 WarpDriveStructure.detect。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 20)
+    public static void warpDriveStructureDetected(GameTestHelper helper) {
+        BlockState alloy = ModBlocks.MANA_ALLOY_BLOCK.get().defaultBlockState();
+        BlockState core = ModBlocks.MANA_WARP_ENGINE.get().defaultBlockState();
+        BlockState intake = ModBlocks.MANA_WARP_INPUT.get().defaultBlockState();
+        Map<BlockPos, BlockState> map = new HashMap<>();
+        for (Vec3i s : WarpDriveStructure.SHELL) map.put(new BlockPos(s.getX(), s.getY(), s.getZ()), alloy);
+        BlockPos coreP = new BlockPos(1, 1, 1), intakeP = new BlockPos(1, 0, 1);
+        map.put(coreP, core);     // 核心放下頸
+        map.put(intakeP, intake); // 進料口放底盤中央
+        var found = WarpDriveStructure.detect(List.of(coreP), map::get);
+        if (found.size() != 1) { helper.fail("complete structure not detected: " + found.size()); return; }
+        if (!found.get(0).intakeLocal().equals(intakeP)) { helper.fail("wrong intake local"); return; }
+        // 缺一塊外殼 → 不該偵測
+        BlockState removed = map.remove(new BlockPos(0, 0, 0));
+        if (!WarpDriveStructure.detect(List.of(coreP), map::get).isEmpty()) { helper.fail("incomplete should not detect"); return; }
+        // 頸部塞東西 → 不該偵測(沙漏腰要空)
+        map.put(new BlockPos(0, 0, 0), removed);
+        map.put(new BlockPos(0, 1, 0), alloy);
+        if (!WarpDriveStructure.detect(List.of(coreP), map::get).isEmpty()) { helper.fail("neck must be empty"); return; }
         helper.succeed();
     }
 }

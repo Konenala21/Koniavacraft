@@ -6,8 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
-New Warp Engine block: a high-tier engine that pushes the top speed cap from 200 up to 600 blocks/s and gives far more speed per engine, but burns fuel ferociously, so you need a lot of dense fuel and tanks to keep it running.
-新增曲速引擎方塊：高階引擎，把速度上限從 200 拉到 600 格/秒、每顆速度貢獻遠高於一般引擎，但極度耗燃料，要靠大量高密度燃料和燃料槽才撐得住。
+The warp drive is now a 3x4x3 multiblock structure, not a single block: an hourglass of mana alloy blocks with a Warp Drive Core and a Warp Drive Intake placed anywhere inside it. Build complete structures on your ship; each one adds warp speed (top cap 600 blocks/s) and pulls its fuel from its own intake (the ship's mana network, fuel items, or fuel fluids like lava). More complete structures, faster. The Mana Alloy Block (9 mana alloy ingots) is the casing.
+曲速引擎現在是 3×4×3 多方塊結構，不再是單方塊：魔力合金做的沙漏，裡面放一個曲速引擎核心和一個進料口（位置隨你）。在船上蓋完整的結構，每座加曲速（上限 600 格/秒），燃料從它自己的進料口來（船上魔力網路、燃料物品、或熔岩之類的燃料流體）。越多座越快。魔力合金方塊（9 魔力合金錠）是外殼。
 
 Mana fuel tanks now show their fuel as a glowing liquid level in the window, so you can tell at a glance which tanks are full or empty, on a ship or in the world.
 魔力燃料槽現在會在窗口顯示發光的液位，一眼就能看出哪個槽滿、哪個空，船上或世界裡都會。
@@ -127,6 +127,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 新增太空維度，包含程序生成的星空天空、物理正確的行星渲染，以及完整太陽系（水星、金星、月球、火星、木星、土星、土衛六、天王星、海王星、冥王星）和比鄰星系雛形（雙星系統）。行星為真實 3D 球體，視角大小隨距離動態縮放。太陽有日冕光暈。進入維度時玩家會出現在地球軌道附近。
 
 ### Developer Notes / 開發者備註
+
+Warp drive multiblock. WarpDriveStructure detects complete 3x4x3 hourglass patterns (20-cell shell = two 3x3 plates + a 2-cell neck; 18 mana alloy + exactly 1 core + 1 intake anywhere, the 16 neck-side cells must be empty), anchored on each warp core (tries the 20 shell slots, axis-aligned in contraption-local coords). ShipEntity replaces the old single-block warpEngineCount with warpDriveCount + warpIntakeLocals (recomputeWarpDrives on full recompute + on warp-block edits in updateContraptionBlock; cores tracked incrementally). Flight: warpSpeed = warpDriveCount * SPEED_PER_WARP(4.0) capped at WARP_CAP(30.0=600) when any drive has intake energy; warp fuel drained from the intake blocks' energy (getWarpFuel/drainWarpFuel) while engines still drain the fuel tanks. ManaWarpInputBlockEntity = the intake (mana/item/fluid -> energy). New gametest warpDriveStructureDetected (complete=1, missing-shell=0, neck-filled=0). 116 green.
+曲速引擎多方塊。WarpDriveStructure 偵測完整 3×4×3 沙漏(20 格殼 = 兩片 3×3 盤 + 2 格頸;18 魔力合金 + 剛好 1 核心 + 1 進料口任意位置,頸層 16 格須空),anchor 在每個核心(試 20 個殼位,contraption-local 軸對齊)。ShipEntity 把舊的單方塊 warpEngineCount 換成 warpDriveCount + warpIntakeLocals(recomputeWarpDrives 在全掃 + updateContraptionBlock 動到曲速方塊時跑;核心 list 增量)。飛行:warpSpeed = warpDriveCount × SPEED_PER_WARP(4.0),有進料口能量時夾 WARP_CAP(30.0=600);曲速燃料從進料口能量抽(getWarpFuel/drainWarpFuel),引擎仍抽燃料槽。新 gametest warpDriveStructureDetected。116 綠。
 
 Warp engine (fuel/engine #2). ManaWarpEngineBlock + warpEngineCount (incremental in updateContraptionBlock, full recompute on assembly/load). maxSpeed = engineCount*SPEED_PER_ENGINE + warpEngineCount*SPEED_PER_WARP(1.0), capped at WARP_CAP(30.0=600 b/s) when any warp engine is present, else SPEED_CAP(10.0=200). Consumption adds FUEL_PER_WARP_MOVE(50)*warpEngineCount per tick. Skeleton validation (scan + assembleShip) accepts a warp engine as the required engine. Datagen (blockstate/loot/tag), placeholder texture and en/zh lang added.
 曲速引擎(燃料/引擎 #2)。ManaWarpEngineBlock + warpEngineCount(updateContraptionBlock 增量、組裝/載入全掃)。maxSpeed = engineCount×SPEED_PER_ENGINE + warpEngineCount×SPEED_PER_WARP(1.0),有曲速引擎時夾 WARP_CAP(30.0=600 b/s) 否則 SPEED_CAP(10.0=200)。消耗每 tick 多加 FUEL_PER_WARP_MOVE(50)×warpEngineCount。骨架驗證(scan + assembleShip)接受曲速引擎當必要引擎。datagen(blockstate/loot/tag)、佔位貼圖、en/zh lang 都加了。

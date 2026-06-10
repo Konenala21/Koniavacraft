@@ -147,14 +147,17 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     // 燃料/引擎(1b)：引擎數=速度上限、燃料槽 local=飛行時抽魔力的對象。contraption 變動時 recomputeFuelSystem() 重算。
     private int engineCount = 0;
-    private int warpEngineCount = 0; // 曲速引擎(#2)：高速 tier，在場時拉高上限
     private final java.util.List<BlockPos> fuelTankLocals = new java.util.ArrayList<>();
+    // 曲速引擎(#2,多方塊):核心 local(偵測輸入)、完整結構數、完整結構的進料口 local(曲速燃料從這抽)。
+    private final java.util.List<BlockPos> warpCoreLocals = new java.util.ArrayList<>();
+    private int warpDriveCount = 0;
+    private final java.util.List<BlockPos> warpIntakeLocals = new java.util.ArrayList<>();
     private static final double SPEED_PER_ENGINE = 0.2;  // 每引擎貢獻的每 tick 速度上限(20 b/s=1.0/tick;~50 引擎到頂 200)
     private static final double SPEED_CAP = 10.0;         // 一般引擎天花板 10.0/tick=200 b/s。碰撞已子步進防穿牆;這麼快只適合高空/太空,貼地面 chunk 載入跟不上會穿插
     private static final int FUEL_PER_ENGINE_MOVE = 12;   // 移動時「每引擎」每 tick 耗魔力(滿油門);加速 ×2;隨油門縮放。引擎越多越快也越耗
-    private static final double SPEED_PER_WARP = 1.0;     // 曲速引擎每顆貢獻(= 5 顆一般引擎)
-    private static final double WARP_CAP = 30.0;          // 有曲速引擎時的天花板 30.0/tick=600 b/s
-    private static final int FUEL_PER_WARP_MOVE = 50;     // 曲速引擎每顆每 tick 耗魔力(很兇,要高密度燃料才撐得住)
+    private static final double SPEED_PER_WARP = 4.0;     // 每「座」完整曲速結構貢獻(~6 座到頂 600)
+    private static final double WARP_CAP = 30.0;          // 有曲速結構時的天花板 30.0/tick=600 b/s
+    private static final int FUEL_PER_WARP_MOVE = 200;    // 每座曲速結構每 tick 從進料口抽的能量(很兇,要高密度燃料/魔力網路撐)
 
     public ShipEntity(EntityType<?> type, Level level) {
         super(type, level);
@@ -294,11 +297,19 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         Block newBlock = state.getBlock();
         boolean oldEngine = oldBlock instanceof ManaEngineBlock, newEngine = newBlock instanceof ManaEngineBlock;
         if (oldEngine != newEngine) engineCount += newEngine ? 1 : -1;
-        boolean oldWarp = oldBlock instanceof ManaWarpEngineBlock, newWarp = newBlock instanceof ManaWarpEngineBlock;
-        if (oldWarp != newWarp) warpEngineCount += newWarp ? 1 : -1;
         boolean oldTank = oldBlock instanceof ManaFuelTankBlock, newTank = newBlock instanceof ManaFuelTankBlock;
         if (oldTank && !newTank) fuelTankLocals.remove(local);
         else if (newTank && !oldTank) fuelTankLocals.add(local.immutable());
+        // 曲速核心 list 增量維護
+        boolean oldWarp = oldBlock instanceof ManaWarpEngineBlock, newWarp = newBlock instanceof ManaWarpEngineBlock;
+        if (oldWarp && !newWarp) warpCoreLocals.remove(local);
+        else if (newWarp && !oldWarp) warpCoreLocals.add(local.immutable());
+        // 動到曲速相關方塊(核心/外殼魔力合金/進料口) → 重掃完整結構(結構完整性靠多方塊，不能增量)
+        Block alloy = ModBlocks.MANA_ALLOY_BLOCK.get();
+        if (oldWarp || newWarp || oldBlock == alloy || newBlock == alloy
+                || oldBlock instanceof ManaWarpInputBlock || newBlock instanceof ManaWarpInputBlock) {
+            recomputeWarpDrives();
+        }
         refreshDimensions(); // bounds 可能變了，更新 hitbox
     }
 
@@ -650,15 +661,15 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         Vec3 forwardDir = new Vec3(wf.x, wf.y, wf.z);
         Vec3 target = forwardDir.scale(f).add(0, v, 0);
         if (target.lengthSqr() > 1) target = target.normalize();
-        // 速度上限 = 引擎數決定，× 玩家油門。沒燃料 → 推不動(maxSpeed=0)，靠慣性飄停。
+        // 速度上限：一般引擎吃燃料槽、曲速結構吃進料口能量,各自有燃料才貢獻;有曲速結構通電 → 天花板拉到 600。× 油門。
         int fuel = getFuel();
-        getEntityData().set(DATA_FUEL, fuel); // 同步給 client 畫 HUD
+        getEntityData().set(DATA_FUEL, fuel); // 同步給 client 畫 HUD(燃料槽)
         boolean hasFuel = fuel > 0;
-        // 有曲速引擎 → 天花板拉到曲速段(600)。速度 = 一般引擎 + 曲速引擎貢獻,夾上限,× 油門。
-        double cap = warpEngineCount > 0 ? WARP_CAP : SPEED_CAP;
-        double maxSpeed = hasFuel
-                ? Math.min(engineCount * SPEED_PER_ENGINE + warpEngineCount * SPEED_PER_WARP, cap) * getThrottle()
-                : 0.0;
+        boolean hasWarp = warpDriveCount > 0 && getWarpFuel() > 0;
+        double engineSpeed = hasFuel ? engineCount * SPEED_PER_ENGINE : 0.0;
+        double warpSpeed = hasWarp ? warpDriveCount * SPEED_PER_WARP : 0.0;
+        double cap = hasWarp ? WARP_CAP : SPEED_CAP;
+        double maxSpeed = Math.min(engineSpeed + warpSpeed, cap) * getThrottle();
         target = target.scale(maxSpeed);
 
         shipVel = shipVel.add(target.subtract(shipVel).scale(ACCEL));
@@ -669,11 +680,14 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         }
         shipVel = allowed; // 撞到的軸不保留動量
 
-        // 燃料消耗：移動才耗(停滯不耗)、加速(有前進/升降輸入)×2、隨油門縮放。抽乾下一 tick getFuel()=0 → 推不動。
-        if (hasFuel && shipVel.lengthSqr() > 1e-6) {
-            boolean accelerating = (f != 0f || v != 0);
-            drainFuel((int) Math.ceil((FUEL_PER_ENGINE_MOVE * engineCount + FUEL_PER_WARP_MOVE * warpEngineCount)
-                    * getThrottle() * (accelerating ? 2 : 1)));
+        // 燃料消耗：移動才耗(停滯不耗)、加速(有前進/升降輸入)×2、隨油門縮放。一般引擎抽燃料槽、曲速結構抽進料口。
+        if (shipVel.lengthSqr() > 1e-6) {
+            int mult = (f != 0f || v != 0) ? 2 : 1;
+            double thr = getThrottle();
+            if (hasFuel && engineCount > 0)
+                drainFuel((int) Math.ceil(FUEL_PER_ENGINE_MOVE * engineCount * thr * mult));
+            if (hasWarp)
+                drainWarpFuel((int) Math.ceil(FUEL_PER_WARP_MOVE * warpDriveCount * thr * mult));
         }
     }
 
@@ -735,23 +749,36 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     public float getThrottle() { return getEntityData().get(DATA_THROTTLE); }
     public void setThrottle(float t) { getEntityData().set(DATA_THROTTLE, Mth.clamp(t, 0f, 1f)); }
     public int getEngineCount() { return engineCount; }
+    public int getWarpDriveCount() { return warpDriveCount; }
     /** HUD 用：同步過來的目前燃料(server 算)。 */
     public int getDisplayFuel() { return getEntityData().get(DATA_FUEL); }
     /** HUD 用：總燃料容量 = 燃料槽數 × 單槽容量(client 端 fuelTankLocals 在 readSpawnData 算好)。 */
     public int getMaxFuel() { return fuelTankLocals.size() * ManaFuelTankBlockEntity.CAPACITY; }
 
-    /** contraption 變動時重算引擎/曲速引擎數 + 燃料槽 local（速度上限/燃料抽取靠這些）。只在組裝/載入跑一次。 */
+    /** contraption 變動時重算引擎數 + 燃料槽/曲速核心 local，再掃完整曲速結構。只在組裝/載入跑一次。 */
     private void recomputeFuelSystem() {
         engineCount = 0;
-        warpEngineCount = 0;
         fuelTankLocals.clear();
-        if (contraption == null) return;
+        warpCoreLocals.clear();
+        if (contraption == null) { warpDriveCount = 0; warpIntakeLocals.clear(); return; }
         for (var e : contraption.getBlocks().entrySet()) {
             Block b = e.getValue().state().getBlock();
-            if (b instanceof ManaWarpEngineBlock) warpEngineCount++;
+            if (b instanceof ManaWarpEngineBlock) warpCoreLocals.add(e.getKey().immutable());
             else if (b instanceof ManaEngineBlock) engineCount++;
-            else if (b instanceof ManaFuelTankBlock) fuelTankLocals.add(e.getKey());
+            else if (b instanceof ManaFuelTankBlock) fuelTankLocals.add(e.getKey().immutable());
         }
+        recomputeWarpDrives();
+    }
+
+    /** 用 warpCoreLocals 掃完整 3×4×3 沙漏結構，更新 warpDriveCount + warpIntakeLocals(曲速燃料從這些進料口抽)。 */
+    private void recomputeWarpDrives() {
+        warpIntakeLocals.clear();
+        if (contraption == null || warpCoreLocals.isEmpty()) { warpDriveCount = 0; return; }
+        var blocks = contraption.getBlocks();
+        var found = WarpDriveStructure.detect(warpCoreLocals,
+                lp -> { var i = blocks.get(lp); return i != null ? i.state() : null; });
+        warpDriveCount = found.size();
+        for (var f : found) warpIntakeLocals.add(f.intakeLocal());
     }
 
     /** 目前總燃料 = 影子裡各燃料槽的魔力總和。沒影子(gametest)回 0。 */
@@ -774,6 +801,29 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             if (amount <= 0) break;
             if (shadow.getBlockEntity(shadowAnchor.offset(lp)) instanceof ManaFuelTankBlockEntity tank)
                 amount -= tank.getManaStorage().extractMana(amount, ManaAction.EXECUTE);
+        }
+    }
+
+    /** 曲速燃料 = 完整結構各進料口的能量總和(影子)。 */
+    private int getWarpFuel() {
+        ServerLevel shadow = getShadow();
+        if (shadow == null || shadowAnchor == null) return 0;
+        int total = 0;
+        for (BlockPos lp : warpIntakeLocals) {
+            if (shadow.getBlockEntity(shadowAnchor.offset(lp)) instanceof ManaWarpInputBlockEntity in)
+                total += in.getEnergy().getManaStored();
+        }
+        return total;
+    }
+
+    /** 從各進料口抽 amount 曲速能量。 */
+    private void drainWarpFuel(int amount) {
+        ServerLevel shadow = getShadow();
+        if (shadow == null || shadowAnchor == null || amount <= 0) return;
+        for (BlockPos lp : warpIntakeLocals) {
+            if (amount <= 0) break;
+            if (shadow.getBlockEntity(shadowAnchor.offset(lp)) instanceof ManaWarpInputBlockEntity in)
+                amount -= in.getEnergy().extractMana(amount, ManaAction.EXECUTE);
         }
     }
     private float rollO; // 上一 tick，渲染插值用
