@@ -3,6 +3,7 @@ package com.github.nalamodikk.register.event;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.client.renderer.deployer.ManaDeployerBEWLR;
 import com.github.nalamodikk.client.renderer.deployer.ManaDeployerRenderer;
+import com.github.nalamodikk.client.renderer.ship.ManaFuelTankRenderer;
 import com.github.nalamodikk.client.renderer.item.FloatingTurretBEWLR;
 import com.github.nalamodikk.client.renderer.item.WandRodBEWLR;
 import com.github.nalamodikk.register.ModItems;
@@ -42,6 +43,7 @@ public class ModRenderLayers {
         event.registerBlockEntityRenderer(ModBlockEntities.ASPECT_PEDESTAL_BE.get(), AspectPedestalRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.ALTAR_PILLAR_BE.get(), AltarPillarRenderer::new);
         event.registerBlockEntityRenderer(ModBlockEntities.RESEARCH_TABLE_BE.get(), ResearchTableRenderer::new);
+        event.registerBlockEntityRenderer(ModBlockEntities.MANA_FUEL_TANK_BE.get(), ManaFuelTankRenderer::new);
 //        event.registerBlockEntityRenderer(ModBlockEntities.ARCANE_CONDUIT_BE.get(), ArcaneConduitBlockEntityRenderer::new);
     }
 

@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Mana fuel tanks now show their fuel as a glowing liquid level in the window, so you can tell at a glance which tanks are full or empty, on a ship or in the world.
+魔力燃料槽現在會在窗口顯示發光的液位，一眼就能看出哪個槽滿、哪個空，船上或世界裡都會。
+
 Spaceship flight rebalanced: fuel now burns faster and scales with engine count (more engines mean more speed but more fuel), and the top speed is much higher (cap 200 blocks/s, about 50 engines). Such high speeds are smooth in open sky; near terrain the chunks may not load fast enough. Going faster than that will need a future warp engine. Editing a large ship no longer stutters as it grows.
 飛船飛行重新平衡：燃料消耗變快、且隨引擎數放大（引擎越多越快也越耗），最高速度大幅提高（上限 200 格/秒，約 50 顆引擎）。這種高速在高空很順，貼近地形時區塊可能來不及載入。想更快要等未來的曲速引擎。編輯大船不再越蓋越卡。
 
@@ -121,6 +124,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 新增太空維度，包含程序生成的星空天空、物理正確的行星渲染，以及完整太陽系（水星、金星、月球、火星、木星、土星、土衛六、天王星、海王星、冥王星）和比鄰星系雛形（雙星系統）。行星為真實 3D 球體，視角大小隨距離動態縮放。太陽有日冕光暈。進入維度時玩家會出現在地球軌道附近。
 
 ### Developer Notes / 開發者備註
+
+Fuel tank visual level (fuel/engine #3). ManaFuelTankRenderer (BER) draws a translucent cyan fluid box in the tank's glass window, height = mana/capacity (each quad emitted in both windings to skip backface-cull winding concerns); tank texture window emptied so the BER fluid shows; added koniava:textures/misc/white.png as the tintable sprite. ManaFuelTankBlockEntity now syncs mana to clients: getUpdateTag + getUpdatePacket for chunk load, and onManaChanged throttles sendBlockUpdated (~every 2.5% change) for world tanks; ship tanks update via the existing BE-NBT mirror (ShipBlockEntityDataPacket, ~16 ticks).
+燃料槽視覺液位(燃料/引擎 #3)。ManaFuelTankRenderer(BER)在槽的玻璃窗內畫半透明 cyan 液體 box,高度=魔力/容量(每面正反兩 winding 免背面剔除繞序);槽貼圖窗口清空讓 BER 液體透出;加 koniava:textures/misc/white.png 當上色貼圖。ManaFuelTankBlockEntity 同步魔力給 client:getUpdateTag + getUpdatePacket(區塊載入),onManaChanged 節流 sendBlockUpdated(約每 2.5% 變化)給世界裡的槽;船上的槽走既有 BE-NBT 鏡射(ShipBlockEntityDataPacket,約 16 tick)。
 
 Spaceship flight tuning + edit-perf fix. resolveTerrain now sub-steps (<=0.5 block/step, per-axis slide) so the ship can't tunnel thin terrain above ~1 block/tick; SPEED_CAP raised 1.0 -> 10.0 (200 blocks/s) and SPEED_PER_ENGINE 0.12 -> 0.2 (now collision-safe at higher speeds; a future warp engine tier is intended for beyond 200). Flight consumption = FUEL_PER_ENGINE_MOVE(12) * engineCount * throttle * (accel?2:1) (was a flat FUEL_PER_MOVE, too low). engineCount + fuelTankLocals are now updated incrementally in updateContraptionBlock (O(1) per edit) instead of a full-contraption recomputeFuelSystem on every block change, which was the editing lag (worst with many engines/tanks); the full scan runs only on assembly/load (setContraption / readAdditionalSaveData / readSpawnData).
 飛船飛行調校 + 編輯效能修。resolveTerrain 改子步進（每步 ≤0.5 格、per-axis 沿牆滑），船在 >~1 格/tick 也不會穿薄牆；SPEED_CAP 從 1.0 提到 2.0（高速下碰撞安全）。飛行消耗 = FUEL_PER_ENGINE_MOVE(12) × engineCount × 油門 × (加速?2:1)（原本是太低的固定 FUEL_PER_MOVE）。engineCount + fuelTankLocals 改在 updateContraptionBlock 增量更新（每次編輯 O(1)），不再每次改方塊都 recomputeFuelSystem 掃全船，那是編輯卡頓主因（引擎/燃料槽越多越卡）；全船掃描只在組裝/載入（setContraption / readAdditionalSaveData / readSpawnData）跑一次。
