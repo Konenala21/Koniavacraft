@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Forming or upgrading an altar built on a spaceship now updates how it looks on the ship: the corner mana blocks turn into the altar's pillars (and rings) on the visible ship instead of staying as plain mana blocks. (Re-trigger the structure wand on an already-formed ship altar once to fix one built before this change.)
+在飛船上組成或升級祭壇現在會更新船上的外觀：角落的魔力方塊會在看得到的船上變成祭壇柱子（和環），不再停留在魔力方塊的樣子。（這個改動之前就蓋好的船上祭壇，對它再用一次結構杖即可修正。）
+
 Breaking a block on a spaceship (such as a formed altar) now removes it for good. Previously a removed block could linger as a "ghost": you could not target or break it, it came back after a restart, and it dropped back into the world when you disassembled the ship.
 在飛船上破壞方塊（例如已成形的祭壇）現在會真的移除。以前被移除的方塊可能變成「殘影」：瞄不到、打不掉、重啟後又出現，拆解飛船時還會掉回世界裡。
 
@@ -100,6 +103,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 新增太空維度，包含程序生成的星空天空、物理正確的行星渲染，以及完整太陽系（水星、金星、月球、火星、木星、土星、土衛六、天王星、海王星、冥王星）和比鄰星系雛形（雙星系統）。行星為真實 3D 球體，視角大小隨距離動態縮放。太陽有日冕光暈。進入維度時玩家會出現在地球軌道附近。
 
 ### Developer Notes / 開發者備註
+
+syncNewShadowBlocksToContraption only added a shadow cell to structureMirror when it differed from the contraption, so altar pillars/rings the player had already placed (matching the shadow) were never tracked. When the altar later converted those mana blocks to altar_pillar / resonance_ring shadow-side, tickServerMirror never saw it (mana_block is not an EntityBlock, so it is only mirrored via structureMirror) and the visible ship stayed mana blocks. It now adds any mana_block / altar_pillar / resonance_ring in the scanned region to structureMirror even when unchanged, so later in-place conversions sync.
+syncNewShadowBlocksToContraption 以前只把「跟 contraption 不一致」的影子格加進 structureMirror，所以玩家先放好（跟影子一致）的祭壇柱子/環從沒被追蹤。之後祭壇在影子端把那些魔力方塊就地轉成 altar_pillar / resonance_ring 時，tickServerMirror 看不到（mana_block 不是 EntityBlock，只能靠 structureMirror 鏡射），船上視覺就停在魔力方塊。現在掃描範圍內任何 mana_block / altar_pillar / resonance_ring 即使沒變也會加進 structureMirror，之後的就地轉換就同步得到。
 
 tickServerMirror previously skipped any cell where the shadow read air but the contraption still held a block, to avoid wiping visual blocks when the shadow chunk had not loaded. Because the shadow region is force-loaded, that condition actually means the block was removed shadow-side (structure deform, machine, or a prior break), so skipping left a ghost: the contraption kept a block with no backing BE, the client rendered it (e.g. the formed-altar BER), pick/break found nothing, it survived save/load, and disassembly wrote it back to the world. Now it only protects when the chunk is not loaded (hasChunkAt guard); a loaded-but-air cell syncs the removal via updateContraptionBlock + ShipBlockUpdatePacket.
 tickServerMirror 以前只要「影子讀到空氣但 contraption 還有方塊」就 skip，避免影子區塊沒載入時誤抹視覺方塊。但影子區域是 force-load 的，這個條件其實代表那格被影子端移除了（結構 deform、機器、或先前的破壞），所以 skip 會留下殘影：contraption 留著沒有實 BE 的方塊，客戶端照畫（例如成形祭壇的 BER），pick/break 找不到，存讀檔後還在，拆解時又寫回世界。現在只在區塊沒載入時保護（hasChunkAt 守衛）；區塊載入著卻是空氣就用 updateContraptionBlock + ShipBlockUpdatePacket 同步移除。
