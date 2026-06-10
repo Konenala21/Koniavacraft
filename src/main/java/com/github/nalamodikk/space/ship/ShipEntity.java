@@ -525,8 +525,16 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             if (info == null) continue;
             BlockPos sp = shadowAnchor.offset(local);
             BlockState ss = shadow.getBlockState(sp);
-            // 安全：影子讀到空氣但視覺有方塊 = 影子那格沒載/放置失敗，絕不可把視覺船的方塊鏡射成空氣抹掉
-            if (ss.isAir() && !info.state().isAir()) continue;
+            // 影子讀到空氣:區分兩種情況。
+            //  1) 那格區塊沒載入 → 不可信，保護視覺方塊別誤抹(force-load 前/載入時序)。
+            //  2) 區塊載入著卻是空 = 那格真的被移除了(結構 deform / 機器 / 先前的 break)→ 視覺也要移除，
+            //     否則 contraption 留著方塊但影子沒了 = ghost：打不到(pick 找不到對應實 BE)、拆解才現形。
+            if (ss.isAir() && !info.state().isAir()) {
+                if (!shadow.hasChunkAt(sp)) continue;          // 沒載入 → 保護
+                updateContraptionBlock(local, ss);             // 載入著卻空 → 真移除，同步抹掉視覺
+                ShipBlockUpdatePacket.sendToClients(this, local, ss);
+                continue;
+            }
             if (!ss.equals(info.state())) {
                 contraption.setBlockState(local, ss);          // blockstate 變(作物/熔爐亮/機器 active)
                 ShipBlockUpdatePacket.sendToClients(this, local, ss);
