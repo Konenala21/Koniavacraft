@@ -29,7 +29,7 @@ public final class ShipThrottleClientHandler {
         if (dy == 0) return;
         float t = Mth.clamp(ship.getThrottle() + (dy > 0 ? 0.1f : -0.1f), 0f, 1f);
         ship.setThrottle(t);                  // 本地即時設(HUD 馬上反應)，server 會權威同步回來
-        ShipThrottlePacket.sendToServer(t);
+        ShipThrottlePacket.sendToServer(ship.getId(), t);
         event.setCanceled(true);              // 駕駛中滾輪 = 調油門，不切快捷欄
     }
 }

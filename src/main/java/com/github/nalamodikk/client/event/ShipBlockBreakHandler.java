@@ -8,6 +8,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import com.github.nalamodikk.client.screen.ship.ShipControlScreen;
+import com.github.nalamodikk.space.ship.ShipCoreBlock;
+import net.minecraft.client.Minecraft;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.level.block.ChestBlock;
 import net.neoforged.api.distmarker.Dist;
@@ -49,6 +52,14 @@ public final class ShipBlockBreakHandler {
         if (!player.level().isClientSide) return;
         ShipEntity.Pick pick = ship.clientPick(player);
         if (pick == null) return;
+        // 右鍵核心(主手、非潛行) → 開控制台 GUI(油門滑桿/燃料/引擎)
+        var ci = ship.getContraption() != null ? ship.getContraption().getBlocks().get(pick.local()) : null;
+        if (event.getHand() == InteractionHand.MAIN_HAND && !player.isSecondaryUseActive()
+                && ci != null && ci.state().getBlock() instanceof ShipCoreBlock) {
+            Minecraft.getInstance().setScreen(new ShipControlScreen(ship));
+            event.setCanceled(true);
+            return;
+        }
         InteractionResult result = ship.interactWithPick(player, event.getHand(), pick);
         if (!result.consumesAction()) return; // PASS = 不是船互動 → 讓 vanilla 處理(吃東西等)
         PacketDistributor.sendToServer(new ShipInteractPacket(ship.getId(), pick.local(),

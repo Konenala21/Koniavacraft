@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Right-click a spaceship's core to open its control panel: a throttle slider to set your cruise throttle, plus fuel and engine readouts. The panel's throttle, the in-flight scroll wheel and the HUD all stay in sync.
+右鍵飛船核心會打開控制台：油門滑桿（設巡航油門）加上燃料和引擎讀數。面板的油門、飛行中的滾輪、HUD 三者都同步。
+
 Spaceships now fly on fuel. Engines set the top speed (more engines, faster), the mana fuel tanks hold the fuel, and flying drains it (twice as fast while you are accelerating; hovering in place uses none). Scroll while driving to set the throttle from 0% to 100%: more throttle is faster but burns more fuel, so you can carry many engines and still cruise slowly to save fuel. A small HUD shows your throttle, engine count and fuel. Run dry and the ship coasts to a stop; refill the tanks from the ship's own mana network (a generator into the tanks).
 飛船現在要靠燃料飛。引擎決定速度上限（引擎越多越快），魔力燃料槽儲存燃料，飛行會消耗（加速時消耗加倍；原地停滯不耗）。駕駛時滾動滑鼠滾輪調整油門 0%～100%：油門越大越快但越耗，所以你可以裝很多引擎卻開慢一點省燃料。小 HUD 會顯示油門、引擎數和燃料。燃料用完船會慣性飄停；用船上自己的魔力網路（發電機接到燃料槽）補給。
 
@@ -112,6 +115,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 新增太空維度，包含程序生成的星空天空、物理正確的行星渲染，以及完整太陽系（水星、金星、月球、火星、木星、土星、土衛六、天王星、海王星、冥王星）和比鄰星系雛形（雙星系統）。行星為真實 3D 球體，視角大小隨距離動態縮放。太陽有日冕光暈。進入維度時玩家會出現在地球軌道附近。
 
 ### Developer Notes / 開發者備註
+
+Fuel/engine Phase 1c. ShipControlScreen (client Screen, no menu) is opened from the client onInteractShip when the picked contraption block is the ShipCoreBlock (main hand, not sneaking): a throttle AbstractSliderButton plus fuel/engine text reading the synced ship data. ShipThrottlePacket now carries the ship id (VAR_INT) so the same packet serves the in-flight scroll wheel and the standing panel; the server resolves the ship by id and accepts the change from a driver-seat rider or any player within 64 blocks. ShipThrottleClientHandler updated to pass ship.getId().
+燃料/引擎 Phase 1c。ShipControlScreen（client Screen，無 menu）由 client onInteractShip 在指到的 contraption 方塊是 ShipCoreBlock 時開（主手、非潛行）：油門 AbstractSliderButton + 讀同步船資料的燃料/引擎文字。ShipThrottlePacket 現在帶船 id（VAR_INT），所以同一條封包同時服務飛行中滾輪與站著開的面板；server 用 id 找船，接受駕駛位乘客或 64 格內任何玩家的調整。ShipThrottleClientHandler 改傳 ship.getId()。
 
 Fuel/engine Phase 1b. ShipEntity caches engineCount + fuel-tank locals (recomputeFuelSystem on setContraption / read* / updateContraptionBlock). Flight maxSpeed = min(engineCount * SPEED_PER_ENGINE, SPEED_CAP) * throttle (DATA_THROTTLE float); getFuel()/drainFuel() read and drain the shadow fuel-tank BEs' ManaStorage. Per-tick consumption: 0 when stationary, FUEL_PER_MOVE * throttle while moving, x2 while accelerating (forward/vertical input); no fuel -> no thrust (coast). DATA_FUEL is synced for the HUD (client has no shadow). ShipThrottlePacket (C2S, driver-seat only) + ShipThrottleClientHandler (mouse scroll while in a driver seat, +/-10%, cancels the hotbar scroll, local-set then server-authoritative). ShipHudOverlay (RenderGuiEvent.Post) draws throttle/engines/fuel bar for drivers.
 燃料/引擎 Phase 1b。ShipEntity 快取 engineCount + 燃料槽 local（setContraption / read* / updateContraptionBlock 時 recomputeFuelSystem）。飛行 maxSpeed = min(engineCount × SPEED_PER_ENGINE, SPEED_CAP) × 油門（DATA_THROTTLE float）；getFuel()/drainFuel() 讀寫影子燃料槽 BE 的 ManaStorage。每 tick 消耗：停滯 0、移動 FUEL_PER_MOVE × 油門、加速（前進/升降輸入）×2；沒燃料 → 無推力（飄停）。DATA_FUEL 同步給 HUD（client 沒影子）。ShipThrottlePacket（C2S，只駕駛位）+ ShipThrottleClientHandler（駕駛位滾輪 ±10%，取消快捷欄滾動，本地先設再由 server 權威）。ShipHudOverlay（RenderGuiEvent.Post）畫油門/引擎/燃料條給駕駛。
