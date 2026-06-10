@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+New Warp Engine block: a high-tier engine that pushes the top speed cap from 200 up to 600 blocks/s and gives far more speed per engine, but burns fuel ferociously, so you need a lot of dense fuel and tanks to keep it running.
+新增曲速引擎方塊：高階引擎，把速度上限從 200 拉到 600 格/秒、每顆速度貢獻遠高於一般引擎，但極度耗燃料，要靠大量高密度燃料和燃料槽才撐得住。
+
 Mana fuel tanks now show their fuel as a glowing liquid level in the window, so you can tell at a glance which tanks are full or empty, on a ship or in the world.
 魔力燃料槽現在會在窗口顯示發光的液位，一眼就能看出哪個槽滿、哪個空，船上或世界裡都會。
 
@@ -124,6 +127,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 新增太空維度，包含程序生成的星空天空、物理正確的行星渲染，以及完整太陽系（水星、金星、月球、火星、木星、土星、土衛六、天王星、海王星、冥王星）和比鄰星系雛形（雙星系統）。行星為真實 3D 球體，視角大小隨距離動態縮放。太陽有日冕光暈。進入維度時玩家會出現在地球軌道附近。
 
 ### Developer Notes / 開發者備註
+
+Warp engine (fuel/engine #2). ManaWarpEngineBlock + warpEngineCount (incremental in updateContraptionBlock, full recompute on assembly/load). maxSpeed = engineCount*SPEED_PER_ENGINE + warpEngineCount*SPEED_PER_WARP(1.0), capped at WARP_CAP(30.0=600 b/s) when any warp engine is present, else SPEED_CAP(10.0=200). Consumption adds FUEL_PER_WARP_MOVE(50)*warpEngineCount per tick. Skeleton validation (scan + assembleShip) accepts a warp engine as the required engine. Datagen (blockstate/loot/tag), placeholder texture and en/zh lang added.
+曲速引擎(燃料/引擎 #2)。ManaWarpEngineBlock + warpEngineCount(updateContraptionBlock 增量、組裝/載入全掃)。maxSpeed = engineCount×SPEED_PER_ENGINE + warpEngineCount×SPEED_PER_WARP(1.0),有曲速引擎時夾 WARP_CAP(30.0=600 b/s) 否則 SPEED_CAP(10.0=200)。消耗每 tick 多加 FUEL_PER_WARP_MOVE(50)×warpEngineCount。骨架驗證(scan + assembleShip)接受曲速引擎當必要引擎。datagen(blockstate/loot/tag)、佔位貼圖、en/zh lang 都加了。
 
 Fuel tank visual level (fuel/engine #3). ManaFuelTankRenderer (BER) draws a translucent cyan fluid box in the tank's glass window, height = mana/capacity (each quad emitted in both windings to skip backface-cull winding concerns); tank texture window emptied so the BER fluid shows; added koniava:textures/misc/white.png as the tintable sprite. ManaFuelTankBlockEntity now syncs mana to clients: getUpdateTag + getUpdatePacket for chunk load, and onManaChanged throttles sendBlockUpdated (~every 2.5% change) for world tanks; ship tanks update via the existing BE-NBT mirror (ShipBlockEntityDataPacket, ~16 ticks).
 燃料槽視覺液位(燃料/引擎 #3)。ManaFuelTankRenderer(BER)在槽的玻璃窗內畫半透明 cyan 液體 box,高度=魔力/容量(每面正反兩 winding 免背面剔除繞序);槽貼圖窗口清空讓 BER 液體透出;加 koniava:textures/misc/white.png 當上色貼圖。ManaFuelTankBlockEntity 同步魔力給 client:getUpdateTag + getUpdatePacket(區塊載入),onManaChanged 節流 sendBlockUpdated(約每 2.5% 變化)給世界裡的槽;船上的槽走既有 BE-NBT 鏡射(ShipBlockEntityDataPacket,約 16 tick)。

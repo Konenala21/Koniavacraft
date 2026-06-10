@@ -147,10 +147,14 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     // 燃料/引擎(1b)：引擎數=速度上限、燃料槽 local=飛行時抽魔力的對象。contraption 變動時 recomputeFuelSystem() 重算。
     private int engineCount = 0;
+    private int warpEngineCount = 0; // 曲速引擎(#2)：高速 tier，在場時拉高上限
     private final java.util.List<BlockPos> fuelTankLocals = new java.util.ArrayList<>();
     private static final double SPEED_PER_ENGINE = 0.2;  // 每引擎貢獻的每 tick 速度上限(20 b/s=1.0/tick;~50 引擎到頂 200)
-    private static final double SPEED_CAP = 10.0;         // 天花板 10.0/tick=200 b/s(一般引擎極限)。再快要未來「曲速引擎」tier。碰撞已子步進防穿牆;這麼快只適合高空/太空,貼地面 chunk 載入跟不上會穿插
+    private static final double SPEED_CAP = 10.0;         // 一般引擎天花板 10.0/tick=200 b/s。碰撞已子步進防穿牆;這麼快只適合高空/太空,貼地面 chunk 載入跟不上會穿插
     private static final int FUEL_PER_ENGINE_MOVE = 12;   // 移動時「每引擎」每 tick 耗魔力(滿油門);加速 ×2;隨油門縮放。引擎越多越快也越耗
+    private static final double SPEED_PER_WARP = 1.0;     // 曲速引擎每顆貢獻(= 5 顆一般引擎)
+    private static final double WARP_CAP = 30.0;          // 有曲速引擎時的天花板 30.0/tick=600 b/s
+    private static final int FUEL_PER_WARP_MOVE = 50;     // 曲速引擎每顆每 tick 耗魔力(很兇,要高密度燃料才撐得住)
 
     public ShipEntity(EntityType<?> type, Level level) {
         super(type, level);
@@ -290,6 +294,8 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         Block newBlock = state.getBlock();
         boolean oldEngine = oldBlock instanceof ManaEngineBlock, newEngine = newBlock instanceof ManaEngineBlock;
         if (oldEngine != newEngine) engineCount += newEngine ? 1 : -1;
+        boolean oldWarp = oldBlock instanceof ManaWarpEngineBlock, newWarp = newBlock instanceof ManaWarpEngineBlock;
+        if (oldWarp != newWarp) warpEngineCount += newWarp ? 1 : -1;
         boolean oldTank = oldBlock instanceof ManaFuelTankBlock, newTank = newBlock instanceof ManaFuelTankBlock;
         if (oldTank && !newTank) fuelTankLocals.remove(local);
         else if (newTank && !oldTank) fuelTankLocals.add(local.immutable());
@@ -648,7 +654,11 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         int fuel = getFuel();
         getEntityData().set(DATA_FUEL, fuel); // 同步給 client 畫 HUD
         boolean hasFuel = fuel > 0;
-        double maxSpeed = hasFuel ? Math.min(engineCount * SPEED_PER_ENGINE, SPEED_CAP) * getThrottle() : 0.0;
+        // 有曲速引擎 → 天花板拉到曲速段(600)。速度 = 一般引擎 + 曲速引擎貢獻,夾上限,× 油門。
+        double cap = warpEngineCount > 0 ? WARP_CAP : SPEED_CAP;
+        double maxSpeed = hasFuel
+                ? Math.min(engineCount * SPEED_PER_ENGINE + warpEngineCount * SPEED_PER_WARP, cap) * getThrottle()
+                : 0.0;
         target = target.scale(maxSpeed);
 
         shipVel = shipVel.add(target.subtract(shipVel).scale(ACCEL));
@@ -662,7 +672,8 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         // 燃料消耗：移動才耗(停滯不耗)、加速(有前進/升降輸入)×2、隨油門縮放。抽乾下一 tick getFuel()=0 → 推不動。
         if (hasFuel && shipVel.lengthSqr() > 1e-6) {
             boolean accelerating = (f != 0f || v != 0);
-            drainFuel((int) Math.ceil(FUEL_PER_ENGINE_MOVE * engineCount * getThrottle() * (accelerating ? 2 : 1)));
+            drainFuel((int) Math.ceil((FUEL_PER_ENGINE_MOVE * engineCount + FUEL_PER_WARP_MOVE * warpEngineCount)
+                    * getThrottle() * (accelerating ? 2 : 1)));
         }
     }
 
@@ -729,14 +740,16 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     /** HUD 用：總燃料容量 = 燃料槽數 × 單槽容量(client 端 fuelTankLocals 在 readSpawnData 算好)。 */
     public int getMaxFuel() { return fuelTankLocals.size() * ManaFuelTankBlockEntity.CAPACITY; }
 
-    /** contraption 變動時重算引擎數 + 燃料槽 local（速度上限/燃料抽取靠這兩個）。 */
+    /** contraption 變動時重算引擎/曲速引擎數 + 燃料槽 local（速度上限/燃料抽取靠這些）。只在組裝/載入跑一次。 */
     private void recomputeFuelSystem() {
         engineCount = 0;
+        warpEngineCount = 0;
         fuelTankLocals.clear();
         if (contraption == null) return;
         for (var e : contraption.getBlocks().entrySet()) {
             Block b = e.getValue().state().getBlock();
-            if (b instanceof ManaEngineBlock) engineCount++;
+            if (b instanceof ManaWarpEngineBlock) warpEngineCount++;
+            else if (b instanceof ManaEngineBlock) engineCount++;
             else if (b instanceof ManaFuelTankBlock) fuelTankLocals.add(e.getKey());
         }
     }

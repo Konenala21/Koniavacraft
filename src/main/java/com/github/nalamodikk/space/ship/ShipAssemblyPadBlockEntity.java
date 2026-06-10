@@ -155,7 +155,7 @@ public class ShipAssemblyPadBlockEntity extends BlockEntity implements MenuProvi
         data.set(DATA_COUNT, ok ? ship.size() : 0);
         data.set(DATA_CORES, 1);
         if (ok) { // 預覽也驗必要骨架：缺引擎/燃料槽先提示，免得按了組裝才知道
-            if (ship.getBlocks().values().stream().noneMatch(i -> i.state().getBlock() instanceof ManaEngineBlock)) { setStatus(STATUS_NO_ENGINE); return; }
+            if (ship.getBlocks().values().stream().noneMatch(i -> (i.state().getBlock() instanceof ManaEngineBlock || i.state().getBlock() instanceof ManaWarpEngineBlock))) { setStatus(STATUS_NO_ENGINE); return; }
             if (ship.getBlocks().values().stream().noneMatch(i -> i.state().getBlock() instanceof ManaFuelTankBlock)) { setStatus(STATUS_NO_FUEL_TANK); return; }
         }
         setStatus(ok ? STATUS_OK : STATUS_FAILED);
@@ -181,7 +181,7 @@ public class ShipAssemblyPadBlockEntity extends BlockEntity implements MenuProvi
         }
 
         // 必要骨架驗證：核心 + ≥1 魔力引擎 + ≥1 魔力燃料槽。缺了不出航。
-        if (ship.getBlocks().values().stream().noneMatch(i -> i.state().getBlock() instanceof ManaEngineBlock)) {
+        if (ship.getBlocks().values().stream().noneMatch(i -> (i.state().getBlock() instanceof ManaEngineBlock || i.state().getBlock() instanceof ManaWarpEngineBlock))) {
             data.set(DATA_CORES, 1); setStatus(STATUS_NO_ENGINE); return null;
         }
         if (ship.getBlocks().values().stream().noneMatch(i -> i.state().getBlock() instanceof ManaFuelTankBlock)) {

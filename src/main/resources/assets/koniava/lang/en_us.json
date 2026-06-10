@@ -546,6 +546,7 @@
   "screen.koniava.ship_assembly_pad.status.no_fuel_tank": "Need at least 1 mana fuel tank",
   "block.koniava.mana_engine": "Mana Engine",
   "block.koniava.mana_fuel_tank": "Mana Fuel Tank",
+  "block.koniava.mana_warp_engine": "Warp Engine",
   "hud.koniava.ship.engines": "Engines: %s",
   "screen.koniava.ship_control.title": "Ship Control",
   "screen.koniava.ship_control.throttle": "Throttle: %s%%",

@@ -74,7 +74,8 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(ModBlocks.SHIP_ASSEMBLY_GANTRY.get())
                 .add(ModBlocks.SHIP_SEAT.get())
                 .add(ModBlocks.MANA_ENGINE.get())
-                .add(ModBlocks.MANA_FUEL_TANK.get());
+                .add(ModBlocks.MANA_FUEL_TANK.get())
+                .add(ModBlocks.MANA_WARP_ENGINE.get());
 
         this.tag(BlockTags.MINEABLE_WITH_SHOVEL)
                 .add(ModBlocks.MANA_GRASS_BLOCK.get())

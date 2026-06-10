@@ -551,6 +551,7 @@
   "screen.koniava.ship_assembly_pad.status.no_fuel_tank": "需要至少 1 個魔力燃料槽",
   "block.koniava.mana_engine": "魔力引擎",
   "block.koniava.mana_fuel_tank": "魔力燃料槽",
+  "block.koniava.mana_warp_engine": "曲速引擎",
   "hud.koniava.ship.engines": "引擎: %s",
   "screen.koniava.ship_control.title": "飛船控制台",
   "screen.koniava.ship_control.throttle": "油門：%s%%",
