@@ -26,6 +26,7 @@ public final class ShipChestAnimator {
     private static boolean wantOpen;
     private static boolean screenWasOpen; // 容器畫面開過了沒（避免畫面還沒開就被當成關掉而提早收蓋）
     private static int waitTicks;          // 開蓋後等容器畫面出現的 tick 數（超時=誤觸發，自動收蓋）
+    private static int closeGrace;         // 畫面關了連續幾 tick（重開選單瞬間會閃關 1 tick，要寬限幾 tick 才真收蓋，否則快速重點蓋子會拍動）
 
     /** 玩家在船上開了某格箱子 → 開始開蓋動畫。 */
     public static void notifyOpened(ShipEntity s, BlockPos l) {
@@ -34,6 +35,7 @@ public final class ShipChestAnimator {
         wantOpen = true;
         screenWasOpen = false;
         waitTicks = 0;
+        closeGrace = 0;
     }
 
     @SubscribeEvent
@@ -43,9 +45,14 @@ public final class ShipChestAnimator {
         if (ship.isRemoved() || mc.level == null) { ship = null; return; }
 
         boolean screenOpen = mc.screen instanceof AbstractContainerScreen<?>;
-        if (screenOpen) screenWasOpen = true;
-        if (screenWasOpen && !screenOpen) wantOpen = false;             // 容器畫面開過又關了 → 收蓋
-        else if (wantOpen && !screenWasOpen && ++waitTicks > 30) wantOpen = false; // ~1.5s 沒等到畫面(誤觸發)→ 收蓋
+        if (screenOpen) { screenWasOpen = true; closeGrace = 0; }
+        if (screenWasOpen && !screenOpen) {
+            // 容器畫面開過又關了 → 收蓋。但重開選單瞬間畫面會閃關 1~2 tick，寬限幾 tick 才真收，
+            // 否則快速重複點右鍵時每次閃關都收蓋一下 → 蓋子全開↔全關拍動。
+            if (++closeGrace > 4) wantOpen = false;
+        } else if (wantOpen && !screenWasOpen && ++waitTicks > 30) {
+            wantOpen = false; // ~1.5s 沒等到畫面(誤觸發)→ 收蓋
+        }
 
         BlockEntity be = ship.getRenderBlockEntities().get(local);
         if (!(be instanceof ChestBlockEntity chest)) { ship = null; return; }
