@@ -289,7 +289,26 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         localCollisionShapeCache = null; collisionListCache = null;
         hullBlocksCache = null;
         dynamicMirrorCache = null;
-        renderBEs = null;
+        // 只更新「變的這一格」的 render BE,不整批砍 renderBEs。整批砍會把別格(例如開著的箱子)的 transient
+        // 渲染狀態(蓋子 openness)歸零 → 開著箱子時船上別的方塊(機器/作物/熔爐)狀態一變就把蓋子打回去 → 抽搐。
+        if (level().isClientSide && renderBEs != null) {
+            if (renderWorld != null) renderWorld.setBlock(local, state, 3);
+            if (state.getBlock() instanceof EntityBlock eb2) {
+                var bi = contraption.getBlocks().get(local);
+                BlockEntity rbe = (bi != null && bi.nbt() != null)
+                        ? BlockEntity.loadStatic(local, state, bi.nbt(), level().registryAccess())
+                        : eb2.newBlockEntity(local, state);
+                if (rbe != null) {
+                    rbe.setLevel(renderWorld != null ? renderWorld : level());
+                    renderBEs.put(local.immutable(), rbe);
+                    if (renderWorld != null) renderWorld.setBlockEntity(rbe);
+                } else {
+                    renderBEs.remove(local);
+                }
+            } else {
+                renderBEs.remove(local);
+            }
+        }
         if (meshCache instanceof ShipMeshHandle h) {
             h.markDirty(); // 保留舊 VBO，debounce 後背景重烤一次(off-thread，不凍主執行緒)
         } else {
