@@ -139,6 +139,9 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     // 目前總燃料(影子各燃料槽魔力和)。server 算、同步給 client 畫 HUD(client 沒影子查不到)。
     private static final EntityDataAccessor<Integer> DATA_FUEL =
             SynchedEntityData.defineId(ShipEntity.class, EntityDataSerializers.INT);
+    // 目前曲速能量(各進料口能量和)。同理同步給 HUD。
+    private static final EntityDataAccessor<Integer> DATA_WARP_FUEL =
+            SynchedEntityData.defineId(ShipEntity.class, EntityDataSerializers.INT);
 
     // client 端平滑跟隨 server 廣播位置用（lerpSteps 在 Entity 是 private 無 getter，自己存一份）
     private int lerpSteps;
@@ -665,7 +668,9 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         int fuel = getFuel();
         getEntityData().set(DATA_FUEL, fuel); // 同步給 client 畫 HUD(燃料槽)
         boolean hasFuel = fuel > 0;
-        boolean hasWarp = warpDriveCount > 0 && getWarpFuel() > 0;
+        int warpFuel = getWarpFuel();
+        getEntityData().set(DATA_WARP_FUEL, warpFuel); // 同步給 HUD
+        boolean hasWarp = warpDriveCount > 0 && warpFuel > 0;
         double engineSpeed = hasFuel ? engineCount * SPEED_PER_ENGINE : 0.0;
         double warpSpeed = hasWarp ? warpDriveCount * SPEED_PER_WARP : 0.0;
         double cap = hasWarp ? WARP_CAP : SPEED_CAP;
@@ -754,6 +759,9 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     public int getDisplayFuel() { return getEntityData().get(DATA_FUEL); }
     /** HUD 用：總燃料容量 = 燃料槽數 × 單槽容量(client 端 fuelTankLocals 在 readSpawnData 算好)。 */
     public int getMaxFuel() { return fuelTankLocals.size() * ManaFuelTankBlockEntity.CAPACITY; }
+    /** HUD 用：曲速能量(同步) + 總容量 = 進料口數 × 單口容量。 */
+    public int getDisplayWarpFuel() { return getEntityData().get(DATA_WARP_FUEL); }
+    public int getMaxWarpFuel() { return warpIntakeLocals.size() * ManaWarpInputBlockEntity.CAPACITY; }
 
     /** contraption 變動時重算引擎數 + 燃料槽/曲速核心 local，再掃完整曲速結構。只在組裝/載入跑一次。 */
     private void recomputeFuelSystem() {
@@ -1858,6 +1866,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         builder.define(DATA_BOW, 0.0f);
         builder.define(DATA_THROTTLE, 1.0f); // 預設滿油門
         builder.define(DATA_FUEL, 0);
+        builder.define(DATA_WARP_FUEL, 0);
     }
 
     @Override

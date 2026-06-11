@@ -557,6 +557,7 @@
   "message.koniava.fuel_tank.level": "Fuel: %1$s / %2$s",
   "message.koniava.fuel_tank.full": "Tank is full",
   "message.koniava.fuel_tank.refueled": "Refueled x%1$s : %2$s / %3$s",
+  "message.koniava.warp_input.energy": "Warp energy: %1$s / %2$s",
   "block.koniava.magic_ore": "Magic Ore",
   "block.koniava.deepslate_magic_ore": "Deepslate Magic Ore",
   "block.koniava.mana_generator": "Mana Generator",

@@ -562,6 +562,7 @@
   "message.koniava.fuel_tank.level": "燃料：%1$s / %2$s",
   "message.koniava.fuel_tank.full": "燃料槽已滿",
   "message.koniava.fuel_tank.refueled": "加注 x%1$s：%2$s / %3$s",
+  "message.koniava.warp_input.energy": "曲速能量：%1$s / %2$s",
   "block.koniava.magic_ore": "魔法礦",
   "block.koniava.deepslate_magic_ore": "深板岩魔法礦",
   "block.koniava.mana_generator": "魔力發電機",

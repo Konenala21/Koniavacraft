@@ -44,6 +44,14 @@ public final class ShipHudOverlay {
         vbar(g, font, x, top, ship.getThrottle(), 0xFF55DD66, "油門", throttlePct + "%");
         vbar(g, font, x + BAR_W + 18, top, fuelFrac, fuel <= 0 ? 0xFFFF5555 : 0xFF55AAFF, "燃料", fuelPct + "%");
 
+        // 第三條:曲速能量(只有船上有完整曲速結構才畫,紫色)
+        if (ship.getWarpDriveCount() > 0) {
+            int warp = ship.getDisplayWarpFuel(), maxWarp = ship.getMaxWarpFuel();
+            float warpFrac = maxWarp > 0 ? (float) warp / maxWarp : 0f;
+            vbar(g, font, x + 2 * (BAR_W + 18), top, warpFrac, warp <= 0 ? 0xFFFF5555 : 0xFFB066FF,
+                    "曲速", Math.round(warpFrac * 100f) + "%");
+        }
+
         // 引擎數(直立 bar 下方,橫排小字)
         g.drawString(font, Component.translatable("hud.koniava.ship.engines", ship.getEngineCount()),
                 x, top + BAR_H + 14, 0xFFCCCCCC, true);
