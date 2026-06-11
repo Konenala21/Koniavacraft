@@ -41,15 +41,17 @@ public final class ShipHudOverlay {
         int throttlePct = Math.round(ship.getThrottle() * 100f);
         int fuelPct = Math.round(fuelFrac * 100f);
 
-        vbar(g, font, x, top, ship.getThrottle(), 0xFF55DD66, "油門", throttlePct + "%");
-        vbar(g, font, x + BAR_W + 18, top, fuelFrac, fuel <= 0 ? 0xFFFF5555 : 0xFF55AAFF, "燃料", fuelPct + "%");
+        vbar(g, font, x, top, ship.getThrottle(), 0xFF55DD66,
+                Component.translatable("hud.koniava.ship.throttle").getString(), throttlePct + "%");
+        vbar(g, font, x + BAR_W + 18, top, fuelFrac, fuel <= 0 ? 0xFFFF5555 : 0xFF55AAFF,
+                Component.translatable("hud.koniava.ship.fuel").getString(), fuelPct + "%");
 
         // 第三條:曲速能量(只有船上有完整曲速結構才畫,紫色)
         if (ship.getWarpDriveCount() > 0) {
             int warp = ship.getDisplayWarpFuel(), maxWarp = ship.getMaxWarpFuel();
             float warpFrac = maxWarp > 0 ? (float) warp / maxWarp : 0f;
             vbar(g, font, x + 2 * (BAR_W + 18), top, warpFrac, warp <= 0 ? 0xFFFF5555 : 0xFFB066FF,
-                    "曲速", Math.round(warpFrac * 100f) + "%");
+                    Component.translatable("hud.koniava.ship.warp").getString(), Math.round(warpFrac * 100f) + "%");
         }
 
         // 引擎數(直立 bar 下方,橫排小字)
@@ -63,10 +65,11 @@ public final class ShipHudOverlay {
         g.fill(x, top, x + BAR_W, top + BAR_H, 0xFF2A2A2E);
         int fh = (int) (BAR_H * Mth.clamp(frac, 0f, 1f));
         g.fill(x, top + BAR_H - fh, x + BAR_W, top + BAR_H, color);
-        // 直排中文標籤（每字一列）放 bar 上方
+        // 直排標籤（每字一列）放 bar 上方，底部固定在 bar 上緣 4px 處，任意長度(中/英)都不會壓到 bar
+        int labelTop = top - 4 - label.length() * 9;
         for (int i = 0; i < label.length(); i++) {
             String ch = String.valueOf(label.charAt(i));
-            g.drawString(font, ch, x + (BAR_W - font.width(ch)) / 2, top - 22 + i * 9, 0xFFDDDDDD, true);
+            g.drawString(font, ch, x + (BAR_W - font.width(ch)) / 2, labelTop + i * 9, 0xFFDDDDDD, true);
         }
         // 數字置中在 bar 下方
         g.drawString(font, num, x + (BAR_W - font.width(num)) / 2, top + BAR_H + 3, 0xFFFFFFFF, true);

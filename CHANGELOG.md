@@ -134,6 +134,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 
 ### Developer Notes / 開發者備註
 
+Ship HUD bar labels (throttle/fuel/warp) now use lang keys (hud.koniava.ship.throttle/fuel/warp) instead of hardcoded Chinese, and the vertical stacked label is bottom-anchored above the bar so any-length label (zh or en) does not overlap the bar.
+飛船 HUD 的 bar 標籤(油門/燃料/曲速)改用 lang key(hud.koniava.ship.throttle/fuel/warp)，不再寫死中文；直排標籤改成底部對齊在 bar 上緣，中英任意長度都不會壓到 bar。
+
 Ship chest lid jitter after closing fixed (frozen ChestLidController). ShipChestAnimator stopped ticking the render BE the moment openness reached 0, leaving oldOpenness=0.1 and openness=0.0; the renderer keeps interpolating between them by partialTick every frame, so the lid bounced between 0.1 and 0.0 forever. Now it ticks one more time until both oldOpenness and openness are 0 (getOpenNess(0f) and getOpenNess(1f)), so the controller settles flat. Diagnosed from a per-tick openness log.
 飛船箱子關閉後抽搐修正(ChestLidController 凍結)。ShipChestAnimator 在 openness 一到 0 就停止 tick，留下 oldOpenness=0.1、openness=0.0；渲染器每幀用 partialTick 在這兩值間插值，蓋子就在 0.1 和 0.0 之間永遠跳。現在多 tick 一次直到 oldOpenness 和 openness 都歸零(getOpenNess(0f) 與 getOpenNess(1f))，控制器才停平。靠每 tick 的 openness log 診斷出來。
 
