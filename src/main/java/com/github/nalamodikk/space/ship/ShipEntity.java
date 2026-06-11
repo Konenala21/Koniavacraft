@@ -294,17 +294,20 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         if (level().isClientSide && renderBEs != null) {
             if (renderWorld != null) renderWorld.setBlock(local, state, 3);
             if (state.getBlock() instanceof EntityBlock eb2) {
-                var bi = contraption.getBlocks().get(local);
-                BlockEntity rbe = (bi != null && bi.nbt() != null)
-                        ? BlockEntity.loadStatic(local, state, bi.nbt(), level().registryAccess())
-                        : eb2.newBlockEntity(local, state);
-                if (rbe != null) {
-                    rbe.setLevel(renderWorld != null ? renderWorld : level());
-                    renderBEs.put(local.immutable(), rbe);
-                    if (renderWorld != null) renderWorld.setBlockEntity(rbe);
-                } else {
-                    renderBEs.remove(local);
+                BlockEntity existing = renderBEs.get(local);
+                if (existing == null || !existing.getType().isValid(state)) {
+                    // 型別變了或還沒有 → 建新 render BE
+                    var bi = contraption.getBlocks().get(local);
+                    BlockEntity rbe = (bi != null && bi.nbt() != null)
+                            ? BlockEntity.loadStatic(local, state, bi.nbt(), level().registryAccess())
+                            : eb2.newBlockEntity(local, state);
+                    if (rbe != null) {
+                        rbe.setLevel(renderWorld != null ? renderWorld : level());
+                        renderBEs.put(local.immutable(), rbe);
+                        if (renderWorld != null) renderWorld.setBlockEntity(rbe);
+                    }
                 }
+                // 型別沒變 → 保留既有 render BE(連同箱子蓋子等 transient 狀態);視覺方塊狀態變化由 mesh 重烤處理
             } else {
                 renderBEs.remove(local);
             }

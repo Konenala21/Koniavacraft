@@ -134,6 +134,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 
 ### Developer Notes / 開發者備註
 
+Ship chest lid jitter after closing fixed (frozen ChestLidController). ShipChestAnimator stopped ticking the render BE the moment openness reached 0, leaving oldOpenness=0.1 and openness=0.0; the renderer keeps interpolating between them by partialTick every frame, so the lid bounced between 0.1 and 0.0 forever. Now it ticks one more time until both oldOpenness and openness are 0 (getOpenNess(0f) and getOpenNess(1f)), so the controller settles flat. Diagnosed from a per-tick openness log.
+飛船箱子關閉後抽搐修正(ChestLidController 凍結)。ShipChestAnimator 在 openness 一到 0 就停止 tick，留下 oldOpenness=0.1、openness=0.0；渲染器每幀用 partialTick 在這兩值間插值，蓋子就在 0.1 和 0.0 之間永遠跳。現在多 tick 一次直到 oldOpenness 和 openness 都歸零(getOpenNess(0f) 與 getOpenNess(1f))，控制器才停平。靠每 tick 的 openness log 診斷出來。
+
 updateContraptionBlock no longer nukes the whole render-BE map on a single block change; it updates only the changed cell. Nuking rebuilt every render BE, zeroing other cells' transient render state, so while a chest was open any unrelated block-state change on the ship (a machine, crop, furnace mirrored from the shadow) reset the lid and made it jitter when later closed. Now other cells (an open chest) are preserved, and it is also cheaper (no full rebuild per block update).
 updateContraptionBlock 改成單格更新，不再因為一格變動就整批砍 render BE。整批砍會重建每個 render BE、把別格的 transient 渲染狀態歸零，所以箱子開著時、船上任何不相干的方塊狀態變動(機器/作物/熔爐從影子鏡射過來)都會重置蓋子，開久一點再關就抽搐。現在別格(開著的箱子)會保留，而且更省(每次方塊更新不再整艘重建)。
 

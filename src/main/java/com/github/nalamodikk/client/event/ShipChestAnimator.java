@@ -19,8 +19,8 @@ import java.util.Map;
 /**
  * 船上箱子開蓋動畫(治本版)。船的箱子真身在影子維度、視覺船的 render BE 不被 tick，所以開箱預設沒有開蓋動畫。
  * 改由 server 在玩家真的開/關了某格船箱子時送 {@link com.github.nalamodikk.common.network.packet.client.ship.ShipChestLidPacket}
- * (權威訊號)，這裡只跟著訊號開合蓋，不再靠「畫面上有沒有 GUI」去猜 → 不會抖、不會拍。
- * 每格箱子每 tick 推 lidAnimateTick；關了且蓋子收完才清掉。可同時追多格(多人/多箱)。
+ * (權威訊號)，這裡只跟著訊號開合蓋，不靠「畫面上有沒有 GUI」去猜。每格箱子每 tick 推 lidAnimateTick；
+ * 可同時追多格(多人/多箱)。
  */
 @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID, value = Dist.CLIENT)
 public final class ShipChestAnimator {
@@ -54,7 +54,9 @@ public final class ShipChestAnimator {
 
             chest.triggerEvent(1, open ? 1 : 0);                                            // 事件 1 = 開蓋；count>0 開、0 關
             ChestBlockEntity.lidAnimateTick(ship.level(), key.local(), chest.getBlockState(), chest); // 推進蓋子插值
-            if (!open && chest.getOpenNess(1.0f) <= 0.0f) it.remove();                      // 關完了 → 清掉
+            // 關完才停止 tick：要等 oldOpenness 也歸零(getOpenNess(0f) 才是上一 tick 值)。否則停在
+            // old=0.1/new=0.0，渲染每幀用 partialTick 在這兩值間插值 → 蓋子在 0.1↔0.0 間永遠抖(關箱後抽搐)。
+            if (!open && chest.getOpenNess(0f) <= 0.0f && chest.getOpenNess(1.0f) <= 0.0f) it.remove();
         }
     }
 }
