@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Lights on a spaceship now work like in the normal world: torches, lamps and glowing blocks cast a real fading light radius, enclosed cabins stay dark until you light them, and the ship's blocks, chests, machines and you yourself are lit by them. Being inside a ship also shelters you from rain now: rain no longer falls or shows inside the ship, and you do not get wet under its roof.
+飛船上的光源現在像一般世界一樣作用：火把、燈、發光方塊會照出真實的漸暗光圈，封閉船艙在你點燈前是暗的，船上的方塊、箱子、機器和你自己都會被照亮。待在船裡現在也會擋雨：船內不再下雨、不顯示雨，有頂遮著就不會被淋濕。
+
 Spaceship chests now open and close their lid smoothly with the proper open/close sound, even when opened repeatedly. Their real selves run in a hidden dimension, so the lid and sound now follow an authoritative server signal instead of being guessed from your screen, which fixes the lid flapping and the sound only playing the first time.
 飛船上的箱子現在開蓋/收蓋會順暢動畫並播正確的開關聲，連續開也不會出問題。箱子真身在隱藏維度，蓋子和音效現在改跟 server 的權威訊號走，不再用你的畫面去猜，修好了蓋子拍動、以及音效只有第一次有的問題。
 
@@ -133,6 +136,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 新增太空維度，包含程序生成的星空天空、物理正確的行星渲染，以及完整太陽系（水星、金星、月球、火星、木星、土星、土衛六、天王星、海王星、冥王星）和比鄰星系雛形（雙星系統）。行星為真實 3D 球體，視角大小隨距離動態縮放。太陽有日冕光暈。進入維度時玩家會出現在地球軌道附近。
 
 ### Developer Notes / 開發者備註
+
+Ship rain shelter. ShipEntity.shelters(wx,wy,wz) checks the local column above a world point for an occluding ship block. LevelRendererRainMixin cancels renderSnowAndRain when the camera entity is sheltered by a nearby ship (no rain particles inside), and LevelRainMixin makes Level.isRainingAt return false when a ship shelters the position (no wetness, fire extinguish, rain sound) - gated so the ship search only runs when it was already raining there.
+飛船擋雨。ShipEntity.shelters(wx,wy,wz) 檢查某世界點 local 上方有沒有不透明船方塊。LevelRendererRainMixin 在鏡頭實體被附近的船遮蔽時取消 renderSnowAndRain(船內不畫雨),LevelRainMixin 讓 Level.isRainingAt 在該座標被船遮蔽時回 false(不淋濕/不滅火/無雨聲);有 gate,只有本來就在那下雨時才搜尋船。
 
 Ship structure lighting now uses real propagated light (stage 1 of full ship lighting). ShipLight runs two BFS over the block snapshot during the off-thread mesh bake: block light flooded from emission sources with -1 falloff through non-occluding blocks, and sky light from columns open above (no occluding ship block overhead = 15, propagated sideways into covered areas). ShipRenderWorld.getBrightness/getRawBrightness use it instead of the old "sky always 15 + self/neighbour emission" fake, so torches cast a real radius and enclosed cabins go dark. Rebakes on edit. The computed ShipLight is shared from the bake (ShipMeshCache.getShipLight) so BER blocks (chests/machines) render with the same per-cell light, and EntityRendererShipLightMixin lights ship-riding/standing entities (driver + local player on deck) by the ship light too (sky from the ship so cabins stay dark, block max'd with vanilla).
 飛船結構光照改用真正的傳播光。ShipLight 在背景烤 mesh 時對方塊快照跑兩個 BFS:block light 從發光方塊 -1 衰減穿透非遮擋方塊,sky light 從露天柱(頭上沒不透明船方塊=15)側向漫進被遮區。ShipRenderWorld 的亮度改用它,不再是「天空恆 15 + 自己/鄰居發光」的假光,火把有真實半徑、封閉船艙會暗。烤好的光從 ShipMeshCache 共用出來,BER 方塊(箱子/機器)用同一份逐格光,EntityRendererShipLightMixin 也讓船上實體(駕駛 + 本機玩家站甲板)被船光照亮(sky 用船的所以暗艙會暗,block 跟 vanilla 取 max)。編輯會 re-bake。

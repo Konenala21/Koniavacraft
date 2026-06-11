@@ -13,7 +13,8 @@
     "EntityShipCollisionMixin",
     "MenuShipShadowMixin",
     "ContainerShipShadowMixin",
-    "ServerLevelSoundBridgeMixin"
+    "ServerLevelSoundBridgeMixin",
+    "LevelRainMixin"
   ],
   "client": [
     "client.MinecraftAccessor",
@@ -21,6 +22,7 @@
     "client.MouseHandlerT6Mixin",
     "client.MouseHandlerShipRollMixin",
     "client.EntityRendererShipLightMixin",
+    "client.LevelRendererRainMixin",
     "client.OptionsSubScreenAccessor",
     "client.ScreenAccessor",
     "client.SoundOptionsScreenMixin",

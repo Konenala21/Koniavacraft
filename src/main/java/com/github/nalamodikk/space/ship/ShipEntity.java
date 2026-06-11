@@ -973,6 +973,19 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         return new Vec3(d.x + c.x, d.y + c.y, d.z + c.z);
     }
 
+    /** 這個世界座標頭上有沒有不透明船方塊遮著(防雨用)。以 local 柱判斷,平船(無 roll/pitch)正確,常見情境足夠。 */
+    public boolean shelters(double wx, double wy, double wz) {
+        if (contraption == null) return false;
+        Vec3 lp = worldToLocalPoint(wx, wy, wz);
+        int lx = Mth.floor(lp.x), ly = Mth.floor(lp.y), lz = Mth.floor(lp.z);
+        int top = Mth.ceil(contraption.bounds().maxY);
+        for (int y = ly + 1; y <= top; y++) {
+            StructureBlockInfo info = contraption.getBlocks().get(new BlockPos(lx, y, lz));
+            if (info != null && info.state().canOcclude()) return true;
+        }
+        return false;
+    }
+
     private Vec3 rotateVec(double x, double y, double z, double deg) {
         double rad = Math.toRadians(deg);
         double cos = Math.cos(rad), sin = Math.sin(rad);
