@@ -12,7 +12,8 @@
     "SpaceVoidDamageMixin",
     "EntityShipCollisionMixin",
     "MenuShipShadowMixin",
-    "ContainerShipShadowMixin"
+    "ContainerShipShadowMixin",
+    "ServerLevelSoundBridgeMixin"
   ],
   "client": [
     "client.MinecraftAccessor",

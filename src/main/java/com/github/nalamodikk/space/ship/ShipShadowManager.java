@@ -3,6 +3,7 @@ package com.github.nalamodikk.space.ship;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.dimension.ModDimensions;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
@@ -10,14 +11,19 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
+import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -32,6 +38,29 @@ public class ShipShadowManager extends SavedData {
 
     private int nextSlot = 0;
     private final Map<UUID, Integer> slots = new HashMap<>();
+
+    // ── 音效橋接:活躍(載入中)的船登記表,server thread 用 ───────────────────────
+    private static final Set<ShipEntity> ACTIVE = new HashSet<>();
+    public static void registerActive(ShipEntity s) { ACTIVE.add(s); }
+    public static void unregisterActive(ShipEntity s) { ACTIVE.remove(s); }
+
+    /**
+     * 影子維度裡播的聲音 → 找擁有該座標的船 → 在船的世界位置重播給玩家。回傳 true 表示已轉發(原本那聲在影子沒人聽)。
+     * 由 ServerLevelSoundBridgeMixin 在 shadow 維度的 playSeededSound 呼叫。
+     */
+    public static boolean forwardShadowSound(double x, double y, double z, Holder<SoundEvent> sound,
+                                             SoundSource source, float vol, float pitch, long seed) {
+        BlockPos sp = BlockPos.containing(x, y, z);
+        for (ShipEntity s : ACTIVE) {
+            if (s.isRemoved() || !s.ownsShadowPos(sp)) continue;
+            if (s.level() instanceof ServerLevel sl) {
+                Vec3 w = s.shadowToWorld(x, y, z);
+                sl.playSeededSound(null, w.x, w.y, w.z, sound, source, vol, pitch, seed);
+            }
+            return true;
+        }
+        return false;
+    }
 
     public static ShipShadowManager get(MinecraftServer server) {
         return server.overworld().getDataStorage().computeIfAbsent(

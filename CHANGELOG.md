@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Block and machine sounds on a spaceship are now audible (furnaces, hoppers, note blocks, etc.). The ship's blocks really run in a hidden dimension, so their sounds used to be silent; they are now forwarded to your ship's position so you can hear them.
+飛船上的方塊和機器音效現在聽得到了（熔爐、漏斗、音符盒等）。船的方塊其實在隱藏維度運轉，以前那些聲音是靜音的；現在會轉發到你船的位置，你就聽得到了。
+
 The warp drive is now a 3x4x3 multiblock structure, not a single block: an hourglass of mana alloy blocks with a Warp Drive Core and a Warp Drive Intake placed anywhere inside it. Build complete structures on your ship; each one adds warp speed (top cap 600 blocks/s) and pulls its fuel from its own intake (the ship's mana network, fuel items, or fuel fluids like lava). More complete structures, faster. The Mana Alloy Block (9 mana alloy ingots) is the casing.
 曲速引擎現在是 3×4×3 多方塊結構，不再是單方塊：魔力合金做的沙漏，裡面放一個曲速引擎核心和一個進料口（位置隨你）。在船上蓋完整的結構，每座加曲速（上限 600 格/秒），燃料從它自己的進料口來（船上魔力網路、燃料物品、或熔岩之類的燃料流體）。越多座越快。魔力合金方塊（9 魔力合金錠）是外殼。
 

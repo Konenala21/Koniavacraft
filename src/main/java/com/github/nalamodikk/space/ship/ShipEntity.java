@@ -371,6 +371,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     @Override
     public void remove(Entity.RemovalReason reason) {
+        if (!level().isClientSide) ShipShadowManager.unregisterActive(this); // 音效橋接:登出活躍船
         // 保險：被 /kill（KILLED）而非正常拆解時，把方塊寫回世界（船散架在原地），不要讓整艘船無聲蒸發。
         // DISCARDED 是「靜默移除」(vanilla 語意=不掉落，例如指令/清理/gametest 框架收尾)，不寫回，否則會把核心灑回原地污染。
         // 區塊卸載/維度切換也不觸發（會存檔/搬移）。
@@ -485,6 +486,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             tickLerp(); // server 權威：client 只平滑跟隨 server 廣播的位置，不自己算移動
         } else {
             ensureShadowForceLoaded();                       // VM4：載入後確保影子 force-load（機器才 tick）
+            if (shadowAnchor != null) ShipShadowManager.registerActive(this); // 音效橋接:登記活躍船(idempotent)
             tickServerMovement(); // server 是唯一真相，依駕駛輸入算移動
             if ((tickCount & 15) == 0) tickServerMirror(); // VM2：每 16 tick 把影子狀態鏡射回視覺船
         }
@@ -1649,6 +1651,18 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         Vec3 w = rotatedWorldPoint(local.getX() + 0.5, local.getY() + 0.5, local.getZ() + 0.5);
         level().playSound(null, w.x, w.y, w.z, sound, SoundSource.BLOCKS, 1.0f, 1.0f);
     }
+
+    // ── 音效橋接(影子→船) ───────────────────────────────────────────────────
+    /** 這個影子座標屬於本船嗎(在本船的影子區域 + 對應 local 有方塊)。 */
+    public boolean ownsShadowPos(BlockPos sp) {
+        if (shadowAnchor == null || contraption == null) return false;
+        return contraption.getBlocks().containsKey(sp.subtract(shadowAnchor));
+    }
+    /** 影子座標 → 船上世界座標(含船姿勢)。 */
+    public Vec3 shadowToWorld(double sx, double sy, double sz) {
+        return rotatedWorldPoint(sx - shadowAnchor.getX(), sy - shadowAnchor.getY(), sz - shadowAnchor.getZ());
+    }
+    public BlockPos shadowAnchor() { return shadowAnchor; }
 
     /** client：挖船上方塊噴碎裂粒子（位置依旋轉算）。 */
     private void spawnBreakParticles(BlockPos local, BlockState state) {
