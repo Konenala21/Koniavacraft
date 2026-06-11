@@ -128,6 +128,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 
 ### Developer Notes / 開發者備註
 
+Chunked ship mesh. ShipMeshCache reworked from one set of per-render-layer VBOs to per-16-block-section VBOs. ShipMeshHandle.markDirty now takes the edited block's local; it dirties only that block's section plus its 6 face-neighbour sections (culling can change across a section boundary). buildIfNeeded debounces then rebakes just the dirty sections (the full-ship snapshot is still used as the cull world so section seams tesselate correctly); draw groups by layer across sections to minimise state changes. Editing a huge ship now rebakes one section's blocks instead of the whole ship. Future-proofs large-ship external expansion. (Verify visually in-game: mesh is client-render, not gametested.)
+飛船 mesh 分塊。ShipMeshCache 從「每 render layer 一組 VBO」改成「每 16³ section 一組 VBO」。ShipMeshHandle.markDirty 現在收變動方塊的 local，只把該 section + 6 面鄰居 section 標 dirty(剔除會跨 section 邊界變)。buildIfNeeded debounce 後只重烤 dirty section(仍用整艘 snapshot 當剔除世界讓邊界正確);draw 按 layer 分組畫減少狀態切換。超大船編輯現在只重烤一個 section 的方塊,不是整艘。為未來大船外部擴建鋪路。
+
 Ship edit-lag fix #2. ShipContraption.removeBlock called recomputeBounds() (a full O(n) scan over every block) on every block break; on a big ship that scanned 2000+ blocks per break = the stutter. Now bounds is only recomputed when the removed block is on a bounds face (could shrink it); removing an interior block leaves bounds unchanged and skips the scan. Placing (addBlock) was already O(1).
 飛船編輯卡頓修 #2。ShipContraption.removeBlock 每次挖方塊都呼叫 recomputeBounds()(全掃每個方塊 O(n));大船每挖一塊掃 2000+ 方塊 = 卡頓主因。現在只有挖到 bounds 邊緣方塊(可能縮小)才重算;挖內部方塊 bounds 不變、跳過全掃。放方塊(addBlock)本來就 O(1)。
 
