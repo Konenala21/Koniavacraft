@@ -44,6 +44,9 @@ public class ShipRenderWorld implements BlockAndTintGetter {
         this.light = new ShipLight(snapshot);
     }
 
+    /** 背景烤時算好的真實光(快照模式才有);給 BER/實體渲染共用,不必重算。 */
+    @Nullable public ShipLight light() { return light; }
+
     @Override
     public BlockState getBlockState(BlockPos pos) {
         if (snapshot != null) return snapshot.getOrDefault(pos, Blocks.AIR.defaultBlockState());

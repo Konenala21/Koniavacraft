@@ -47,10 +47,17 @@ public class ShipMeshCache implements AutoCloseable, ShipMeshHandle {
     private boolean dirty = false;
     private long dirtyAtMs = 0;
     // 背景執行緒烤的結果：tesselate(慢)在 worker 跑，烤好才在 render thread 上傳 GL → 組裝/編輯不卡主執行緒。
-    private CompletableFuture<List<LayerMesh>> pending;
+    private CompletableFuture<BakeResult> pending;
+    // 烤 mesh 時順便算好的真實光照，給 BER/船上實體渲染共用(別重算)。volatile:worker 算、render thread 讀。
+    private volatile ShipLight shipLight;
 
     /** 一層的烤好結果：MeshData 參考著 bytes 的記憶體，上傳前 bytes 不能 close。 */
     private record LayerMesh(RenderType layer, MeshData mesh, ByteBufferBuilder bytes) {}
+    /** 一次背景烤的完整結果：各層 mesh + 算好的光。 */
+    private record BakeResult(List<LayerMesh> layers, ShipLight light) {}
+
+    /** 給渲染器查船上某 local 位置的真實光(BER/實體用)。烤好前可能為 null。 */
+    @org.jetbrains.annotations.Nullable public ShipLight getShipLight() { return shipLight; }
 
     /** 編輯時呼叫：不砍 VBO，只標記稍後重烤(debounce)。 */
     @Override
@@ -87,7 +94,7 @@ public class ShipMeshCache implements AutoCloseable, ShipMeshHandle {
     }
 
     /** worker thread：純 tesselate(讀不可變快照 + baked model，皆 thread-safe)。不碰 GL。 */
-    private static List<LayerMesh> bakeOffThread(Map<BlockPos, BlockState> snapshot, Level level) {
+    private static BakeResult bakeOffThread(Map<BlockPos, BlockState> snapshot, Level level) {
         ShipRenderWorld world = new ShipRenderWorld(level, snapshot);
         BlockRenderDispatcher brd = Minecraft.getInstance().getBlockRenderer();
         ModelBlockRenderer mr = brd.getModelRenderer();
@@ -119,12 +126,12 @@ public class ShipMeshCache implements AutoCloseable, ShipMeshHandle {
             if (mesh != null) out.add(new LayerMesh(layer, mesh, bytes));
             else bytes.close();
         }
-        return out;
+        return new BakeResult(out, world.light());
     }
 
     /** render thread：把背景烤好的 mesh 上傳成 VBO，換掉舊的(舊 VBO 撐到這刻才關 → 重烤期間不閃)。 */
     private void uploadPending() {
-        List<LayerMesh> result;
+        BakeResult result;
         try {
             result = pending.join();
         } catch (Exception ex) {
@@ -133,9 +140,10 @@ public class ShipMeshCache implements AutoCloseable, ShipMeshHandle {
             return;
         }
         pending = null;
+        shipLight = result.light(); // 換 mesh 的同時換上對應的光,給 BER/實體查
         for (VertexBuffer vb : buffers.values()) vb.close();
         buffers.clear();
-        for (LayerMesh lm : result) {
+        for (LayerMesh lm : result.layers()) {
             VertexBuffer vb = new VertexBuffer(VertexBuffer.Usage.STATIC);
             vb.bind();
             vb.upload(lm.mesh()); // 上傳並消耗 mesh
@@ -171,7 +179,7 @@ public class ShipMeshCache implements AutoCloseable, ShipMeshHandle {
         // 還在背景烤就把結果收掉，否則 MeshData/ByteBufferBuilder 的 native 記憶體會漏
         if (pending != null) {
             try {
-                for (LayerMesh lm : pending.join()) { lm.mesh().close(); lm.bytes().close(); }
+                for (LayerMesh lm : pending.join().layers()) { lm.mesh().close(); lm.bytes().close(); }
             } catch (Exception ignored) {}
             pending = null;
         }

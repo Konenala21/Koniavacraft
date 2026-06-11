@@ -20,6 +20,7 @@
     "client.LanguageSelectScreenMixin",
     "client.MouseHandlerT6Mixin",
     "client.MouseHandlerShipRollMixin",
+    "client.EntityRendererShipLightMixin",
     "client.OptionsSubScreenAccessor",
     "client.ScreenAccessor",
     "client.SoundOptionsScreenMixin",
