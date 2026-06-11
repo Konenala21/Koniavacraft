@@ -18,6 +18,7 @@
     "client.MinecraftAccessor",
     "client.LanguageSelectScreenMixin",
     "client.MouseHandlerT6Mixin",
+    "client.MouseHandlerShipRollMixin",
     "client.OptionsSubScreenAccessor",
     "client.ScreenAccessor",
     "client.SoundOptionsScreenMixin",
