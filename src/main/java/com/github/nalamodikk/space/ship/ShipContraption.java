@@ -273,9 +273,15 @@ public class ShipContraption {
         bounds = bounds.minmax(new AABB(local));
     }
 
-    /** 移除一個方塊（停船編輯：挖方塊）。bounds 重算（可能縮小）。 */
+    /** 移除一個方塊（停船編輯：挖方塊）。只有挖到 bounds 邊緣才可能縮小 → 才全掃重算；
+     *  挖內部方塊 bounds 不變，跳過全掃（大船每挖一塊不再掃 2000+ 方塊 = 不頓）。 */
     public void removeBlock(BlockPos local) {
-        if (blocks.remove(local) != null) recomputeBounds();
+        if (blocks.remove(local) == null) return;
+        if (local.getX() == (int) bounds.minX || local.getX() == (int) bounds.maxX - 1
+                || local.getY() == (int) bounds.minY || local.getY() == (int) bounds.maxY - 1
+                || local.getZ() == (int) bounds.minZ || local.getZ() == (int) bounds.maxZ - 1) {
+            recomputeBounds();
+        }
     }
 
     private void recomputeBounds() {
