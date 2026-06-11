@@ -324,11 +324,18 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         if (renderBEs != null && level() != null) {
             var info = contraption.getBlocks().get(local);
             if (info != null && info.state().getBlock() instanceof EntityBlock) {
-                BlockEntity be = BlockEntity.loadStatic(local, info.state(), nbt, level().registryAccess());
-                if (be != null) {
-                    be.setLevel(renderWorld != null ? renderWorld : level());
-                    renderBEs.put(local, be);
-                    if (renderWorld != null) renderWorld.setBlockEntity(be);
+                BlockEntity existing = renderBEs.get(local);
+                if (existing != null && existing.getType().isValid(info.state())) {
+                    // 套 NBT 到既有 render BE，保留 transient 動畫狀態(箱子 openness)。
+                    // 重建(loadStatic)會把 openness 歸零，跟 ShipChestAnimator 的開蓋每 16 tick 打架 → 抽搐。
+                    existing.loadWithComponents(nbt, level().registryAccess());
+                } else {
+                    BlockEntity be = BlockEntity.loadStatic(local, info.state(), nbt, level().registryAccess());
+                    if (be != null) {
+                        be.setLevel(renderWorld != null ? renderWorld : level());
+                        renderBEs.put(local, be);
+                        if (renderWorld != null) renderWorld.setBlockEntity(be);
+                    }
                 }
             }
         }

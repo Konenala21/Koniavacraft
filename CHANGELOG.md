@@ -131,6 +131,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 
 ### Developer Notes / 開發者備註
 
+Ship chest (and other BE) animation jitter fix. updateContraptionBlockEntityData rebuilt the render BE from scratch (BlockEntity.loadStatic) on every mirrored BE-NBT sync (every 16 ticks), resetting transient render state like the chest's lid openness, which fought ShipChestAnimator and made the lid twitch. Now the NBT is applied to the EXISTING render BE (loadWithComponents) when the type still matches, preserving transient animation state; a fresh BE is only built when there is none or the type changed.
+飛船箱子(及其他 BE)動畫抽搐修。updateContraptionBlockEntityData 每次鏡射 BE-NBT 過來(每 16 tick)都用 BlockEntity.loadStatic 重建 render BE，把箱子蓋開合度這種 transient 渲染狀態歸零，跟 ShipChestAnimator 打架 → 蓋子抽搐。現在型別還相符時把 NBT 套到既有 render BE(loadWithComponents)保留 transient 動畫狀態；只有不存在或型別變了才新建。
+
 Chunked ship mesh. ShipMeshCache reworked from one set of per-render-layer VBOs to per-16-block-section VBOs. ShipMeshHandle.markDirty now takes the edited block's local; it dirties only that block's section plus its 6 face-neighbour sections (culling can change across a section boundary). buildIfNeeded debounces then rebakes just the dirty sections (the full-ship snapshot is still used as the cull world so section seams tesselate correctly); draw groups by layer across sections to minimise state changes. Editing a huge ship now rebakes one section's blocks instead of the whole ship. Future-proofs large-ship external expansion. (Verify visually in-game: mesh is client-render, not gametested.)
 飛船 mesh 分塊。ShipMeshCache 從「每 render layer 一組 VBO」改成「每 16³ section 一組 VBO」。ShipMeshHandle.markDirty 現在收變動方塊的 local，只把該 section + 6 面鄰居 section 標 dirty(剔除會跨 section 邊界變)。buildIfNeeded debounce 後只重烤 dirty section(仍用整艘 snapshot 當剔除世界讓邊界正確);draw 按 layer 分組畫減少狀態切換。超大船編輯現在只重烤一個 section 的方塊,不是整艘。為未來大船外部擴建鋪路。
 
