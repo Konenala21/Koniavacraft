@@ -290,7 +290,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         dynamicMirrorCache = null;
         renderBEs = null;
         if (meshCache instanceof ShipMeshHandle h) {
-            h.markDirty(local); // 只重烤這格所在的 section(+邊界鄰居),不整艘重烤 → 大船編輯不卡
+            h.markDirty(); // 保留舊 VBO，debounce 後背景重烤一次(off-thread，不凍主執行緒)
         } else {
             meshCache = null; // 還沒建/烤失敗 → 讓渲染器重建
             meshFailed = false;
