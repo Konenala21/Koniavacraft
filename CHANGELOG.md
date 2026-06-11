@@ -134,6 +134,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 
 ### Developer Notes / 開發者備註
 
+Ship structure lighting now uses real propagated light (stage 1 of full ship lighting). ShipLight runs two BFS over the block snapshot during the off-thread mesh bake: block light flooded from emission sources with -1 falloff through non-occluding blocks, and sky light from columns open above (no occluding ship block overhead = 15, propagated sideways into covered areas). ShipRenderWorld.getBrightness/getRawBrightness use it instead of the old "sky always 15 + self/neighbour emission" fake, so torches cast a real radius and enclosed cabins go dark. Rebakes on edit. BER blocks and ship-riding entities are not yet lit by it (next stage).
+飛船結構光照改用真正的傳播光(完整船照明的第 1 階)。ShipLight 在背景烤 mesh 時對方塊快照跑兩個 BFS:block light 從發光方塊 -1 衰減穿透非遮擋方塊,sky light 從露天柱(頭上沒不透明船方塊=15)側向漫進被遮區。ShipRenderWorld 的亮度改用它,不再是「天空恆 15 + 自己/鄰居發光」的假光,所以火把有真實半徑、封閉船艙會暗。編輯會 re-bake。BER 方塊和船上實體還沒接(下一階)。
+
 Ship HUD bar labels (throttle/fuel/warp) now use lang keys (hud.koniava.ship.throttle/fuel/warp) instead of hardcoded Chinese, and the vertical stacked label is bottom-anchored above the bar so any-length label (zh or en) does not overlap the bar.
 飛船 HUD 的 bar 標籤(油門/燃料/曲速)改用 lang key(hud.koniava.ship.throttle/fuel/warp)，不再寫死中文；直排標籤改成底部對齊在 bar 上緣，中英任意長度都不會壓到 bar。
 
