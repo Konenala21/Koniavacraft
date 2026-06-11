@@ -12,6 +12,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -50,6 +51,10 @@ public class ShipShadowManager extends SavedData {
      */
     public static boolean forwardShadowSound(double x, double y, double z, Holder<SoundEvent> sound,
                                              SoundSource source, float vol, float pitch, long seed) {
+        // 箱子開關聲不轉發:船箱子由 ShipEntity.onChestOpened/onChestClosed 在船位置播權威音，
+        // 影子箱子那份(viewer 計數對跨維度玩家失效會亂播)直接吞掉，避免雙重 + 抖動。
+        SoundEvent se = sound.value();
+        if (se == SoundEvents.CHEST_OPEN || se == SoundEvents.CHEST_CLOSE) return true;
         BlockPos sp = BlockPos.containing(x, y, z);
         for (ShipEntity s : ACTIVE) {
             if (s.isRemoved() || !s.ownsShadowPos(sp)) continue;

@@ -1,6 +1,7 @@
 package com.github.nalamodikk.space.ship;
 
 import com.github.nalamodikk.common.network.packet.client.ship.ShipBlockUpdatePacket;
+import com.github.nalamodikk.common.network.packet.client.ship.ShipChestLidPacket;
 import com.github.nalamodikk.common.block.blockentity.altar.AltarGeometry;
 import com.github.nalamodikk.common.item.tool.StructureBuildWandItem;
 import com.github.nalamodikk.register.ModBlocks;
@@ -1407,7 +1408,12 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
                 if (sp.getItemInHand(hand).getItem() instanceof StructureBuildWandItem) {
                     syncNewShadowBlocksToContraption(local, 14);
                 }
-                if (!opened && isContainer(info.state())) openContainer(sp, local, info); // 退回鏡像容器
+                if (!opened && isContainer(info.state())) { openContainer(sp, local, info); opened = true; } // 退回鏡像容器
+                // 箱子開了 GUI → 權威開蓋訊號(計人數，關閉由 ShipChestTracker 的 container close 事件處理)
+                if (opened && info.state().getBlock() instanceof ChestBlock) {
+                    onChestOpened(local);
+                    ShipChestTracker.track(sp, this, local);
+                }
             }
             return InteractionResult.sidedSuccess(level().isClientSide);
         }
@@ -1670,6 +1676,40 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         return rotatedWorldPoint(sx - shadowAnchor.getX(), sy - shadowAnchor.getY(), sz - shadowAnchor.getZ());
     }
     public BlockPos shadowAnchor() { return shadowAnchor; }
+
+    // ── 船箱子開蓋的權威訊號(治本:不靠 client 猜畫面) ───────────────────────────
+    // 每格箱子有幾個玩家開著。0→1 廣播開蓋 + 播開箱聲;1→0 廣播關蓋 + 播關箱聲。多人共開時蓋保持開。
+    private final Map<BlockPos, Integer> chestViewers = new HashMap<>();
+
+    /** server：玩家開了這格船箱子的 GUI。 */
+    public void onChestOpened(BlockPos local) {
+        if (level().isClientSide) return;
+        int c = chestViewers.merge(local.immutable(), 1, Integer::sum);
+        if (c == 1) {
+            ShipChestLidPacket.sendToClients(this, local, true);
+            playChestSound(local, SoundEvents.CHEST_OPEN);
+        }
+    }
+
+    /** server：玩家關了這格船箱子的 GUI(或斷線/換容器)。 */
+    public void onChestClosed(BlockPos local) {
+        if (level().isClientSide) return;
+        Integer c = chestViewers.get(local);
+        if (c == null) return;
+        if (c <= 1) {
+            chestViewers.remove(local);
+            ShipChestLidPacket.sendToClients(this, local, false);
+            playChestSound(local, SoundEvents.CHEST_CLOSE);
+        } else {
+            chestViewers.put(local.immutable(), c - 1);
+        }
+    }
+
+    private void playChestSound(BlockPos local, SoundEvent sound) {
+        Vec3 w = rotatedWorldPoint(local.getX() + 0.5, local.getY() + 0.5, local.getZ() + 0.5);
+        level().playSound(null, w.x, w.y, w.z, sound, SoundSource.BLOCKS,
+                0.5f, level().random.nextFloat() * 0.1f + 0.9f);
+    }
 
     /** client：挖船上方塊噴碎裂粒子（位置依旋轉算）。 */
     private void spawnBreakParticles(BlockPos local, BlockState state) {

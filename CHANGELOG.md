@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Spaceship chests now open and close their lid smoothly with the proper open/close sound, even when opened repeatedly. Their real selves run in a hidden dimension, so the lid and sound now follow an authoritative server signal instead of being guessed from your screen, which fixes the lid flapping and the sound only playing the first time.
+飛船上的箱子現在開蓋/收蓋會順暢動畫並播正確的開關聲，連續開也不會出問題。箱子真身在隱藏維度，蓋子和音效現在改跟 server 的權威訊號走，不再用你的畫面去猜，修好了蓋子拍動、以及音效只有第一次有的問題。
+
 Block and machine sounds on a spaceship are now audible (furnaces, hoppers, note blocks, etc.). The ship's blocks really run in a hidden dimension, so their sounds used to be silent; they are now forwarded to your ship's position so you can hear them.
 飛船上的方塊和機器音效現在聽得到了（熔爐、漏斗、音符盒等）。船的方塊其實在隱藏維度運轉，以前那些聲音是靜音的；現在會轉發到你船的位置，你就聽得到了。
 
@@ -130,6 +133,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 新增太空維度，包含程序生成的星空天空、物理正確的行星渲染，以及完整太陽系（水星、金星、月球、火星、木星、土星、土衛六、天王星、海王星、冥王星）和比鄰星系雛形（雙星系統）。行星為真實 3D 球體，視角大小隨距離動態縮放。太陽有日冕光暈。進入維度時玩家會出現在地球軌道附近。
 
 ### Developer Notes / 開發者備註
+
+Ship chest lid + sound now driven by an authoritative server signal (proper root fix). The chest GUI is the shadow chest's menu, but the shadow chest's ContainerOpenersCounter counts players in the shadow dimension (always 0, the viewer is cross-dimension), so its lid/sound were broken; the client previously inferred the lid from "is any container screen open" + a debounce, which flapped on rapid re-open. Now ShipEntity keeps a per-chest viewer count (onChestOpened/onChestClosed), broadcasts ShipChestLidPacket (S2C authoritative open/close) and plays CHEST_OPEN/CHEST_CLOSE at the ship position; ShipChestTracker maps player to (ship, local) on open and fires onChestClosed on PlayerContainerEvent.Close. ShipChestAnimator now just follows the packet (no screen heuristic, no debounce). The sound bridge skips CHEST_OPEN/CHEST_CLOSE so the broken shadow ones do not double up.
+飛船箱子蓋子+音效改由 server 權威訊號驅動(真正治本)。箱子 GUI 是影子箱子的選單，但影子箱子的 ContainerOpenersCounter 數的是影子維度裡的玩家(永遠 0，viewer 在別維度)，所以它的蓋子/音效是壞的；client 以前用「畫面上有沒有開著容器」+ debounce 去猜蓋子，快速重開會拍動。現在 ShipEntity 自己記每格箱子的觀看人數(onChestOpened/onChestClosed)，廣播 ShipChestLidPacket(S2C 權威開/關)並在船位置播 CHEST_OPEN/CHEST_CLOSE；ShipChestTracker 開箱時記 player→(ship, local)，PlayerContainerEvent.Close 時 onChestClosed。ShipChestAnimator 只跟封包走(沒有畫面猜測、沒有 debounce)。音效橋接略過 CHEST_OPEN/CHEST_CLOSE，避免影子那份壞掉的雙重播放。
 
 Ship chest (and other BE) animation jitter fix. updateContraptionBlockEntityData rebuilt the render BE from scratch (BlockEntity.loadStatic) on every mirrored BE-NBT sync (every 16 ticks), resetting transient render state like the chest's lid openness, which fought ShipChestAnimator and made the lid twitch. Now the NBT is applied to the EXISTING render BE (loadWithComponents) when the type still matches, preserving transient animation state; a fresh BE is only built when there is none or the type changed.
 飛船箱子(及其他 BE)動畫抽搐修。updateContraptionBlockEntityData 每次鏡射 BE-NBT 過來(每 16 tick)都用 BlockEntity.loadStatic 重建 render BE，把箱子蓋開合度這種 transient 渲染狀態歸零，跟 ShipChestAnimator 打架 → 蓋子抽搐。現在型別還相符時把 NBT 套到既有 render BE(loadWithComponents)保留 transient 動畫狀態；只有不存在或型別變了才新建。

@@ -66,11 +66,6 @@ public final class ShipBlockBreakHandler {
                 pick.face().get3DDataValue(), pick.hitLocal(), event.getHand() == InteractionHand.OFF_HAND));
         event.setCanceled(true);
         event.setCancellationResult(result);
-        // 開箱動畫:非「潛行放方塊編輯」且指到的是箱子 → 記下讓 client 推開蓋(船箱真身在影子、render BE 不 tick → 預設沒動畫)
-        boolean sneakPlacing = ship.isParked() && player.isSecondaryUseActive()
-                && player.getItemInHand(event.getHand()).getItem() instanceof BlockItem;
-        var info = ship.getContraption() != null ? ship.getContraption().getBlocks().get(pick.local()) : null;
-        if (!sneakPlacing && info != null && info.state().getBlock() instanceof ChestBlock)
-            ShipChestAnimator.notifyOpened(ship, pick.local());
+        // 開箱動畫由 server 權威訊號(ShipChestLidPacket)驅動 ShipChestAnimator，不再 client 端猜，見 ShipEntity.onChestOpened。
     }
 }

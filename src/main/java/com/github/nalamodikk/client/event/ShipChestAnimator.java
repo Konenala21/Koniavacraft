@@ -3,8 +3,8 @@ package com.github.nalamodikk.client.event;
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.space.ship.ShipEntity;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.neoforged.api.distmarker.Dist;
@@ -12,53 +12,49 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 /**
- * 船上箱子開蓋動畫。船的箱子真身在影子維度、視覺船的 render BE 不被 tick，所以開箱預設沒有開蓋動畫。
- * 玩家在船上開箱時記下那一格，client 每 tick 對該 render BE 的箱子推開蓋（triggerEvent + lidAnimateTick），
- * ChestRenderer 讀 getOpenNess 就會畫出開合。容器畫面關了就收蓋，收完清掉。一次追一個箱子（常見情境）。
+ * 船上箱子開蓋動畫(治本版)。船的箱子真身在影子維度、視覺船的 render BE 不被 tick，所以開箱預設沒有開蓋動畫。
+ * 改由 server 在玩家真的開/關了某格船箱子時送 {@link com.github.nalamodikk.common.network.packet.client.ship.ShipChestLidPacket}
+ * (權威訊號)，這裡只跟著訊號開合蓋，不再靠「畫面上有沒有 GUI」去猜 → 不會抖、不會拍。
+ * 每格箱子每 tick 推 lidAnimateTick；關了且蓋子收完才清掉。可同時追多格(多人/多箱)。
  */
 @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID, value = Dist.CLIENT)
 public final class ShipChestAnimator {
     private ShipChestAnimator() {}
 
-    private static ShipEntity ship;
-    private static BlockPos local;
-    private static boolean wantOpen;
-    private static boolean screenWasOpen; // 容器畫面開過了沒（避免畫面還沒開就被當成關掉而提早收蓋）
-    private static int waitTicks;          // 開蓋後等容器畫面出現的 tick 數（超時=誤觸發，自動收蓋）
-    private static int closeGrace;         // 畫面關了連續幾 tick（重開選單瞬間會閃關 1 tick，要寬限幾 tick 才真收蓋，否則快速重點蓋子會拍動）
+    private record Key(int shipId, BlockPos local) {}
 
-    /** 玩家在船上開了某格箱子 → 開始開蓋動畫。 */
-    public static void notifyOpened(ShipEntity s, BlockPos l) {
-        ship = s;
-        local = l.immutable();
-        wantOpen = true;
-        screenWasOpen = false;
-        waitTicks = 0;
-        closeGrace = 0;
+    private static final Map<Key, Boolean> wantOpen = new HashMap<>();
+
+    /** 收到 server 的權威開/關蓋訊號(ShipChestLidPacket.handle 呼叫)。 */
+    public static void setLid(int shipId, BlockPos local, boolean open) {
+        wantOpen.put(new Key(shipId, local.immutable()), open);
     }
 
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
-        if (ship == null) return;
+        if (wantOpen.isEmpty()) return;
         Minecraft mc = Minecraft.getInstance();
-        if (ship.isRemoved() || mc.level == null) { ship = null; return; }
+        if (mc.level == null) { wantOpen.clear(); return; }
 
-        boolean screenOpen = mc.screen instanceof AbstractContainerScreen<?>;
-        if (screenOpen) { screenWasOpen = true; closeGrace = 0; }
-        if (screenWasOpen && !screenOpen) {
-            // 容器畫面開過又關了 → 收蓋。但重開選單瞬間畫面會閃關 1~2 tick，寬限幾 tick 才真收，
-            // 否則快速重複點右鍵時每次閃關都收蓋一下 → 蓋子全開↔全關拍動。
-            if (++closeGrace > 4) wantOpen = false;
-        } else if (wantOpen && !screenWasOpen && ++waitTicks > 30) {
-            wantOpen = false; // ~1.5s 沒等到畫面(誤觸發)→ 收蓋
+        Iterator<Map.Entry<Key, Boolean>> it = wantOpen.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<Key, Boolean> e = it.next();
+            Key key = e.getKey();
+            boolean open = e.getValue();
+
+            Entity ent = mc.level.getEntity(key.shipId());
+            if (!(ent instanceof ShipEntity ship) || ship.isRemoved()) { it.remove(); continue; }
+            BlockEntity be = ship.getRenderBlockEntities().get(key.local());
+            if (!(be instanceof ChestBlockEntity chest)) { it.remove(); continue; }
+
+            chest.triggerEvent(1, open ? 1 : 0);                                            // 事件 1 = 開蓋；count>0 開、0 關
+            ChestBlockEntity.lidAnimateTick(ship.level(), key.local(), chest.getBlockState(), chest); // 推進蓋子插值
+            if (!open && chest.getOpenNess(1.0f) <= 0.0f) it.remove();                      // 關完了 → 清掉
         }
-
-        BlockEntity be = ship.getRenderBlockEntities().get(local);
-        if (!(be instanceof ChestBlockEntity chest)) { ship = null; return; }
-
-        chest.triggerEvent(1, wantOpen ? 1 : 0);                                              // 事件 1 = 開蓋；count>0 開、0 關
-        ChestBlockEntity.lidAnimateTick(ship.level(), local, chest.getBlockState(), chest);   // 推進蓋子插值
-        if (!wantOpen && chest.getOpenNess(1.0f) <= 0.0f) ship = null;                        // 收完了 → 清掉
     }
 }
