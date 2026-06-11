@@ -535,7 +535,9 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         ServerLevel shadow = getShadow();
         if (shadow == null) return;
         BlockPos sp = shadowAnchor.offset(local);
-        shadow.setBlock(sp, state, Block.UPDATE_ALL);
+        // 影子是隱藏維度:不用 UPDATE_ALL(flag 1 鄰居連鎖在大船每次編輯就是凍的元兇)。只用 CLIENTS(影子無玩家=近乎 no-op)
+        // → 不觸發鄰居更新連鎖。方塊/BE 照樣放、capability 照樣失效通知(魔力網路每 tick push 偵測,不靠鄰居更新)。
+        shadow.setBlock(sp, state, Block.UPDATE_CLIENTS);
         if (nbt != null) {
             BlockEntity be = shadow.getBlockEntity(sp);
             if (be != null) be.loadWithComponents(nbt, shadow.registryAccess());
