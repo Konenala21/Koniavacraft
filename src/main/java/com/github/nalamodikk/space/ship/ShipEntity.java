@@ -307,8 +307,12 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
                         renderBEs.put(local.immutable(), rbe);
                         if (renderWorld != null) renderWorld.setBlockEntity(rbe);
                     }
+                } else {
+                    // 型別沒變但 blockstate 可能變了(如箱子 SINGLE→LEFT/RIGHT、爐子點燃)→ 更新既有 BE 的 state,
+                    // BER 才畫對(箱子單/雙模型看 TYPE)。保留 BE 本身 → 蓋子 openness 等 transient 不歸零。
+                    existing.setBlockState(state);
+                    if (renderWorld != null) renderWorld.setBlockEntity(existing);
                 }
-                // 型別沒變 → 保留既有 render BE(連同箱子蓋子等 transient 狀態);視覺方塊狀態變化由 mesh 重烤處理
             } else {
                 renderBEs.remove(local);
             }
