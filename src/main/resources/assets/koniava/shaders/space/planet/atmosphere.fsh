@@ -213,7 +213,7 @@ void main(){
 
         // ── 白天藍霧(aerial perspective):受光面整片疊大氣藍,越靠邊緣越濃 → 邊緣不再清晰見底,有大氣厚度感 ──
         float dayLit = clamp(dot(n, lSun) * 0.5 + 0.5, 0.0, 1.0);
-        float haze   = clamp(pow(1.0 - nDotV, 2.0) * dayLit * uAtmoDensity * 0.35, 0.0, 0.3);
+        float haze   = clamp(pow(1.0 - nDotV, 2.0) * dayLit * uAtmoDensity * 0.6, 0.0, 0.55);
         col = mix(col, uAtmoColor * 1.2, haze);
 
         // ── 海洋鏡面反光：specular 圖標出海洋(R 亮)，陽光在海面反射朝鏡頭時形成亮點(Blinn-Phong)──
