@@ -211,13 +211,23 @@ void main(){
 
         vec3  col = surfCol * sh + uAtmoColor * edgeAtmo;
 
+        // ── 白天藍霧(aerial perspective):受光面整片疊大氣藍,越靠邊緣越濃 → 邊緣不再清晰見底,有大氣厚度感 ──
+        float dayLit = clamp(dot(n, lSun) * 0.5 + 0.5, 0.0, 1.0);
+        float haze   = clamp(pow(1.0 - nDotV, 2.0) * dayLit * uAtmoDensity * 0.35, 0.0, 0.3);
+        col = mix(col, uAtmoColor * 1.2, haze);
+
         // ── 海洋鏡面反光：specular 圖標出海洋(R 亮)，陽光在海面反射朝鏡頭時形成亮點(Blinn-Phong)──
         if (uHasSpec == 1 && NdotL > 0.0) {
             float specMask = texture(uSpecTex, uv).r;
             if (specMask > 0.01) {
                 vec3  halfV = normalize(lSun - lD);                 // -lD = 朝鏡頭；半向量
-                float glint = pow(max(dot(nLit, halfV), 0.0), 64.0);
-                col += vec3(1.0, 0.95, 0.82) * glint * specMask * NdotL * 1.1; // 暖白陽光反光，限受光面
+                float h     = max(dot(nLit, halfV), 0.0);
+                // 兩段粗糙度:寬柔反光主體(指數低=大片漸層)+ 較亮小核心 → 中間亮往外柔散,不再一團死白
+                float glint = pow(h, 18.0) * 0.42 + pow(h, 90.0) * 0.30;
+                // Fresnel:掠射角(越靠邊緣)海面反射越強 → 反光自然延伸到邊緣,更物理(只增亮、不染色)
+                float fres  = pow(1.0 - nDotV, 5.0);
+                glint *= 1.0 + fres * 2.5;
+                col += vec3(1.0, 0.95, 0.82) * glint * specMask * NdotL; // 暖白反光,限受光面
             }
         }
 

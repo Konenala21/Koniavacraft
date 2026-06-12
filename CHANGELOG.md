@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Earth and other planets look a bit more realistic from space: the sun's reflection on the ocean is now a soft glint that fades outward instead of a hard white dot, and a subtle blue atmospheric haze gives the lit edge of a planet some depth.
+從太空看地球和其他行星更真實了一點:太陽在海面的反光現在是往外柔和漸散的亮點,不再是一顆死白點;受光面邊緣多了一層淡淡的藍色大氣霧,有了厚度感。
+
 Editing and flying a spaceship are much smoother now. The big stutter (server ticks were spiking to half a second on bigger ships) came from rebuilding the ship's collision shape too expensively; that is fixed, so placing/breaking hull blocks and moving around on the ship no longer hitch. Stairs and slabs on a ship stay walkable. As part of the same pass, the ship's mesh re-bake and lighting were also made much cheaper. Crops and solar collectors on a ship still work, but the hidden simulation dimension is now uniformly lit, so they no longer need open sky (they also work in enclosed parts of the ship).
 編輯和駕駛飛船現在順暢多了。主要的卡頓(大船上 server tick 會尖刺到半秒)來自飛船碰撞形狀重建得太貴;這個修好了,放/破壞外殼方塊、在船上移動都不再頓。船上的樓梯和半磚照樣走得上去。同一輪也把飛船的 mesh 重烤和光照變便宜很多。船上的農作物和太陽能照樣運作,但隱藏模擬維度現在均勻全亮,所以不再需要露天(船的封閉處也會運作)。
 
