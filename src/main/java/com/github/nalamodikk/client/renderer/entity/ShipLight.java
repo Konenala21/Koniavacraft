@@ -1,112 +1,96 @@
 package com.github.nalamodikk.client.renderer.entity;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayDeque;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
  * 飛船光照:在方塊快照上跑兩個 BFS 算出每格的 block light + sky light(像 vanilla 的傳播衰減),
- * 取代原本「自己+鄰居發光值、天空恆 15」的假光,讓火把/發光石真的照出半徑、封閉船艙會暗。
- * 烤 mesh 時(背景執行緒)算一次,範圍只在船 bounds + 1 圈(讓外殼面/露天柱也拿得到光)。
+ * 取代「自己+鄰居發光值、天空恆 15」的假光,讓火把/發光石真的照出半徑、封閉船艙會暗。
+ * 烤 mesh 時(背景執行緒)算一次,範圍只在船 bounds + 1 圈。
  *
- * block:從發光方塊 BFS、每格 -1 衰減、穿透非遮擋方塊(canOcclude=false),不透明方塊只受光不再傳。
- * sky:沒有不透明船方塊遮頭的格 = 15(露天),被遮的 0 起算,再從露天格側向/向下 BFS -1 漫進船艙。
- * 日夜變暗由渲染端 LightTexture 對 sky 通道處理,這裡只給原始光值。
+ * 用扁平 byte 陣列(local 座標當 index)+ 預存 occlusion 陣列,BFS 純陣列存取,不碰 HashMap(原本 ~3.4ms 的元兇)。
+ * block:從發光方塊 BFS、每格 -1 衰減、穿透非遮擋方塊,不透明方塊只受光不再傳。
+ * sky:頭上沒不透明船方塊的格 = 15(露天),被遮的 0 起算,再從露天格 BFS -1 漫進船艙。日夜變暗由渲染端 LightTexture 處理。
  */
 public final class ShipLight {
 
-    private final Map<Long, Byte> blockLight = new HashMap<>();
-    private final Map<Long, Byte> skyLight = new HashMap<>();
+    private final int minX, minY, minZ, sizeX, sizeY, sizeXY;
+    private final byte[] block, sky;
 
     public ShipLight(Map<BlockPos, BlockState> blocks) {
-        if (blocks.isEmpty()) return;
-        int minX = Integer.MAX_VALUE, minY = Integer.MAX_VALUE, minZ = Integer.MAX_VALUE;
-        int maxX = Integer.MIN_VALUE, maxY = Integer.MIN_VALUE, maxZ = Integer.MIN_VALUE;
+        if (blocks.isEmpty()) { minX = minY = minZ = 0; sizeX = sizeY = sizeXY = 0; block = sky = new byte[0]; return; }
+        int mnX = Integer.MAX_VALUE, mnY = Integer.MAX_VALUE, mnZ = Integer.MAX_VALUE;
+        int mxX = Integer.MIN_VALUE, mxY = Integer.MIN_VALUE, mxZ = Integer.MIN_VALUE;
         for (BlockPos p : blocks.keySet()) {
-            minX = Math.min(minX, p.getX()); minY = Math.min(minY, p.getY()); minZ = Math.min(minZ, p.getZ());
-            maxX = Math.max(maxX, p.getX()); maxY = Math.max(maxY, p.getY()); maxZ = Math.max(maxZ, p.getZ());
+            mnX = Math.min(mnX, p.getX()); mnY = Math.min(mnY, p.getY()); mnZ = Math.min(mnZ, p.getZ());
+            mxX = Math.max(mxX, p.getX()); mxY = Math.max(mxY, p.getY()); mxZ = Math.max(mxZ, p.getZ());
         }
-        minX--; minY--; minZ--; maxX++; maxY++; maxZ++; // +1 圈
-        computeBlock(blocks, minX, minY, minZ, maxX, maxY, maxZ);
-        computeSky(blocks, minX, minY, minZ, maxX, maxY, maxZ);
-    }
+        minX = mnX - 1; minY = mnY - 1; minZ = mnZ - 1; // +1 圈
+        sizeX = (mxX + 1) - minX + 1; sizeY = (mxY + 1) - minY + 1; int sizeZ = (mxZ + 1) - minZ + 1;
+        sizeXY = sizeX * sizeY;
+        int n = sizeXY * sizeZ;
+        block = new byte[n]; sky = new byte[n];
+        byte[] occ = new byte[n];
+        int[] topOcc = new int[sizeX * sizeZ]; // 每 (x,z) 柱最高的不透明方塊 local-y;-1 = 沒有
+        java.util.Arrays.fill(topOcc, -1);
 
-    public int block(BlockPos p) { return blockLight.getOrDefault(p.asLong(), (byte) 0); }
-    public int sky(BlockPos p) { return skyLight.getOrDefault(p.asLong(), (byte) 0); }
-
-    private static boolean occludes(Map<BlockPos, BlockState> blocks, BlockPos p) {
-        BlockState s = blocks.get(p);
-        return s != null && s.canOcclude();
-    }
-
-    private static boolean inBounds(BlockPos p, int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
-        return p.getX() >= minX && p.getX() <= maxX && p.getY() >= minY && p.getY() <= maxY
-                && p.getZ() >= minZ && p.getZ() <= maxZ;
-    }
-
-    private void computeBlock(Map<BlockPos, BlockState> blocks, int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
-        ArrayDeque<Long> q = new ArrayDeque<>();
+        ArrayDeque<Integer> blockQ = new ArrayDeque<>();
         for (var e : blocks.entrySet()) {
-            int em = e.getValue().getLightEmission();
-            if (em > 0) {
-                long k = e.getKey().asLong();
-                blockLight.put(k, (byte) em);
-                q.add(k);
-            }
+            BlockPos p = e.getKey(); BlockState st = e.getValue();
+            int lx = p.getX() - minX, ly = p.getY() - minY, lz = p.getZ() - minZ;
+            int i = lx + ly * sizeX + lz * sizeXY;
+            if (st.canOcclude()) { occ[i] = 1; int col = lx + lz * sizeX; if (ly > topOcc[col]) topOcc[col] = ly; }
+            int em = st.getLightEmission();
+            if (em > 0) { block[i] = (byte) em; blockQ.add(i); }
         }
-        bfs(q, blockLight, blocks, minX, minY, minZ, maxX, maxY, maxZ);
-    }
+        bfs(blockQ, block, occ);
 
-    private void computeSky(Map<BlockPos, BlockState> blocks, int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
-        // 每個 (x,z) 柱最高的不透明方塊 Y;在它之上的格露天 = 15
-        Map<Long, Integer> topOcclude = new HashMap<>();
-        for (var e : blocks.entrySet()) {
-            if (!e.getValue().canOcclude()) continue;
-            BlockPos p = e.getKey();
-            long col = ((long) p.getX() << 32) | (p.getZ() & 0xFFFFFFFFL);
-            topOcclude.merge(col, p.getY(), Math::max);
-        }
-        ArrayDeque<Long> q = new ArrayDeque<>();
-        for (int x = minX; x <= maxX; x++) {
-            for (int z = minZ; z <= maxZ; z++) {
-                long col = ((long) x << 32) | (z & 0xFFFFFFFFL);
-                Integer top = topOcclude.get(col);
-                int topY = top == null ? Integer.MIN_VALUE : top;
-                for (int y = minY; y <= maxY; y++) {
-                    if (y > topY) { // 露天
-                        long k = BlockPos.asLong(x, y, z);
-                        skyLight.put(k, (byte) 15);
-                        q.add(k);
-                    }
+        ArrayDeque<Integer> skyQ = new ArrayDeque<>();
+        for (int lx = 0; lx < sizeX; lx++)
+            for (int lz = 0; lz < sizeZ; lz++) {
+                int topY = topOcc[lx + lz * sizeX];
+                for (int ly = topY + 1; ly < sizeY; ly++) { // 露天(最高不透明之上)
+                    int i = lx + ly * sizeX + lz * sizeXY;
+                    sky[i] = 15; skyQ.add(i);
                 }
             }
-        }
-        bfs(q, skyLight, blocks, minX, minY, minZ, maxX, maxY, maxZ);
+        bfs(skyQ, sky, occ);
     }
 
-    /** 共用 BFS:從種子格 -1 漫延,穿透非遮擋方塊,不透明方塊只受光不再傳。 */
-    private static void bfs(ArrayDeque<Long> q, Map<Long, Byte> light, Map<BlockPos, BlockState> blocks,
-                            int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
-        BlockPos.MutableBlockPos mp = new BlockPos.MutableBlockPos();
+    public int block(BlockPos p) { int i = idx(p.getX(), p.getY(), p.getZ()); return i < 0 ? 0 : block[i]; }
+    public int sky(BlockPos p) { int i = idx(p.getX(), p.getY(), p.getZ()); return i < 0 ? 0 : sky[i]; }
+
+    private int idx(int wx, int wy, int wz) {
+        int lx = wx - minX, ly = wy - minY, lz = wz - minZ;
+        if (lx < 0 || lx >= sizeX || ly < 0 || ly >= sizeY || lz < 0 || lz * sizeXY >= block.length) return -1;
+        return lx + ly * sizeX + lz * sizeXY;
+    }
+
+    /** 共用 BFS(純陣列):從種子 -1 漫延,穿透非遮擋格,不透明格只受光不再傳。 */
+    private void bfs(ArrayDeque<Integer> q, byte[] light, byte[] occ) {
+        int sizeZ = block.length / sizeXY;
         while (!q.isEmpty()) {
-            long k = q.poll();
-            int L = light.getOrDefault(k, (byte) 0);
+            int i = q.poll();
+            int L = light[i];
             if (L <= 1) continue;
-            BlockPos p = BlockPos.of(k);
-            for (Direction d : Direction.values()) {
-                mp.setWithOffset(p, d);
-                if (!inBounds(mp, minX, minY, minZ, maxX, maxY, maxZ)) continue;
-                long nk = mp.asLong();
-                int nL = L - 1;
-                if (nL > light.getOrDefault(nk, (byte) 0)) {
-                    light.put(nk, (byte) nL);
-                    if (!occludes(blocks, mp)) q.add(nk); // 不透明只受光、不再往外傳
-                }
-            }
+            int nL = L - 1;
+            int lx = i % sizeX, ly = (i / sizeX) % sizeY, lz = i / sizeXY;
+            if (lx > 0)         step(i - 1,      nL, light, occ, q);
+            if (lx < sizeX - 1) step(i + 1,      nL, light, occ, q);
+            if (ly > 0)         step(i - sizeX,  nL, light, occ, q);
+            if (ly < sizeY - 1) step(i + sizeX,  nL, light, occ, q);
+            if (lz > 0)         step(i - sizeXY, nL, light, occ, q);
+            if (lz < sizeZ - 1) step(i + sizeXY, nL, light, occ, q);
+        }
+    }
+
+    private static void step(int ni, int nL, byte[] light, byte[] occ, ArrayDeque<Integer> q) {
+        if (nL > light[ni]) {
+            light[ni] = (byte) nL;
+            if (occ[ni] == 0) q.add(ni); // 不透明只受光、不再往外傳
         }
     }
 }
