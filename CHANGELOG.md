@@ -137,6 +137,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 
 ### Developer Notes / 開發者備註
 
+Ship mesh is now section-based (16-cube sections, one VBO per section per render layer) to cut the edit stutter. Editing still bakes the whole ship off-thread (light propagation needs the whole ship), but only the sections whose content hash changed (block states + baked light, including a 1-block border) are re-uploaded to GL, instead of re-uploading the whole-ship VBO every edit. Draw is batched per render layer (setup state once, draw all sections, clear once). Verify in-game: FPS while flying must not regress vs the single-VBO baseline; if it does, coarsen the section size or revert.
+飛船 mesh 改成 section 化(16³ section、每 section 每 render layer 一個 VBO)來減少編輯卡頓。編輯仍整艘背景烤(光傳播需要全船),但只重傳「內容 hash 變了」的 section(方塊狀態 + 烤好的光,含 1 圈邊界),不再每次編輯都重傳整艘的 VBO。draw 按 render layer 批(setup 一次、畫所有 section、clear 一次)。實機驗:飛行 FPS 不能比單一大 VBO 退步;若退步就把 section 調大或還原。
+
 Aspect altar re-validates its structure on load. A ship assembly removes captured blocks with UPDATE_CLIENTS (no neighbour notify, for perf), so moving/splitting an altar by assembling a ship over it did not fire the pillar neighbour-change that triggers checkStructure, leaving the core stuck in the formed state with a broken structure. AspectAltarBlockEntity.onLoad now runs checkStructure when formed, so a core placed into the ship shadow (or reloaded) re-checks and de-forms if its structure is incomplete. Decoupled fix (also covers worldedit/fill breakage), no ship-to-altar coupling.
 本源祭壇載入時重驗結構。船組裝用 UPDATE_CLIENTS 移除捕捉的方塊(不通知鄰居,為效能),所以在祭壇上組裝船把它搬移/分家時，不會觸發柱子鄰居變更去跑 checkStructure，核心就卡在 formed 但結構壞了。AspectAltarBlockEntity.onLoad 現在在 formed 時跑 checkStructure，核心被放進船影子(或重載)時會重驗，結構不完整就自動解散。解耦修法(也涵蓋 worldedit/fill 弄壞)，不把祭壇耦進船組裝。
 
