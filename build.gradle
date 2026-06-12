@@ -204,6 +204,8 @@ dependencies {
     // Jade - optional compile-time, runtime for testing
     compileOnly("maven.modrinth:jade:${jade_version}")
     localRuntime("maven.modrinth:jade:${jade_version}")
+    // spark profiler — dev-only(localRuntime 不發佈),遊戲裡用 /spark profiler 剖析卡頓
+    localRuntime("maven.modrinth:spark:1.10.124-neoforge-1.21.1")
     implementation "io.github.classgraph:classgraph:4.8.173"
     // Example mod dependency using a file as dependency
     // implementation files("libs/coolmod-${mc_version}-${coolmod_version}.jar")
