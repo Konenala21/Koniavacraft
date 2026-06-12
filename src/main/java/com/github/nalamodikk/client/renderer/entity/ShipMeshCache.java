@@ -16,6 +16,7 @@ import net.minecraft.client.renderer.block.ModelBlockRenderer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -63,8 +64,8 @@ public class ShipMeshCache implements AutoCloseable, ShipMeshHandle {
 
     /** 一 (section,layer) 的烤好結果。 */
     private record SecMesh(long section, RenderType layer, MeshData mesh, ByteBufferBuilder bytes) {}
-    /** 一次背景烤:各 (section,layer) mesh + 每 section 的內容 hash + 算好的光。 */
-    private record BakeResult(List<SecMesh> meshes, Map<Long, Integer> hashes, ShipLight light) {}
+    /** 一次背景烤:只含「改動 section」的 mesh + 全 section 的內容 hash + 改動 section 集 + 算好的光。 */
+    private record BakeResult(List<SecMesh> meshes, Map<Long, Integer> hashes, Set<Long> changed, ShipLight light) {}
 
     @org.jetbrains.annotations.Nullable public ShipLight getShipLight() { return shipLight; }
 
@@ -94,27 +95,52 @@ public class ShipMeshCache implements AutoCloseable, ShipMeshHandle {
     private void startBake(ShipContraption c, Level level) {
         Map<BlockPos, BlockState> snapshot = new HashMap<>(c.getBlocks().size());
         for (var e : c.getBlocks().entrySet()) snapshot.put(e.getKey(), e.getValue().state());
-        pending = CompletableFuture.supplyAsync(() -> bakeOffThread(snapshot, level), Util.backgroundExecutor());
+        Map<Long, Integer> prevHashes = new HashMap<>(sectionHash); // 給背景烤比對,只重烤改動的 section
+        pending = CompletableFuture.supplyAsync(() -> bakeOffThread(snapshot, level, prevHashes), Util.backgroundExecutor());
     }
 
     /** worker thread：純 tesselate + 算光 + 算每 section 內容 hash。不碰 GL。 */
-    private static BakeResult bakeOffThread(Map<BlockPos, BlockState> snapshot, Level level) {
+    private static BakeResult bakeOffThread(Map<BlockPos, BlockState> snapshot, Level level, Map<Long, Integer> prevHashes) {
         ShipRenderWorld world = new ShipRenderWorld(level, snapshot);
         ShipLight light = world.light();
         BlockRenderDispatcher brd = Minecraft.getInstance().getBlockRenderer();
+
+        // 1. 算每 section 的內容 hash:只算會進 mesh 的 MODEL 方塊,每方塊用「位置+blockId+自身與6鄰的光」,
+        //    用 sum 累進(交換律→與遍歷順序無關)。便宜:每方塊 ~7 次光查詢,不再掃 18³ 全空氣(原本 hash 5.5ms 的元兇)。
+        Map<Long, Integer> hashes = new HashMap<>();
+        BlockPos.MutableBlockPos mp = new BlockPos.MutableBlockPos();
+        for (var entry : snapshot.entrySet()) {
+            BlockPos p = entry.getKey();
+            BlockState st = entry.getValue();
+            if (st.isAir() || st.getRenderShape() != RenderShape.MODEL) continue;
+            int bh = p.hashCode() * 31 + Block.getId(st);
+            if (light != null) {
+                bh = bh * 31 + light.block(p) * 7 + light.sky(p);
+                for (Direction d : Direction.values()) { mp.setWithOffset(p, d); bh = bh * 31 + light.block(mp) * 7 + light.sky(mp); }
+            }
+            hashes.merge(sectionKey(p), bh, Integer::sum);
+        }
+
+        // 2. 找改動的 section(hash 不同/新增/清空)。初次烤 prevHashes 空 → 全部 changed。
+        Set<Long> changed = new HashSet<>();
+        for (var e : hashes.entrySet()) {
+            Integer old = prevHashes.get(e.getKey());
+            if (old == null || !old.equals(e.getValue())) changed.add(e.getKey());
+        }
+        for (long sec : prevHashes.keySet()) if (!hashes.containsKey(sec)) changed.add(sec); // 清空的 section
+
+        // 3. 只 tesselate 改動的 section(沒變的沿用舊 VBO)。這是把 tesselate 從整艘砍成幾個 section 的關鍵。
         ModelBlockRenderer mr = brd.getModelRenderer();
         RandomSource random = RandomSource.create();
         PoseStack ps = new PoseStack();
-
-        // (section,layer) -> builder。逐方塊 tesselate 進它所屬 section+layer 的 buffer。
         Map<Long, Map<RenderType, BufferBuilder>> builders = new HashMap<>();
         Map<Long, Map<RenderType, ByteBufferBuilder>> byteBuilders = new HashMap<>();
-
         for (var entry : snapshot.entrySet()) {
             BlockPos local = entry.getKey();
             BlockState state = entry.getValue();
             if (state.isAir() || state.getRenderShape() != RenderShape.MODEL) continue;
             long sec = sectionKey(local);
+            if (!changed.contains(sec)) continue; // 沒變的 section 不重烤
             BakedModel model = brd.getBlockModel(state);
             ModelData md = model.getModelData(world, local, state, ModelData.EMPTY);
             var types = model.getRenderTypes(state, random, md);
@@ -144,31 +170,10 @@ public class ShipMeshCache implements AutoCloseable, ShipMeshHandle {
                 else bytes.close();
             }
         }
-
-        // 每 section 的內容 hash:該 section + 1 圈邊界的 (blockStateId, blockLight, skyLight)。
-        // 邊界納入 → 鄰居方塊/光變化也會讓本 section hash 變 → 不會漏傳(safe,寧可多傳不可少傳)。
-        Map<Long, Integer> hashes = new HashMap<>();
-        Set<Long> sections = new HashSet<>();
-        for (BlockPos p : snapshot.keySet()) sections.add(sectionKey(p));
-        BlockPos.MutableBlockPos mp = new BlockPos.MutableBlockPos();
-        for (long sec : sections) {
-            int sx = (int) (BlockPos.getX(sec)) << 4, sy = (int) (BlockPos.getY(sec)) << 4, sz = (int) (BlockPos.getZ(sec)) << 4;
-            int h = 1;
-            for (int x = sx - 1; x <= sx + 16; x++)
-                for (int y = sy - 1; y <= sy + 16; y++)
-                    for (int z = sz - 1; z <= sz + 16; z++) {
-                        mp.set(x, y, z);
-                        BlockState st = snapshot.getOrDefault(mp, Blocks.AIR.defaultBlockState());
-                        h = h * 31 + Block.getId(st);
-                        if (light != null) { h = h * 31 + light.block(mp); h = h * 31 + light.sky(mp); }
-                    }
-            hashes.put(sec, h);
-        }
-
-        return new BakeResult(out, hashes, light);
+        return new BakeResult(out, hashes, changed, light);
     }
 
-    /** render thread：只上傳「hash 變了」的 section 的 VBO,沒變的沿用舊的。 */
+    /** render thread：上傳背景烤回來的「改動 section」的 VBO(bake 已只產 changed section,沒變的沿用舊的)。 */
     private void uploadPending() {
         BakeResult result;
         try {
@@ -181,45 +186,22 @@ public class ShipMeshCache implements AutoCloseable, ShipMeshHandle {
         pending = null;
         shipLight = result.light();
 
-        // 哪些 section 變了(hash 不同 = 內容變,要重傳)。
-        Set<Long> changed = new HashSet<>();
-        for (var e : result.hashes().entrySet()) {
-            Integer old = sectionHash.get(e.getKey());
-            if (old == null || !old.equals(e.getValue())) changed.add(e.getKey());
-        }
-        // 這次烤裡有的 section(其餘代表已清空)。
-        Set<Long> present = result.hashes().keySet();
-
-        // 變動的 section:先關掉它在各 layer 的舊 VBO(等下用新 mesh 重建)。
-        for (long sec : changed) {
+        // 改動的 section(含被清空的):先關掉各 layer 的舊 VBO。
+        for (long sec : result.changed()) {
             for (Map<Long, VertexBuffer> byLayer : buffers.values()) {
                 VertexBuffer old = byLayer.remove(sec);
                 if (old != null) old.close();
             }
         }
-        // 上傳變動 section 的新 mesh;沒變的 section 直接釋放新烤出來的 mesh(沿用舊 VBO)。
+        // 上傳改動 section 的新 mesh(被清空的 section 沒有 mesh → 上面已關掉就沒了)。
         for (SecMesh sm : result.meshes()) {
-            if (changed.contains(sm.section())) {
-                VertexBuffer vb = new VertexBuffer(VertexBuffer.Usage.STATIC);
-                vb.bind();
-                vb.upload(sm.mesh());
-                VertexBuffer.unbind();
-                buffers.computeIfAbsent(sm.layer(), k -> new HashMap<>()).put(sm.section(), vb);
-            } else {
-                sm.mesh().close();
-            }
+            VertexBuffer vb = new VertexBuffer(VertexBuffer.Usage.STATIC);
+            vb.bind();
+            vb.upload(sm.mesh());
+            VertexBuffer.unbind();
+            buffers.computeIfAbsent(sm.layer(), k -> new HashMap<>()).put(sm.section(), vb);
             sm.bytes().close();
         }
-        // 已清空(這次烤沒有方塊)的 section:關掉殘留 VBO。
-        Set<Long> dead = new HashSet<>();
-        for (Map<Long, VertexBuffer> byLayer : buffers.values())
-            for (long sec : byLayer.keySet()) if (!present.contains(sec)) dead.add(sec);
-        for (long sec : dead)
-            for (Map<Long, VertexBuffer> byLayer : buffers.values()) {
-                VertexBuffer old = byLayer.remove(sec);
-                if (old != null) old.close();
-            }
-
         sectionHash.clear();
         sectionHash.putAll(result.hashes());
         built = true;
