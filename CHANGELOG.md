@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Rain around a spaceship behaves correctly now. In third person, rain shows again when the camera is outside the ship (it used to vanish because the shelter check looked at the player, who was under the ship, instead of the actual camera). And the brief rain flicker inside a ship is fixed: the ship was sometimes missed by a too-small search when you stood far from its centre.
+飛船周圍的下雨現在正常了。第三人稱時鏡頭在船外會正常下雨(以前會消失,因為遮蔽判斷看的是站在船下的玩家,不是實際鏡頭)。船艙內偶爾閃一下雨也修好了:你站離船中心遠時,原本的小範圍搜尋有時找不到船。
+
 The sun looks more realistic up close: its corona (the outer glow) now fades out smoothly instead of ending in a hard edge that swept across the screen like a flat sheet, and its prominences (the plasma the sun throws off at its edge) are now small red wisps hugging the limb, sized to roughly match real prominences, instead of big bright yellow arcs.
 近看太陽更真實了:日冕(外圈光暈)現在會平滑淡出,不再是一條像平面貼片掃過螢幕的硬邊;日珥(太陽邊緣噴出的電漿)現在是貼著邊緣的小紅絲,尺寸大致照真實日珥,不再是又大又亮的黃色弧。
 
