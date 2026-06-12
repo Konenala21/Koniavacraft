@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Editing a spaceship (placing/breaking hull blocks) is much smoother now. Placing a block no longer triggers a sky-light recompute in the hidden simulation dimension the ship's blocks live in, which was the main remaining stutter. Crops and solar collectors on a ship still work, but the hidden dimension is now uniformly lit, so they no longer need open sky (they also work in enclosed parts of the ship).
+編輯飛船(放/破壞外殼方塊)現在順暢多了。放方塊不再觸發船方塊所在的隱藏模擬維度的天空光照重算,那是剩下的主要卡頓來源。船上的農作物和太陽能照樣運作,但隱藏維度現在均勻全亮,所以不再需要露天(船的封閉處也會運作)。
+
 Lights on a spaceship now work like in the normal world: torches, lamps and glowing blocks cast a real fading light radius, enclosed cabins stay dark until you light them, and the ship's blocks, chests, machines and you yourself are lit by them. Being inside a ship also shelters you from rain now: rain no longer falls or shows inside the ship, and you do not get wet under its roof.
 飛船上的光源現在像一般世界一樣作用：火把、燈、發光方塊會照出真實的漸暗光圈，封閉船艙在你點燈前是暗的，船上的方塊、箱子、機器和你自己都會被照亮。待在船裡現在也會擋雨：船內不再下雨、不顯示雨，有頂遮著就不會被淋濕。
 
@@ -136,6 +139,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 新增太空維度，包含程序生成的星空天空、物理正確的行星渲染，以及完整太陽系（水星、金星、月球、火星、木星、土星、土衛六、天王星、海王星、冥王星）和比鄰星系雛形（雙星系統）。行星為真實 3D 球體，視角大小隨距離動態縮放。太陽有日冕光暈。進入維度時玩家會出現在地球軌道附近。
 
 ### Developer Notes / 開發者備註
+
+ship_shadow dimension type set to hasSkyLight=false + ambientLight=1.0. The shadow is never rendered, but it had sky light (so crops/solar on ships had light), and writing a placed block into the shadow (writeToShadow) triggered a sky-light column recompute on the server thread, which in singleplayer contended with the client render thread and was the dominant remaining edit stutter (ship render itself profiled at 1-2ms, bake 2ms off-thread; the cost was server-side). Uniform ambient light keeps crops/solar working (now without needing open sky). Run datagen to regenerate the dimension type JSON.
+ship_shadow 維度型別改 hasSkyLight=false + ambientLight=1.0。影子不被渲染,但它原本有天光(讓船上農作/太陽能有光),而把放的方塊寫進影子(writeToShadow)會在 server thread 觸發天光整柱重算,單機下跟 client render thread 搶 CPU,是剩下最主要的編輯卡頓(飛船渲染本身剖析只 1-2ms、bake 2ms 在背景;成本在 server 端)。均勻環境光讓農作/太陽能照樣運作(只是不再需要露天)。要跑 datagen 重生維度型別 JSON。
 
 Ship edit bake is now incremental: only the changed sections are re-tesselated, not the whole ship. Profiling showed each edit triggered a ~15ms whole-ship bake on a worker thread (light 3ms, tesselate 6ms, hash 5.5ms for ~950 blocks), and continuous editing fired one per edit, so the worker thread contended with the client render thread for CPU and dropped frames (this is why ship placement stuttered but vanilla placement did not). The per-section content hash is now a cheap per-block order-independent sum (position + block id + own and 6-neighbour light) instead of scanning the 18-cube of every section, and bakeOffThread receives the previous hashes, diffs them, and only tesselates the sections whose hash changed. Light changes still invalidate the right sections because each block's hash includes its neighbour light.
 飛船編輯重烤改成增量:只重 tesselate 改動的 section,不再整艘。剖析顯示每次編輯都在 worker 執行緒觸發 ~15ms 的整艘重烤(光 3ms、tesselate 6ms、hash 5.5ms,約 950 塊),連續編輯每放一塊烤一次,worker 跟 client render thread 搶 CPU 掉幀(這就是船上放會頓、vanilla 不會的原因)。每 section 內容 hash 改成便宜的逐方塊、與順序無關的 sum(位置+blockId+自身與6鄰的光),不再掃每 section 的 18³;bakeOffThread 收到上次的 hash 比對,只 tesselate hash 變了的 section。光變化仍會正確讓對應 section 失效,因為每方塊 hash 含鄰居光。

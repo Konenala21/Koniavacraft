@@ -138,8 +138,8 @@ public class ModDimensionProvider {
 
         // 飛船影子：固定正午 + 天光（作物生長），無頂、不能睡、無怪。玩家永不進入故 effects 隨便用 overworld
         context.register(ModDimensions.SHIP_SHADOW_TYPE, new DimensionType(
-                OptionalLong.of(6000),  // 固定正午 → 恆定天光，作物會長
-                true,   // hasSkyLight（作物需要光）
+                OptionalLong.of(6000),  // 固定正午
+                false,  // hasSkyLight=false：影子沒人渲染、不需天光;關掉才不會在「放方塊寫進影子」時觸發整柱天光重算(單機卡頓元兇)
                 false,  // hasCeiling
                 false,  // ultraWarm
                 false,  // natural
@@ -149,7 +149,7 @@ public class ModDimensionProvider {
                 0, 256, 256,
                 BlockTags.INFINIBURN_OVERWORLD,
                 BuiltinDimensionTypes.OVERWORLD_EFFECTS,
-                0.0f,   // ambientLight（靠天光）
+                1.0f,   // ambientLight=1.0：均勻全亮(光 15)→ 船上農作/太陽能照樣運作,只是不再需要露天
                 new DimensionType.MonsterSettings(false, false, UniformInt.of(0, 0), 0) // 生怪光等級 0 + biome 無 spawn = 不生怪
         ));
     }
