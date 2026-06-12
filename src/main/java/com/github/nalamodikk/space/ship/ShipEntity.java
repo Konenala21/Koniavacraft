@@ -931,9 +931,9 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     }
 
     /**
-     * contraption 所有方塊的碰撞盒合併成 local 框的一個 VoxelShape（靜態，快取一次）。
-     * 滿格方塊(絕大多數)直接填一個 block 解析度的 bitset(O(N))，只有非滿格(階梯/半磚等)才 Shapes.or。
-     * 避免舊式 N 次 Shapes.or 的 O(N^2)（2000 方塊船 92ms → ~1ms）。
+     * contraption 所有方塊的碰撞盒做成 local 框的一個 VoxelShape（快取 + 編輯後 debounce 重建）。
+     * 用 2× 解析度 bitset 取樣每方塊的碰撞盒(半磚/樓梯保留半格台階,可走上去),全程零 Shapes.or。
+     * 任何 Shapes.or / Shapes.join 累積在大船上都會 O(ship) 掃 forAllBoxes(spark 實測佔 server 32.89%、單 tick 501ms)。
      */
     private VoxelShape localCollisionShape() {
         // 有快取且(沒髒 或 髒了但還沒過 debounce)→ 直接用舊的。編輯中持續用舊形狀(站的甲板照樣有碰撞),
@@ -950,30 +950,34 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         AABB b = contraption.bounds();
         int minX = Mth.floor(b.minX), minY = Mth.floor(b.minY), minZ = Mth.floor(b.minZ);
         int sx = Mth.floor(b.maxX) - minX, sy = Mth.floor(b.maxY) - minY, sz = Mth.floor(b.maxZ) - minZ;
-        BitSetDiscreteVoxelShape grid = new BitSetDiscreteVoxelShape(sx, sy, sz);
-        VoxelShape partial = Shapes.empty();
+        // 2× 解析度 bitset:每方塊取樣它的碰撞盒填進 2×2×2 子體素 → 半磚/樓梯保留可走的半格(0.5)台階(<= 自動上階 0.6),
+        // 但全程零 Shapes.or。原本對 partial 方塊(階梯/半磚)用 Shapes.or 累積、最後跟整艘 bitset 合併 →
+        // BitSetDiscreteVoxelShape.forAllBoxes 掃整艘(spark 實測佔 server thread 32.89%、單 tick 爆 501ms)。換成純 bitset fill = O(ship)。
+        final int RES = 2;
+        BitSetDiscreteVoxelShape grid = new BitSetDiscreteVoxelShape(sx * RES, sy * RES, sz * RES);
         for (var e : contraption.getBlocks().entrySet()) {
             BlockPos lp = e.getKey();
             BlockState st = e.getValue().state();
+            if (st.isAir()) continue;
+            int bx = (lp.getX() - minX) * RES, by = (lp.getY() - minY) * RES, bz = (lp.getZ() - minZ) * RES;
             VoxelShape cs = st.getCollisionShape(EmptyBlockGetter.INSTANCE, lp);
-            if (cs.isEmpty()) {
-                // 有些方塊碰撞依賴 BE/Level，用 EmptyBlockGetter 查到空殼 → 站上去穿模掉下去、也指不到。
-                // 任何非空氣方塊(都有渲染)空碰撞就補滿格 = 你看得到的方塊就站得上去。
-                grid.fill(lp.getX() - minX, lp.getY() - minY, lp.getZ() - minZ);
+            if (cs.isEmpty()) { // 碰撞依賴 BE 的方塊查到空殼 → 補滿格(看得到就站得上)
+                for (int x = 0; x < RES; x++) for (int y = 0; y < RES; y++) for (int z = 0; z < RES; z++) grid.fill(bx + x, by + y, bz + z);
                 continue;
             }
-            if (st.isCollisionShapeFullBlock(EmptyBlockGetter.INSTANCE, lp)) {
-                grid.fill(lp.getX() - minX, lp.getY() - minY, lp.getZ() - minZ);
-            } else {
-                partial = Shapes.or(partial, cs.move(lp.getX(), lp.getY(), lp.getZ()));
+            for (AABB box : cs.toAabbs()) { // 取樣碰撞盒覆蓋到的子體素
+                int x0 = (int) Math.floor(box.minX * RES), x1 = (int) Math.ceil(box.maxX * RES);
+                int y0 = (int) Math.floor(box.minY * RES), y1 = (int) Math.ceil(box.maxY * RES);
+                int z0 = (int) Math.floor(box.minZ * RES), z1 = (int) Math.ceil(box.maxZ * RES);
+                for (int x = x0; x < x1; x++) for (int y = y0; y < y1; y++) for (int z = z0; z < z1; z++) grid.fill(bx + x, by + y, bz + z);
             }
         }
-        double[] xs = new double[sx + 1], ys = new double[sy + 1], zs = new double[sz + 1];
-        for (int i = 0; i <= sx; i++) xs[i] = minX + i;
-        for (int i = 0; i <= sy; i++) ys[i] = minY + i;
-        for (int i = 0; i <= sz; i++) zs[i] = minZ + i;
-        VoxelShape full = new ArrayVoxelShape(grid, xs, ys, zs);
-        return localCollisionShapeCache = (partial.isEmpty() ? full : Shapes.or(full, partial));
+        int nx = sx * RES, ny = sy * RES, nz = sz * RES;
+        double[] xs = new double[nx + 1], ys = new double[ny + 1], zs = new double[nz + 1];
+        for (int i = 0; i <= nx; i++) xs[i] = minX + (double) i / RES;
+        for (int i = 0; i <= ny; i++) ys[i] = minY + (double) i / RES;
+        for (int i = 0; i <= nz; i++) zs[i] = minZ + (double) i / RES;
+        return localCollisionShapeCache = new ArrayVoxelShape(grid, xs, ys, zs);
     }
 
     /** 世界座標點 → local 框座標（rotatedWorldPoint 的逆：用姿勢的共軛）。 */
