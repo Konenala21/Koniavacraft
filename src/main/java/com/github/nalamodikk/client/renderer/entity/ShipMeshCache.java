@@ -42,10 +42,13 @@ import java.util.concurrent.CompletableFuture;
  */
 public class ShipMeshCache implements AutoCloseable, ShipMeshHandle {
 
-    private static final long REBAKE_DELAY_MS = 400; // 編輯後 debounce
+    private static final long REBAKE_DELAY_MS = 120; // 編輯後 debounce(縮短:讓 pending 更快進正式 VBO、累積更少)
 
     // layer -> (sectionKey -> VBO)。按 layer 分組方便 draw 批次。
     private final Map<RenderType, Map<Long, VertexBuffer>> buffers = new HashMap<>();
+    // pending(剛放、烤好前)的暫存 VBO:只在 pending 集合變動時重 tesselate 一次,之後每幀只畫(不再每幀重算 = 不卡)。
+    private final Map<RenderType, VertexBuffer> pendingBuffers = new HashMap<>();
+    private int pendingSig = -1;
     // 每 section 上次烤出來的內容 hash(block state + 光,含 1 圈邊界)。比對決定要不要重傳。
     private final Map<Long, Integer> sectionHash = new HashMap<>();
     private boolean built = false;
@@ -241,6 +244,67 @@ public class ShipMeshCache implements AutoCloseable, ShipMeshHandle {
         }
     }
 
+    /** 畫 pending(剛放、烤好前)方塊:只在 pending 集合變動時重 tesselate 一次進暫存 VBO,之後每幀只畫。 */
+    public void drawPending(PoseStack pose, Set<BlockPos> pending, ShipContraption c, Level level) {
+        if (pending.isEmpty()) {
+            if (!pendingBuffers.isEmpty()) { for (VertexBuffer vb : pendingBuffers.values()) vb.close(); pendingBuffers.clear(); }
+            pendingSig = -1;
+            return;
+        }
+        int sig = pending.size();
+        for (BlockPos p : pending) sig = sig * 31 + p.hashCode();
+        if (sig != pendingSig) { rebuildPending(pending, c, level); pendingSig = sig; }
+        if (pendingBuffers.isEmpty()) return;
+        Matrix4f modelView = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(pose.last().pose());
+        Matrix4f projection = RenderSystem.getProjectionMatrix();
+        for (var e : pendingBuffers.entrySet()) {
+            e.getKey().setupRenderState();
+            e.getValue().bind();
+            e.getValue().drawWithShader(modelView, projection, RenderSystem.getShader());
+            VertexBuffer.unbind();
+            e.getKey().clearRenderState();
+        }
+    }
+
+    private void rebuildPending(Set<BlockPos> pending, ShipContraption c, Level level) {
+        for (VertexBuffer vb : pendingBuffers.values()) vb.close();
+        pendingBuffers.clear();
+        ShipRenderWorld world = new ShipRenderWorld(level, c); // live 模式(crude 光,暫時的,馬上被真烤取代)
+        BlockRenderDispatcher brd = Minecraft.getInstance().getBlockRenderer();
+        ModelBlockRenderer mr = brd.getModelRenderer();
+        RandomSource random = RandomSource.create();
+        PoseStack ps = new PoseStack();
+        for (RenderType layer : RenderType.chunkBufferLayers()) {
+            ByteBufferBuilder bytes = new ByteBufferBuilder(2048);
+            BufferBuilder bb = new BufferBuilder(bytes, layer.mode(), layer.format());
+            boolean any = false;
+            for (BlockPos local : pending) {
+                var info = c.getBlocks().get(local);
+                if (info == null) continue;
+                BlockState state = info.state();
+                if (state.isAir() || state.getRenderShape() != RenderShape.MODEL) continue;
+                BakedModel model = brd.getBlockModel(state);
+                ModelData md = model.getModelData(world, local, state, ModelData.EMPTY);
+                if (!model.getRenderTypes(state, random, md).contains(layer)) continue;
+                ps.pushPose();
+                ps.translate(local.getX(), local.getY(), local.getZ());
+                mr.tesselateBlock(world, model, state, local, ps, bb, true, random,
+                        state.getSeed(local), OverlayTexture.NO_OVERLAY, md, layer);
+                ps.popPose();
+                any = true;
+            }
+            MeshData mesh = any ? bb.build() : null;
+            if (mesh != null) {
+                VertexBuffer vb = new VertexBuffer(VertexBuffer.Usage.DYNAMIC);
+                vb.bind();
+                vb.upload(mesh);
+                VertexBuffer.unbind();
+                pendingBuffers.put(layer, vb);
+            }
+            bytes.close();
+        }
+    }
+
     @Override
     public void close() {
         if (pending != null) {
@@ -253,5 +317,7 @@ public class ShipMeshCache implements AutoCloseable, ShipMeshHandle {
             for (VertexBuffer vb : byLayer.values()) vb.close();
         buffers.clear();
         sectionHash.clear();
+        for (VertexBuffer vb : pendingBuffers.values()) vb.close();
+        pendingBuffers.clear();
     }
 }

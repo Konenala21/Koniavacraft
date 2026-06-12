@@ -72,9 +72,9 @@ public class ShipEntityRenderer extends EntityRenderer<ShipEntity> {
                     }
                     if (cache.buildIfNeeded(c, entity.level())) entity.clearPendingVisualBlocks(); // 烤好接棒
                     cache.draw(pose);
-                    // 剛放、還沒進 VBO 的方塊：每幀先畫(放下去立刻可見，不先透明)
+                    // 剛放、還沒進 VBO 的方塊：用暫存 VBO 畫(只在 pending 變動時重 tesselate 一次,之後每幀只畫 → 不卡頓)
                     if (!entity.getPendingVisualBlocks().isEmpty()) {
-                        renderBlocksPerFrame(entity, c, entity.getPendingVisualBlocks().keySet(), pose, buffers);
+                        cache.drawPending(pose, entity.getPendingVisualBlocks().keySet(), c, entity.level());
                     }
                     drewStatic = true;
                 } catch (Exception ex) {

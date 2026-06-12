@@ -137,6 +137,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 
 ### Developer Notes / 開發者備註
 
+Ship edit stutter was actually the per-frame re-tesselation of just-placed blocks (the pending-visual fallback), not the VBO upload (timing showed updateBlock 0.1ms, section upload 0.3ms, but one pending block cost ~0.8ms every frame and ~7.6ms cold). ShipMeshCache.drawPending now tesselates the pending blocks once into a small dynamic VBO and only rebuilds it when the pending set changes, drawing it cheaply each frame; placing+breaking continuously no longer re-tesselates everything per frame. Rebake debounce cut to 120ms so pending clears into the real per-section VBOs sooner.
+飛船編輯卡頓的真因是「剛放的方塊在烤好前每幀重新 tesselate」(pending 暫顯),不是 VBO 上傳(計時:updateBlock 0.1ms、section 上傳 0.3ms,但一塊 pending 方塊每幀要 ~0.8ms、冷啟動 ~7.6ms)。ShipMeshCache.drawPending 改成把 pending 方塊只 tesselate 一次進一個小的 dynamic VBO,只有 pending 集合變動才重建,每幀只畫;連續放+破壞不再每幀重算全部。重烤 debounce 縮到 120ms,pending 更快進正式的 per-section VBO。
+
 Ship mesh is now section-based (16-cube sections, one VBO per section per render layer) to cut the edit stutter. Editing still bakes the whole ship off-thread (light propagation needs the whole ship), but only the sections whose content hash changed (block states + baked light, including a 1-block border) are re-uploaded to GL, instead of re-uploading the whole-ship VBO every edit. Draw is batched per render layer (setup state once, draw all sections, clear once). Verify in-game: FPS while flying must not regress vs the single-VBO baseline; if it does, coarsen the section size or revert.
 飛船 mesh 改成 section 化(16³ section、每 section 每 render layer 一個 VBO)來減少編輯卡頓。編輯仍整艘背景烤(光傳播需要全船),但只重傳「內容 hash 變了」的 section(方塊狀態 + 烤好的光,含 1 圈邊界),不再每次編輯都重傳整艘的 VBO。draw 按 render layer 批(setup 一次、畫所有 section、clear 一次)。實機驗:飛行 FPS 不能比單一大 VBO 退步;若退步就把 section 調大或還原。
 
