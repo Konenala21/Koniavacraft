@@ -110,6 +110,16 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
         }
     }
 
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        // 載入時若已成形,主動重驗一次結構:被船組裝搬移/分家時是用 UPDATE_CLIENTS 移除方塊(不觸發鄰居更新),
+        // 柱子的 checkStructure 不會被觸發 → 結構分家了核心卻停在 formed。核心被放進影子/重載時這裡補驗,壞了就自動解散。
+        if (level != null && !level.isClientSide() && isFormed()) {
+            checkStructure();
+        }
+    }
+
     private void extractManaFromNeighbors() {
         if (level == null || manaStorage.getManaStored() >= MAX_MANA) return;
         IOHandlerUtils.extractManaFromNeighbors(level, worldPosition, manaStorage, directionConfig, MANA_TRANSFER_RATE);

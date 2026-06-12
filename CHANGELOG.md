@@ -137,6 +137,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 
 ### Developer Notes / 開發者備註
 
+Aspect altar re-validates its structure on load. A ship assembly removes captured blocks with UPDATE_CLIENTS (no neighbour notify, for perf), so moving/splitting an altar by assembling a ship over it did not fire the pillar neighbour-change that triggers checkStructure, leaving the core stuck in the formed state with a broken structure. AspectAltarBlockEntity.onLoad now runs checkStructure when formed, so a core placed into the ship shadow (or reloaded) re-checks and de-forms if its structure is incomplete. Decoupled fix (also covers worldedit/fill breakage), no ship-to-altar coupling.
+本源祭壇載入時重驗結構。船組裝用 UPDATE_CLIENTS 移除捕捉的方塊(不通知鄰居,為效能),所以在祭壇上組裝船把它搬移/分家時，不會觸發柱子鄰居變更去跑 checkStructure，核心就卡在 formed 但結構壞了。AspectAltarBlockEntity.onLoad 現在在 formed 時跑 checkStructure，核心被放進船影子(或重載)時會重驗，結構不完整就自動解散。解耦修法(也涵蓋 worldedit/fill 弄壞)，不把祭壇耦進船組裝。
+
 updateContraptionBlock only calls refreshDimensions now when the contraption bounds actually changed, instead of on every edit. Placing blocks inside the existing hull does not move the hitbox, so the client no longer recomputes dimensions/collision for every received block update while filling a hull (less edit stutter).
 updateContraptionBlock 現在只有在 contraption bounds 真的改變時才呼叫 refreshDimensions,不再每次編輯都跑。放在現有外殼內部的方塊不會動到 hitbox,所以填外殼時 client 不再為每個收到的方塊更新重算 dimensions/碰撞(減少編輯卡頓)。
 
