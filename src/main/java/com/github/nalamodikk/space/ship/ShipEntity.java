@@ -287,7 +287,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         if (level().isClientSide && !state.isAir()) {
             pendingVisualBlocks.put(local.immutable(), System.currentTimeMillis());
         }
-        localCollisionShapeCache = null; collisionListCache = null;
+        collisionDirty = true; collisionDirtyAtMs = System.currentTimeMillis(); // debounce 重建,不立刻作廢(別每 tick 重建整艘)
         hullBlocksCache = null;
         dynamicMirrorCache = null;
         // 只更新「變的這一格」的 render BE,不整批砍 renderBEs。整批砍會把別格(例如開著的箱子)的 transient
@@ -622,7 +622,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             if (!ss.equals(info.state())) {
                 contraption.setBlockState(local, ss);          // blockstate 變(作物/熔爐亮/機器 active)
                 ShipBlockUpdatePacket.sendToClients(this, local, ss);
-                localCollisionShapeCache = null; collisionListCache = null; // 形狀可能變(作物長/門開)
+                collisionDirty = true; collisionDirtyAtMs = System.currentTimeMillis(); // 形狀可能變(作物長/門開),debounce 重建
             }
             if (ss.getBlock() instanceof EntityBlock) {        // BE NBT 鏡射(機器內容/進度/物品底座 item)
                 BlockEntity sbe = shadow.getBlockEntity(sp);
@@ -919,6 +919,9 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     @Nullable private VoxelShape localCollisionShapeCache;
     @Nullable private CollisionList collisionListCache; // OBB 碰撞用的方塊盒清單，跟 shape 一起失效(別每 tick 重建)
+    private boolean collisionDirty;                     // 編輯後標記,debounce 後才重建(別每 tick 重建整艘 O(ship) 形狀)
+    private long collisionDirtyAtMs;
+    private static final long COLLISION_DEBOUNCE_MS = 200;
 
     private CollisionList collisionList(VoxelShape shape) {
         if (collisionListCache != null) return collisionListCache;
@@ -933,7 +936,14 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
      * 避免舊式 N 次 Shapes.or 的 O(N^2)（2000 方塊船 92ms → ~1ms）。
      */
     private VoxelShape localCollisionShape() {
-        if (localCollisionShapeCache != null) return localCollisionShapeCache;
+        // 有快取且(沒髒 或 髒了但還沒過 debounce)→ 直接用舊的。編輯中持續用舊形狀(站的甲板照樣有碰撞),
+        // 停手 debounce 後才重建一次 → 不再每 tick 重建整艘 = 編輯不卡。
+        if (localCollisionShapeCache != null
+                && !(collisionDirty && System.currentTimeMillis() - collisionDirtyAtMs >= COLLISION_DEBOUNCE_MS)) {
+            return localCollisionShapeCache;
+        }
+        collisionDirty = false;
+        collisionListCache = null; // 形狀要重建 → list 也作廢
         if (contraption == null || contraption.getBlocks().isEmpty()) {
             return localCollisionShapeCache = Shapes.empty();
         }
