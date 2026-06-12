@@ -137,6 +137,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 
 ### Developer Notes / 開發者備註
 
+updateContraptionBlock only calls refreshDimensions now when the contraption bounds actually changed, instead of on every edit. Placing blocks inside the existing hull does not move the hitbox, so the client no longer recomputes dimensions/collision for every received block update while filling a hull (less edit stutter).
+updateContraptionBlock 現在只有在 contraption bounds 真的改變時才呼叫 refreshDimensions,不再每次編輯都跑。放在現有外殼內部的方塊不會動到 hitbox,所以填外殼時 client 不再為每個收到的方塊更新重算 dimensions/碰撞(減少編輯卡頓)。
+
 Ship rain shelter. ShipEntity.shelters(wx,wy,wz) checks the local column above a world point for an occluding ship block. LevelRendererRainMixin cancels renderSnowAndRain when the camera entity is sheltered by a nearby ship (no rain particles inside), and LevelRainMixin makes Level.isRainingAt return false when a ship shelters the position (no wetness, fire extinguish, rain sound) - gated so the ship search only runs when it was already raining there.
 飛船擋雨。ShipEntity.shelters(wx,wy,wz) 檢查某世界點 local 上方有沒有不透明船方塊。LevelRendererRainMixin 在鏡頭實體被附近的船遮蔽時取消 renderSnowAndRain(船內不畫雨),LevelRainMixin 讓 Level.isRainingAt 在該座標被船遮蔽時回 false(不淋濕/不滅火/無雨聲);有 gate,只有本來就在那下雨時才搜尋船。
 

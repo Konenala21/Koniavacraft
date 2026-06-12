@@ -267,6 +267,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
      */
     public void updateContraptionBlock(BlockPos local, BlockState state) {
         if (contraption == null) return;
+        AABB boundsBefore = contraption.bounds(); // 只有 bounds 真的變了才 refreshDimensions(放內部格不必,放外殼一堆時省 client 卡頓)
         // 舊方塊(改之前)：給粒子用，也判斷要不要重算燃料系統(只有動到引擎/燃料槽才掃)
         var oldInfo = contraption.getBlocks().get(local);
         Block oldBlock = oldInfo != null ? oldInfo.state().getBlock() : null;
@@ -336,7 +337,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
                 || oldBlock instanceof ManaWarpInputBlock || newBlock instanceof ManaWarpInputBlock) {
             recomputeWarpDrives();
         }
-        refreshDimensions(); // bounds 可能變了，更新 hitbox
+        if (!boundsBefore.equals(contraption.bounds())) refreshDimensions(); // bounds 真的變了才更新 hitbox
     }
 
     /** Client：收到影子鏡射過來的 BE NBT(物品底座的 item / 機器內容)→ 更新 contraption NBT + 只重建那一格的
