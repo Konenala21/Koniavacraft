@@ -1480,6 +1480,8 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
                             && !player.getAbilities().instabuild) {
                         player.getItemInHand(hand).shrink(1);
                     }
+                } else {
+                    clientPredictPlace(player, hand, pick, newLocal, bi.getBlock()); // 本地先放,免等封包來回的延遲
                 }
                 return InteractionResult.sidedSuccess(level().isClientSide);
             }
@@ -1525,6 +1527,20 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         }
     }
 
+    /** client 端破壞預測:本地先把該格(+門另一半)設成 AIR,免等封包來回。視覺上方塊在下次 mesh 重烤(debounce)後消失。
+     *  鏡射 breakLocalBlock 接受條件:核心(0,0,0)不可挖、不存在的格跳過。 */
+    public void clientPredictBreak(BlockPos local) {
+        if (!level().isClientSide || contraption == null || local == null || local.equals(BlockPos.ZERO)) return;
+        var info = contraption.getBlocks().get(local);
+        if (info == null) return;
+        BlockState st = info.state();
+        updateContraptionBlock(local, Blocks.AIR.defaultBlockState());
+        if (st.getBlock() instanceof DoorBlock && st.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)) {
+            BlockPos other = st.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == DoubleBlockHalf.LOWER ? local.above() : local.below();
+            if (contraption.getBlocks().containsKey(other)) updateContraptionBlock(other, Blocks.AIR.defaultBlockState());
+        }
+    }
+
     private void removeBlockAndSync(BlockPos local) {
         updateContraptionBlock(local, Blocks.AIR.defaultBlockState());
         ShipBlockUpdatePacket.sendToClients(this, local, Blocks.AIR.defaultBlockState());
@@ -1539,6 +1555,16 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         if (isStructuralBlock(block)) return false;                 // 核心/發射台方塊不該放上船
         if (contraption.size() >= ShipContraption.MAX_BLOCKS) return false; // 方塊數上限（渲染/效能）
         return placeState(local, computePlacementState(player, hand, pick, local, block));
+    }
+
+    /** client 端放置預測:本地先把單一方塊放上(updateContraptionBlock 會丟進 pendingVisualBlocks 即時顯示),
+     *  免等 server 封包來回的 ~50ms 延遲。多方塊(門/床)另一半、箱子合併等 server 權威更新 ~50ms 後對齊。
+     *  鏡射 placeBlock 的接受條件,避免預測了 server 會拒絕的放置。 */
+    private void clientPredictPlace(Player player, InteractionHand hand, Pick pick, BlockPos newLocal, Block block) {
+        if (contraption == null || isStructuralBlock(block) || contraption.size() >= ShipContraption.MAX_BLOCKS) return;
+        BlockState state = computePlacementState(player, hand, pick, newLocal, block);
+        if (state.isAir()) return;
+        updateContraptionBlock(newLocal, state);
     }
 
     /** 核心與發射台方塊不可放到船上（會出現怪狀態/重複錨點）。 */

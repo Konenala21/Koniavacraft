@@ -36,6 +36,7 @@ public final class ShipBlockBreakHandler {
         if (!player.level().isClientSide || !ship.isParked()) return;
         BlockPos local = ship.getAimedLocalBlock(player); // 跟準心/外框同一個 pick
         if (local == null) return;
+        ship.clientPredictBreak(local); // 本地先移除,免等封包來回的延遲
         PacketDistributor.sendToServer(new ShipBreakBlockPacket(ship.getId(), local));
     }
 
