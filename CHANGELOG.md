@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+The sun looks more realistic up close: its corona (the outer glow) now fades out smoothly instead of ending in a hard edge that swept across the screen like a flat sheet, and its prominences (the plasma the sun throws off at its edge) are now small red wisps hugging the limb, sized to roughly match real prominences, instead of big bright yellow arcs.
+近看太陽更真實了:日冕(外圈光暈)現在會平滑淡出,不再是一條像平面貼片掃過螢幕的硬邊;日珥(太陽邊緣噴出的電漿)現在是貼著邊緣的小紅絲,尺寸大致照真實日珥,不再是又大又亮的黃色弧。
+
 Earth and other planets look a bit more realistic from space: the sun's reflection on the ocean is now a soft glint that fades outward instead of a hard white dot, and a subtle blue atmospheric haze gives the lit edge of a planet some depth.
 從太空看地球和其他行星更真實了一點:太陽在海面的反光現在是往外柔和漸散的亮點,不再是一顆死白點;受光面邊緣多了一層淡淡的藍色大氣霧,有了厚度感。
 

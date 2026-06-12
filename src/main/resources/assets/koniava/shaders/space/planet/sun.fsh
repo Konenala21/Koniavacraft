@@ -140,6 +140,9 @@ void main(){
         if(normDist<1.0){fragColor=vec4(0.0);return;}
 
         float falloff=exp(-(normDist-1.0)*4.0/coronaFac)*uAtmoDensity;
+        // 外緣平滑淡出,不要硬切。遠處用 normDist 柔化外圈;近處(日冕撐到接近 90° 上限)用 sinRay 柔化,
+        // 否則近看時 cap(0.999)那條硬邊會像 2D 貼片橫過螢幕。
+        falloff *= smoothstep(coronaFac, coronaFac*0.6, normDist) * smoothstep(0.999, 0.96, sinRay);
         falloff=clamp(falloff,0.0,1.0);
 
         // 日冕顏色偏橙紅
@@ -167,7 +170,7 @@ void main(){
             float arcSpan=0.30+fi*0.10;
             // 呼吸：高度只 ±12% 微幅起伏，不是噴發
             float breathe=0.94+0.06*sin(iTime*0.04+fi*2.0);
-            float peakH=(0.45+fi*0.15)*breathe;
+            float peakH=(0.04+fi*0.025)*breathe; // 真實寧靜日珥高度 ~0.04~0.14 太陽半徑,是貼著邊緣的小環(原本 0.22+ 高了 5~10 倍)
 
             float dA=promAngle-A1;
             dA=mod(dA+3.14159,6.28318)-3.14159;
@@ -183,7 +186,7 @@ void main(){
             float thick=(0.03+0.015*sin(3.14159*s))*(0.7+0.6*fbm(vec3(s*6.0,fi,iTime*0.05)));
             float wisp=0.55+0.45*fbm(vec3(s*9.0, promZone*7.0-iTime*0.06, fi)); // 絲狀紊流
             float tube=exp(-(dH*dH)/(thick*thick))*wisp;
-            vec3 pc=mix(vec3(1.0,0.55,0.12), vec3(1.0,0.28,0.05), clamp(promZone/peakH,0.0,1.0));
+            vec3 pc=mix(vec3(1.0,0.16,0.16), vec3(0.70,0.04,0.08), clamp(promZone/peakH,0.0,1.0)); // 純 H-alpha 紅,別讓 G/B 太高否則疊在橘日冕上偏橘
             promCol+=pc*tube;
         }
 
@@ -207,15 +210,16 @@ void main(){
             float jetAngle=fract(sin(cycId*3.7+fj*5.1)*1000.0)*6.28318;
             float dA=promAngle-jetAngle;
             dA=mod(dA+3.14159,6.28318)-3.14159;
-            float jetH=(0.8+fj*0.2)*env;
+            float jetH=(0.40+fj*0.10)*env;      // 縮短,別噴太遠
             float hN=clamp(promZone/max(jetH,0.001),0.0,1.0);
             float w=0.035*(1.0+hN*1.5);         // 往上展開成羽流
             float fil=0.5+0.5*fbm(vec3(dA*8.0, promZone*8.0-iTime*0.3, fj));
             float jet=exp(-(dA*dA)/(w*w))*pow(1.0-hN,1.1)*step(promZone,jetH)*fil;
-            promCol+=mix(vec3(1.0,0.75,0.35), vec3(1.0,0.12,0.03), hN)*jet*1.5;
+            promCol+=mix(vec3(1.0,0.20,0.16), vec3(0.70,0.04,0.08), hN)*jet*1.0; // 純紅
         }
 
-        coronaCol+=promCol*heightFade*2.6;
+        // 提亮一點讓紅壓過後面的橘日冕(否則加法疊上去會偏橘看不出紅)。小環不會掃螢幕,只在貼到太陽臉上才淡出
+        coronaCol+=promCol*heightFade*2.3*smoothstep(1.0,0.72,sinA);
 
         if(dot(coronaCol,vec3(1.0))<0.001){fragColor=vec4(0.0);return;}
         fragColor=vec4(coronaCol,0.0);  // alpha=0：純加法混合
