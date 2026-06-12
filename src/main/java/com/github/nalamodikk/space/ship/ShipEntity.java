@@ -25,6 +25,7 @@ import net.minecraft.world.ItemInteractionResult;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -1509,12 +1510,13 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         var info = contraption.getBlocks().get(local);
         if (info == null) return;
         if (!player.getAbilities().instabuild) {
+            Vec3 wp = rotatedWorldPoint(local.getX() + 0.5, local.getY() + 0.5, local.getZ() + 0.5); // 挖的那格的世界位置
             ItemStack block = new ItemStack(info.state().getBlock().asItem());
-            if (!block.isEmpty()) spawnAtLocation(block);
+            if (!block.isEmpty()) giveOrDrop(player, block, wp);
             if (info.nbt() != null && info.nbt().contains("Items")) {
                 NonNullList<ItemStack> items = NonNullList.withSize(256, ItemStack.EMPTY);
                 ContainerHelper.loadAllItems(info.nbt(), items, level().registryAccess());
-                for (ItemStack it : items) if (!it.isEmpty()) spawnAtLocation(it);
+                for (ItemStack it : items) if (!it.isEmpty()) giveOrDrop(player, it, wp);
             }
         }
         playInteractSound(local, info.state().getSoundType().getBreakSound());
@@ -1524,6 +1526,16 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             BlockPos other = info.state().getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == DoubleBlockHalf.LOWER
                     ? local.above() : local.below();
             if (contraption.getBlocks().containsKey(other)) removeBlockAndSync(other);
+        }
+    }
+
+    /** 破壞掉落:優先直接進玩家背包,放不下才掉在「挖的那格」的世界位置(不用跑去船中心撿)。 */
+    private void giveOrDrop(Player player, ItemStack stack, Vec3 wp) {
+        player.getInventory().add(stack); // 收進背包(就地減 count)
+        if (!stack.isEmpty()) {           // 背包滿沒收完 → 剩的掉在原地
+            ItemEntity ie = new ItemEntity(level(), wp.x, wp.y, wp.z, stack);
+            ie.setDefaultPickUpDelay();
+            level().addFreshEntity(ie);
         }
     }
 
