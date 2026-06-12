@@ -1549,17 +1549,26 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         // 箱子 double：computePlacementState 用真實世界 context 算 → 看不到 contraption 裡的相鄰箱子 → 預設 SINGLE。
         // 這裡照 vanilla 幾何在 contraption 內找同 facing 的相鄰單箱連成 LEFT/RIGHT(否則船上箱子開起來都是 27)。
         // LEFT 的夥伴在 facing.clockwise、RIGHT 在 facing.counterclockwise。
-        if (b instanceof net.minecraft.world.level.block.ChestBlock
-                && state.getValue(net.minecraft.world.level.block.ChestBlock.TYPE) == ChestType.SINGLE) {
-            Direction f = state.getValue(net.minecraft.world.level.block.ChestBlock.FACING);
-            var cw = contraption.getBlocks().get(local.relative(f.getClockWise()));
-            var ccw = contraption.getBlocks().get(local.relative(f.getCounterClockWise()));
-            if (cw != null && isSingleChestFacing(cw.state(), f)) {
-                state = state.setValue(net.minecraft.world.level.block.ChestBlock.TYPE, ChestType.LEFT);
-                placeOne(local.relative(f.getClockWise()), cw.state().setValue(net.minecraft.world.level.block.ChestBlock.TYPE, ChestType.RIGHT));
-            } else if (ccw != null && isSingleChestFacing(ccw.state(), f)) {
-                state = state.setValue(net.minecraft.world.level.block.ChestBlock.TYPE, ChestType.RIGHT);
-                placeOne(local.relative(f.getCounterClockWise()), ccw.state().setValue(net.minecraft.world.level.block.ChestBlock.TYPE, ChestType.LEFT));
+        if (b instanceof ChestBlock && state.getValue(ChestBlock.TYPE) == ChestType.SINGLE) {
+            // 找任一相鄰的單箱,把新箱「對齊到鄰箱的朝向」再連成 LEFT/RIGHT(vanilla 放箱子也會對齊鄰箱)。
+            // 原本只比對新箱自己朝向的 cw/ccw,但船上 computePlacementState 讓箱子面向玩家,
+            // 兩次放置視角稍差朝向就不同 → 連不上。改成掃 4 個水平鄰格、對齊鄰箱朝向,只要並排就連。
+            for (Direction d : Direction.Plane.HORIZONTAL) {
+                var nb = contraption.getBlocks().get(local.relative(d));
+                if (nb == null) continue;
+                BlockState ns = nb.state();
+                if (!(ns.getBlock() instanceof ChestBlock) || ns.getValue(ChestBlock.TYPE) != ChestType.SINGLE) continue;
+                Direction nf = ns.getValue(ChestBlock.FACING);
+                if (d == nf.getCounterClockWise()) {        // 鄰箱在新箱的 nf 逆時針側 → 鄰箱=LEFT、新箱=RIGHT
+                    state = state.setValue(ChestBlock.FACING, nf).setValue(ChestBlock.TYPE, ChestType.RIGHT);
+                    placeOne(local.relative(d), ns.setValue(ChestBlock.TYPE, ChestType.LEFT));
+                    break;
+                } else if (d == nf.getClockWise()) {        // 鄰箱在新箱的 nf 順時針側 → 鄰箱=RIGHT、新箱=LEFT
+                    state = state.setValue(ChestBlock.FACING, nf).setValue(ChestBlock.TYPE, ChestType.LEFT);
+                    placeOne(local.relative(d), ns.setValue(ChestBlock.TYPE, ChestType.RIGHT));
+                    break;
+                }
+                // d == nf 或 nf.getOpposite()(前後排)→ 箱子不該連,繼續找
             }
         }
         if (state.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)) { // 門/高植物：上下
@@ -1583,13 +1592,6 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         updateContraptionBlock(local, state);
         ShipBlockUpdatePacket.sendToClients(this, local, state);
         writeToShadow(local, state, null); // 影子也放（機器網路同步）
-    }
-
-    /** contraption 內某格是不是「同 facing 的單箱」(可連成 double 的對象)。 */
-    private static boolean isSingleChestFacing(BlockState s, Direction f) {
-        return s.getBlock() instanceof net.minecraft.world.level.block.ChestBlock
-                && s.getValue(net.minecraft.world.level.block.ChestBlock.TYPE) == ChestType.SINGLE
-                && s.getValue(net.minecraft.world.level.block.ChestBlock.FACING) == f;
     }
 
     /** 用 vanilla getStateForPlacement 算放置後的 state，方向轉進 local 框。失敗退回 defaultBlockState。 */

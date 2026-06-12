@@ -302,6 +302,31 @@ public class ShipAssemblyGameTests {
         helper.succeed();
     }
 
+    /** 放兩個相鄰但「朝向不同」的箱子也該連成 double:新箱要對齊鄰箱朝向(這是實機連不上的真正情境)。 */
+    @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
+    public static void shipPlacedChestsConnectMismatchedFacing(GameTestHelper helper) {
+        ShipContraption ship = new ShipContraption();
+        for (int x = 0; x < 6; x++) for (int z = 0; z < 4; z++)
+            ship.addBlock(new BlockPos(x, 0, z), Blocks.QUARTZ_BLOCK.defaultBlockState(), null);
+        ShipEntity entity = new ShipEntity(ModEntities.SHIP.get(), helper.getLevel());
+        entity.setContraption(ship);
+        BlockPos origin = helper.absolutePos(new BlockPos(4, 4, 4));
+        entity.setPos(origin.getX() + 0.5, origin.getY() + 0.5, origin.getZ() + 0.5);
+        entity.setOldPosAndRot();
+        // 先放面 NORTH 的,再放它西邊、但面 SOUTH(不同朝向)的 → 新箱該對齊成 NORTH 並連成 double
+        entity.placeState(new BlockPos(3, 1, 1), Blocks.CHEST.defaultBlockState().setValue(ChestBlock.FACING, Direction.NORTH));
+        entity.placeState(new BlockPos(2, 1, 1), Blocks.CHEST.defaultBlockState().setValue(ChestBlock.FACING, Direction.SOUTH));
+        BlockState a = ship.getBlocks().get(new BlockPos(2, 1, 1)).state();
+        BlockState bs = ship.getBlocks().get(new BlockPos(3, 1, 1)).state();
+        KoniavacraftMod.LOGGER.info("[shipchestmismatch] a={}/{} b={}/{}",
+                a.getValue(ChestBlock.FACING), a.getValue(ChestBlock.TYPE), bs.getValue(ChestBlock.FACING), bs.getValue(ChestBlock.TYPE));
+        if (a.getValue(ChestBlock.TYPE) == ChestType.SINGLE || bs.getValue(ChestBlock.TYPE) == ChestType.SINGLE)
+            helper.fail("mismatched-facing chests stayed SINGLE: " + a.getValue(ChestBlock.TYPE) + "/" + bs.getValue(ChestBlock.TYPE));
+        if (a.getValue(ChestBlock.FACING) != bs.getValue(ChestBlock.FACING))
+            helper.fail("merged chests not aligned to same facing: " + a.getValue(ChestBlock.FACING) + " vs " + bs.getValue(ChestBlock.FACING));
+        helper.succeed();
+    }
+
     @GameTest(template = TEMPLATE, templateNamespace = KoniavacraftMod.MOD_ID, timeoutTicks = 60)
     public static void disassembleReturnsBlocksAndRemovesEntity(GameTestHelper helper) {
         ShipAssemblyPadBlockEntity pad = setupBaseAndPad(helper);
