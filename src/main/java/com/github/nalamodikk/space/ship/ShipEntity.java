@@ -17,8 +17,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.portal.DimensionTransition;
+import com.github.nalamodikk.dimension.ModDimensions;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
@@ -163,6 +166,12 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     // 魔焓/tier(暫常數,之後接燃料物品/引擎世代)。基礎魔力 = 魔焓 5;魔力引擎能燒魔焓 ≤ 9(基礎+精煉魔力)。
     private static final int ENTHALPY_BASIC_MANA = 5;
     private static final int MANA_ENGINE_ENTHALPY_CAP = 9;
+    // 跨維度轉場高度(船是 entity 無 Y 上限)。進軌道最低 tier:有燃料+引擎=tier 5 ≥ 1,基礎船就能上;星球之後要更高。
+    private static final int SPACE_ENTRY_Y = 1000;          // 主世界飛到這高度 → 進太空
+    private static final int ORBIT_MIN_TIER = 1;
+    private static final double SPACE_ARRIVE_Y = 256.0;     // 進太空後的 Y(太空虛空)
+    private static final int SPACE_EXIT_Y = 0;              // 太空降到這高度 → 回主世界
+    private static final double OVERWORLD_RETURN_Y = 700.0; // 回主世界的 Y(高空,接著往下飛)
     private static final double SPEED_PER_WARP = 4.0;     // 每「座」完整曲速結構貢獻(~6 座到頂 600)
     private static final double WARP_CAP = 30.0;          // 有曲速結構時的天花板 30.0/tick=600 b/s
     private static final int FUEL_PER_WARP_MOVE = 200;    // 每座曲速結構每 tick 從進料口抽的能量(很兇,要高密度燃料/魔力網路撐)
@@ -736,6 +745,52 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
                 drainFuel((int) Math.ceil(FUEL_PER_ENGINE_MOVE * engineCount * thr * mult));
             if (hasWarp)
                 drainWarpFuel((int) Math.ceil(FUEL_PER_WARP_MOVE * warpDriveCount * thr * mult));
+        }
+
+        tickDimensionTransition(); // 高度觸發:飛到夠高 → 進太空(tier gate);太空降夠低 → 回主世界
+    }
+
+    /**
+     * 高度觸發的跨維度轉場。主世界飛到 SPACE_ENTRY_Y → 檢查 tier 夠就連船帶人傳進太空；
+     * 太空降到 SPACE_EXIT_Y → 傳回主世界高空(回程不卡 tier)。船是 entity,用 changeDimension 重建
+     * (contraption + shadowAnchor 在 save NBT,新船 tick 自動重接影子),乘客先卸載再傳過去重騎。
+     */
+    private void tickDimensionTransition() {
+        if (level().isClientSide || dimChanging || contraption == null) return;
+        MinecraftServer server = level().getServer();
+        if (server == null) return;
+
+        if (level().dimension() == Level.OVERWORLD && getY() >= SPACE_ENTRY_Y) {
+            if (getShipTier() < ORBIT_MIN_TIER) { // tier 不夠:離不開大氣層,節流提示,不傳送
+                if (tickCount % 40 == 0)
+                    for (Entity p : getPassengers())
+                        if (p instanceof ServerPlayer sp)
+                            sp.displayClientMessage(Component.translatable("message.koniava.ship.tier_too_low_orbit"), true);
+                return;
+            }
+            ServerLevel space = server.getLevel(ModDimensions.SPACE);
+            if (space != null) doDimensionTransition(space, new Vec3(getX(), SPACE_ARRIVE_Y, getZ()));
+        } else if (level().dimension() == ModDimensions.SPACE && getY() <= SPACE_EXIT_Y) {
+            ServerLevel over = server.overworld();
+            doDimensionTransition(over, new Vec3(getX(), OVERWORLD_RETURN_Y, getZ()));
+        }
+    }
+
+    /** 連船帶乘客搬到 target 維度的 arrive 位置。changeDimension 重建船,乘客卸載→傳送→重騎。 */
+    private void doDimensionTransition(ServerLevel target, Vec3 arrive) {
+        dimChanging = true;
+        java.util.List<ServerPlayer> riders = new java.util.ArrayList<>();
+        for (Entity p : getPassengers()) if (p instanceof ServerPlayer sp) riders.add(sp);
+        for (ServerPlayer sp : riders) sp.stopRiding();
+        DimensionTransition transition = new DimensionTransition(
+                target, arrive, Vec3.ZERO, getYRot(), getXRot(), DimensionTransition.DO_NOTHING);
+        Entity moved = this.changeDimension(transition);
+        if (moved instanceof ShipEntity newShip) {
+            newShip.dimChanging = false;
+            for (ServerPlayer sp : riders) {
+                sp.teleportTo(target, arrive.x, arrive.y + 1.0, arrive.z, java.util.Set.of(), sp.getYRot(), sp.getXRot());
+                sp.startRiding(newShip, true);
+            }
         }
     }
 
@@ -2068,6 +2123,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     @Nullable private BlockPos shadowAnchor; // 影子維度裡這台船方塊的錨點（VM1，server-only）
     private transient boolean shadowForceLoaded; // VM4：本次載入是否已 force-load 影子（重啟/卸載後 reset）
+    private transient boolean dimChanging;        // 正在跨維度轉場,防同 tick 重複觸發
     public void setShadowAnchor(BlockPos a) { this.shadowAnchor = a; }
     @Nullable public BlockPos getShadowAnchor() { return shadowAnchor; }
 

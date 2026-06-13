@@ -551,6 +551,7 @@
   "block.koniava.mana_alloy_block": "Mana Alloy Block",
   "hud.koniava.ship.engines": "Engines: %s",
   "hud.koniava.ship.tier": "Tier: T%s",
+  "message.koniava.ship.tier_too_low_orbit": "Tier too low to leave the atmosphere",
   "hud.koniava.ship.throttle": "Thr",
   "hud.koniava.ship.fuel": "Fuel",
   "hud.koniava.ship.warp": "Warp",
