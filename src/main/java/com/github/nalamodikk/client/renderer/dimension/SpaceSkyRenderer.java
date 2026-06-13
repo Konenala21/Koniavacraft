@@ -44,7 +44,7 @@ public class SpaceSkyRenderer {
                     && mc.player.getY() < com.github.nalamodikk.dimension.MoonChunkGenerator.CRUST_BOTTOM) return;
             atmo = 1.0f;
         } else {
-            atmo = AtmosphereTransition.blend(mc);
+            atmo = AtmosphereTransition.skyFade(mc); // 比地球漸變陡,切換前就全黑蓋掉 vanilla 太陽月亮
             if (atmo <= 0f) return;
         }
 

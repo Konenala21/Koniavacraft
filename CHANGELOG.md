@@ -9,8 +9,8 @@ All notable changes to this project will be documented in this file.
 Conduits and machines on a spaceship now show their connections visually. Previously a conduit on a ship would not grow an arm toward a fuel tank or machine you placed next to it (the connection worked, it just looked detached); now placing or breaking a block refreshes the neighbouring conduits' appearance so they connect on screen too.
 飛船上的導管和機器現在會正確顯示連接外觀了。以前在船上的導管不會朝你旁邊放的燃料槽或機器長出連接臂(功能有接,只是看起來沒接);現在放置或破壞方塊會刷新鄰近導管的外觀,畫面上也接起來。
 
-Flying your spaceship up into space is seamless now: as you climb past high altitude the sky darkens, stars fade in, and Earth shrinks away below you, so when the ship actually crosses into the space dimension the moment looks continuous instead of a sudden black loading flash. The space background is also pre-warmed during the climb, so arriving in space no longer flickers.
-駕駛飛船上太空現在無縫了:爬過高空時天空會漸漸變黑、星空淡入、地球在下方變小後退,所以飛船真正跨進太空維度那一刻看起來是連續的,不再是突然黑屏載入閃一下。爬升過程也順便預熱了太空背景,抵達太空不再閃爍。
+Flying your spaceship up into space is seamless now: as you climb past high altitude the sky darkens, the overworld sun and moon fade out, stars fade in, and Earth shrinks away below you, so when the ship actually crosses into the space dimension the moment looks continuous instead of a sudden black loading flash. The space background is also pre-warmed during the climb, so arriving in space no longer flickers.
+駕駛飛船上太空現在無縫了:爬過高空時天空會漸漸變黑、原本的太陽月亮淡出、星空淡入、地球在下方變小後退,所以飛船真正跨進太空維度那一刻看起來是連續的,不再是突然黑屏載入閃一下。爬升過程也順便預熱了太空背景,抵達太空不再閃爍。
 
 Fly your spaceship high enough and it carries you up into space. Climb to the entry altitude in the normal world and, if your ship's tier is high enough, the whole ship and everyone aboard is taken into the space dimension. If the tier is too low you cannot leave the atmosphere (a message tells you). In space, descend low enough and the ship brings you back down to the normal world. The ship HUD shows your current Tier.
 把飛船飛得夠高就能帶你上太空。在一般世界爬升到進入高度,只要飛船階級夠,整艘船和船上所有人就會被帶進太空維度。階級不夠就離不開大氣層(會提示你)。在太空裡降得夠低,船會把你帶回一般世界。船的 HUD 會顯示你目前的階級。

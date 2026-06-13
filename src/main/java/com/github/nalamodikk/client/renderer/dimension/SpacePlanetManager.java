@@ -104,13 +104,15 @@ public class SpacePlanetManager {
     }
 
     /**
-     * 主世界爬升時在玩家正下方畫一顆地球。隨高度後退（距離 150→280）+ 淡入（alpha=atmo），到 Y1000
-     * 時距離 280、視角半徑 ≈ 15°，正好對齊太空那邊在引力區（280 格）剛抵達時看到的地球大小 → 切換無縫。
+     * 主世界爬升時在玩家正下方畫一顆大地球（剛飛上來的感覺）。隨高度後退（dist 近→遠 → 地球越爬越小）+ 淡入（alpha=atmo）。
+     * 半徑放大成 500（>太空地球的 76）→ 比切換瞬間的太空地球大很多，切換那刻會「縮一下」，這是大球換來的代價。
+     * dist 起終點是獨立調的（不再綁引力區，那個已因大球放大失去對齊意義）。
      */
     private static void renderAscentEarth(Minecraft mc, float atmo, float gameTime,
                                           float[] invProj, float[] invView, int w, int h) {
-        float dist   = Mth.lerp(atmo, 150f, 280f);  // 越高越遠 → 地球越小，賣「離開」
-        float radius = 76f;                          // 跟太空地球同物理半徑
+        float dist   = Mth.lerp(atmo, 350f, 900f);          // 低空近(大) → 高空遠(小):縮速回上一版(範圍小=縮得慢)
+        float radius = 2500f;                               // 超大爬升地球(塞滿下方;跟太空地球 76 差很多 → 切換會縮一下)
+        float earthAlpha = Math.min(1f, atmo * 4f);         // 淡入跟大小解綁:早早全顯示,才看得到低空那顆最大的
         float angDeg = (float) Math.toDegrees(Math.atan(radius / dist));
         float cosAng = (float) Math.cos(Math.toRadians(angDeg));
 
@@ -130,7 +132,7 @@ public class SpacePlanetManager {
             earthDir, dist, cosAng, sunDir,
             new Vector3f(0.18f, 0.42f, 0.68f), new Vector3f(0.35f, 0.62f, 1.0f),
             1.2f, 0.10f, false,
-            earthTex, earthAtmo, earthNight, 0.002f, 0.00216f, atmo, null, 1.001f, earthNormal, earthSpec);
+            earthTex, earthAtmo, earthNight, 0.002f, 0.00216f, earthAlpha, null, 1.001f, earthNormal, earthSpec);
     }
 
     /** 月球天空：簡單明亮太陽（驅動日夜）+ 精緻地球（固定掛天上，相位由太陽方向自動算）。 */

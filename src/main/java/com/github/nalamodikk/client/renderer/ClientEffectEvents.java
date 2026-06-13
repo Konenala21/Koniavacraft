@@ -52,7 +52,7 @@ public final class ClientEffectEvents {
     // 主世界爬升進太空時，把霧色隨高度染黑 → 地平線殘留的藍消失，配合星空淡入 = 大氣層漸變。
     @SubscribeEvent
     public static void onFogColor(ViewportEvent.ComputeFogColor event) {
-        float b = AtmosphereTransition.blend(Minecraft.getInstance());
+        float b = AtmosphereTransition.skyFade(Minecraft.getInstance()); // 跟天空同步,地平線藍跟太陽月亮一起消
         if (b <= 0f) return;
         float keep = 1.0f - b;
         event.setRed(event.getRed() * keep);

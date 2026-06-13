@@ -37,4 +37,18 @@ public final class AtmosphereTransition {
         return (float) Mth.clamp(
                 (camY - Y_FADE_START) / (double) (Y_FADE_END - Y_FADE_START), 0.0, 1.0);
     }
+
+    /** 天空/霧的淡出在起點上方這麼多格內就淡完(太陽月亮消失),不隨傳送高度拉長 → 一爬就有太空感。 */
+    public static final double SKY_FADE_BAND = 300.0;
+
+    /**
+     * 天空/霧用的漸變：綁「起點上方絕對高度」（{@link #SKY_FADE_BAND} 格內淡完），不像 {@link #blend} 那樣
+     * 被整段 700→SPACE_ENTRY_Y 攤平。所以傳送高度拉高也不會害低空的太陽月亮淡很慢。地球球體仍用原 blend
+     * （要它整段都可見、慢慢縮），所以分開兩條曲線。
+     */
+    public static float skyFade(Minecraft mc) {
+        if (blend(mc) <= 0f) return 0f; // 共用 blend 的閘門:只在主世界騎合格飛船爬過起點才生效
+        double camY = mc.gameRenderer.getMainCamera().getPosition().y;
+        return (float) Mth.clamp((camY - Y_FADE_START) / SKY_FADE_BAND, 0.0, 1.0);
+    }
 }

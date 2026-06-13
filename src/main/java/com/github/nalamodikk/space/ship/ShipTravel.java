@@ -31,14 +31,14 @@ import java.util.List;
  */
 public final class ShipTravel {
 
-    /** 主世界飛到這高度 → 進太空。必須等於 client 端 AtmosphereTransition.Y_FADE_END。 */
-    public static final int SPACE_ENTRY_Y = 1000;
+    /** 主世界飛到這高度 → 進太空。client 端 AtmosphereTransition.Y_FADE_END 自動引用這個。 */
+    public static final int SPACE_ENTRY_Y = 3000;
     /** 進軌道最低 tier:有燃料+引擎=tier 5 ≥ 1,基礎船就能上;星球之後要更高。 */
     public static final int ORBIT_MIN_TIER = 1;
-    /** 引力區半徑(>地球視覺半徑 76)。 */
-    public static final double EARTH_GRAVITY_RADIUS = 280.0;
-    /** 進太空時落在引力區外緣再加這距離(地球外側)。 */
-    public static final double ARRIVE_MARGIN = 150.0;
+    /** 引力區半徑(回地球的觸發距離)。注意:<地球視覺半徑 76 → 回程會先飛進地球球體才傳送(鑽進星球感)。 */
+    public static final double EARTH_GRAVITY_RADIUS = 40.0;
+    /** 進太空時落在引力區外緣再加這距離(地球外側)。抵達距離 = 半徑+margin,客戶端 renderAscentEarth 對齊這個。 */
+    public static final double ARRIVE_MARGIN = 50.0;
     /** 回主世界的 Y(高空,接著往下飛)。 */
     public static final double OVERWORLD_RETURN_Y = 700.0;
     /** 轉場後冷卻 tick,防剛到就立刻反彈。 */
