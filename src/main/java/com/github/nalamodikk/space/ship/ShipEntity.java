@@ -5,6 +5,7 @@ import com.github.nalamodikk.common.network.packet.client.ship.ShipChestLidPacke
 import com.github.nalamodikk.common.block.blockentity.altar.AltarGeometry;
 import com.github.nalamodikk.common.item.tool.StructureBuildWandItem;
 import com.github.nalamodikk.register.ModBlocks;
+import com.github.nalamodikk.common.block.blockentity.conduit.ArcaneConduitBlock;
 import com.github.nalamodikk.common.capability.mana.ManaAction;
 import net.minecraft.core.Vec3i;
 import net.minecraft.core.BlockPos;
@@ -556,6 +557,25 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         if (nbt != null) {
             BlockEntity be = shadow.getBlockEntity(sp);
             if (be != null) be.loadWithComponents(nbt, shadow.registryAccess());
+        }
+        refreshConduitConnections(shadow, sp); // 鄰接外觀(導管連接臂):UPDATE_CLIENTS 抑制了鄰居更新,自己補
+    }
+
+    /**
+     * 更新「鄰居感知外觀」的導管(連接臂)。因為 writeToShadow 用 UPDATE_CLIENTS 不發鄰居更新(大船凍結元兇),
+     * 既有導管不會自動朝新放/挖的鄰居(燃料槽/機器)長/縮臂。這裡 bounded 補:只碰中心那格 + 6 鄰居,
+     * 寫回也用 UPDATE_CLIENTS(不觸發連鎖),視覺由 tickServerMirror 把影子 state 鏡射回 contraption。
+     */
+    private static void refreshConduitConnections(ServerLevel shadow, BlockPos center) {
+        refreshOneConduit(shadow, center);
+        for (Direction d : Direction.values()) refreshOneConduit(shadow, center.relative(d));
+    }
+
+    private static void refreshOneConduit(ServerLevel shadow, BlockPos pos) {
+        BlockState s = shadow.getBlockState(pos);
+        if (s.getBlock() instanceof ArcaneConduitBlock conduit) {
+            BlockState ns = conduit.updateConnections(shadow, pos, s);
+            if (ns != s) shadow.setBlock(pos, ns, Block.UPDATE_CLIENTS);
         }
     }
 
