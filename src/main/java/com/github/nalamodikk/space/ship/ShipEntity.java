@@ -22,6 +22,10 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.portal.DimensionTransition;
 import com.github.nalamodikk.dimension.ModDimensions;
+import com.github.nalamodikk.space.orbit.PlanetDef;
+import com.github.nalamodikk.space.orbit.StarSystem;
+import com.github.nalamodikk.space.orbit.StarSystemRegistry;
+import org.joml.Vector3f;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.ItemInteractionResult;
@@ -166,12 +170,15 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     // 魔焓/tier(暫常數,之後接燃料物品/引擎世代)。基礎魔力 = 魔焓 5;魔力引擎能燒魔焓 ≤ 9(基礎+精煉魔力)。
     private static final int ENTHALPY_BASIC_MANA = 5;
     private static final int MANA_ENGINE_ENTHALPY_CAP = 9;
-    // 跨維度轉場高度(船是 entity 無 Y 上限)。進軌道最低 tier:有燃料+引擎=tier 5 ≥ 1,基礎船就能上;星球之後要更高。
+    // 跨維度轉場(船是 entity 無 Y 上限)。進軌道最低 tier:有燃料+引擎=tier 5 ≥ 1,基礎船就能上;星球之後要更高。
     private static final int SPACE_ENTRY_Y = 1000;          // 主世界飛到這高度 → 進太空
     private static final int ORBIT_MIN_TIER = 1;
-    private static final double SPACE_ARRIVE_Y = 256.0;     // 進太空後的 Y(太空虛空)
-    private static final int SPACE_EXIT_Y = 0;              // 太空降到這高度 → 回主世界
-    private static final double OVERWORLD_RETURN_Y = 700.0; // 回主世界的 Y(高空,接著往下飛)
+    // 地球在太空維度會公轉(繞太陽),引力區跟著地球當下軌道位置走(同渲染:StarSystemRegistry + getGameTime)。
+    // 回地球 = 飛進這顆移動中的球,不是 Y 門檻 → 在太空其他地方愛怎麼飛都行,只有飛向地球才回去。
+    private static final double EARTH_GRAVITY_RADIUS = 280.0; // 引力區半徑(>地球視覺半徑 76)
+    private static final double ARRIVE_MARGIN = 150.0;        // 進太空時落在引力區外緣再加這距離(地球外側)
+    private static final double OVERWORLD_RETURN_Y = 700.0;   // 回主世界的 Y(高空,接著往下飛)
+    private static final int TRANSITION_COOLDOWN = 100;       // 轉場後冷卻 tick,防剛到就立刻反彈
     private static final double SPEED_PER_WARP = 4.0;     // 每「座」完整曲速結構貢獻(~6 座到頂 600)
     private static final double WARP_CAP = 30.0;          // 有曲速結構時的天花板 30.0/tick=600 b/s
     private static final int FUEL_PER_WARP_MOVE = 200;    // 每座曲速結構每 tick 從進料口抽的能量(很兇,要高密度燃料/魔力網路撐)
@@ -757,6 +764,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
      */
     private void tickDimensionTransition() {
         if (level().isClientSide || dimChanging || contraption == null) return;
+        if (transitionCooldown > 0) { transitionCooldown--; return; }
         MinecraftServer server = level().getServer();
         if (server == null) return;
 
@@ -769,11 +777,35 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
                 return;
             }
             ServerLevel space = server.getLevel(ModDimensions.SPACE);
-            if (space != null) doDimensionTransition(space, new Vec3(getX(), SPACE_ARRIVE_Y, getZ()));
-        } else if (level().dimension() == ModDimensions.SPACE && getY() <= SPACE_EXIT_Y) {
-            ServerLevel over = server.overworld();
-            doDimensionTransition(over, new Vec3(getX(), OVERWORLD_RETURN_Y, getZ()));
+            if (space != null) {
+                launchX = getX(); launchZ = getZ(); // 記住發射點,回程傳回這
+                // 落在地球(當下軌道位置)外側、引力區外:沿「遠離太陽」方向推開
+                Vec3 earth = currentEarthSpacePos(space);
+                Vector3f sysPos = StarSystemRegistry.SOLAR_SYSTEM.worldPos();
+                Vec3 sun = new Vec3(sysPos.x, earth.y, sysPos.z);
+                Vec3 outward = earth.subtract(sun);
+                outward = outward.lengthSqr() < 1e-6 ? new Vec3(1, 0, 0) : outward.normalize();
+                Vec3 arrive = earth.add(outward.scale(EARTH_GRAVITY_RADIUS + ARRIVE_MARGIN));
+                doDimensionTransition(space, arrive);
+            }
+        } else if (level().dimension() == ModDimensions.SPACE) {
+            Vec3 earth = currentEarthSpacePos((ServerLevel) level()); // 公轉中,每 tick 重算
+            if (position().distanceToSqr(earth) <= EARTH_GRAVITY_RADIUS * EARTH_GRAVITY_RADIUS)
+                doDimensionTransition(server.overworld(), new Vec3(launchX, OVERWORLD_RETURN_Y, launchZ));
         }
+    }
+
+    /** 地球在太空維度的當下位置(公轉)。跟渲染同一套:StarSystemRegistry 的軌道公式 + getGameTime。 */
+    private static Vec3 currentEarthSpacePos(ServerLevel space) {
+        StarSystem sys = StarSystemRegistry.SOLAR_SYSTEM;
+        double t = space.getGameTime();
+        Vector3f sunPos = sys.stars().get(0).worldPositionAt(t, sys.worldPos());
+        for (PlanetDef p : sys.planets())
+            if (p.id().equals("earth")) {
+                Vector3f ep = p.worldPositionAt(t, sunPos);
+                return new Vec3(ep.x, ep.y, ep.z);
+            }
+        return new Vec3(sunPos.x, sunPos.y, sunPos.z);
     }
 
     /** 連船帶乘客搬到 target 維度的 arrive 位置。changeDimension 重建船,乘客卸載→傳送→重騎。 */
@@ -787,6 +819,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         Entity moved = this.changeDimension(transition);
         if (moved instanceof ShipEntity newShip) {
             newShip.dimChanging = false;
+            newShip.transitionCooldown = TRANSITION_COOLDOWN; // 剛到,冷卻防立刻反彈回去
             for (ServerPlayer sp : riders) {
                 sp.teleportTo(target, arrive.x, arrive.y + 1.0, arrive.z, java.util.Set.of(), sp.getYRot(), sp.getXRot());
                 sp.startRiding(newShip, true);
@@ -2109,6 +2142,8 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             int[] a = tag.getIntArray("ShadowAnchor");
             if (a.length == 3) shadowAnchor = new BlockPos(a[0], a[1], a[2]);
         }
+        launchX = tag.getDouble("LaunchX");
+        launchZ = tag.getDouble("LaunchZ");
     }
 
     @Override
@@ -2119,11 +2154,15 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         if (shadowAnchor != null) {
             tag.putIntArray("ShadowAnchor", new int[]{shadowAnchor.getX(), shadowAnchor.getY(), shadowAnchor.getZ()});
         }
+        tag.putDouble("LaunchX", launchX);
+        tag.putDouble("LaunchZ", launchZ);
     }
 
     @Nullable private BlockPos shadowAnchor; // 影子維度裡這台船方塊的錨點（VM1，server-only）
     private transient boolean shadowForceLoaded; // VM4：本次載入是否已 force-load 影子（重啟/卸載後 reset）
     private transient boolean dimChanging;        // 正在跨維度轉場,防同 tick 重複觸發
+    private transient int transitionCooldown;     // 轉場後冷卻,防剛到就反彈(不存檔,重建後手動設)
+    private double launchX, launchZ;              // 從主世界哪裡發射的,回程傳回這(存 NBT 跨維度保留)
     public void setShadowAnchor(BlockPos a) { this.shadowAnchor = a; }
     @Nullable public BlockPos getShadowAnchor() { return shadowAnchor; }
 
