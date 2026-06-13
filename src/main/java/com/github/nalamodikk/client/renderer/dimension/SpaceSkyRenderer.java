@@ -8,6 +8,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
@@ -22,7 +23,7 @@ public class SpaceSkyRenderer {
     private static int vaoId     = -1;
     private static int vboId     = -1;
 
-    private static int locTime, locInvProj, locInvView, locResolution, locMoonSky;
+    private static int locTime, locInvProj, locInvView, locResolution, locMoonSky, locAtmosphere;
 
     private static boolean initialized = false;
 
@@ -33,10 +34,19 @@ public class SpaceSkyRenderer {
         if (mc.level == null) return;
         boolean space = mc.level.dimension().equals(ModDimensions.SPACE);
         boolean moon  = mc.level.dimension().equals(ModDimensions.MOON);
-        if (!space && !moon) return;
-        // 月球地底/中空不畫星空
-        if (moon && mc.player != null
-                && mc.player.getY() < com.github.nalamodikk.dimension.MoonChunkGenerator.CRUST_BOTTOM) return;
+
+        // atmo = 1 全太空（不透明）；主世界爬升 = 漸變值（星空淡入疊在原版天空上）。
+        // 在主世界就跑這個 shader 也順便做了「背景預載」：切換前 init() 已完成 → 進 SPACE 不再冷啟動閃黑。
+        float atmo;
+        if (space || moon) {
+            // 月球地底/中空不畫星空
+            if (moon && mc.player != null
+                    && mc.player.getY() < com.github.nalamodikk.dimension.MoonChunkGenerator.CRUST_BOTTOM) return;
+            atmo = 1.0f;
+        } else {
+            atmo = AtmosphereTransition.blend(mc);
+            if (atmo <= 0f) return;
+        }
 
         if (!initialized) {
             init();
@@ -49,7 +59,14 @@ public class SpaceSkyRenderer {
         boolean depth = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
         boolean blend = GL11.glIsEnabled(GL11.GL_BLEND);
         GL11.glDisable(GL11.GL_DEPTH_TEST);
-        GL11.glDisable(GL11.GL_BLEND);
+        // 全太空(atmo=1)：不透明直接蓋。主世界爬升(atmo<1)：alpha blend 把星空淡入疊在原版天空上。
+        if (atmo < 1.0f) {
+            GL11.glEnable(GL11.GL_BLEND);
+            GL14.glBlendFuncSeparate(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA,
+                    GL11.GL_ONE, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        } else {
+            GL11.glDisable(GL11.GL_BLEND);
+        }
 
         GL20.glUseProgram(programId);
 
@@ -58,6 +75,7 @@ public class SpaceSkyRenderer {
         GL20.glUniform1f(locTime, gameTime);
         GL20.glUniform2f(locResolution, target.width, target.height);
         if (locMoonSky != -1) GL20.glUniform1i(locMoonSky, moon ? 1 : 0);
+        if (locAtmosphere != -1) GL20.glUniform1f(locAtmosphere, atmo);
 
         float[] invProj = new float[16];
         float[] invView = new float[16];
@@ -72,7 +90,7 @@ public class SpaceSkyRenderer {
 
         GL20.glUseProgram(prevProg);
         if (depth) GL11.glEnable(GL11.GL_DEPTH_TEST);
-        if (blend) GL11.glEnable(GL11.GL_BLEND);
+        if (blend) GL11.glEnable(GL11.GL_BLEND); else GL11.glDisable(GL11.GL_BLEND);
     }
 
     public static void reload() { release(); }
@@ -95,6 +113,7 @@ public class SpaceSkyRenderer {
         locInvView    = GL20.glGetUniformLocation(programId, "InvViewMat");
         locResolution = GL20.glGetUniformLocation(programId, "iResolution");
         locMoonSky    = GL20.glGetUniformLocation(programId, "uMoonSky");
+        locAtmosphere = GL20.glGetUniformLocation(programId, "uAtmosphere");
         GL20.glUseProgram(0);
 
         vaoId = GL30.glGenVertexArrays();

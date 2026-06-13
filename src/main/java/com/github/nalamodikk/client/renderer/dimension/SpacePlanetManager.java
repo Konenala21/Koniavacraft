@@ -9,6 +9,7 @@ import com.github.nalamodikk.space.orbit.StarSystemRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.util.Mth;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -49,7 +50,14 @@ public class SpacePlanetManager {
         if (mc.level == null || mc.player == null) return;
         boolean inSpace = mc.level.dimension().equals(ModDimensions.SPACE);
         boolean onMoon  = mc.level.dimension().equals(ModDimensions.MOON);
-        if (!inSpace && !onMoon) return;
+        // 主世界爬升：在玩家正下方畫一顆會後退的地球，賣「離開地球」並對齊太空那邊的視覺
+        float ascentAtmo = 0f;
+        boolean overworldAscent = false;
+        if (!inSpace && !onMoon) {
+            ascentAtmo = AtmosphereTransition.blend(mc);
+            if (ascentAtmo <= 0f) return;
+            overworldAscent = true;
+        }
         // 月球地底/中空（地殼底以下）不畫天空，否則在星球內部看到星空很怪
         if (onMoon && mc.player.getY() < com.github.nalamodikk.dimension.MoonChunkGenerator.CRUST_BOTTOM) return;
 
@@ -77,6 +85,11 @@ public class SpacePlanetManager {
         );
         Vector3f camFwd = new Vector3f(-invView[8], -invView[9], -invView[10]).normalize();
 
+        if (overworldAscent) {
+            renderAscentEarth(mc, ascentAtmo, gameTime, invProj, invView, target.width, target.height);
+            return;
+        }
+
         if (onMoon) {
             // 月球天空：從地表往上看，太陽走天空弧（日夜）、地球固定掛天上有相位
             float partialT = event.getPartialTick().getGameTimeDeltaPartialTick(false);
@@ -88,6 +101,36 @@ public class SpacePlanetManager {
             renderSystem(system, playerPos, camFwd, tick, gameTime,
                          invProj, invView, target.width, target.height);
         }
+    }
+
+    /**
+     * 主世界爬升時在玩家正下方畫一顆地球。隨高度後退（距離 150→280）+ 淡入（alpha=atmo），到 Y1000
+     * 時距離 280、視角半徑 ≈ 15°，正好對齊太空那邊在引力區（280 格）剛抵達時看到的地球大小 → 切換無縫。
+     */
+    private static void renderAscentEarth(Minecraft mc, float atmo, float gameTime,
+                                          float[] invProj, float[] invView, int w, int h) {
+        float dist   = Mth.lerp(atmo, 150f, 280f);  // 越高越遠 → 地球越小，賣「離開」
+        float radius = 76f;                          // 跟太空地球同物理半徑
+        float angDeg = (float) Math.toDegrees(Math.atan(radius / dist));
+        float cosAng = (float) Math.cos(Math.toRadians(angDeg));
+
+        Vector3f earthDir = new Vector3f(0f, -1f, 0f); // 正下方
+
+        // 光源：用主世界當下太陽方向，地球亮面跟主世界日照大致一致
+        float sunAng = mc.level.getSunAngle(1.0f);
+        Vector3f sunDir = new Vector3f((float) Math.cos(sunAng), (float) Math.sin(sunAng), 0.2f).normalize();
+
+        int earthTex    = getTexture("earth");
+        int earthAtmo   = getTexture("earth_atmo");
+        int earthNight  = getTexture("earth_night");
+        int earthNormal = getTexture("earth_normal");
+        int earthSpec   = getTexture("earth_specular");
+
+        atmosphereRenderer.renderAtmosphere(invProj, invView, gameTime, w, h,
+            earthDir, dist, cosAng, sunDir,
+            new Vector3f(0.18f, 0.42f, 0.68f), new Vector3f(0.35f, 0.62f, 1.0f),
+            1.2f, 0.10f, false,
+            earthTex, earthAtmo, earthNight, 0.002f, 0.00216f, atmo, null, 1.001f, earthNormal, earthSpec);
     }
 
     /** 月球天空：簡單明亮太陽（驅動日夜）+ 精緻地球（固定掛天上，相位由太陽方向自動算）。 */

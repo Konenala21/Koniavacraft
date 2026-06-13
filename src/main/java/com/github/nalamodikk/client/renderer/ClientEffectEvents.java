@@ -1,6 +1,7 @@
 package com.github.nalamodikk.client.renderer;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.client.renderer.dimension.AtmosphereTransition;
 import com.github.nalamodikk.client.renderer.dimension.SpacePlanetManager;
 import com.github.nalamodikk.client.renderer.dimension.SpaceSkyRenderer;
 import com.github.nalamodikk.common.item.DevRenderTestItem;
@@ -12,6 +13,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 
 @EventBusSubscriber(modid = KoniavacraftMod.MOD_ID, value = Dist.CLIENT)
@@ -45,6 +47,17 @@ public final class ClientEffectEvents {
     public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
         SpaceSkyRenderer.reload();
         SpacePlanetManager.reload();
+    }
+
+    // 主世界爬升進太空時，把霧色隨高度染黑 → 地平線殘留的藍消失，配合星空淡入 = 大氣層漸變。
+    @SubscribeEvent
+    public static void onFogColor(ViewportEvent.ComputeFogColor event) {
+        float b = AtmosphereTransition.blend(Minecraft.getInstance());
+        if (b <= 0f) return;
+        float keep = 1.0f - b;
+        event.setRed(event.getRed() * keep);
+        event.setGreen(event.getGreen() * keep);
+        event.setBlue(event.getBlue() * keep);
     }
 
     @SubscribeEvent

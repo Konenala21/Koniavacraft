@@ -5,6 +5,7 @@ uniform vec2  iResolution;
 uniform mat4  InvProjMat;
 uniform mat4  InvViewMat;
 uniform int   uMoonSky;   // 1 = 月球（無大氣：星星更亮不閃爍、無流星）
+uniform float uAtmosphere; // 1 = 全太空（不透明），<1 = 主世界爬升漸變（星空淡入疊在原版天空上）
 
 in  vec2 texCoord;
 out vec4 fragColor;
@@ -96,5 +97,5 @@ void main(){
         }
     }
 
-    fragColor=vec4(mwCol+tint*bright,1.0);
+    fragColor=vec4(mwCol+tint*bright,uAtmosphere);
 }
