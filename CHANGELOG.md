@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Breaking blocks on a spaceship now works like in the normal world: in survival you hold to mine and the block shows the usual cracking overlay that progresses with its hardness and your tool, then breaks, instead of breaking instantly on one click. Creative still breaks instantly.
+在飛船上破壞方塊現在跟一般世界一樣:生存模式按住左鍵挖,方塊會顯示一般的裂紋,隨方塊硬度和你的工具推進,挖滿才破壞,不再是點一下就瞬間破壞。創造模式仍是瞬破。
+
 Breaking a block on a spaceship now puts the drop straight into your inventory, and if your inventory is full the leftover drops right where you broke it, instead of all drops appearing at the ship's centre.
 在飛船上破壞方塊現在會把掉落物直接收進背包,背包滿了剩下的就掉在你挖的那一格,不再是所有掉落物都跑到船的中心。
 

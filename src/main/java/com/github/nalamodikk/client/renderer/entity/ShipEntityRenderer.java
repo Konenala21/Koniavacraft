@@ -1,13 +1,16 @@
 package com.github.nalamodikk.client.renderer.entity;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.client.event.ShipMiningHandler;
 import com.github.nalamodikk.space.ship.ShipContraption;
 import com.github.nalamodikk.space.ship.ShipEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
+import com.mojang.blaze3d.vertex.SheetedDecalTextureGenerator;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.block.ModelBlockRenderer;
@@ -19,6 +22,7 @@ import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
@@ -104,6 +108,23 @@ public class ShipEntityRenderer extends EntityRenderer<ShipEntity> {
                 r.render(be, partialTick, pose, buffers, beLight, OverlayTexture.NO_OVERLAY);
                 pose.popPose();
             }
+
+            // 挖掘裂紋:正版式破壞進度,用 vanilla destroy overlay 畫在正在挖的那格(階數由 ShipMiningHandler 給)
+            int crackStage = ShipMiningHandler.crackStage(entity);
+            BlockPos minedLocal = ShipMiningHandler.minedLocal(entity);
+            if (crackStage >= 0 && minedLocal != null) {
+                StructureBlockInfo minfo = c.getBlocks().get(minedLocal);
+                if (minfo != null && !minfo.state().isAir() && minfo.state().getRenderShape() == RenderShape.MODEL) {
+                    ShipRenderWorld rw = new ShipRenderWorld(entity.level(), c);
+                    pose.pushPose();
+                    pose.translate(minedLocal.getX(), minedLocal.getY(), minedLocal.getZ());
+                    VertexConsumer dvc = buffers.getBuffer(ModelBakery.DESTROY_TYPES.get(crackStage));
+                    SheetedDecalTextureGenerator decal = new SheetedDecalTextureGenerator(dvc, pose.last(), 1.0f);
+                    blockRenderer.renderBreakingTexture(minfo.state(), minedLocal, rw, pose, decal, ModelData.EMPTY);
+                    pose.popPose();
+                }
+            }
+
             pose.popPose(); // 結束整艘船的 yaw 旋轉
         }
         super.render(entity, yaw, partialTick, pose, buffers, packedLight);

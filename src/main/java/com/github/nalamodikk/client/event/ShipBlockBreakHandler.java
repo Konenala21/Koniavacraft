@@ -34,6 +34,7 @@ public final class ShipBlockBreakHandler {
         if (!(event.getTarget() instanceof ShipEntity ship)) return;
         Player player = event.getEntity();
         if (!player.level().isClientSide || !ship.isParked()) return;
+        if (!player.getAbilities().instabuild) return; // 生存:交給 ShipMiningHandler 按住挖(裂紋進度),這裡只負責創造瞬破
         BlockPos local = ship.getAimedLocalBlock(player); // 跟準心/外框同一個 pick
         if (local == null) return;
         ship.clientPredictBreak(local); // 本地先移除,免等封包來回的延遲
