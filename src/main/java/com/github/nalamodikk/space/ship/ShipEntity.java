@@ -17,14 +17,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.level.portal.DimensionTransition;
 import com.github.nalamodikk.dimension.ModDimensions;
-import com.github.nalamodikk.space.orbit.PlanetDef;
-import com.github.nalamodikk.space.orbit.StarSystem;
-import com.github.nalamodikk.space.orbit.StarSystemRegistry;
 import org.joml.Vector3f;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -157,31 +152,10 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     private double lerpX, lerpY, lerpZ;
     private float lerpYRot, lerpXRot;
 
-    // 燃料/引擎(1b)：引擎數=速度上限、燃料槽 local=飛行時抽魔力的對象。contraption 變動時 recomputeFuelSystem() 重算。
-    private int engineCount = 0;
-    private final java.util.List<BlockPos> fuelTankLocals = new java.util.ArrayList<>();
-    // 曲速引擎(#2,多方塊):核心 local(偵測輸入)、完整結構數、完整結構的進料口 local(曲速燃料從這抽)。
-    private final java.util.List<BlockPos> warpCoreLocals = new java.util.ArrayList<>();
-    private int warpDriveCount = 0;
-    private final java.util.List<BlockPos> warpIntakeLocals = new java.util.ArrayList<>();
-    private static final double SPEED_PER_ENGINE = 0.2;  // 每引擎貢獻的每 tick 速度上限(20 b/s=1.0/tick;~50 引擎到頂 200)
-    private static final double SPEED_CAP = 10.0;         // 一般引擎天花板 10.0/tick=200 b/s。碰撞已子步進防穿牆;這麼快只適合高空/太空,貼地面 chunk 載入跟不上會穿插
-    private static final int FUEL_PER_ENGINE_MOVE = 12;   // 移動時「每引擎」每 tick 耗魔力(滿油門);加速 ×2;隨油門縮放。引擎越多越快也越耗
-    // 魔焓/tier(暫常數,之後接燃料物品/引擎世代)。基礎魔力 = 魔焓 5;魔力引擎能燒魔焓 ≤ 9(基礎+精煉魔力)。
-    private static final int ENTHALPY_BASIC_MANA = 5;
-    private static final int MANA_ENGINE_ENTHALPY_CAP = 9;
-    // 跨維度轉場(船是 entity 無 Y 上限)。進軌道最低 tier:有燃料+引擎=tier 5 ≥ 1,基礎船就能上;星球之後要更高。
-    private static final int SPACE_ENTRY_Y = 1000;          // 主世界飛到這高度 → 進太空
-    private static final int ORBIT_MIN_TIER = 1;
-    // 地球在太空維度會公轉(繞太陽),引力區跟著地球當下軌道位置走(同渲染:StarSystemRegistry + getGameTime)。
-    // 回地球 = 飛進這顆移動中的球,不是 Y 門檻 → 在太空其他地方愛怎麼飛都行,只有飛向地球才回去。
-    private static final double EARTH_GRAVITY_RADIUS = 280.0; // 引力區半徑(>地球視覺半徑 76)
-    private static final double ARRIVE_MARGIN = 150.0;        // 進太空時落在引力區外緣再加這距離(地球外側)
-    private static final double OVERWORLD_RETURN_Y = 700.0;   // 回主世界的 Y(高空,接著往下飛)
-    private static final int TRANSITION_COOLDOWN = 100;       // 轉場後冷卻 tick,防剛到就立刻反彈
-    private static final double SPEED_PER_WARP = 4.0;     // 每「座」完整曲速結構貢獻(~6 座到頂 600)
-    private static final double WARP_CAP = 30.0;          // 有曲速結構時的天花板 30.0/tick=600 b/s
-    private static final int FUEL_PER_WARP_MOVE = 200;    // 每座曲速結構每 tick 從進料口抽的能量(很兇,要高密度燃料/魔力網路撐)
+    // 燃料/引擎/曲速子系統(引擎數、燃料槽/曲速 local、讀/抽燃料、tier)抽到 ShipFuelSystem。contraption 變動時重算。
+    private final ShipFuelSystem fuelSystem = new ShipFuelSystem(this);
+    // 高度觸發跨維度旅行(主世界 <-> 太空、tier gate、發射點存檔)抽到 ShipTravel。doTransition 重建後設新船 travel,故 package 可見。
+    final ShipTravel travel = new ShipTravel(this);
 
     public ShipEntity(EntityType<?> type, Level level) {
         super(type, level);
@@ -270,7 +244,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         this.collisionListCache = null;
         this.hullBlocksCache = null;
         this.dynamicMirrorCache = null;
-        recomputeFuelSystem();   // 引擎數/燃料槽
+        fuelSystem.recompute();  // 引擎數/燃料槽
         refreshDimensions();     // 依新 contraption 撐大 hitbox
     }
 
@@ -343,24 +317,8 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             meshCache = null; // 還沒建/烤失敗 → 讓渲染器重建
             meshFailed = false;
         }
-        // 增量更新引擎數/燃料槽，不掃全船 → 大量放引擎/燃料槽逐個放也不卡(每次 O(1))。
-        // 全船掃描只在組裝/載入(recomputeFuelSystem)做一次；這裡只調整這一格的差異。
-        Block newBlock = state.getBlock();
-        boolean oldEngine = oldBlock instanceof ManaEngineBlock, newEngine = newBlock instanceof ManaEngineBlock;
-        if (oldEngine != newEngine) engineCount += newEngine ? 1 : -1;
-        boolean oldTank = oldBlock instanceof ManaFuelTankBlock, newTank = newBlock instanceof ManaFuelTankBlock;
-        if (oldTank && !newTank) fuelTankLocals.remove(local);
-        else if (newTank && !oldTank) fuelTankLocals.add(local.immutable());
-        // 曲速核心 list 增量維護
-        boolean oldWarp = oldBlock instanceof ManaWarpEngineBlock, newWarp = newBlock instanceof ManaWarpEngineBlock;
-        if (oldWarp && !newWarp) warpCoreLocals.remove(local);
-        else if (newWarp && !oldWarp) warpCoreLocals.add(local.immutable());
-        // 動到曲速相關方塊(核心/外殼魔力合金/進料口) → 重掃完整結構(結構完整性靠多方塊，不能增量)
-        Block alloy = ModBlocks.MANA_ALLOY_BLOCK.get();
-        if (oldWarp || newWarp || oldBlock == alloy || newBlock == alloy
-                || oldBlock instanceof ManaWarpInputBlock || newBlock instanceof ManaWarpInputBlock) {
-            recomputeWarpDrives();
-        }
+        // 增量更新引擎數/燃料槽/曲速，不掃全船 → 大量放引擎/燃料槽逐個放也不卡(每次 O(1))。
+        fuelSystem.onBlockChanged(local, oldBlock, state.getBlock());
         if (!boundsBefore.equals(contraption.bounds())) refreshDimensions(); // bounds 真的變了才更新 hitbox
     }
 
@@ -550,7 +508,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     // ── VM2：影子(真相)→視覺船(鏡像) 狀態鏡射 ─────────────────────────────────
     @Nullable
-    private ServerLevel getShadow() {
+    ServerLevel getShadow() {
         if (shadowAnchor == null || level().isClientSide) return null;
         var server = level().getServer();
         return server == null ? null : ShipShadowManager.shadowLevel(server);
@@ -724,15 +682,15 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         Vec3 target = forwardDir.scale(f).add(0, v, 0);
         if (target.lengthSqr() > 1) target = target.normalize();
         // 速度上限：一般引擎吃燃料槽、曲速結構吃進料口能量,各自有燃料才貢獻;有曲速結構通電 → 天花板拉到 600。× 油門。
-        int fuel = getFuel();
+        int fuel = fuelSystem.currentFuel();
         getEntityData().set(DATA_FUEL, fuel); // 同步給 client 畫 HUD(燃料槽)
         boolean hasFuel = fuel > 0;
-        int warpFuel = getWarpFuel();
+        int warpFuel = fuelSystem.currentWarpFuel();
         getEntityData().set(DATA_WARP_FUEL, warpFuel); // 同步給 HUD
-        boolean hasWarp = warpDriveCount > 0 && warpFuel > 0;
-        double engineSpeed = hasFuel ? engineCount * SPEED_PER_ENGINE : 0.0;
-        double warpSpeed = hasWarp ? warpDriveCount * SPEED_PER_WARP : 0.0;
-        double cap = hasWarp ? WARP_CAP : SPEED_CAP;
+        boolean hasWarp = fuelSystem.warpDriveCount() > 0 && warpFuel > 0;
+        double engineSpeed = hasFuel ? fuelSystem.engineCount() * ShipFuelSystem.SPEED_PER_ENGINE : 0.0;
+        double warpSpeed = hasWarp ? fuelSystem.warpDriveCount() * ShipFuelSystem.SPEED_PER_WARP : 0.0;
+        double cap = hasWarp ? ShipFuelSystem.WARP_CAP : ShipFuelSystem.SPEED_CAP;
         double maxSpeed = Math.min(engineSpeed + warpSpeed, cap) * getThrottle();
         target = target.scale(maxSpeed);
 
@@ -748,83 +706,13 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         if (shipVel.lengthSqr() > 1e-6) {
             int mult = (f != 0f || v != 0) ? 2 : 1;
             double thr = getThrottle();
-            if (hasFuel && engineCount > 0)
-                drainFuel((int) Math.ceil(FUEL_PER_ENGINE_MOVE * engineCount * thr * mult));
+            if (hasFuel && fuelSystem.engineCount() > 0)
+                fuelSystem.drainFuel((int) Math.ceil(ShipFuelSystem.FUEL_PER_ENGINE_MOVE * fuelSystem.engineCount() * thr * mult));
             if (hasWarp)
-                drainWarpFuel((int) Math.ceil(FUEL_PER_WARP_MOVE * warpDriveCount * thr * mult));
+                fuelSystem.drainWarpFuel((int) Math.ceil(ShipFuelSystem.FUEL_PER_WARP_MOVE * fuelSystem.warpDriveCount() * thr * mult));
         }
 
-        tickDimensionTransition(); // 高度觸發:飛到夠高 → 進太空(tier gate);太空降夠低 → 回主世界
-    }
-
-    /**
-     * 高度觸發的跨維度轉場。主世界飛到 SPACE_ENTRY_Y → 檢查 tier 夠就連船帶人傳進太空；
-     * 太空降到 SPACE_EXIT_Y → 傳回主世界高空(回程不卡 tier)。船是 entity,用 changeDimension 重建
-     * (contraption + shadowAnchor 在 save NBT,新船 tick 自動重接影子),乘客先卸載再傳過去重騎。
-     */
-    private void tickDimensionTransition() {
-        if (level().isClientSide || dimChanging || contraption == null) return;
-        if (transitionCooldown > 0) { transitionCooldown--; return; }
-        MinecraftServer server = level().getServer();
-        if (server == null) return;
-
-        if (level().dimension() == Level.OVERWORLD && getY() >= SPACE_ENTRY_Y) {
-            if (getShipTier() < ORBIT_MIN_TIER) { // tier 不夠:離不開大氣層,節流提示,不傳送
-                if (tickCount % 40 == 0)
-                    for (Entity p : getPassengers())
-                        if (p instanceof ServerPlayer sp)
-                            sp.displayClientMessage(Component.translatable("message.koniava.ship.tier_too_low_orbit"), true);
-                return;
-            }
-            ServerLevel space = server.getLevel(ModDimensions.SPACE);
-            if (space != null) {
-                launchX = getX(); launchZ = getZ(); // 記住發射點,回程傳回這
-                // 落在地球(當下軌道位置)外側、引力區外:沿「遠離太陽」方向推開
-                Vec3 earth = currentEarthSpacePos(space);
-                Vector3f sysPos = StarSystemRegistry.SOLAR_SYSTEM.worldPos();
-                Vec3 sun = new Vec3(sysPos.x, earth.y, sysPos.z);
-                Vec3 outward = earth.subtract(sun);
-                outward = outward.lengthSqr() < 1e-6 ? new Vec3(1, 0, 0) : outward.normalize();
-                Vec3 arrive = earth.add(outward.scale(EARTH_GRAVITY_RADIUS + ARRIVE_MARGIN));
-                doDimensionTransition(space, arrive);
-            }
-        } else if (level().dimension() == ModDimensions.SPACE) {
-            Vec3 earth = currentEarthSpacePos((ServerLevel) level()); // 公轉中,每 tick 重算
-            if (position().distanceToSqr(earth) <= EARTH_GRAVITY_RADIUS * EARTH_GRAVITY_RADIUS)
-                doDimensionTransition(server.overworld(), new Vec3(launchX, OVERWORLD_RETURN_Y, launchZ));
-        }
-    }
-
-    /** 地球在太空維度的當下位置(公轉)。跟渲染同一套:StarSystemRegistry 的軌道公式 + getGameTime。 */
-    private static Vec3 currentEarthSpacePos(ServerLevel space) {
-        StarSystem sys = StarSystemRegistry.SOLAR_SYSTEM;
-        double t = space.getGameTime();
-        Vector3f sunPos = sys.stars().get(0).worldPositionAt(t, sys.worldPos());
-        for (PlanetDef p : sys.planets())
-            if (p.id().equals("earth")) {
-                Vector3f ep = p.worldPositionAt(t, sunPos);
-                return new Vec3(ep.x, ep.y, ep.z);
-            }
-        return new Vec3(sunPos.x, sunPos.y, sunPos.z);
-    }
-
-    /** 連船帶乘客搬到 target 維度的 arrive 位置。changeDimension 重建船,乘客卸載→傳送→重騎。 */
-    private void doDimensionTransition(ServerLevel target, Vec3 arrive) {
-        dimChanging = true;
-        java.util.List<ServerPlayer> riders = new java.util.ArrayList<>();
-        for (Entity p : getPassengers()) if (p instanceof ServerPlayer sp) riders.add(sp);
-        for (ServerPlayer sp : riders) sp.stopRiding();
-        DimensionTransition transition = new DimensionTransition(
-                target, arrive, Vec3.ZERO, getYRot(), getXRot(), DimensionTransition.DO_NOTHING);
-        Entity moved = this.changeDimension(transition);
-        if (moved instanceof ShipEntity newShip) {
-            newShip.dimChanging = false;
-            newShip.transitionCooldown = TRANSITION_COOLDOWN; // 剛到,冷卻防立刻反彈回去
-            for (ServerPlayer sp : riders) {
-                sp.teleportTo(target, arrive.x, arrive.y + 1.0, arrive.z, java.util.Set.of(), sp.getYRot(), sp.getXRot());
-                sp.startRiding(newShip, true);
-            }
-        }
+        travel.tick(); // 高度觸發:飛到夠高 → 進太空(tier gate);太空飛進地球引力區 → 回主世界
     }
 
     /** client 端：朝 server 廣播的目標位置/yaw 每 tick 步進一步，平滑跟隨（像 vanilla 船）。 */
@@ -884,99 +772,19 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     // ── 燃料/引擎(1b) ──────────────────────────────────────────────────────────
     public float getThrottle() { return getEntityData().get(DATA_THROTTLE); }
     public void setThrottle(float t) { getEntityData().set(DATA_THROTTLE, Mth.clamp(t, 0f, 1f)); }
-    public int getEngineCount() { return engineCount; }
+    public int getEngineCount() { return fuelSystem.engineCount(); }
 
-    /**
-     * 飛船 tier = min(裝著的最高燃料魔焓(引擎燒得動的), 引擎魔焓上限)。0 = 不能飛(沒引擎或沒燃料)。
-     * 之後 gate 目的地用。目前只有「基礎魔力」燃料(魔焓 5) + 魔力引擎(上限 9) → 有魔力就 tier 5。
-     * 用同步的 DATA_FUEL + engineCount(兩者 client 都有) → client HUD 也算得出來。
-     */
-    public int getShipTier() {
-        int engineCap = engineCount > 0 ? MANA_ENGINE_ENTHALPY_CAP : 0;
-        if (engineCap == 0) return 0;
-        int fuelEnthalpy = getEntityData().get(DATA_FUEL) > 0 ? Math.min(ENTHALPY_BASIC_MANA, engineCap) : 0;
-        return Math.min(fuelEnthalpy, engineCap);
-    }
-    public int getWarpDriveCount() { return warpDriveCount; }
+    /** 飛船 tier(gate 目的地用)。實際計算在 {@link ShipFuelSystem#tier()}。 */
+    public int getShipTier() { return fuelSystem.tier(); }
+    public int getWarpDriveCount() { return fuelSystem.warpDriveCount(); }
     /** HUD 用：同步過來的目前燃料(server 算)。 */
     public int getDisplayFuel() { return getEntityData().get(DATA_FUEL); }
-    /** HUD 用：總燃料容量 = 燃料槽數 × 單槽容量(client 端 fuelTankLocals 在 readSpawnData 算好)。 */
-    public int getMaxFuel() { return fuelTankLocals.size() * ManaFuelTankBlockEntity.CAPACITY; }
+    /** HUD 用：總燃料容量 = 燃料槽數 × 單槽容量。 */
+    public int getMaxFuel() { return fuelSystem.tankCount() * ManaFuelTankBlockEntity.CAPACITY; }
     /** HUD 用：曲速能量(同步) + 總容量 = 進料口數 × 單口容量。 */
     public int getDisplayWarpFuel() { return getEntityData().get(DATA_WARP_FUEL); }
-    public int getMaxWarpFuel() { return warpIntakeLocals.size() * ManaWarpInputBlockEntity.CAPACITY; }
+    public int getMaxWarpFuel() { return fuelSystem.warpIntakeCount() * ManaWarpInputBlockEntity.CAPACITY; }
 
-    /** contraption 變動時重算引擎數 + 燃料槽/曲速核心 local，再掃完整曲速結構。只在組裝/載入跑一次。 */
-    private void recomputeFuelSystem() {
-        engineCount = 0;
-        fuelTankLocals.clear();
-        warpCoreLocals.clear();
-        if (contraption == null) { warpDriveCount = 0; warpIntakeLocals.clear(); return; }
-        for (var e : contraption.getBlocks().entrySet()) {
-            Block b = e.getValue().state().getBlock();
-            if (b instanceof ManaWarpEngineBlock) warpCoreLocals.add(e.getKey().immutable());
-            else if (b instanceof ManaEngineBlock) engineCount++;
-            else if (b instanceof ManaFuelTankBlock) fuelTankLocals.add(e.getKey().immutable());
-        }
-        recomputeWarpDrives();
-    }
-
-    /** 用 warpCoreLocals 掃完整 3×4×3 沙漏結構，更新 warpDriveCount + warpIntakeLocals(曲速燃料從這些進料口抽)。 */
-    private void recomputeWarpDrives() {
-        warpIntakeLocals.clear();
-        if (contraption == null || warpCoreLocals.isEmpty()) { warpDriveCount = 0; return; }
-        var blocks = contraption.getBlocks();
-        var found = WarpDriveStructure.detect(warpCoreLocals,
-                lp -> { var i = blocks.get(lp); return i != null ? i.state() : null; });
-        warpDriveCount = found.size();
-        for (var f : found) warpIntakeLocals.add(f.intakeLocal());
-    }
-
-    /** 目前總燃料 = 影子裡各燃料槽的魔力總和。沒影子(gametest)回 0。 */
-    public int getFuel() {
-        ServerLevel shadow = getShadow();
-        if (shadow == null || shadowAnchor == null) return 0;
-        int total = 0;
-        for (BlockPos lp : fuelTankLocals) {
-            if (shadow.getBlockEntity(shadowAnchor.offset(lp)) instanceof ManaFuelTankBlockEntity tank)
-                total += tank.getManaStorage().getManaStored();
-        }
-        return total;
-    }
-
-    /** 從影子的燃料槽抽 amount 魔力（飛行消耗）。逐槽抽到夠為止。 */
-    private void drainFuel(int amount) {
-        ServerLevel shadow = getShadow();
-        if (shadow == null || shadowAnchor == null || amount <= 0) return;
-        for (BlockPos lp : fuelTankLocals) {
-            if (amount <= 0) break;
-            if (shadow.getBlockEntity(shadowAnchor.offset(lp)) instanceof ManaFuelTankBlockEntity tank)
-                amount -= tank.getManaStorage().extractMana(amount, ManaAction.EXECUTE);
-        }
-    }
-
-    /** 曲速燃料 = 完整結構各進料口的能量總和(影子)。 */
-    private int getWarpFuel() {
-        ServerLevel shadow = getShadow();
-        if (shadow == null || shadowAnchor == null) return 0;
-        int total = 0;
-        for (BlockPos lp : warpIntakeLocals) {
-            if (shadow.getBlockEntity(shadowAnchor.offset(lp)) instanceof ManaWarpInputBlockEntity in)
-                total += in.getEnergy().getManaStored();
-        }
-        return total;
-    }
-
-    /** 從各進料口抽 amount 曲速能量。 */
-    private void drainWarpFuel(int amount) {
-        ServerLevel shadow = getShadow();
-        if (shadow == null || shadowAnchor == null || amount <= 0) return;
-        for (BlockPos lp : warpIntakeLocals) {
-            if (amount <= 0) break;
-            if (shadow.getBlockEntity(shadowAnchor.offset(lp)) instanceof ManaWarpInputBlockEntity in)
-                amount -= in.getEnergy().extractMana(amount, ManaAction.EXECUTE);
-        }
-    }
     private float rollO; // 上一 tick，渲染插值用
 
     /**
@@ -1925,51 +1733,19 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     @Nullable
     public record Pick(BlockPos local, Direction face, Vec3 hitLocal) {}
 
+    /** 視線拾取(raycast 準心瞄準船上哪格)抽到 ShipPicking。互動/外框/挖礦共用同一條 pick。 */
+    private final ShipPicking picking = new ShipPicking(this);
+
     /** Client 算準心瞄準的 pick(local+面+hit),透過 ShipInteractPacket 傳給 server,讓互動跟準心一致。 */
     @Nullable
     public Pick clientPick(Player player) {
-        return pickLocal(player);
-    }
-
-    /** raycast 視線進船的 local 方塊，回傳最近命中的方塊 + 命中面 + 命中點(local，放方塊朝向要用)。 */
-    @Nullable
-    private Pick pickLocal(Player player) {
-        if (contraption == null) return null;
-        Vec3 eye = player.getEyePosition();
-        Vec3 end = eye.add(player.getViewVector(1.0f).scale(6.0));
-        Vec3 ls = worldToLocalPoint(eye.x, eye.y, eye.z);
-        Vec3 le = worldToLocalPoint(end.x, end.y, end.z);
-        Pick best = null;
-        double bestDist = Double.MAX_VALUE;
-        for (var e : contraption.getBlocks().entrySet()) {
-            BlockPos lp = e.getKey();
-            VoxelShape shape = e.getValue().state().getShape(EmptyBlockGetter.INSTANCE, lp);
-            if (shape.isEmpty()) shape = Shapes.block(); // 空 outline 也補滿格 → 渲染得出來就指得到
-            BlockHitResult hit = shape.clip(ls, le, lp);
-            if (hit != null) {
-                double d = hit.getLocation().distanceToSqr(ls);
-                if (d < bestDist) { bestDist = d; best = new Pick(lp, hit.getDirection(), hit.getLocation()); }
-            }
-        }
-        return best;
-    }
-
-    @Nullable
-    private BlockPos pickLocalBlock(Player player) {
-        Pick p = pickLocal(player);
-        return p == null ? null : p.local();
+        return picking.pick(player);
     }
 
     /** client 選取外框用：玩家瞄準的 local 方塊（沒指到回 null）。 */
     @Nullable
     public BlockPos getAimedLocalBlock(Player player) {
-        return pickLocalBlock(player);
-    }
-
-    /** 命中面方向（放方塊用）；沒命中回 UP 當保底。 */
-    private Direction pickFace(Player player) {
-        Pick p = pickLocal(player);
-        return p == null ? Direction.UP : p.face();
+        return picking.pickBlock(player);
     }
 
     /**
@@ -2135,15 +1911,14 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             ShipContraption c = new ShipContraption();
             c.readNbt(level(), tag.getCompound("Ship"));
             this.contraption = c;
-            recomputeFuelSystem();
+            fuelSystem.recompute();
             refreshDimensions();
         }
         if (tag.contains("ShadowAnchor")) {
             int[] a = tag.getIntArray("ShadowAnchor");
             if (a.length == 3) shadowAnchor = new BlockPos(a[0], a[1], a[2]);
         }
-        launchX = tag.getDouble("LaunchX");
-        launchZ = tag.getDouble("LaunchZ");
+        travel.readNbt(tag); // 發射點(LaunchX/Z)
     }
 
     @Override
@@ -2154,15 +1929,11 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         if (shadowAnchor != null) {
             tag.putIntArray("ShadowAnchor", new int[]{shadowAnchor.getX(), shadowAnchor.getY(), shadowAnchor.getZ()});
         }
-        tag.putDouble("LaunchX", launchX);
-        tag.putDouble("LaunchZ", launchZ);
+        travel.writeNbt(tag); // 發射點(LaunchX/Z),跨維度/重啟保留
     }
 
     @Nullable private BlockPos shadowAnchor; // 影子維度裡這台船方塊的錨點（VM1，server-only）
     private transient boolean shadowForceLoaded; // VM4：本次載入是否已 force-load 影子（重啟/卸載後 reset）
-    private transient boolean dimChanging;        // 正在跨維度轉場,防同 tick 重複觸發
-    private transient int transitionCooldown;     // 轉場後冷卻,防剛到就反彈(不存檔,重建後手動設)
-    private double launchX, launchZ;              // 從主世界哪裡發射的,回程傳回這(存 NBT 跨維度保留)
     public void setShadowAnchor(BlockPos a) { this.shadowAnchor = a; }
     @Nullable public BlockPos getShadowAnchor() { return shadowAnchor; }
 
@@ -2192,7 +1963,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
             ShipContraption c = new ShipContraption();
             c.readFromBuf(buf);
             this.contraption = c;
-            recomputeFuelSystem();
+            fuelSystem.recompute();
             refreshDimensions();
         }
         if (buf.readBoolean()) shadowAnchor = buf.readBlockPos();

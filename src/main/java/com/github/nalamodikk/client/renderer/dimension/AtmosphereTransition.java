@@ -1,6 +1,7 @@
 package com.github.nalamodikk.client.renderer.dimension;
 
 import com.github.nalamodikk.space.ship.ShipEntity;
+import com.github.nalamodikk.space.ship.ShipTravel;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -20,8 +21,8 @@ public final class AtmosphereTransition {
 
     /** 漸變起點高度：低於此 = 正常主世界天空。 */
     public static final int Y_FADE_START = 700;
-    /** 漸變終點高度：必須等於 {@code ShipEntity.SPACE_ENTRY_Y}（實際切換維度的高度）。 */
-    public static final int Y_FADE_END = 1000;
+    /** 漸變終點高度 = 實際切換維度的高度（{@link ShipTravel#SPACE_ENTRY_Y}），自動同步。 */
+    public static final int Y_FADE_END = ShipTravel.SPACE_ENTRY_Y;
 
     /**
      * 0 = 正常主世界天空，1 = 全太空。非主世界、沒騎合格飛船、或低於 {@link #Y_FADE_START} → 0。
