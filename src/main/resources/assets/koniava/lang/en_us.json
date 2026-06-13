@@ -550,6 +550,7 @@
   "block.koniava.mana_warp_input": "Warp Drive Intake",
   "block.koniava.mana_alloy_block": "Mana Alloy Block",
   "hud.koniava.ship.engines": "Engines: %s",
+  "hud.koniava.ship.tier": "Tier: T%s",
   "hud.koniava.ship.throttle": "Thr",
   "hud.koniava.ship.fuel": "Fuel",
   "hud.koniava.ship.warp": "Warp",

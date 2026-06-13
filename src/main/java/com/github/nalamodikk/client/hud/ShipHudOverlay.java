@@ -57,6 +57,9 @@ public final class ShipHudOverlay {
         // 引擎數(直立 bar 下方,橫排小字)
         g.drawString(font, Component.translatable("hud.koniava.ship.engines", ship.getEngineCount()),
                 x, top + BAR_H + 14, 0xFFCCCCCC, true);
+        // 飛船 tier(燃料魔焓 + 引擎上限決定,gate 能飛到哪)
+        g.drawString(font, Component.translatable("hud.koniava.ship.tier", ship.getShipTier()),
+                x, top + BAR_H + 24, 0xFFCCCCCC, true);
     }
 
     /** 一條直立 bar：下往上填 + 上方直排中文標籤 + 下方數字。 */

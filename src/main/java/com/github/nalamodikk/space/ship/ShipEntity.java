@@ -160,6 +160,9 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     private static final double SPEED_PER_ENGINE = 0.2;  // 每引擎貢獻的每 tick 速度上限(20 b/s=1.0/tick;~50 引擎到頂 200)
     private static final double SPEED_CAP = 10.0;         // 一般引擎天花板 10.0/tick=200 b/s。碰撞已子步進防穿牆;這麼快只適合高空/太空,貼地面 chunk 載入跟不上會穿插
     private static final int FUEL_PER_ENGINE_MOVE = 12;   // 移動時「每引擎」每 tick 耗魔力(滿油門);加速 ×2;隨油門縮放。引擎越多越快也越耗
+    // 魔焓/tier(暫常數,之後接燃料物品/引擎世代)。基礎魔力 = 魔焓 5;魔力引擎能燒魔焓 ≤ 9(基礎+精煉魔力)。
+    private static final int ENTHALPY_BASIC_MANA = 5;
+    private static final int MANA_ENGINE_ENTHALPY_CAP = 9;
     private static final double SPEED_PER_WARP = 4.0;     // 每「座」完整曲速結構貢獻(~6 座到頂 600)
     private static final double WARP_CAP = 30.0;          // 有曲速結構時的天花板 30.0/tick=600 b/s
     private static final int FUEL_PER_WARP_MOVE = 200;    // 每座曲速結構每 tick 從進料口抽的能量(很兇,要高密度燃料/魔力網路撐)
@@ -794,6 +797,18 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     public float getThrottle() { return getEntityData().get(DATA_THROTTLE); }
     public void setThrottle(float t) { getEntityData().set(DATA_THROTTLE, Mth.clamp(t, 0f, 1f)); }
     public int getEngineCount() { return engineCount; }
+
+    /**
+     * 飛船 tier = min(裝著的最高燃料魔焓(引擎燒得動的), 引擎魔焓上限)。0 = 不能飛(沒引擎或沒燃料)。
+     * 之後 gate 目的地用。目前只有「基礎魔力」燃料(魔焓 5) + 魔力引擎(上限 9) → 有魔力就 tier 5。
+     * 用同步的 DATA_FUEL + engineCount(兩者 client 都有) → client HUD 也算得出來。
+     */
+    public int getShipTier() {
+        int engineCap = engineCount > 0 ? MANA_ENGINE_ENTHALPY_CAP : 0;
+        if (engineCap == 0) return 0;
+        int fuelEnthalpy = getEntityData().get(DATA_FUEL) > 0 ? Math.min(ENTHALPY_BASIC_MANA, engineCap) : 0;
+        return Math.min(fuelEnthalpy, engineCap);
+    }
     public int getWarpDriveCount() { return warpDriveCount; }
     /** HUD 用：同步過來的目前燃料(server 算)。 */
     public int getDisplayFuel() { return getEntityData().get(DATA_FUEL); }
