@@ -552,6 +552,7 @@
   "hud.koniava.ship.engines": "Engines: %s",
   "hud.koniava.ship.tier": "Tier: T%s",
   "message.koniava.ship.tier_too_low_orbit": "Tier too low to leave the atmosphere",
+  "message.koniava.ship.too_fast_dismount": "Too fast to disembark: slow down first",
   "hud.koniava.ship.throttle": "Thr",
   "hud.koniava.ship.fuel": "Fuel",
   "hud.koniava.ship.warp": "Warp",

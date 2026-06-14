@@ -105,8 +105,10 @@ public class ShipMeshCache implements AutoCloseable, ShipMeshHandle {
         ShipLight light = world.light();
         BlockRenderDispatcher brd = Minecraft.getInstance().getBlockRenderer();
 
-        // 1. 算每 section 的內容 hash:只算會進 mesh 的 MODEL 方塊,每方塊用「位置+blockId+自身與6鄰的光」,
-        //    用 sum 累進(交換律→與遍歷順序無關)。便宜:每方塊 ~7 次光查詢,不再掃 18³ 全空氣(原本 hash 5.5ms 的元兇)。
+        // 1. 算每 section 的內容 hash:只算會進 mesh 的 MODEL 方塊,每方塊用「位置+blockId+6鄰方塊id+自身與6鄰的光」,
+        //    用 sum 累進(交換律→與遍歷順序無關)。便宜:每方塊 ~7 次查詢,不再掃 18³ 全空氣(原本 hash 5.5ms 的元兇)。
+        //    6鄰方塊id 一定要算:跨 section 挖/放方塊會改鄰居那格的「邊界面剔除」(露出/遮住),沒算進 hash 那格 section
+        //    就不會重烤 → 挖掉外殼後後面方塊的面還被剔除 → 透視看穿船。
         Map<Long, Integer> hashes = new HashMap<>();
         BlockPos.MutableBlockPos mp = new BlockPos.MutableBlockPos();
         for (var entry : snapshot.entrySet()) {
@@ -114,6 +116,7 @@ public class ShipMeshCache implements AutoCloseable, ShipMeshHandle {
             BlockState st = entry.getValue();
             if (st.isAir() || st.getRenderShape() != RenderShape.MODEL) continue;
             int bh = p.hashCode() * 31 + Block.getId(st);
+            for (Direction d : Direction.values()) { mp.setWithOffset(p, d); bh = bh * 31 + Block.getId(world.getBlockState(mp)); }
             if (light != null) {
                 bh = bh * 31 + light.block(p) * 7 + light.sky(p);
                 for (Direction d : Direction.values()) { mp.setWithOffset(p, d); bh = bh * 31 + light.block(mp) * 7 + light.sky(mp); }

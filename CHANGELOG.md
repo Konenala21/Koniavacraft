@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+Breaking a hull block on a spaceship no longer leaves a see-through hole. Previously, mining a block could leave the block behind it transparent so you could see straight through the ship; now the neighbouring block's newly exposed face is redrawn correctly.
+在飛船上破壞外殼方塊不再留下透視的洞了。以前挖掉一格可能讓後面的方塊變透明、直接看穿船;現在鄰居方塊新露出來的面會正確重畫。
+
+You can no longer disembark a spaceship while it is moving fast (a message tells you to slow down first). At high speed, stepping off turned you into a free-falling entity that the ship instantly outran, throwing you outside the hull in whatever direction; dismount is now held until you slow down. Slow or stationary dismount works as before.
+飛船高速移動時不能下船了(會提示你先減速)。高速下船會把你變成自由落下的實體,船瞬間就把你拋在後面、往各方向甩出船殼;現在會擋著等你減速再下。低速/停船下船跟原本一樣。
+
 The first time planets render (e.g. Earth while flying up to space) no longer freezes the game for several seconds. The large planet textures are now decoded on a background thread and only uploaded to the GPU on the main thread, so the climb stays smooth instead of stuttering while Earth loads.
 第一次渲染行星(例如飛上太空時的地球)不再卡住遊戲好幾秒了。大張的行星貼圖改成在背景執行緒解碼、只在主執行緒上傳 GPU,所以爬升全程順暢,不會在地球載入時頓住。
 
@@ -181,6 +187,12 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 新增太空維度，包含程序生成的星空天空、物理正確的行星渲染，以及完整太陽系（水星、金星、月球、火星、木星、土星、土衛六、天王星、海王星、冥王星）和比鄰星系雛形（雙星系統）。行星為真實 3D 球體，視角大小隨距離動態縮放。太陽有日冕光暈。進入維度時玩家會出現在地球軌道附近。
 
 ### Developer Notes / 開發者備註
+
+Fix see-through holes when breaking ship hull blocks. ShipMeshCache bakes per 16-block section and skips re-tesselating sections whose content hash is unchanged. The per-block hash folded in the block's own id + the 6 neighbours' light, but not the 6 neighbours' block ids, so removing a block across a section boundary did not change the adjacent block's section hash; that section was not re-baked and the adjacent block's now-exposed boundary face stayed culled (transparent). The hash now also folds in Block.getId of each of the 6 neighbours (via world.getBlockState), so a border block whose neighbour changed gets a new hash and its section is re-tesselated. ~6 extra snapshot lookups per block during the off-thread hash; only on edit.
+修破壞飛船外殼方塊的透視洞。ShipMeshCache 分 16 格 section 烤,hash 沒變的 section 不重 tesselate。每方塊 hash 折了「自己的 id + 6 鄰的光」,但沒折「6 鄰的方塊 id」,所以跨 section 挖掉一格時,鄰居那格的 section hash 沒變、不重烤,它新露出的邊界面就還被剔除(透明)。hash 現在也折進 6 鄰的 Block.getId(經 world.getBlockState),邊界方塊的鄰居變了就拿到新 hash、它的 section 就重烤。背景 hash 每方塊多 ~6 次 snapshot 查詢,只在編輯時跑。
+
+Block fast-speed dismount instead of trying to place the rider safely. At ship speeds up to ~600 b/s (30/tick) a dismounted player is a free entity that can never keep up, so any placement throws them out. ShipEntity.removePassenger now, for a player-initiated dismount while shipVel^2 > DISMOUNT_BLOCK_SPEED_SQR (40 b/s), completes the vanilla removal then immediately re-rides the player (startRiding force, seat assignment persists in DATA_SEATS) with a throttled hint. Gated to skip server-forced ejects: only when !isRemoved() (not disassembly/removal) and !travel.isTransitioning() (the dimension transition does its own dismount/teleport/remount). Below the threshold the previous deck-placement + ship-velocity path still runs.
+高速下船改成直接擋,不再試著安全擺位。船速到 ~600 b/s(30/tick)時下船的玩家是自由實體,永遠追不上,怎麼擺都會被甩出。ShipEntity.removePassenger 現在對「玩家主動下船且 shipVel^2 > DISMOUNT_BLOCK_SPEED_SQR(40 b/s)」先完成 vanilla 移除再立刻重新騎回(startRiding force,座位指派留在 DATA_SEATS)+ 節流提示。gate 排除 server 強制卸:只在 !isRemoved()(非拆解/移除)且 !travel.isTransitioning()(轉場自己會卸/傳/重騎)。低於門檻仍走原本的甲板擺位 + 帶船速。
 
 Planet textures now decode off-thread to kill the first-render freeze. The earth set is large (earth_atmo.jpg alone is 11.6 MB) and SpacePlanetManager.getTexture used to read + STB-decode the JPGs synchronously on the render thread the first time each was needed; MAX_TEXTURE_UPLOADS_PER_FRAME only throttled the GL upload, not the multi-second decode. getTexture now, on the main thread, only resolves the Resource and submits a decode task to a small daemon ExecutorService; the worker reads bytes + stbi_load_from_memory and parks the result (a Decoded record holding the native pixel buffer) in a ConcurrentHashMap; a later getTexture call uploads it on the main thread (still throttled) and frees the native pixels. textureCache stays main-thread-only (-1 = missing/failed, never retried); a decoding set prevents duplicate submits. Lowering the texture resolution (the 11.6 MB atmo especially) would cut it further.
 行星貼圖改背景解碼,消掉首次渲染的卡頓。地球那組很大(光 earth_atmo.jpg 就 11.6 MB),SpacePlanetManager.getTexture 以前在 render thread 首次同步讀 + STB 解碼 JPG;MAX_TEXTURE_UPLOADS_PER_FRAME 只限 GL 上傳,擋不到那數秒的解碼。getTexture 現在在主執行緒只解析 Resource、把解碼丟給一個小的 daemon ExecutorService;worker 讀 bytes + stbi_load_from_memory,把結果(Decoded record 持有 native 像素)放進 ConcurrentHashMap;之後的 getTexture 在主執行緒上傳(仍限流)再釋放 native 像素。textureCache 維持只在主執行緒讀寫(-1=無檔/失敗,不再試);decoding set 防重複提交。把貼圖解析度調低(尤其 11.6 MB 的 atmo)能再省更多。

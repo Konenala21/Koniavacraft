@@ -54,6 +54,11 @@ public final class ShipTravel {
         this.ship = ship;
     }
 
+    /** 是否正在跨維度轉場(轉場會卸乘客→傳送→重騎,removePassenger 別把這當「玩家高速下船」誤擋)。 */
+    public boolean isTransitioning() {
+        return dimChanging;
+    }
+
     /**
      * 每 server tick 跑（由 tickServerMovement 呼叫）。主世界 Y >= SPACE_ENTRY_Y → tier 夠就進太空；
      * 太空飛進地球引力區 → 回主世界。

@@ -557,6 +557,7 @@
   "hud.koniava.ship.engines": "引擎: %s",
   "hud.koniava.ship.tier": "階級: T%s",
   "message.koniava.ship.tier_too_low_orbit": "階級不足,離不開大氣層",
+  "message.koniava.ship.too_fast_dismount": "速度太快無法下船:先減速",
   "hud.koniava.ship.throttle": "油門",
   "hud.koniava.ship.fuel": "燃料",
   "hud.koniava.ship.warp": "曲速",

@@ -1772,8 +1772,21 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
      * 下船位置：出現在自己座位旁（往船右側一格），不再停在船中心(≈核心)。
      * vanilla 不替玩家呼叫 getDismountLocationForPassenger，所以在 removePassenger 自己擺位。
      */
+    private static final double DISMOUNT_BLOCK_SPEED_SQR = 4.0; // >2/tick(40 b/s)禁止下船:自由實體 physics 追不上,一定被甩出船外
+
     @Override
     protected void removePassenger(Entity passenger) {
+        // 高速時不讓玩家下船:船每 tick 跳幾十格,下船成自由實體 physics 追不上 → 一定被甩出船外。降速再下。
+        // 只擋「玩家主動下船」:船還活著(非拆解/移除)、非跨維度轉場(轉場自己會卸→傳→重騎)。
+        if (!level().isClientSide && passenger instanceof ServerPlayer sp
+                && !isRemoved() && !travel.isTransitioning()
+                && shipVel.lengthSqr() > DISMOUNT_BLOCK_SPEED_SQR) {
+            super.removePassenger(passenger);   // vanilla 已把 vehicle 設 null,先完成移除
+            sp.startRiding(this, true);          // 立刻重新騎回(座位指派還在 DATA_SEATS,不用重設)
+            if (tickCount % 20 == 0)
+                sp.displayClientMessage(Component.translatable("message.koniava.ship.too_fast_dismount"), true);
+            return;
+        }
         List<BlockPos> seats = getSeats();
         int idx = seatIndexOf(passenger); // 移除前先取指派的座位 index
         boolean moving = shipVel.lengthSqr() > 0.01; // 船在動(>0.1/tick):下船要特別處理,否則高速會甩出船外
