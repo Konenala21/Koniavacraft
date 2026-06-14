@@ -46,17 +46,26 @@ public class SpacePlanetManager {
 
     // 行星貼圖快取：planet id → GL texture id（-1=無貼圖/解碼失敗,不再試）。只在 render(主)執行緒讀寫。
     private static final Map<String, Integer> textureCache = new HashMap<>();
-    // 每幀最多上傳 N 張貼圖，避免首次進入維度時一幀全部上傳造成延遲
-    private static final int MAX_TEXTURE_UPLOADS_PER_FRAME = 2;
 
-    // 背景解碼:大圖(earth_atmo.jpg 11.6MB 等)STB 解碼要數秒,放 worker thread 跑,主執行緒只做 GL 上傳 → render thread 不卡。
+    // 背景解碼:大圖(earth 8K,134MB)STB 解碼要數秒,放 worker thread 跑 → render thread 不卡。
     private record Decoded(int width, int height, ByteBuffer pixels) {} // pixels==null => 解碼失敗哨兵
     private static final Map<String, Decoded> decoded = new ConcurrentHashMap<>();      // worker 放,主執行緒取走上傳
-    private static final Set<String> decoding = ConcurrentHashMap.newKeySet();          // 正在排隊/解碼,防重複提交
+    private static final Set<String> decoding = ConcurrentHashMap.newKeySet();          // 正在排隊/解碼+上傳,防重複提交
+
+    // 分幀上傳:解碼好的大貼圖一次 glTexSubImage2D 整張(134MB)會卡一下,改成每幀只上傳幾條 row,化整為零、不降畫質。
+    // 上傳完成前該行星先用程序化(texId 還沒進 textureCache),完成才換貼圖 → 不會露出半填滿的亂色。
+    private static final class Upload {
+        final int texId, width, height; final ByteBuffer pixels; int rowsDone;
+        Upload(int texId, int width, int height, ByteBuffer pixels) {
+            this.texId = texId; this.width = width; this.height = height; this.pixels = pixels;
+        }
+    }
+    private static final Map<String, Upload> uploading = new HashMap<>(); // 主執行緒:分幀上傳中
+    private static final int UPLOAD_BYTES_PER_FRAME = 4 * 1024 * 1024;    // 每幀上傳預算 ~4MB(134MB 約 33 幀填滿,~0.5s)
+
     private static final ExecutorService DECODE_POOL = Executors.newFixedThreadPool(2, r -> {
         Thread t = new Thread(r, "Koniava-PlanetTexDecode"); t.setDaemon(true); return t;
     });
-    private static int textureUploadsThisFrame = 0;
 
     public static void onRenderLevel(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SKY) return;
@@ -75,7 +84,7 @@ public class SpacePlanetManager {
         // 月球地底/中空（地殼底以下）不畫天空，否則在星球內部看到星空很怪
         if (onMoon && mc.player.getY() < com.github.nalamodikk.dimension.MoonChunkGenerator.CRUST_BOTTOM) return;
 
-        textureUploadsThisFrame = 0; // 每幀重置上傳計數
+        processUploads(); // 每幀推進分幀貼圖上傳(限 byte 預算)
         if (!initialized) { init(); initCooldown = 3; return; }
         if (initCooldown > 0) { initCooldown--; return; }
 
@@ -334,9 +343,10 @@ public class SpacePlanetManager {
      */
     private static int getTexture(String planetId) {
         Integer cached = textureCache.get(planetId);
-        if (cached != null) return cached; // 含 -1(無檔/解碼失敗,不再試)
+        if (cached != null) return cached;          // 含 -1(無檔/解碼失敗,不再試)
+        if (uploading.containsKey(planetId)) return -1; // 分幀上傳中:先用程序化,別重複解碼/分配
 
-        // 背景解好了 → 主執行緒上傳(限流)
+        // 背景解好了 → 分配空 texture + 排進分幀上傳(每幀幾條 row,不一次塞 134MB)
         Decoded ready = decoded.remove(planetId);
         if (ready != null) {
             if (ready.pixels() == null) { // 失敗哨兵
@@ -344,15 +354,9 @@ public class SpacePlanetManager {
                 decoding.remove(planetId);
                 return -1;
             }
-            if (textureUploadsThisFrame >= MAX_TEXTURE_UPLOADS_PER_FRAME) {
-                decoded.put(planetId, ready); // 本幀上傳額度用完,放回下幀再上傳
-                return -1;
-            }
-            int texId = uploadDecoded(planetId, ready);
-            textureCache.put(planetId, texId);
-            decoding.remove(planetId);
-            textureUploadsThisFrame++;
-            return texId;
+            int texId = allocTexture(ready.width(), ready.height());
+            uploading.put(planetId, new Upload(texId, ready.width(), ready.height(), ready.pixels()));
+            return -1; // 開始分幀上傳,填滿前先程序化
         }
 
         // 還沒解碼 → 主執行緒只查 Resource(快),讀 bytes + STB 解碼丟背景
@@ -397,21 +401,47 @@ public class SpacePlanetManager {
         }
     }
 
-    /** 主執行緒：GL 生成 + 上傳已解碼像素,釋放 native pixels。AMD bug:先 null 配置再 glTexSubImage2D。 */
-    private static int uploadDecoded(String planetId, Decoded d) {
+    /** 主執行緒：GL 生成 texture + 配置空間(AMD bug:先 null 配置,像素之後分幀 glTexSubImage2D 填)。 */
+    private static int allocTexture(int width, int height) {
         int texId = GL11.glGenTextures();
         GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, d.width(), d.height(), 0,
+        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, width, height, 0,
             GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (ByteBuffer) null);
-        GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, d.width(), d.height(),
-            GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, d.pixels());
-        STBImage.stbi_image_free(d.pixels());
-        KoniavacraftMod.LOGGER.info("[SpacePlanet] Uploaded {}x{} {}", d.width(), d.height(), planetId);
         return texId;
+    }
+
+    /**
+     * 每幀推進分幀上傳:在 ~{@link #UPLOAD_BYTES_PER_FRAME} byte 預算內,對進行中的貼圖各上傳幾條 row。
+     * 填滿才把 texId 放進 textureCache(行星才換成貼圖)、釋放 native pixels。化整為零 → 不卡、不降畫質。
+     */
+    private static void processUploads() {
+        if (uploading.isEmpty()) return;
+        int budget = UPLOAD_BYTES_PER_FRAME;
+        var it = uploading.entrySet().iterator();
+        while (it.hasNext() && budget > 0) {
+            var e = it.next();
+            Upload u = e.getValue();
+            int rowBytes = u.width * 4;
+            int rows = Math.min(Math.max(1, budget / rowBytes), u.height - u.rowsDone);
+            ByteBuffer slice = u.pixels.duplicate();
+            slice.position(u.rowsDone * rowBytes);
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, u.texId);
+            GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, u.rowsDone, u.width, rows,
+                GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, slice);
+            u.rowsDone += rows;
+            budget -= rows * rowBytes;
+            if (u.rowsDone >= u.height) { // 填滿 → 換貼圖、釋放
+                STBImage.stbi_image_free(u.pixels);
+                textureCache.put(e.getKey(), u.texId);
+                decoding.remove(e.getKey());
+                it.remove();
+                KoniavacraftMod.LOGGER.info("[SpacePlanet] Uploaded {}x{} {}", u.width, u.height, e.getKey());
+            }
+        }
     }
 
     private static void init() {
@@ -428,5 +458,11 @@ public class SpacePlanetManager {
         // AMD driver 26.x bug：glDeleteTextures + 重新 glTexImage2D 會 EXCEPTION_ACCESS_VIOLATION
         // 所以 F3+T 完全不動：貼圖保留、shader 不重編
         // 代價：shader/貼圖變更需要完整重啟遊戲才生效（AMD 驅動限制，無法繞過）
+        // 但要釋放「還沒上傳完/還沒上傳」的 native pixels(STB 配置,不會被 GC),否則登出在首次載入中途會洩漏。
+        for (Upload u : uploading.values()) STBImage.stbi_image_free(u.pixels);
+        uploading.clear();
+        for (Decoded d : decoded.values()) if (d.pixels() != null) STBImage.stbi_image_free(d.pixels());
+        decoded.clear();
+        decoding.clear();
     }
 }
