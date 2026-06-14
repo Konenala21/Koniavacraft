@@ -1230,6 +1230,10 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
      */
     Vec3 resolveTerrain(Vec3 move) { // package-visible 給 GameTest 直接測碰撞
         if (contraption == null) return move;
+        // 太空維度沒地形 → 跳過地形碰撞。否則高速飛行會對「船路徑上一堆未生成的區塊」狂跑 getBlockState
+        // (強制載入海量區塊 → 延遲 + 記憶體壓力,且曾在 blockedBy 的 C2 編譯碼觸發 native crash;也是船高速跑進
+        //  未載入區塊被卸掉「消失」的主因)。太空無地形,本來就不該做這個檢查。
+        if (level().dimension() == ModDimensions.SPACE) return move;
         // 子步進：高速(>~0.5格/tick)時 blockedBy 只看目的地會穿過薄牆。切成 ≤0.5 格的小段逐段擋(per-axis 沿牆滑)。
         // ≤0.5 格走原本單段邏輯，保住既有碰撞 gametest 的行為。
         int steps = (int) Math.ceil(move.length() / 0.5);
@@ -1287,12 +1291,21 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
 
     /** 軸對齊盒是否撞到世界實心方塊(忽略自己的發射台結構)。 */
     private boolean boxHitsTerrain(AABB box) {
+        // 非有限座標(NaN/Inf,例如姿勢/速度算爆)→ 別碰 getBlockState,直接當沒撞(避免界外/壞座標 native crash)
+        if (!(Double.isFinite(box.minX) && Double.isFinite(box.minY) && Double.isFinite(box.minZ)
+                && Double.isFinite(box.maxX) && Double.isFinite(box.maxY) && Double.isFinite(box.maxZ))) return false;
         int minX = Mth.floor(box.minX), maxX = Mth.floor(box.maxX);
-        int minY = Mth.floor(box.minY), maxY = Mth.floor(box.maxY);
+        // Y 夾到世界高度,別查界外(getBlockState 界外行為不可靠)
+        int minY = Math.max(Mth.floor(box.minY), level().getMinBuildHeight());
+        int maxY = Math.min(Mth.floor(box.maxY), level().getMaxBuildHeight() - 1);
         int minZ = Mth.floor(box.minZ), maxZ = Mth.floor(box.maxZ);
         for (int bx = minX; bx <= maxX; bx++)
-            for (int by = minY; by <= maxY; by++)
-                for (int bz = minZ; bz <= maxZ; bz++) {
+            for (int bz = minZ; bz <= maxZ; bz++) {
+                // 沒載入的區塊直接跳過:getBlockState 會「同步強制載入/生成」沒載入的區塊(blocking)。高速飛行
+                // (尤其貼地/太空)沿路徑掃一堆未載入區塊 → 海量同步區塊生成在 server thread → native crash。
+                // 撞不到看不見(未載入)的地形 = 合理;chunk 載進來後下一 tick 自然會擋。
+                if (!level().hasChunkAt(bx, bz)) continue;
+                for (int by = minY; by <= maxY; by++) {
                     BlockPos bp = new BlockPos(bx, by, bz);
                     BlockState s = level().getBlockState(bp);
                     if (s.isAir() || isShipScaffolding(s)) continue; // 自己的發射台結構不擋船
@@ -1300,6 +1313,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
                     if (shape.isEmpty()) continue;
                     if (box.intersects(shape.bounds().move(bx, by, bz))) return true;
                 }
+            }
         return false;
     }
 
