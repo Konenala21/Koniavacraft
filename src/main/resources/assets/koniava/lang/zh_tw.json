@@ -560,6 +560,7 @@
   "hud.koniava.ship.throttle": "油門",
   "hud.koniava.ship.fuel": "燃料",
   "hud.koniava.ship.warp": "曲速",
+  "hud.koniava.ship.altitude": "高度",
   "screen.koniava.ship_control.title": "飛船控制台",
   "screen.koniava.ship_control.throttle": "油門：%s%%",
   "screen.koniava.ship_control.fuel": "燃料：%1$s / %2$s",

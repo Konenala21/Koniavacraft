@@ -6,6 +6,15 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+The first time planets render (e.g. Earth while flying up to space) no longer freezes the game for several seconds. The large planet textures are now decoded on a background thread and only uploaded to the GPU on the main thread, so the climb stays smooth instead of stuttering while Earth loads.
+第一次渲染行星(例如飛上太空時的地球)不再卡住遊戲好幾秒了。大張的行星貼圖改成在背景執行緒解碼、只在主執行緒上傳 GPU,所以爬升全程順暢,不會在地球載入時頓住。
+
+Dismounting a spaceship while it is moving fast no longer flings you outside the hull. You now step off onto the deck above your seat and carry the ship's current speed, so you stay with the ship instead of being left behind and clipping through the wall.
+飛船高速移動中下船不再被甩到船體外面了。你會踩到座位上方的甲板、並帶著船當下的速度,所以會跟著船走,不會被留在後面、穿出船殼。
+
+Driving a spaceship in the normal world now shows an altitude bar on the right edge of the screen: it fills as you climb, and when it reaches the top you are at the height that takes you into space. It is blue when your ship's tier is high enough to leave, red when it is not (so you know you cannot leave even at the top). The bar hides itself once you are in space and comes back when you return to the normal world.
+在一般世界駕駛飛船現在會在螢幕右側顯示一條高度條:隨爬升填滿,到頂時就是進太空的高度。飛船階級夠離開時是藍色,不夠時是紅色(讓你知道就算到頂也離不開)。進太空後這條會自己隱藏,回一般世界再出現。
+
 Conduits and machines on a spaceship now show their connections visually. Previously a conduit on a ship would not grow an arm toward a fuel tank or machine you placed next to it (the connection worked, it just looked detached); now placing or breaking a block refreshes the neighbouring conduits' appearance so they connect on screen too.
 飛船上的導管和機器現在會正確顯示連接外觀了。以前在船上的導管不會朝你旁邊放的燃料槽或機器長出連接臂(功能有接,只是看起來沒接);現在放置或破壞方塊會刷新鄰近導管的外觀,畫面上也接起來。
 
@@ -172,6 +181,16 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 新增太空維度，包含程序生成的星空天空、物理正確的行星渲染，以及完整太陽系（水星、金星、月球、火星、木星、土星、土衛六、天王星、海王星、冥王星）和比鄰星系雛形（雙星系統）。行星為真實 3D 球體，視角大小隨距離動態縮放。太陽有日冕光暈。進入維度時玩家會出現在地球軌道附近。
 
 ### Developer Notes / 開發者備註
+
+Planet textures now decode off-thread to kill the first-render freeze. The earth set is large (earth_atmo.jpg alone is 11.6 MB) and SpacePlanetManager.getTexture used to read + STB-decode the JPGs synchronously on the render thread the first time each was needed; MAX_TEXTURE_UPLOADS_PER_FRAME only throttled the GL upload, not the multi-second decode. getTexture now, on the main thread, only resolves the Resource and submits a decode task to a small daemon ExecutorService; the worker reads bytes + stbi_load_from_memory and parks the result (a Decoded record holding the native pixel buffer) in a ConcurrentHashMap; a later getTexture call uploads it on the main thread (still throttled) and frees the native pixels. textureCache stays main-thread-only (-1 = missing/failed, never retried); a decoding set prevents duplicate submits. Lowering the texture resolution (the 11.6 MB atmo especially) would cut it further.
+行星貼圖改背景解碼,消掉首次渲染的卡頓。地球那組很大(光 earth_atmo.jpg 就 11.6 MB),SpacePlanetManager.getTexture 以前在 render thread 首次同步讀 + STB 解碼 JPG;MAX_TEXTURE_UPLOADS_PER_FRAME 只限 GL 上傳,擋不到那數秒的解碼。getTexture 現在在主執行緒只解析 Resource、把解碼丟給一個小的 daemon ExecutorService;worker 讀 bytes + stbi_load_from_memory,把結果(Decoded record 持有 native 像素)放進 ConcurrentHashMap;之後的 getTexture 在主執行緒上傳(仍限流)再釋放 native 像素。textureCache 維持只在主執行緒讀寫(-1=無檔/失敗,不再試);decoding set 防重複提交。把貼圖解析度調低(尤其 11.6 MB 的 atmo)能再省更多。
+
+Dismounting a moving ship no longer flings the player out. ShipEntity.removePassenger placed the rider 1.2 blocks to the side of the seat with no velocity, so on a fast ship the rider was instantly left behind / clipped through the hull. When shipVel is non-trivial it now places the rider on the deck above the seat (inside the ship footprint, so the deck-carry logic holds them) and copies the ship's velocity onto the rider (setDeltaMovement + hasImpulse); the old side-search placement is kept for a stationary ship.
+
+下動中的船不再把玩家甩飛。ShipEntity.removePassenger 以前把人放座位旁 1.2 格、沒給速度,高速船上就瞬間被甩在後面/穿出船殼。船速不可忽略時改放座位正上方的甲板(在船體範圍內,甲板 carry 會接住)並把船速複製給玩家(setDeltaMovement + hasImpulse);停著的船維持原本的船側放置。
+
+Altitude HUD bar in ShipHudOverlay. While driving a ship in OVERWORLD it draws a vertical fill bar on the right edge = clamp(player.getY() / ShipTravel.SPACE_ENTRY_Y); blue when getShipTier() >= ORBIT_MIN_TIER, red otherwise. Gated on dimension == OVERWORLD so it auto-hides in space. New lang key hud.koniava.ship.altitude.
+ShipHudOverlay 加高度條。在 OVERWORLD 駕駛飛船時在右側畫垂直填充條 = clamp(player.getY() / ShipTravel.SPACE_ENTRY_Y);tier 夠藍、不夠紅。gate 在 dimension == OVERWORLD,進太空自動隱藏。新 lang key hud.koniava.ship.altitude。
 
 Suppress the vanilla loading screen during a ship space transition, via NeoForge's DimensionTransitionScreenManager (the official extension point) rather than packet/timing tricks. changeDimension makes the client unload/reload the level, and both Minecraft.setLevel and ClientPacketListener.startWaitingForNewLevel cover the gap with a ReceivingLevelScreen looked up by (from, to) dimension through that manager, during which our space sky is not rendering. ClientModEvents now handles RegisterDimensionTransitionScreenEvent and registers a transparent SeamlessTransitionScreen (a ReceivingLevelScreen subclass whose render/renderBackground are no-ops) for OVERWORLD<->SPACE both ways, so the empty new level plus our space sky show through with no loading flash; it still inherits tick() so it auto-closes when the level is received. Keys on dimensions (SPACE is only reachable by ship) so ordinary teleports are unaffected and no packet is needed.
 轉場時攔掉 vanilla 載入畫面,改用 NeoForge 的 DimensionTransitionScreenManager(官方擴充點),不靠封包/時序。changeDimension 會讓 client 卸載/重載世界,Minecraft.setLevel 和 ClientPacketListener.startWaitingForNewLevel 都透過這個 manager 用 (from, to) 維度查出 ReceivingLevelScreen 蓋住空檔,那期間我們的太空天空沒在 render。ClientModEvents 現在接 RegisterDimensionTransitionScreenEvent,給 OVERWORLD<->SPACE 雙向註冊一個透明的 SeamlessTransitionScreen(ReceivingLevelScreen 子類,render/renderBackground 都 no-op)→ 空的新世界 + 太空天空直接透出來,沒有載入閃屏;仍繼承 tick() 所以區塊到齊會自動關。key 在維度上(SPACE 只有飛船能到),一般傳送不受影響,也不用封包。

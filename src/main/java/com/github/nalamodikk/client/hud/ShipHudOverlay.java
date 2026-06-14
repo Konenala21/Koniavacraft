@@ -2,11 +2,13 @@ package com.github.nalamodikk.client.hud;
 
 import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.space.ship.ShipEntity;
+import com.github.nalamodikk.space.ship.ShipTravel;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -52,6 +54,17 @@ public final class ShipHudOverlay {
             float warpFrac = maxWarp > 0 ? (float) warp / maxWarp : 0f;
             vbar(g, font, x + 2 * (BAR_W + 18), top, warpFrac, warp <= 0 ? 0xFFFF5555 : 0xFFB066FF,
                     Component.translatable("hud.koniava.ship.warp").getString(), Math.round(warpFrac * 100f) + "%");
+        }
+
+        // 高度條(螢幕右側,導航用):指標隨高度,到頂=要進太空。只在主世界畫,進太空維度自動消失、回主世界再畫。
+        // tier 夠=藍(到頂能進太空),tier 不夠=紅(到頂也離不開大氣層)。
+        if (mc.level != null && mc.level.dimension() == Level.OVERWORLD) {
+            float altFrac = Mth.clamp((float) mc.player.getY() / ShipTravel.SPACE_ENTRY_Y, 0f, 1f);
+            boolean canEnter = ship.getShipTier() >= ShipTravel.ORBIT_MIN_TIER;
+            int ax = mc.getWindow().getGuiScaledWidth() - 16 - BAR_W;
+            vbar(g, font, ax, top, altFrac, canEnter ? 0xFF66CCFF : 0xFFFF6655,
+                    Component.translatable("hud.koniava.ship.altitude").getString(),
+                    String.valueOf((int) mc.player.getY()));
         }
 
         // 引擎數(直立 bar 下方,橫排小字)

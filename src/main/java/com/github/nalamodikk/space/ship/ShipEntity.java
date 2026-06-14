@@ -1776,23 +1776,31 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     protected void removePassenger(Entity passenger) {
         List<BlockPos> seats = getSeats();
         int idx = seatIndexOf(passenger); // 移除前先取指派的座位 index
+        boolean moving = shipVel.lengthSqr() > 0.01; // 船在動(>0.1/tick):下船要特別處理,否則高速會甩出船外
         Vec3 spot = null;
         if (idx >= 0 && idx < seats.size()) {
             BlockPos seat = seats.get(idx);
             Vec3 seatWorld = rotatedWorldPoint(seat.getX() + 0.5, seat.getY(), seat.getZ() + 0.5);
-            // 在座位周圍試幾個方向，挑第一個不卡在船方塊裡的（避免下船穿進牆/船模）
-            double[][] offsets = {{1.2, 0, 0}, {-1.2, 0, 0}, {0, 0, 1.2}, {0, 0, -1.2}, {0, 1.2, 0}};
-            for (double[] o : offsets) {
-                Vec3 side = rotateVec(o[0], o[1], o[2], getYRot());
-                Vec3 cand = new Vec3(seatWorld.x + side.x, seatWorld.y + o[1], seatWorld.z + side.z);
-                if (!isInsideShip(cand.x, cand.y, cand.z)) { spot = cand; break; }
+            if (moving) {
+                // 船在動:放在座位正上方(船體內,被甲板 carry 接住),別放船側 → 不會被高速的船甩出船外
+                spot = new Vec3(seatWorld.x, seatWorld.y + 1.0, seatWorld.z);
+            } else {
+                // 在座位周圍試幾個方向，挑第一個不卡在船方塊裡的（避免下船穿進牆/船模）
+                double[][] offsets = {{1.2, 0, 0}, {-1.2, 0, 0}, {0, 0, 1.2}, {0, 0, -1.2}, {0, 1.2, 0}};
+                for (double[] o : offsets) {
+                    Vec3 side = rotateVec(o[0], o[1], o[2], getYRot());
+                    Vec3 cand = new Vec3(seatWorld.x + side.x, seatWorld.y + o[1], seatWorld.z + side.z);
+                    if (!isInsideShip(cand.x, cand.y, cand.z)) { spot = cand; break; }
+                }
+                if (spot == null) spot = new Vec3(seatWorld.x, seatWorld.y + 1.5, seatWorld.z); // 都被擋就放上方
             }
-            if (spot == null) spot = new Vec3(seatWorld.x, seatWorld.y + 1.5, seatWorld.z); // 都被擋就放上方
         }
         super.removePassenger(passenger);
         if (!level().isClientSide) unassignSeat(passenger); // 清掉座位指派
         if (spot != null && !level().isClientSide) {
             passenger.setPos(spot.x, spot.y, spot.z);
+            // 船在動 → 把船當下速度給下船的人,別被甩在後面/穿出船外(接著由甲板 carry 接管)
+            if (moving) { passenger.setDeltaMovement(shipVel); passenger.hasImpulse = true; }
             if (passenger instanceof ServerPlayer sp) {
                 sp.connection.teleport(spot.x, spot.y, spot.z, sp.getYRot(), sp.getXRot());
             }

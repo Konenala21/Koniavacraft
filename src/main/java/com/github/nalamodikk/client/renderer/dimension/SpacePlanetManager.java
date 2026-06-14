@@ -8,6 +8,7 @@ import com.github.nalamodikk.space.orbit.StarSystem;
 import com.github.nalamodikk.space.orbit.StarSystemRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.Mth;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
@@ -23,10 +24,15 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class SpacePlanetManager {
 
@@ -38,10 +44,18 @@ public class SpacePlanetManager {
     private static boolean initialized = false;
     private static int     initCooldown = 0; // AMD：init 後跳過 N 幀再開始渲染
 
-    // 行星貼圖快取：planet id → GL texture id（-1=無貼圖）
+    // 行星貼圖快取：planet id → GL texture id（-1=無貼圖/解碼失敗,不再試）。只在 render(主)執行緒讀寫。
     private static final Map<String, Integer> textureCache = new HashMap<>();
     // 每幀最多上傳 N 張貼圖，避免首次進入維度時一幀全部上傳造成延遲
     private static final int MAX_TEXTURE_UPLOADS_PER_FRAME = 2;
+
+    // 背景解碼:大圖(earth_atmo.jpg 11.6MB 等)STB 解碼要數秒,放 worker thread 跑,主執行緒只做 GL 上傳 → render thread 不卡。
+    private record Decoded(int width, int height, ByteBuffer pixels) {} // pixels==null => 解碼失敗哨兵
+    private static final Map<String, Decoded> decoded = new ConcurrentHashMap<>();      // worker 放,主執行緒取走上傳
+    private static final Set<String> decoding = ConcurrentHashMap.newKeySet();          // 正在排隊/解碼,防重複提交
+    private static final ExecutorService DECODE_POOL = Executors.newFixedThreadPool(2, r -> {
+        Thread t = new Thread(r, "Koniava-PlanetTexDecode"); t.setDaemon(true); return t;
+    });
     private static int textureUploadsThisFrame = 0;
 
     public static void onRenderLevel(RenderLevelStageEvent event) {
@@ -314,62 +328,89 @@ public class SpacePlanetManager {
         bodies.forEach(b -> b.draw().run());
     }
 
-    // 懶載入行星貼圖：assets/koniava/textures/space/<id>.jpg 或 .png
+    /**
+     * 懶載入行星貼圖：assets/koniava/textures/space/&lt;id&gt;.jpg 或 .png。
+     * 解碼(STB,大圖數秒)在背景執行緒;主執行緒只查 Resource + GL 上傳(每幀限流)。回 -1 = 還沒好/無貼圖。
+     */
     private static int getTexture(String planetId) {
-        if (textureCache.containsKey(planetId)) return textureCache.get(planetId);
+        Integer cached = textureCache.get(planetId);
+        if (cached != null) return cached; // 含 -1(無檔/解碼失敗,不再試)
 
-        ResourceManager rm = Minecraft.getInstance().getResourceManager();
-        // 每幀上傳限制：超過上限本幀回傳 -1（下幀再試），避免首次進入卡頓
-        if (textureUploadsThisFrame >= MAX_TEXTURE_UPLOADS_PER_FRAME) {
-            return -1;
-        }
-
-        int texId = -1;
-
-        for (String ext : new String[]{"jpg", "png"}) {
-            var loc = ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID,
-                "textures/space/" + planetId + "." + ext);
-            var res = rm.getResource(loc);
-            if (res.isEmpty()) continue;
-
-            try (InputStream in = res.get().open();
-                 MemoryStack stack = MemoryStack.stackPush()) {
-                byte[] bytes = in.readAllBytes();
-                var buf = BufferUtils.createByteBuffer(bytes.length);
-                buf.put(bytes).flip();
-
-                var w = stack.mallocInt(1);
-                var h = stack.mallocInt(1);
-                var ch = stack.mallocInt(1);
-                var pixels = STBImage.stbi_load_from_memory(buf, w, h, ch, 4);
-                if (pixels == null) {
-                    KoniavacraftMod.LOGGER.warn("[SpacePlanet] STB failed {}: {}", loc, STBImage.stbi_failure_reason());
-                    continue;
-                }
-                texId = GL11.glGenTextures();
-                GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId);
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-                // AMD driver bug（atio6axx 24+/26.x）：
-                // glTexImage2D 在 shader reload 後崩潰。
-                // 修法：先用 null data 分配空間，再用 glTexSubImage2D 上傳像素
-                GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA,
-                    w.get(0), h.get(0), 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE,
-                    (java.nio.ByteBuffer) null);
-                GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0,
-                    w.get(0), h.get(0), GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, pixels);
-                STBImage.stbi_image_free(pixels);
-                textureUploadsThisFrame++;
-                KoniavacraftMod.LOGGER.info("[SpacePlanet] Loaded {}x{} {}", w.get(0), h.get(0), loc);
-                break;
-            } catch (Exception e) {
-                KoniavacraftMod.LOGGER.warn("[SpacePlanet] Failed to load {}: {}", loc, e.getMessage());
+        // 背景解好了 → 主執行緒上傳(限流)
+        Decoded ready = decoded.remove(planetId);
+        if (ready != null) {
+            if (ready.pixels() == null) { // 失敗哨兵
+                textureCache.put(planetId, -1);
+                decoding.remove(planetId);
+                return -1;
             }
+            if (textureUploadsThisFrame >= MAX_TEXTURE_UPLOADS_PER_FRAME) {
+                decoded.put(planetId, ready); // 本幀上傳額度用完,放回下幀再上傳
+                return -1;
+            }
+            int texId = uploadDecoded(planetId, ready);
+            textureCache.put(planetId, texId);
+            decoding.remove(planetId);
+            textureUploadsThisFrame++;
+            return texId;
         }
 
-        textureCache.put(planetId, texId);
+        // 還沒解碼 → 主執行緒只查 Resource(快),讀 bytes + STB 解碼丟背景
+        if (decoding.add(planetId)) {
+            ResourceManager rm = Minecraft.getInstance().getResourceManager();
+            Resource res = null;
+            for (String ext : new String[]{"jpg", "png"}) {
+                var loc = ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID,
+                    "textures/space/" + planetId + "." + ext);
+                var r = rm.getResource(loc);
+                if (r.isPresent()) { res = r.get(); break; }
+            }
+            if (res == null) {
+                textureCache.put(planetId, -1); // 沒這檔
+                decoding.remove(planetId);
+                return -1;
+            }
+            final Resource fres = res;
+            DECODE_POOL.submit(() -> decoded.put(planetId, decodeOffThread(planetId, fres)));
+        }
+        return -1; // 解碼中
+    }
+
+    /** 背景執行緒：讀 bytes + STB 解碼成 RGBA。失敗回 pixels=null 哨兵(native pixels 由主執行緒上傳後釋放)。 */
+    private static Decoded decodeOffThread(String planetId, Resource res) {
+        try (InputStream in = res.open(); MemoryStack stack = MemoryStack.stackPush()) {
+            byte[] bytes = in.readAllBytes();
+            ByteBuffer buf = BufferUtils.createByteBuffer(bytes.length);
+            buf.put(bytes).flip();
+            var w = stack.mallocInt(1);
+            var h = stack.mallocInt(1);
+            var ch = stack.mallocInt(1);
+            ByteBuffer pixels = STBImage.stbi_load_from_memory(buf, w, h, ch, 4);
+            if (pixels == null) {
+                KoniavacraftMod.LOGGER.warn("[SpacePlanet] STB failed {}: {}", planetId, STBImage.stbi_failure_reason());
+                return new Decoded(0, 0, null);
+            }
+            return new Decoded(w.get(0), h.get(0), pixels);
+        } catch (Exception e) {
+            KoniavacraftMod.LOGGER.warn("[SpacePlanet] decode failed {}: {}", planetId, e.getMessage());
+            return new Decoded(0, 0, null);
+        }
+    }
+
+    /** 主執行緒：GL 生成 + 上傳已解碼像素,釋放 native pixels。AMD bug:先 null 配置再 glTexSubImage2D。 */
+    private static int uploadDecoded(String planetId, Decoded d) {
+        int texId = GL11.glGenTextures();
+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+        GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, d.width(), d.height(), 0,
+            GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, (ByteBuffer) null);
+        GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, d.width(), d.height(),
+            GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, d.pixels());
+        STBImage.stbi_image_free(d.pixels());
+        KoniavacraftMod.LOGGER.info("[SpacePlanet] Uploaded {}x{} {}", d.width(), d.height(), planetId);
         return texId;
     }
 
