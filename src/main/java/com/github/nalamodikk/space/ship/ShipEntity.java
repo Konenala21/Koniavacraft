@@ -383,6 +383,17 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
         com.github.nalamodikk.KoniavacraftMod.LOGGER.info("[shipwand] synced {} new blocks from shadow to ship (0=杖沒蓋成/沒跑)", n);
     }
 
+    /**
+     * vanilla 在 Y < 維度最低高度 - 64 時把實體當「掉出世界」discard(船飛到 Y≈-128 整艘帶乘客蒸發)。
+     * 太空是真空、可往任何方向自由飛(含往下),沒有掉出世界這回事 → 太空不 discard。其他維度維持 vanilla。
+     * (玩家的虛空傷害另有處理,這裡只管船不被蒸發。)
+     */
+    @Override
+    protected void onBelowWorld() {
+        if (level().dimension() == ModDimensions.SPACE) return;
+        super.onBelowWorld();
+    }
+
     @Override
     public void remove(Entity.RemovalReason reason) {
         if (!level().isClientSide) ShipShadowManager.unregisterActive(this); // 音效橋接:登出活躍船
