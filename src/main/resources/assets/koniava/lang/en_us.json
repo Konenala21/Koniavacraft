@@ -556,6 +556,7 @@
   "hud.koniava.ship.throttle": "Thr",
   "hud.koniava.ship.fuel": "Fuel",
   "hud.koniava.ship.warp": "Warp",
+  "hud.koniava.ship.warp_formed": "Warp drives: %s/%s",
   "hud.koniava.ship.altitude": "Alt",
   "screen.koniava.ship_control.title": "Ship Control",
   "screen.koniava.ship_control.throttle": "Throttle: %s%%",

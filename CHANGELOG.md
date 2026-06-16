@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+The flight HUD now tells you whether your warp drives are built correctly. When a ship has any warp drive cores, it shows "Warp drives: formed/cores" while driving: green when every core is part of a complete 3x4x3 structure, red when some are not (so you can tell a core's hourglass is built wrong, e.g. its waist is not left empty), instead of having no feedback at all.
+飛行 HUD 現在會告訴你曲速引擎有沒有蓋對。船上有放曲速核心時,駕駛中會顯示「曲速結構: 成形數/核心數」:每個核心都組成完整 3×4×3 結構時是綠色,有沒成形的是紅色(讓你知道某個核心的沙漏蓋錯了,例如腰沒留空),不再是完全沒回饋。
+
 You can now float around in space on foot, zero-gravity style. When you are out in the space dimension and not riding a ship (and not in creative flight or spectator), movement becomes a damped 3D float: WASD thrusts in the direction you are looking (look up and press forward to rise), Jump thrusts up and Sneak thrusts down, and you coast to a gentle stop when you let go instead of falling. You still collide with ships and surfaces.
 現在可以在太空徒步零重力漂浮了。在太空維度、沒騎飛船(也非創造飛行/旁觀)時,移動變成阻尼 3D 漂浮:WASD 朝你看的方向推進(抬頭按前進就上升),跳=往上、Shift=往下,放開按鍵會慢慢滑停而不是墜落。還是會跟飛船和表面碰撞。
 

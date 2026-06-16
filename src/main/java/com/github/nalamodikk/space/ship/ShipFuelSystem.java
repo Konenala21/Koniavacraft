@@ -166,7 +166,8 @@ public final class ShipFuelSystem {
     }
 
     public int engineCount() { return engineCount; }
-    public int warpDriveCount() { return warpDriveCount; }
+    public int warpDriveCount() { return warpDriveCount; }       // 完整成形的曲速結構數
+    public int warpCoreCount() { return warpCoreLocals.size(); } // 放下的曲速核心數(成形回饋:成形數 < 核心數 = 有蓋錯)
     public int tankCount() { return fuelTankLocals.size(); }
     public int warpIntakeCount() { return warpIntakeLocals.size(); }
 }

@@ -808,6 +808,7 @@ public class ShipEntity extends Entity implements IEntityWithComplexSpawn {
     /** 飛船 tier(gate 目的地用)。實際計算在 {@link ShipFuelSystem#tier()}。 */
     public int getShipTier() { return fuelSystem.tier(); }
     public int getWarpDriveCount() { return fuelSystem.warpDriveCount(); }
+    public int getWarpCoreCount() { return fuelSystem.warpCoreCount(); } // 放下的核心數(HUD 成形回饋)
     /** HUD 用：同步過來的目前燃料(server 算)。 */
     public int getDisplayFuel() { return getEntityData().get(DATA_FUEL); }
     /** HUD 用：總燃料容量 = 燃料槽數 × 單槽容量。 */

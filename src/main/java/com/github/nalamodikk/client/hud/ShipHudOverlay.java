@@ -73,6 +73,14 @@ public final class ShipHudOverlay {
         // 飛船 tier(燃料魔焓 + 引擎上限決定,gate 能飛到哪)
         g.drawString(font, Component.translatable("hud.koniava.ship.tier", ship.getShipTier()),
                 x, top + BAR_H + 24, 0xFFCCCCCC, true);
+        // 曲速結構成形回饋:放了核心才顯示「成形數/核心數」。成形<核心 = 有蓋錯(腰沒留空/缺進料口等),變紅提示。
+        int warpCores = ship.getWarpCoreCount();
+        if (warpCores > 0) {
+            int formed = ship.getWarpDriveCount();
+            int color = formed >= warpCores ? 0xFF55DD66 : 0xFFFF6655; // 全成形綠,有沒成形的紅
+            g.drawString(font, Component.translatable("hud.koniava.ship.warp_formed", formed, warpCores),
+                    x, top + BAR_H + 34, color, true);
+        }
     }
 
     /** 一條直立 bar：下往上填 + 上方直排中文標籤 + 下方數字。 */
