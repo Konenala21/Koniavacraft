@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+You can now float around in space on foot, zero-gravity style. When you are out in the space dimension and not riding a ship (and not in creative flight or spectator), movement becomes a damped 3D float: WASD thrusts in the direction you are looking (look up and press forward to rise), Jump thrusts up and Sneak thrusts down, and you coast to a gentle stop when you let go instead of falling. You still collide with ships and surfaces.
+現在可以在太空徒步零重力漂浮了。在太空維度、沒騎飛船(也非創造飛行/旁觀)時,移動變成阻尼 3D 漂浮:WASD 朝你看的方向推進(抬頭按前進就上升),跳=往上、Shift=往下,放開按鍵會慢慢滑停而不是墜落。還是會跟飛船和表面碰撞。
+
 Spaceships no longer vanish when you fly down in space. The game treats anything below the bottom of a world as "fell out of the world" and deletes it, so flying down to about Y -128 in space made the whole ship and everyone aboard disappear. Space is a vacuum you can fly through in any direction, so ships are no longer deleted for being low there.
 飛船在太空往下飛不再消失了。遊戲會把低於世界底部的東西當成「掉出世界」刪掉,所以在太空往下飛到大約 Y -128 時整艘船和船上所有人就會消失。太空是可以往任何方向飛的真空,所以船在太空不再因為太低而被刪掉。
 
@@ -193,6 +196,9 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 新增太空維度，包含程序生成的星空天空、物理正確的行星渲染，以及完整太陽系（水星、金星、月球、火星、木星、土星、土衛六、天王星、海王星、冥王星）和比鄰星系雛形（雙星系統）。行星為真實 3D 球體，視角大小隨距離動態縮放。太陽有日冕光暈。進入維度時玩家會出現在地球軌道附近。
 
 ### Developer Notes / 開發者備註
+
+Zero-g player floating in space via a client mixin. Player walking is client-authoritative (the client computes position from input and sends it; the server trusts it), so custom on-foot physics only needs the LocalPlayer. New client mixin LocalPlayerSpaceFloatMixin injects at HEAD of LivingEntity.travel, gated to instanceof LocalPlayer in dimension == SPACE, not a passenger / not creative-flying / not spectator. It builds a thrust from look (W follows look incl. pitch), a horizontal strafe axis, and jump/sneak for up/down, normalizes it to SPACE_FLOAT_ACCEL (0.04), and does deltaMovement = old*SPACE_FLOAT_DAMPING (0.9) + thrust (terminal ~0.4/tick ~8 b/s), then move(SELF) for collision and cancels vanilla travel. Gravity was already off in space (SpaceDimensionHandler.setNoGravity) and void damage is handled by SpaceVoidDamageMixin. Strafe/forward sign is test-and-flip; accel/damping are the feel knobs.
+太空玩家零重力漂浮,用 client mixin。玩家走路是 client 權威(client 算位置送 server,server 信任),所以徒步自訂物理只需 LocalPlayer。新 client mixin LocalPlayerSpaceFloatMixin 注入 LivingEntity.travel 的 HEAD,gate instanceof LocalPlayer + dimension == SPACE + 非乘客/非創造飛/非旁觀。從視線(W 含俯仰)、水平 strafe 軸、跳/蹲(上下)組出推力,normalize 成 SPACE_FLOAT_ACCEL(0.04),deltaMovement = 舊*SPACE_FLOAT_DAMPING(0.9) + 推力(終速 ~0.4/tick ~8 b/s),再 move(SELF) 走碰撞、cancel vanilla travel。太空重力本來就關了(SpaceDimensionHandler.setNoGravity)、虛空傷害由 SpaceVoidDamageMixin 處理。strafe/forward 正負號 test-and-flip;accel/damping 是手感旋鈕。
 
 Stop ships being discarded as "fell out of the world" in space. A diagnostic log in remove() showed the disappearance was reason=DISCARDED at Y -128 with a passenger still aboard: Entity.checkBelowWorld discards any entity at Y < minBuildHeight - 64 (space minBuildHeight is -64, so -128). ShipEntity now overrides onBelowWorld() to no-op in dimension == SPACE (vacuum, free vertical flight; no out-of-world). Other dimensions keep vanilla. Player void damage in space is handled separately, so the ship override is all that was needed (note: the previous changelog entry's claim that the disappearance was the chunk-loading storm was wrong; that fix addressed the crash, this addresses the vanish).
 止住太空船被當「掉出世界」discard。remove() 的診斷 log 顯示消失是 reason=DISCARDED、Y -128、乘客還在:Entity.checkBelowWorld 在 Y < minBuildHeight - 64 時 discard(太空 minBuildHeight 是 -64,所以 -128)。ShipEntity 現在覆寫 onBelowWorld(),在 dimension == SPACE 時 no-op(真空、垂直自由飛、沒有掉出世界)。其他維度維持 vanilla。玩家在太空的虛空傷害另有處理,所以只需要改船這邊(註:上一條 changelog 說消失是區塊載入風暴是錯的,那個修的是崩潰,這個才是修消失)。

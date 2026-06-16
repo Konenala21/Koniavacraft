@@ -31,7 +31,8 @@
     "client.TitleScreenMixin",
     "client.LivingEntityRendererMixin",
     "client.ShipCameraMixin",
-    "client.GameRendererShipPickMixin"
+    "client.GameRendererShipPickMixin",
+    "client.LocalPlayerSpaceFloatMixin"
   ],
   "server": [],
   "injectors": {
