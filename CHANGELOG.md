@@ -6,8 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
-Warp drives are now much faster, so they are actually worth building. One complete warp structure now adds 300 blocks/s (up from 80), so two of them reach the 600 blocks/s warp cap. Each warp structure is now far more speed per block than stacking normal mana engines, instead of being worse than them.
-曲速引擎現在快很多了,終於值得蓋。一座完整曲速結構現在加 300 格/秒(原本 80),所以兩座就到 600 格/秒的曲速上限。每座曲速結構現在的「每格速度」遠勝堆一般魔力引擎,不再比它們還爛。
+Warp drives are now much faster, so they are actually worth building. One complete warp structure now adds 300 blocks/s (up from 80), and the warp speed cap was raised to 2400 blocks/s (from 600), so eight structures reach the top. Each warp structure is now far more speed per block than stacking normal mana engines, instead of being worse than them. (Such high speeds are for space, where chunks are empty; near the ground or terrain it may stutter.)
+曲速引擎現在快很多了,終於值得蓋。一座完整曲速結構現在加 300 格/秒(原本 80),曲速上限也拉到 2400 格/秒(原本 600),所以八座到頂。每座曲速結構現在的「每格速度」遠勝堆一般魔力引擎,不再比它們還爛。(這種高速是給太空的,那裡區塊全空;貼地或有地形時可能會穿插。)
 
 The flight HUD now tells you whether your warp drives are built correctly. When a ship has any warp drive cores, it shows "Warp drives: formed/cores" while driving: green when every core is part of a complete 3x4x3 structure, red when some are not (so you can tell a core's hourglass is built wrong, e.g. its waist is not left empty), instead of having no feedback at all.
 飛行 HUD 現在會告訴你曲速引擎有沒有蓋對。船上有放曲速核心時,駕駛中會顯示「曲速結構: 成形數/核心數」:每個核心都組成完整 3×4×3 結構時是綠色,有沒成形的是紅色(讓你知道某個核心的沙漏蓋錯了,例如腰沒留空),不再是完全沒回饋。
