@@ -34,8 +34,8 @@ public final class ShipFuelSystem {
     /** 魔力引擎能燒的最高魔焓。 */
     public static final int MANA_ENGINE_ENTHALPY_CAP = 9;
 
-    /** 每「座」完整曲速結構貢獻(~6 座到頂 600)。 */
-    public static final double SPEED_PER_WARP = 4.0;
+    /** 每「座」完整曲速結構貢獻(15/tick=300 b/s 一座;2 座到頂 600)。比引擎每格效率高 ~4 倍,名副其實的高階科技。 */
+    public static final double SPEED_PER_WARP = 15.0;
     /** 有曲速結構時的天花板 30.0/tick=600 b/s。 */
     public static final double WARP_CAP = 30.0;
     /** 每座曲速結構每 tick 從進料口抽的能量(很兇,要高密度燃料/魔力網路撐)。 */
