@@ -43,6 +43,12 @@ public final class ShipTravel {
     public static final double OVERWORLD_RETURN_Y = 700.0;
     /** 轉場後冷卻 tick,防剛到就立刻反彈。 */
     public static final int TRANSITION_COOLDOWN = 100;
+    /** 月球引力區半徑(降落月球的觸發距離)。月球視覺半徑 21,zone 在它外側。 */
+    public static final double MOON_GRAVITY_RADIUS = 40.0;
+    /** 降落月球的抵達 Y(月表約 70~84 之上,往下飛降落)。 */
+    public static final double MOON_ARRIVE_Y = 160.0;
+    /** 在月球飛到這高度 → 離開回太空。 */
+    public static final double MOON_EXIT_Y = 256.0;
 
     private final ShipEntity ship;
 
@@ -81,7 +87,7 @@ public final class ShipTravel {
             if (space != null) {
                 launchX = ship.getX(); launchZ = ship.getZ(); // 記住發射點,回程傳回這
                 // 落在地球(當下軌道位置)外側、引力區外:沿「遠離太陽」方向推開
-                Vec3 earth = currentEarthSpacePos(space);
+                Vec3 earth = planetSpacePos(space, "earth");
                 Vector3f sysPos = StarSystemRegistry.SOLAR_SYSTEM.worldPos();
                 Vec3 sun = new Vec3(sysPos.x, earth.y, sysPos.z);
                 Vec3 outward = earth.subtract(sun);
@@ -90,23 +96,45 @@ public final class ShipTravel {
                 doTransition(space, arrive);
             }
         } else if (ship.level().dimension() == ModDimensions.SPACE) {
-            Vec3 earth = currentEarthSpacePos((ServerLevel) ship.level()); // 公轉中,每 tick 重算
+            ServerLevel space = (ServerLevel) ship.level();
+            // 月球引力區 → 降落 MOON 維度(先檢查月球:它繞地球軌道 700,跟地球引力區分得開)
+            Vec3 moon = planetSpacePos(space, "moon"); // 公轉中,每 tick 重算
+            if (ship.position().distanceToSqr(moon) <= MOON_GRAVITY_RADIUS * MOON_GRAVITY_RADIUS) {
+                ServerLevel moonLevel = server.getLevel(ModDimensions.MOON);
+                if (moonLevel != null) { doTransition(moonLevel, new Vec3(0.5, MOON_ARRIVE_Y, 0.5)); return; }
+            }
+            // 地球引力區 → 回主世界
+            Vec3 earth = planetSpacePos(space, "earth");
             if (ship.position().distanceToSqr(earth) <= EARTH_GRAVITY_RADIUS * EARTH_GRAVITY_RADIUS)
                 doTransition(server.overworld(), new Vec3(launchX, OVERWORLD_RETURN_Y, launchZ));
+        } else if (ship.level().dimension() == ModDimensions.MOON && ship.getY() >= MOON_EXIT_Y) {
+            // 在月球飛高 → 回太空的月球當下軌道位置(外側,遠離母星地球)
+            ServerLevel space = server.getLevel(ModDimensions.SPACE);
+            if (space != null) {
+                Vec3 moon = planetSpacePos(space, "moon");
+                Vec3 earth = planetSpacePos(space, "earth");
+                Vec3 outward = moon.subtract(earth);
+                outward = outward.lengthSqr() < 1e-6 ? new Vec3(1, 0, 0) : outward.normalize();
+                doTransition(space, moon.add(outward.scale(MOON_GRAVITY_RADIUS + ARRIVE_MARGIN)));
+            }
         }
     }
 
-    /** 地球在太空維度的當下位置(公轉)。跟渲染同一套:StarSystemRegistry 的軌道公式 + getGameTime。 */
-    private static Vec3 currentEarthSpacePos(ServerLevel space) {
+    /** 行星在太空維度的當下位置(公轉,含繞母星的衛星鏈)。跟渲染同一套:軌道公式 + getGameTime。 */
+    private static Vec3 planetSpacePos(ServerLevel space, String id) {
         StarSystem sys = StarSystemRegistry.SOLAR_SYSTEM;
         double t = space.getGameTime();
         Vector3f sunPos = sys.stars().get(0).worldPositionAt(t, sys.worldPos());
-        for (PlanetDef p : sys.planets())
-            if (p.id().equals("earth")) {
-                Vector3f ep = p.worldPositionAt(t, sunPos);
-                return new Vec3(ep.x, ep.y, ep.z);
+        PlanetDef target = null;
+        for (PlanetDef p : sys.planets()) if (p.id().equals(id)) { target = p; break; }
+        if (target == null) return new Vec3(sunPos.x, sunPos.y, sunPos.z);
+        Vector3f parentPos = sunPos; // 衛星(月球)繞母星(地球),母星繞太陽
+        if (!target.parentId().isEmpty())
+            for (PlanetDef p : sys.planets()) if (p.id().equals(target.parentId())) {
+                parentPos = p.worldPositionAt(t, sunPos); break;
             }
-        return new Vec3(sunPos.x, sunPos.y, sunPos.z);
+        Vector3f pos = target.worldPositionAt(t, parentPos);
+        return new Vec3(pos.x, pos.y, pos.z);
     }
 
     /** 連船帶乘客搬到 target 維度的 arrive 位置。changeDimension 重建船,乘客卸載→傳送→重騎。 */
