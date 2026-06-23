@@ -37,17 +37,17 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.MOON_STONE);
         blockWithItem(ModBlocks.MOON_DEEPSTONE);
         blockWithItem(ModBlocks.MOON_CORE);
-        // 飛船方塊（cubeAll，貼圖在 block/ship_*.png）
-        blockWithItem(ModBlocks.SHIP_CORE);
-        blockWithItem(ModBlocks.SHIP_ASSEMBLY_PAD);
+        // 飛船方塊：蕎麥麵畫的 Blockbench 自訂模型（手寫 block/ 模型 JSON，貼圖 block/*.png）
+        customShipModel(ModBlocks.SHIP_CORE, "ship_core");
+        customShipModel(ModBlocks.SHIP_ASSEMBLY_BASE, "ship_assembly_base"); // 組裝底座地板：蕎麥麵新模型
+        customShipModel(ModBlocks.SHIP_ASSEMBLY_GANTRY, "ship_assembly_gantry");
+        customShipModel(ModBlocks.MANA_FUEL_TANK, "mana_fuel_tank");
         blockWithItem(ModBlocks.MANA_ENGINE);
-        blockWithItem(ModBlocks.MANA_FUEL_TANK);
         blockWithItem(ModBlocks.MANA_WARP_ENGINE);
         blockWithItem(ModBlocks.MANA_WARP_INPUT);
         blockWithItem(ModBlocks.MANA_ALLOY_BLOCK);
-        blockWithItem(ModBlocks.SHIP_ASSEMBLY_BASE);
-        blockWithItem(ModBlocks.SHIP_ASSEMBLY_GANTRY);
-        shipSeatModel(); // 椅子造型（座板 + 椅背），非整塊
+        blockWithItem(ModBlocks.SHIP_ASSEMBLY_PAD); // 組裝台：沿用原本 cubeAll(新素材是給底座 base 的)
+        shipSeatModel(); // 椅子造型：蕎麥麵自訂模型 + FACING 旋轉
         blockWithItem(ModBlocks.ASPECT_RESEARCH_DESK);
         blockWithItem(ModBlocks.MAGIC_ORE);
         blockWithItem(ModBlocks.DEEPSLATE_MAGIC_ORE);
@@ -499,32 +499,22 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(deferredBlock.get(), cubeAll(deferredBlock.get()));
     }
 
-    /** 飛船座椅：椅子造型（座板 2~14 高 0~7 + 椅背靠北面 z11~14 高 7~16），單一貼圖 ship_seat。 */
+    /**
+     * 飛船方塊指向蕎麥麵手寫的自訂 Blockbench 模型（block/<name>.json）。
+     * blockstate 單一變體 + item model 也用同一個模型。無 facing 的方塊用這個。
+     */
+    private void customShipModel(DeferredBlock<? extends Block> block, String name) {
+        ModelFile model = new ModelFile.UncheckedModelFile(modLoc("block/" + name));
+        simpleBlock(block.get(), model);
+        simpleBlockItem(block.get(), model);
+    }
+
+    /**
+     * 飛船座椅：蕎麥麵手寫自訂模型 block/ship_seat.json，椅背在模型 z 高側（z 11~14），
+     * 沿用 horizontalBlock 的 (toYRot+180)%360 旋轉約定，跟 ShipSeatBlock 的 VoxelShape 對齊。
+     */
     private void shipSeatModel() {
-        var t = modLoc("block/ship_seat");
-        var seat = models().withExistingParent("ship_seat", mcLoc("block/block"))
-                .ao(false)
-                .texture("particle", t)
-                .texture("t", t)
-                // 座板
-                .element().from(2, 0, 2).to(14, 7, 14)
-                    .face(Direction.DOWN).uvs(2, 2, 14, 14).texture("#t").end()
-                    .face(Direction.UP).uvs(2, 2, 14, 14).texture("#t").end()
-                    .face(Direction.NORTH).uvs(2, 9, 14, 16).texture("#t").end()
-                    .face(Direction.SOUTH).uvs(2, 9, 14, 16).texture("#t").end()
-                    .face(Direction.WEST).uvs(2, 9, 14, 16).texture("#t").end()
-                    .face(Direction.EAST).uvs(2, 9, 14, 16).texture("#t").end()
-                    .end()
-                // 椅背（靠 north，z 11~14）
-                .element().from(2, 7, 11).to(14, 16, 14)
-                    .face(Direction.NORTH).uvs(2, 0, 14, 9).texture("#t").end()
-                    .face(Direction.SOUTH).uvs(2, 0, 14, 9).texture("#t").end()
-                    .face(Direction.UP).uvs(2, 11, 14, 14).texture("#t").end()
-                    .face(Direction.DOWN).uvs(2, 11, 14, 14).texture("#t").end()
-                    .face(Direction.WEST).uvs(11, 0, 14, 9).texture("#t").end()
-                    .face(Direction.EAST).uvs(11, 0, 14, 9).texture("#t").end()
-                    .end();
-        // 依 FACING 旋轉（椅背在 north z 高側，預設面向 = 模型朝 south）
+        ModelFile seat = new ModelFile.UncheckedModelFile(modLoc("block/ship_seat"));
         horizontalBlock(ModBlocks.SHIP_SEAT.get(), seat);
         simpleBlockItem(ModBlocks.SHIP_SEAT.get(), seat);
     }

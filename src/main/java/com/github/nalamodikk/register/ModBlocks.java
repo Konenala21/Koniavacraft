@@ -251,7 +251,7 @@ public class ModBlocks {
 
     public static final DeferredBlock<ManaFuelTankBlock> MANA_FUEL_TANK = registerBlock("mana_fuel_tank",
             () -> new ManaFuelTankBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL)
-                    .strength(3.0f).sound(SoundType.METAL).requiresCorrectToolForDrops()));
+                    .strength(3.0f).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion()));
 
     // ── 曲速引擎核心 + 輸入方塊（多方塊「曲速大結構」的部件，先不開放單獨用）─────
     public static final DeferredBlock<ManaWarpEngineBlock> MANA_WARP_ENGINE = registerBlock("mana_warp_engine",

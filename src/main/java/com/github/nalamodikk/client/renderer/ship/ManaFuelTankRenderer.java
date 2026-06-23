@@ -20,10 +20,11 @@ import net.minecraft.util.Mth;
 public class ManaFuelTankRenderer implements BlockEntityRenderer<ManaFuelTankBlockEntity> {
     private static final ResourceLocation WHITE =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/misc/white.png");
-    // 液窗內腔範圍(對應貼圖窗口 x/z 5~11、y 3~13；留一點邊不貼到框)
-    private static final float X0 = 5.5f / 16f, X1 = 10.5f / 16f;
-    private static final float Z0 = 5.5f / 16f, Z1 = 10.5f / 16f;
-    private static final float Y0 = 3.5f / 16f, Y_SPAN = 9f / 16f;
+    // 液窗內腔範圍(對齊蕎麥麵新模型 mana_reservoir 的玻璃儲液芯：內框 cube x/z 3~13、y 4~28，
+    // 各內縮 0.5 不貼到框；模型是塔狀往上長到 2 格高，故 Y_SPAN 用 24/16)
+    private static final float X0 = 3.5f / 16f, X1 = 12.5f / 16f;
+    private static final float Z0 = 3.5f / 16f, Z1 = 12.5f / 16f;
+    private static final float Y0 = 4f / 16f, Y_SPAN = 24f / 16f;
     private static final int COLOR = (205 << 24) | (40 << 16) | (200 << 8) | 224; // ARGB cyan, 半透明
 
     public ManaFuelTankRenderer(BlockEntityRendererProvider.Context context) {}
