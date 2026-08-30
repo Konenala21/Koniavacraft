@@ -97,3 +97,4 @@ local.properties
 
 .playwright-mcp/
 /scripts/
+/.agents/
