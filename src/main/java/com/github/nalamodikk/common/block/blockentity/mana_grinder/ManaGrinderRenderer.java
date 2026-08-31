@@ -109,7 +109,7 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
                                       int packedLight, int packedOverlay,
                                       float time, float animationScale, boolean isWorking) {
         // 滾輪一起同步轉，繞水平的 X 軸滾動，表面看起來是上下捲動（不是繞 Z 軸像鐘面那樣轉圈），不工作時停止
-        float rotation = (animationScale > 0.0F && isWorking) ? time * 15.0F : 0.0F;
+        float rotation = (animationScale > 0.0F && isWorking) ? time * -15.0F : 0.0F;
         renderGroupWithXRotation(poseStack, vertexConsumer, packedLight, packedOverlay, WHEEL_GROUP, rotation);
     }
 
