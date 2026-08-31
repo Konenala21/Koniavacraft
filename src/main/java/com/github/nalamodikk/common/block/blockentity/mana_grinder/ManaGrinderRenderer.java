@@ -4,8 +4,6 @@ import com.github.nalamodikk.KoniavacraftMod;
 import com.github.nalamodikk.common.utils.render.BlockbenchModelRenderUtils;
 import com.github.nalamodikk.common.utils.render.BlockbenchModelRenderUtils.ModelElement;
 import com.github.nalamodikk.client.utils.render.RenderAnimationLodUtils;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -27,13 +25,10 @@ import org.slf4j.Logger;
 
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlockEntity>, IBlockEntityRendererExtension<ManaGrinderBlockEntity> {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -46,19 +41,16 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/block/mana_grinder_active.png");
     private static final ResourceLocation TEXTURE_ACTIVE_MC_META =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/block/mana_grinder_active.png.mcmeta");
+    private static final ResourceLocation TEXTURE_CRYSTAL =
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/block/mana_crystal_3d.png");
 
-    private static final String STATIC_MAIN_GROUP = "bb_main";
-    private static final String CRYSTAL_MAIN = "bone";
-    private static final String CRYSTAL_LEFT = "bone3";
-    private static final String CRYSTAL_RIGHT = "bone4";
-    private static final String CRUSHER_LEFT_CORE = "crusher_left_core";
-    private static final String CRUSHER_RIGHT_CORE = "crusher_right_core";
-    private static final String CRUSHER_LEFT_BLADES = "crusher_left_blades";
-    private static final String CRUSHER_RIGHT_BLADES = "crusher_right_blades";
+    // 蕎麥麵 2026-06 重做的粉碎機模型的群組名字（見 mana_pulverizer.bbmodel）
+    private static final String BODY_GROUP = "機身";
+    private static final String WHEEL_GROUP = "滾輪";
+    private static final String CRYSTAL_MAIN = "水晶中";
+    private static final String CRYSTAL_LEFT = "水晶左";
+    private static final String CRYSTAL_RIGHT = "水晶右";
     private static final Vector3f DEFAULT_ORIGIN = new Vector3f(0.5F, 0.5F, 0.5F);
-    private static final Vector3f CRYSTAL_MAIN_PIVOT = new Vector3f(8.3F / 16.0F, 29.24749F / 16.0F, 8.29246F / 16.0F);
-    private static final Vector3f CRYSTAL_LEFT_PIVOT = new Vector3f(5.1F / 16.0F, 29.24749F / 16.0F, 8.29246F / 16.0F);
-    private static final Vector3f CRYSTAL_RIGHT_PIVOT = new Vector3f(11.3F / 16.0F, 29.24749F / 16.0F, 8.29246F / 16.0F);
 
     private final Map<String, List<ModelElement>> groupElements = new HashMap<>();
     private final Map<String, Vector3f> customOrigins = new HashMap<>();
@@ -88,26 +80,22 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
         Direction facing = blockEntity.getBlockState().getValue(ManaGrinderBlock.FACING);
         BlockbenchModelRenderUtils.applyHorizontalFacingRotation(poseStack, facing, 0.0F, 180.0F, 90.0F, -90.0F);
 
-        ResourceLocation currentTexture = isWorking ? TEXTURE_ACTIVE : TEXTURE_IDLE;
-        VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(currentTexture));
+        // mana_grinder_active.png 是蕎麥麵重做模型「之前」的舊資產，UV 版面跟新模型完全對不上（構圖是
+        // 另一組小圖示動畫，不是新機身貼圖的縮小版），套上去會顯示錯亂內容。蕎麥麵補一份照新版面畫的
+        // 運作動畫貼圖之前，機身貼圖固定用閒置版；滾輪轉動、水晶行為這些運作中的動畫邏輯完全不受影響。
+        // 要接回運作貼圖動畫時：currentBodyTexture 改回 isWorking ? TEXTURE_ACTIVE : TEXTURE_IDLE，
+        // 並把下面這段 frame 動畫的 UvTransform 邏輯放回來（邏輯本身沒問題，只是先沒有能用的貼圖）。
+        ResourceLocation currentBodyTexture = TEXTURE_IDLE;
         BlockbenchModelRenderUtils.UvTransform previousUvTransform = null;
-        if (isWorking && activeTextureFrameCount > 1) {
-            int frameIndex = resolveActiveTextureFrame(blockEntity.getLevel().getGameTime(), partialTick);
-            float frameScaleV = 1.0F / activeTextureFrameCount;
-            float frameOffsetV = frameScaleV * frameIndex;
-            previousUvTransform = BlockbenchModelRenderUtils.setUvTransform(1.0F, frameScaleV, 0.0F, frameOffsetV);
-        }
 
         try {
-            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "standalone_0", 0.0F, 0.0F, 0.0F, 0.0F);
-            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "standalone_1", 0.0F, 0.0F, 0.0F, 0.0F);
-            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "standalone_2", 0.0F, 0.0F, 0.0F, 0.0F);
-            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "standalone_3", 0.0F, 0.0F, 0.0F, 0.0F);
-            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "standalone_4", 0.0F, 0.0F, 0.0F, 0.0F);
-            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, STATIC_MAIN_GROUP, 0.0F, 0.0F, 0.0F, 0.0F);
+            // 兩張貼圖分開拿 buffer；用完一個才拿下一個，避免共用排序 buffer 時把前一個沖掉導致 crash
+            VertexConsumer bodyConsumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(currentBodyTexture));
+            renderGroup(poseStack, bodyConsumer, packedLight, packedOverlay, BODY_GROUP, 0.0F, 0.0F, 0.0F, 0.0F);
+            renderWheelAnimation(poseStack, bodyConsumer, packedLight, packedOverlay, time, animationScale, isWorking);
 
-            renderCrystalAnimation(poseStack, vertexConsumer, packedLight, packedOverlay, time, animationScale, isWorking);
-            renderCrusherAnimation(poseStack, vertexConsumer, packedLight, packedOverlay, time, animationScale, isWorking);
+            VertexConsumer crystalConsumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(TEXTURE_CRYSTAL));
+            renderCrystalAnimation(poseStack, crystalConsumer, packedLight, packedOverlay, time, animationScale, isWorking);
         } finally {
             if (previousUvTransform != null) {
                 BlockbenchModelRenderUtils.restoreUvTransform(previousUvTransform);
@@ -115,6 +103,14 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
         }
 
         poseStack.popPose();
+    }
+
+    private void renderWheelAnimation(PoseStack poseStack, VertexConsumer vertexConsumer,
+                                      int packedLight, int packedOverlay,
+                                      float time, float animationScale, boolean isWorking) {
+        // 滾輪一起同步轉，繞水平的 X 軸滾動，表面看起來是上下捲動（不是繞 Z 軸像鐘面那樣轉圈），不工作時停止
+        float rotation = (animationScale > 0.0F && isWorking) ? time * 15.0F : 0.0F;
+        renderGroupWithXRotation(poseStack, vertexConsumer, packedLight, packedOverlay, WHEEL_GROUP, rotation);
     }
 
     private void renderCrystalAnimation(PoseStack poseStack, VertexConsumer vertexConsumer,
@@ -141,25 +137,6 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
         }
     }
 
-    private void renderCrusherAnimation(PoseStack poseStack, VertexConsumer vertexConsumer,
-                                        int packedLight, int packedOverlay,
-                                        float time, float animationScale, boolean isWorking) {
-        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRUSHER_LEFT_CORE, 0.0F, 0.0F, 0.0F, 0.0F);
-        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRUSHER_RIGHT_CORE, 0.0F, 0.0F, 0.0F, 0.0F);
-
-        float leftRotation = 0.0F;
-        float rightRotation = 0.0F;
-
-        if (animationScale > 0.0F && isWorking) {
-            float angularFactor = 15.0F;
-            leftRotation = time * angularFactor;
-            rightRotation = -time * angularFactor;
-        }
-
-        renderGroupWithZRotation(poseStack, vertexConsumer, packedLight, packedOverlay, CRUSHER_LEFT_BLADES, leftRotation);
-        renderGroupWithZRotation(poseStack, vertexConsumer, packedLight, packedOverlay, CRUSHER_RIGHT_BLADES, rightRotation);
-    }
-
     private void renderGroup(PoseStack poseStack, VertexConsumer vertexConsumer,
                              int packedLight, int packedOverlay, String groupName,
                              float offsetX, float offsetY, float offsetZ, float rotationY) {
@@ -169,17 +146,17 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
         );
     }
 
-    private void renderGroupWithZRotation(PoseStack poseStack, VertexConsumer vertexConsumer,
+    private void renderGroupWithXRotation(PoseStack poseStack, VertexConsumer vertexConsumer,
                                           int packedLight, int packedOverlay,
-                                          String groupName, float rotationZ) {
-        if (Math.abs(rotationZ) < 1.0E-6F) {
+                                          String groupName, float rotationX) {
+        if (Math.abs(rotationX) < 1.0E-6F) {
             renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, groupName, 0.0F, 0.0F, 0.0F, 0.0F);
             return;
         }
         Vector3f origin = getGroupOrigin(groupName);
         poseStack.pushPose();
         poseStack.translate(origin.x(), origin.y(), origin.z());
-        poseStack.mulPose(com.mojang.math.Axis.ZP.rotation(rotationZ));
+        poseStack.mulPose(com.mojang.math.Axis.XP.rotation(rotationX));
         poseStack.translate(-origin.x(), -origin.y(), -origin.z());
         renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, groupName, 0.0F, 0.0F, 0.0F, 0.0F);
         poseStack.popPose();
@@ -212,66 +189,16 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
         customOrigins.clear();
 
         groupElements.putAll(BlockbenchModelRenderUtils.parseGroupedElements(modelData, true));
-        // 與模型本體中心對齊，避免旋轉時產生公轉位移感
-        customOrigins.put(CRYSTAL_MAIN, CRYSTAL_MAIN_PIVOT);
-        customOrigins.put(CRYSTAL_LEFT, CRYSTAL_LEFT_PIVOT);
-        customOrigins.put(CRYSTAL_RIGHT, CRYSTAL_RIGHT_PIVOT);
 
-        List<ModelElement> parsedElements = BlockbenchModelRenderUtils.parseElements(modelData);
-        JsonArray groups = modelData.getAsJsonArray("groups");
-        registerWheelGroups(groups, parsedElements, "粉碎輪", CRUSHER_LEFT_CORE, CRUSHER_LEFT_BLADES);
-        registerWheelGroups(groups, parsedElements, "粉碎輪2", CRUSHER_RIGHT_CORE, CRUSHER_RIGHT_BLADES);
-    }
-
-    private void registerWheelGroups(JsonArray groups, List<ModelElement> parsedElements,
-                                     String targetGroupName, String coreGroupName, String bladesGroupName) {
-        JsonObject targetGroup = findGroupByName(groups, targetGroupName);
-        if (targetGroup == null) {
-            LOGGER.warn("Mana grinder model group not found: {}", targetGroupName);
-            return;
-        }
-
-        Vector3f wheelOrigin = readOrigin(targetGroup);
-        Set<Integer> coreIndices = new LinkedHashSet<>();
-        collectDirectElementIndices(targetGroup, coreIndices);
-        if (coreIndices.isEmpty()) {
-            LOGGER.warn("Model group {} has no direct pivot elements.", targetGroupName);
-        } else {
-            List<ModelElement> coreElements = collectElementsByIndices(parsedElements, coreIndices);
-            if (!coreElements.isEmpty()) {
-                groupElements.put(coreGroupName, coreElements);
-                wheelOrigin = calculateElementsCenter(coreElements, wheelOrigin);
-                customOrigins.put(coreGroupName, wheelOrigin);
-            }
-        }
-
-        Set<Integer> bladeIndices = new LinkedHashSet<>();
-        collectNestedElementIndices(targetGroup, bladeIndices);
-        bladeIndices.removeAll(coreIndices);
-        if (bladeIndices.isEmpty()) {
-            LOGGER.warn("Model group {} has no renderable elements.", targetGroupName);
-            return;
-        }
-        List<ModelElement> bladeElements = collectElementsByIndices(parsedElements, bladeIndices);
-        if (bladeElements.isEmpty()) {
-            return;
-        }
-        groupElements.put(bladesGroupName, bladeElements);
-        customOrigins.put(bladesGroupName, wheelOrigin);
-    }
-
-    private List<ModelElement> collectElementsByIndices(List<ModelElement> parsedElements, Set<Integer> indices) {
-        List<ModelElement> elements = new ArrayList<>();
-        for (Integer index : indices) {
-            if (index >= 0 && index < parsedElements.size()) {
-                elements.add(parsedElements.get(index));
-            }
-        }
-        return elements;
+        // 群組沒有自己標定精確的旋轉軸心時，退回用群組本身方塊的幾何中心當軸心
+        customOrigins.put(WHEEL_GROUP, calculateElementsCenter(groupElements.get(WHEEL_GROUP), DEFAULT_ORIGIN));
+        customOrigins.put(CRYSTAL_MAIN, calculateElementsCenter(groupElements.get(CRYSTAL_MAIN), DEFAULT_ORIGIN));
+        customOrigins.put(CRYSTAL_LEFT, calculateElementsCenter(groupElements.get(CRYSTAL_LEFT), DEFAULT_ORIGIN));
+        customOrigins.put(CRYSTAL_RIGHT, calculateElementsCenter(groupElements.get(CRYSTAL_RIGHT), DEFAULT_ORIGIN));
     }
 
     private Vector3f calculateElementsCenter(List<ModelElement> elements, Vector3f fallback) {
-        if (elements.isEmpty()) {
+        if (elements == null || elements.isEmpty()) {
             return fallback;
         }
         float sumX = 0.0F;
@@ -284,80 +211,6 @@ public class ManaGrinderRenderer implements BlockEntityRenderer<ManaGrinderBlock
         }
         float count = elements.size();
         return new Vector3f(sumX / count, sumY / count, sumZ / count);
-    }
-
-    private JsonObject findGroupByName(JsonArray groups, String targetName) {
-        for (int i = 0; i < groups.size(); i++) {
-            JsonElement element = groups.get(i);
-            if (!element.isJsonObject()) {
-                continue;
-            }
-            JsonObject groupObject = element.getAsJsonObject();
-            if (groupObject.has("name") && targetName.equals(groupObject.get("name").getAsString())) {
-                return groupObject;
-            }
-            if (groupObject.has("children")) {
-                JsonArray children = groupObject.getAsJsonArray("children");
-                JsonObject nestedResult = findGroupByName(children, targetName);
-                if (nestedResult != null) {
-                    return nestedResult;
-                }
-            }
-        }
-        return null;
-    }
-
-    private void collectDirectElementIndices(JsonObject groupObject, Set<Integer> result) {
-        if (!groupObject.has("children")) {
-            return;
-        }
-        JsonArray children = groupObject.getAsJsonArray("children");
-        for (int i = 0; i < children.size(); i++) {
-            JsonElement child = children.get(i);
-            if (child.isJsonPrimitive()) {
-                result.add(child.getAsInt());
-            }
-        }
-    }
-
-    private void collectNestedElementIndices(JsonObject groupObject, Set<Integer> result) {
-        if (!groupObject.has("children")) {
-            return;
-        }
-        JsonArray children = groupObject.getAsJsonArray("children");
-        for (int i = 0; i < children.size(); i++) {
-            JsonElement child = children.get(i);
-            if (child.isJsonObject()) {
-                collectAllElementIndices(child.getAsJsonObject(), result);
-            }
-        }
-    }
-
-    private void collectAllElementIndices(JsonObject groupObject, Set<Integer> result) {
-        if (!groupObject.has("children")) {
-            return;
-        }
-        JsonArray children = groupObject.getAsJsonArray("children");
-        for (int i = 0; i < children.size(); i++) {
-            JsonElement child = children.get(i);
-            if (child.isJsonPrimitive()) {
-                result.add(child.getAsInt());
-            } else if (child.isJsonObject()) {
-                collectAllElementIndices(child.getAsJsonObject(), result);
-            }
-        }
-    }
-
-    private Vector3f readOrigin(JsonObject groupObject) {
-        if (!groupObject.has("origin")) {
-            return DEFAULT_ORIGIN;
-        }
-        JsonArray origin = groupObject.getAsJsonArray("origin");
-        return new Vector3f(
-                origin.get(0).getAsFloat() / 16.0F,
-                origin.get(1).getAsFloat() / 16.0F,
-                origin.get(2).getAsFloat() / 16.0F
-        );
     }
 
     private void loadActiveTextureAnimationMeta() {
