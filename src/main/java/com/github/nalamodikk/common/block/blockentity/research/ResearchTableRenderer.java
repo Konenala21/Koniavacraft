@@ -1,6 +1,7 @@
 package com.github.nalamodikk.common.block.blockentity.research;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.common.block.ResearchTableBlock;
 import com.github.nalamodikk.common.utils.render.BlockbenchModelRenderUtils;
 import com.github.nalamodikk.common.utils.render.BlockbenchModelRenderUtils.ModelElement;
 import com.google.gson.JsonObject;
@@ -16,6 +17,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.neoforged.neoforge.client.extensions.IBlockEntityRendererExtension;
@@ -73,6 +75,10 @@ public class ResearchTableRenderer implements BlockEntityRenderer<ResearchTableB
         VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(TEXTURE));
 
         poseStack.pushPose();
+        if (blockEntity.getBlockState().hasProperty(ResearchTableBlock.FACING)) {
+            Direction facing = blockEntity.getBlockState().getValue(ResearchTableBlock.FACING);
+            BlockbenchModelRenderUtils.applyHorizontalFacingRotation(poseStack, facing, 180.0F, 0.0F, 90.0F, 270.0F);
+        }
         for (String group : groupElements.keySet()) {
             BlockbenchModelRenderUtils.renderGroup(
                     poseStack, vertexConsumer, packedLight, packedOverlay,
