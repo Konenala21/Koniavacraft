@@ -26,17 +26,22 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
     @Override
     protected void registerStatesAndModels() {
-        blockWithItem(ModBlocks.MANA_CHARGER);
+        // 魔力充能台：蕎麥麵自訂模型 + FACING 旋轉（模型本身前面朝向跟 FACING=NORTH 差 180 度，額外轉回來）
+        createManaModelWithFacing(ModBlocks.MANA_CHARGER, 180);
+        itemModels().withExistingParent("mana_charger", modLoc("block/mana_charger"));
 
-        // 🪄 技能核心編碼台（六面同材質 block/skill_encoder）
-        blockWithItem(ModBlocks.SKILL_ENCODER);
+        // 🪄 技能核心編碼台：蕎麥麵自訂模型（block/skill_encoder）+ FACING 旋轉（模型前面朝向跟 FACING=NORTH 差 180 度）
+        createManaModelWithFacing(ModBlocks.SKILL_ENCODER, 180);
+        itemModels().withExistingParent("skill_encoder", modLoc("block/skill_encoder"));
 
         // 🏗️ 基礎方塊 (六面相同材質)
         blockWithItem(ModBlocks.MANA_BLOCK);
         blockWithItem(ModBlocks.MOON_REGOLITH);
         blockWithItem(ModBlocks.MOON_STONE);
         blockWithItem(ModBlocks.MOON_DEEPSTONE);
-        blockWithItem(ModBlocks.MOON_CORE);
+        // 月核：蕎麥麵自訂模型（block/moon_core）
+        createManaModel(ModBlocks.MOON_CORE);
+        itemModels().withExistingParent("moon_core", modLoc("block/moon_core"));
         // 飛船方塊：蕎麥麵畫的 Blockbench 自訂模型（手寫 block/ 模型 JSON，貼圖 block/*.png）
         customShipModel(ModBlocks.SHIP_CORE, "ship_core");
         customShipModel(ModBlocks.SHIP_ASSEMBLY_BASE, "ship_assembly_base"); // 組裝底座地板：蕎麥麵新模型
@@ -46,9 +51,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.MANA_WARP_ENGINE);
         blockWithItem(ModBlocks.MANA_WARP_INPUT);
         blockWithItem(ModBlocks.MANA_ALLOY_BLOCK);
-        blockWithItem(ModBlocks.SHIP_ASSEMBLY_PAD); // 組裝台：沿用原本 cubeAll(新素材是給底座 base 的)
+        customShipModel(ModBlocks.SHIP_ASSEMBLY_PAD, "ship_assembly_pad"); // 組裝台：蕎麥麵新模型(先前註解過時,已確認新素材是給組裝台的)
         shipSeatModel(); // 椅子造型：蕎麥麵自訂模型 + FACING 旋轉
-        blockWithItem(ModBlocks.ASPECT_RESEARCH_DESK);
+        // 本源交易站：蕎麥麵自訂模型（block/aspect_research_desk）+ FACING 旋轉
+        createManaModelWithFacing(ModBlocks.ASPECT_RESEARCH_DESK);
+        itemModels().withExistingParent("aspect_research_desk", modLoc("block/aspect_research_desk"));
         blockWithItem(ModBlocks.MAGIC_ORE);
         blockWithItem(ModBlocks.DEEPSLATE_MAGIC_ORE);
         blockWithItem(ModBlocks.MANA_SOIL);
@@ -102,7 +109,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         createManaModelWithFacing(ModBlocks.MANA_PLATE_PRESS);
         createManaGeneratorModel();
         createSolarCollectorModel();
-        createManaModel(ModBlocks.RESEARCH_TABLE);
+        createManaModelWithFacing(ModBlocks.RESEARCH_TABLE, 180); // 模型前面朝向跟 FACING=NORTH 差 180 度
 
         // BER handles visual; this model only provides the particle texture for break/step effects
         ModelFile deployerModel = models().withExistingParent("mana_deployer", mcLoc("block/block"))
@@ -214,28 +221,29 @@ public class ModBlockStateProvider extends BlockStateProvider {
      * 🧭 創建有朝向屬性的魔力方塊模型
      */
     private void createManaModelWithFacing(DeferredBlock<?> blockHolder) {
+        createManaModelWithFacing(blockHolder, 0);
+    }
+
+    /**
+     * @param extraYRotation 額外疊加的 Y 軸旋轉角度（0/90/180/270），用來修正模型本身前面朝向跟 FACING=NORTH 對不上的情況
+     */
+    private void createManaModelWithFacing(DeferredBlock<?> blockHolder, int extraYRotation) {
         Block block = blockHolder.get();
         String blockName = blockHolder.getId().getPath();
+        ModelFile model = new ModelFile.UncheckedModelFile(modLoc("block/" + blockName));
 
         getVariantBuilder(block)
-                // 北面 (默認方向)
                 .partialState().with(HorizontalDirectionalBlock.FACING, Direction.NORTH)
-                .modelForState().modelFile(new ModelFile.UncheckedModelFile(modLoc("block/" + blockName))).addModel()
+                .modelForState().modelFile(model).rotationY(Math.floorMod(0 + extraYRotation, 360)).addModel()
 
-                // 南面 (旋轉180度)
                 .partialState().with(HorizontalDirectionalBlock.FACING, Direction.SOUTH)
-                .modelForState().modelFile(new ModelFile.UncheckedModelFile(modLoc("block/" + blockName)))
-                .rotationY(180).addModel()
+                .modelForState().modelFile(model).rotationY(Math.floorMod(180 + extraYRotation, 360)).addModel()
 
-                // 西面 (旋轉270度)
                 .partialState().with(HorizontalDirectionalBlock.FACING, Direction.WEST)
-                .modelForState().modelFile(new ModelFile.UncheckedModelFile(modLoc("block/" + blockName)))
-                .rotationY(270).addModel()
+                .modelForState().modelFile(model).rotationY(Math.floorMod(270 + extraYRotation, 360)).addModel()
 
-                // 東面 (旋轉90度)
                 .partialState().with(HorizontalDirectionalBlock.FACING, Direction.EAST)
-                .modelForState().modelFile(new ModelFile.UncheckedModelFile(modLoc("block/" + blockName)))
-                .rotationY(90).addModel();
+                .modelForState().modelFile(model).rotationY(Math.floorMod(90 + extraYRotation, 360)).addModel();
     }
 
     /**

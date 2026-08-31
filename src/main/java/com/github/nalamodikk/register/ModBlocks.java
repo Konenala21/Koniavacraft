@@ -10,6 +10,7 @@ import com.github.nalamodikk.common.block.blockentity.mana_crafting.ManaCrafting
 import com.github.nalamodikk.common.block.blockentity.mana_generator.ManaGeneratorBlock;
 import com.github.nalamodikk.common.block.blockentity.mana_deployer.ManaDeployerBlock;
 import com.github.nalamodikk.common.block.blockentity.mana_grinder.ManaGrinderBlock;
+import com.github.nalamodikk.common.block.AspectResearchDeskBlock;
 import com.github.nalamodikk.common.block.blockentity.altar.AltarPillarBlock;
 import com.github.nalamodikk.common.block.blockentity.altar.AspectAltarBlock;
 import com.github.nalamodikk.common.block.blockentity.altar.AspectPedestalBlock;
@@ -82,11 +83,11 @@ public class ModBlocks {
                     .lightLevel(s -> 10).requiresCorrectToolForDrops()));
 
     // 本源研究桌:本源研究員村民的職業方塊(純方塊、無 BlockEntity,跟玩家用的研究台分開,避免 POI 卡頓)
-    public static final DeferredBlock<Block> ASPECT_RESEARCH_DESK =
-            registerBlock("aspect_research_desk", () -> new Block(BlockBehaviour.Properties.ofFullCopy(Blocks.LECTERN)));
+    public static final DeferredBlock<AspectResearchDeskBlock> ASPECT_RESEARCH_DESK =
+            registerBlock("aspect_research_desk", () -> new AspectResearchDeskBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.LECTERN).noOcclusion()));
 
     public static final DeferredBlock<Block> MANA_CRAFTING_TABLE_BLOCK =
-            registerBlock("mana_crafting_table", () -> new ManaCraftingTableBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.BIRCH_WOOD)));
+            registerBlock("mana_crafting_table", () -> new ManaCraftingTableBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.BIRCH_WOOD).noOcclusion()));
 
     public static final DeferredBlock<Block> RESEARCH_TABLE =
             registerBlock("research_table", () -> new ResearchTableBlock(
@@ -190,24 +191,24 @@ public class ModBlocks {
     // === 🔮 新增：魔力注入機 ===
     public static final DeferredBlock<ManaInfuserBlock> MANA_INFUSER = registerBlock("mana_infuser",
             () -> new ManaInfuserBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL)
-                    .strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().lightLevel(state ->
+                    .strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion().lightLevel(state ->
                             state.getValue(ManaInfuserBlock.WORKING) ? 7 : 0))); // 工作時發光
 
     // === 🔩 魔力壓板機 ===
     public static final DeferredBlock<ManaPlatePressBlock> MANA_PLATE_PRESS = registerBlock("mana_plate_press",
             () -> new ManaPlatePressBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL)
-                    .strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().lightLevel(state ->
+                    .strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion().lightLevel(state ->
                             state.getValue(ManaPlatePressBlock.WORKING) ? 5 : 0)));
 
     // === 🪄 技能核心編碼台 ===
     public static final DeferredBlock<SkillEncoderBlock> SKILL_ENCODER = registerBlock("skill_encoder",
             () -> new SkillEncoderBlock(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_PURPLE)
-                    .strength(3.0f).sound(SoundType.METAL).requiresCorrectToolForDrops()));
+                    .strength(3.0f).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion()));
 
     // === ⚙️ 新增：魔力粉碎機 ===
     public static final DeferredBlock<ManaGrinderBlock> MANA_GRINDER = registerBlock("mana_grinder",
             () -> new ManaGrinderBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL)
-                    .strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().lightLevel(state ->
+                    .strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion().lightLevel(state ->
                             state.getValue(ManaGrinderBlock.WORKING) ? 6 : 0))); // 工作時發光
 
     // === 🔮 多方塊：本源聚陣 ===
@@ -242,7 +243,7 @@ public class ModBlocks {
     // ── 飛船核心（駕駛/錨點，會跟船走；用組裝台組裝）─────────────────────
     public static final DeferredBlock<ShipCoreBlock> SHIP_CORE = registerBlock("ship_core",
             () -> new ShipCoreBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL)
-                    .strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops()));
+                    .strength(3.5f).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion()));
 
     // ── 飛船魔力引擎 / 燃料槽（組裝必要骨架：核心 + ≥1 引擎 + ≥1 燃料槽）──────
     public static final DeferredBlock<ManaEngineBlock> MANA_ENGINE = registerBlock("mana_engine",
