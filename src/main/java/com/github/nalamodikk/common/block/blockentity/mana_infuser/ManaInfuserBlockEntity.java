@@ -108,7 +108,7 @@ public class ManaInfuserBlockEntity extends AbstractManaMachineEntityBlock imple
     public void tickMachine() {
         if (level == null || level.isClientSide()) return;
 
-        if (!ResearchGate.canOperate("mana_infusion", level, ownerId)) {
+        if (!ResearchGate.canOperate("mana_infuser", level, ownerId)) {
             currentRecipe = null;
             progress = 0;
             lastComputedWorking = false;
