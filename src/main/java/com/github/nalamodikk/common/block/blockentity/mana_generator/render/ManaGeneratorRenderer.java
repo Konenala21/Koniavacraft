@@ -34,14 +34,21 @@ import java.util.Optional;
 public class ManaGeneratorRenderer implements BlockEntityRenderer<ManaGeneratorBlockEntity>, IBlockEntityRendererExtension<ManaGeneratorBlockEntity> {
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    private static final ResourceLocation TEXTURE_IDLE =
+    private static final ResourceLocation TEXTURE_BODY =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/block/mana_generator_texture.png");
-    private static final ResourceLocation TEXTURE_ACTIVE =
-            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/block/mana_generator_active.png");
+    private static final ResourceLocation TEXTURE_CRYSTAL =
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/block/mana_crystal_3d.png");
     private static final ResourceLocation MODEL_LOCATION =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "models/block/generator/mana_generator.json");
 
+    // 蕎麥麵 2026-08 重做的發電機模型群組名字（見 mana_generator.bbmodel）
+    private static final String BODY_GROUP = "power-main";
+    private static final String CRYSTAL_MAIN = "cryst-main";
+    private static final String CRYSTAL_SUB = "cryst";
+    private static final Vector3f DEFAULT_ORIGIN = new Vector3f(0.5F, 0.5F, 0.5F);
+
     private final Map<String, List<ModelElement>> groupElements = new HashMap<>();
+    private final Map<String, Vector3f> customOrigins = new HashMap<>();
     private boolean modelLoaded = false;
 
     public ManaGeneratorRenderer(BlockEntityRendererProvider.Context context) {
@@ -68,7 +75,27 @@ public class ManaGeneratorRenderer implements BlockEntityRenderer<ManaGeneratorB
 
     private void parseModelData(JsonObject modelData) {
         groupElements.clear();
+        customOrigins.clear();
         groupElements.putAll(BlockbenchModelRenderUtils.parseGroupedElements(modelData, false));
+
+        customOrigins.put(CRYSTAL_MAIN, calculateElementsCenter(groupElements.get(CRYSTAL_MAIN), DEFAULT_ORIGIN));
+        customOrigins.put(CRYSTAL_SUB, calculateElementsCenter(groupElements.get(CRYSTAL_SUB), DEFAULT_ORIGIN));
+    }
+
+    private Vector3f calculateElementsCenter(List<ModelElement> elements, Vector3f fallback) {
+        if (elements == null || elements.isEmpty()) {
+            return fallback;
+        }
+        float sumX = 0.0F;
+        float sumY = 0.0F;
+        float sumZ = 0.0F;
+        for (ModelElement element : elements) {
+            sumX += (element.x1 + element.x2) * 0.5F;
+            sumY += (element.y1 + element.y2) * 0.5F;
+            sumZ += (element.z1 + element.z2) * 0.5F;
+        }
+        float count = elements.size();
+        return new Vector3f(sumX / count, sumY / count, sumZ / count);
     }
 
     @Override
@@ -87,33 +114,33 @@ public class ManaGeneratorRenderer implements BlockEntityRenderer<ManaGeneratorB
         Direction facing = blockEntity.getBlockState().getValue(ManaGeneratorBlock.FACING);
         applyBlockRotation(poseStack, facing);
 
-        ResourceLocation currentTexture = isWorking ? TEXTURE_ACTIVE : TEXTURE_IDLE;
-        VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.entitySolid(currentTexture));
+        // 兩張貼圖分開拿 buffer；用完一個才拿下一個，避免共用排序 buffer 時把前一個沖掉導致 crash
+        VertexConsumer bodyConsumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(TEXTURE_BODY));
+        renderGroup(poseStack, bodyConsumer, packedLight, packedOverlay, BODY_GROUP, 0.0F, 0.0F, 0.0F, 0.0F);
 
-        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "bb_main", 0.0F, 0.0F, 0.0F, 0.0F);
-        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "bone2", 0.0F, 0.0F, 0.0F, 0.0F);
-
-        if (animationScale <= 0.0F) {
-            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "bone", 0.0F, 0.0F, 0.0F, 0.0F);
-            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "bone3", 0.0F, 0.0F, 0.0F, 0.0F);
-            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "bone4", 0.0F, 0.0F, 0.0F, 0.0F);
-        } else if (isWorking) {
-            float centralRot = time * 10.0F;
-            float leftRot = -time * 10.8F;
-            float rightRot = time * 10.2F;
-            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "bone", 0.0F, 0.0F, 0.0F, centralRot);
-            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "bone3", 0.0F, 0.0F, 0.0F, leftRot);
-            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "bone4", 0.0F, 0.0F, 0.0F, rightRot);
-        } else {
-            float centralFloat = (float) Math.sin(time) * 0.125F;
-            float leftFloat = (float) Math.sin(time + Math.PI * 2.0F / 3.0F) * 0.125F;
-            float rightFloat = (float) Math.sin(time + Math.PI * 4.0F / 3.0F) * 0.125F;
-            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "bone", 0.0F, centralFloat, 0.0F, 0.0F);
-            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "bone3", 0.0F, leftFloat, 0.0F, 0.0F);
-            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "bone4", 0.0F, rightFloat, 0.0F, 0.0F);
-        }
+        VertexConsumer crystalConsumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(TEXTURE_CRYSTAL));
+        renderCrystalAnimation(poseStack, crystalConsumer, packedLight, packedOverlay, time, animationScale, isWorking);
 
         poseStack.popPose();
+    }
+
+    private void renderCrystalAnimation(PoseStack poseStack, VertexConsumer vertexConsumer,
+                                        int packedLight, int packedOverlay,
+                                        float time, float animationScale, boolean isWorking) {
+        if (animationScale <= 0.0F) {
+            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRYSTAL_MAIN, 0.0F, 0.0F, 0.0F, 0.0F);
+            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRYSTAL_SUB, 0.0F, 0.0F, 0.0F, 0.0F);
+        } else if (isWorking) {
+            float mainRotation = time * 10.0F;
+            float subRotation = -time * 10.8F;
+            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRYSTAL_MAIN, 0.0F, 0.0F, 0.0F, mainRotation);
+            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRYSTAL_SUB, 0.0F, 0.0F, 0.0F, subRotation);
+        } else {
+            float mainOffsetY = (float) Math.sin(time) * 0.125F;
+            float subOffsetY = (float) Math.sin(time + Math.PI * 2.0F / 3.0F) * 0.125F;
+            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRYSTAL_MAIN, 0.0F, mainOffsetY, 0.0F, 0.0F);
+            renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRYSTAL_SUB, 0.0F, subOffsetY, 0.0F, 0.0F);
+        }
     }
 
     private void applyBlockRotation(PoseStack poseStack, Direction facing) {
@@ -125,22 +152,12 @@ public class ManaGeneratorRenderer implements BlockEntityRenderer<ManaGeneratorB
                              float offsetX, float offsetY, float offsetZ, float rotationY) {
         BlockbenchModelRenderUtils.renderGroup(
                 poseStack, vertexConsumer, packedLight, packedOverlay,
-                groupElements, groupName, offsetX, offsetY, offsetZ, rotationY, this::getBlockbenchGroupOrigin
+                groupElements, groupName, offsetX, offsetY, offsetZ, rotationY, this::getGroupOrigin
         );
     }
 
-    private static final Vector3f ORIGIN_BONE    = new Vector3f(8.0F  / 16.0F, 29.24749F / 16.0F, 8.29246F / 16.0F);
-    private static final Vector3f ORIGIN_BONE3   = new Vector3f(3.0F  / 16.0F, 29.24749F / 16.0F, 8.29246F / 16.0F);
-    private static final Vector3f ORIGIN_BONE4   = new Vector3f(13.0F / 16.0F, 29.24749F / 16.0F, 8.29246F / 16.0F);
-    private static final Vector3f ORIGIN_DEFAULT = new Vector3f(0.0F, 0.0F, 0.0F);
-
-    private Vector3f getBlockbenchGroupOrigin(String groupName) {
-        return switch (groupName) {
-            case "bone"  -> ORIGIN_BONE;
-            case "bone3" -> ORIGIN_BONE3;
-            case "bone4" -> ORIGIN_BONE4;
-            default      -> ORIGIN_DEFAULT;
-        };
+    private Vector3f getGroupOrigin(String groupName) {
+        return customOrigins.getOrDefault(groupName, DEFAULT_ORIGIN);
     }
 
     @Override
