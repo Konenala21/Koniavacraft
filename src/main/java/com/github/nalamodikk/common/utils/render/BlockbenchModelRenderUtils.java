@@ -235,6 +235,11 @@ public final class BlockbenchModelRenderUtils {
         poseStack.popPose();
     }
 
+    /**
+     * 頂點走位跟 UV 分配都照 vanilla {@code EnumFaceDirection} / {@code BlockFaceUV}
+     * (net.minecraft.client.renderer.block.model，MCP 反編譯核對過)的實際規則，
+     * 不是憑感覺排的，6 面走位+UV公式都跟 vanilla 逐點對過。
+     */
     private static void renderCube(PoseStack poseStack, VertexConsumer vertexConsumer,
                                    int packedLight, int packedOverlay, ModelElement element) {
         Matrix4f matrix = poseStack.last().pose();
@@ -254,35 +259,35 @@ public final class BlockbenchModelRenderUtils {
         if (down != null) {
             Vector3f n = nm.transform(new Vector3f(0f, -1f, 0f));
             addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
-                    x1, y1, z1, x2, y1, z1, x2, y1, z2, x1, y1, z2, n.x(), n.y(), n.z(), down);
+                    x1, y1, z2, x1, y1, z1, x2, y1, z1, x2, y1, z2, n.x(), n.y(), n.z(), down);
         }
 
         FaceUV north = element.faceUVs.get("north");
         if (north != null) {
             Vector3f n = nm.transform(new Vector3f(0f, 0f, -1f));
             addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
-                    x1, y1, z1, x1, y2, z1, x2, y2, z1, x2, y1, z1, n.x(), n.y(), n.z(), north);
+                    x2, y2, z1, x2, y1, z1, x1, y1, z1, x1, y2, z1, n.x(), n.y(), n.z(), north);
         }
 
         FaceUV south = element.faceUVs.get("south");
         if (south != null) {
             Vector3f n = nm.transform(new Vector3f(0f, 0f, 1f));
             addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
-                    x1, y1, z2, x2, y1, z2, x2, y2, z2, x1, y2, z2, n.x(), n.y(), n.z(), south);
+                    x1, y2, z2, x1, y1, z2, x2, y1, z2, x2, y2, z2, n.x(), n.y(), n.z(), south);
         }
 
         FaceUV west = element.faceUVs.get("west");
         if (west != null) {
             Vector3f n = nm.transform(new Vector3f(-1f, 0f, 0f));
             addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
-                    x1, y1, z1, x1, y1, z2, x1, y2, z2, x1, y2, z1, n.x(), n.y(), n.z(), west);
+                    x1, y2, z1, x1, y1, z1, x1, y1, z2, x1, y2, z2, n.x(), n.y(), n.z(), west);
         }
 
         FaceUV east = element.faceUVs.get("east");
         if (east != null) {
             Vector3f n = nm.transform(new Vector3f(1f, 0f, 0f));
             addQuadWithUV(vertexConsumer, matrix, packedLight, packedOverlay,
-                    x2, y1, z1, x2, y2, z1, x2, y2, z2, x2, y1, z2, n.x(), n.y(), n.z(), east);
+                    x2, y2, z2, x2, y1, z2, x2, y1, z1, x2, y2, z1, n.x(), n.y(), n.z(), east);
         }
     }
 
@@ -309,8 +314,9 @@ public final class BlockbenchModelRenderUtils {
                                                float nx, float ny, float nz, FaceUV faceUV,
                                                int targetIndex, int rotationSteps) {
         int sourceIndex = (targetIndex - rotationSteps + 4) & 3;
+        // vanilla BlockFaceUV: index 0->(u1,v1), 1->(u1,v2), 2->(u2,v2), 3->(u2,v1)
         float u = (sourceIndex == 0 || sourceIndex == 1) ? faceUV.u1 : faceUV.u2;
-        float v = (sourceIndex == 0 || sourceIndex == 3) ? faceUV.v2 : faceUV.v1;
+        float v = (sourceIndex == 1 || sourceIndex == 2) ? faceUV.v2 : faceUV.v1;
         UvTransform transform = UV_TRANSFORM.get();
         u = u * transform.scaleU + transform.offsetU;
         v = v * transform.scaleV + transform.offsetV;
