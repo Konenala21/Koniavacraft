@@ -36,8 +36,15 @@ public class SolarCollectorRenderer implements BlockEntityRenderer<SolarManaColl
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "models/block/collector/solar_mana_collector.json");
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/block/solar_mana_collector.png");
+    private static final ResourceLocation TEXTURE_CRYSTAL =
+            ResourceLocation.fromNamespaceAndPath(KoniavacraftMod.MOD_ID, "textures/block/mana_crystal_3d.png");
+
+    // 蕎麥麵 2026-06 重做的模型的群組名字（見 mana_solarcollector.bbmodel）
+    private static final String BODY_GROUP = "機身";
+    private static final String CRYSTAL_GROUP = "水晶";
 
     private final Map<String, List<ModelElement>> groupElements = new HashMap<>();
+    private final Map<String, Vector3f> customOrigins = new HashMap<>();
     private boolean modelLoaded = false;
 
     public SolarCollectorRenderer(BlockEntityRendererProvider.Context context) {
@@ -54,7 +61,6 @@ public class SolarCollectorRenderer implements BlockEntityRenderer<SolarManaColl
 
         float animationScale = RenderAnimationLodUtils.getAnimationTimeScale(blockEntity.getBlockPos());
         float time = (blockEntity.getLevel().getGameTime() + partialTick) * 0.05F * animationScale;
-        VertexConsumer vertexConsumer = bufferSource.getBuffer(RenderType.entityTranslucentCull(TEXTURE));
 
         poseStack.pushPose();
         if (blockEntity.getBlockState().hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
@@ -62,10 +68,12 @@ public class SolarCollectorRenderer implements BlockEntityRenderer<SolarManaColl
             applyBlockRotation(poseStack, facing);
         }
 
-        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "standalone_0", 0.0F, 0.0F, 0.0F, 0.0F);
-        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "standalone_4", 0.0F, 0.0F, 0.0F, 0.0F);
-        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "group", 0.0F, 0.0F, 0.0F, 0.0F);
-        renderCrystalAnimation(poseStack, vertexConsumer, packedLight, packedOverlay, time, animationScale);
+        // translucent 類型的 buffer 是排序共用的，先拿第二個會把第一個沖掉，所以要用完一個才拿下一個
+        VertexConsumer bodyConsumer = bufferSource.getBuffer(RenderType.entityTranslucentCull(TEXTURE));
+        renderGroup(poseStack, bodyConsumer, packedLight, packedOverlay, BODY_GROUP, 0.0F, 0.0F, 0.0F, 0.0F);
+
+        VertexConsumer crystalConsumer = bufferSource.getBuffer(RenderType.entityTranslucentCull(TEXTURE_CRYSTAL));
+        renderCrystalAnimation(poseStack, crystalConsumer, packedLight, packedOverlay, time, animationScale);
         poseStack.popPose();
     }
 
@@ -73,10 +81,10 @@ public class SolarCollectorRenderer implements BlockEntityRenderer<SolarManaColl
                                         int packedLight, int packedOverlay, float time, float animationScale) {
         float floatY = 0.0F;
         if (animationScale > 0.0F) {
-            float floatAmplitude = 0.05F * animationScale;
+            float floatAmplitude = 0.15F * animationScale;
             floatY = (float) Math.sin(time * 1.5F) * floatAmplitude;
         }
-        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, "bone", 0.0F, floatY, 0.0F, 0.0F);
+        renderGroup(poseStack, vertexConsumer, packedLight, packedOverlay, CRYSTAL_GROUP, 0.0F, floatY, 0.0F, 0.0F);
     }
 
     @Override
@@ -110,9 +118,27 @@ public class SolarCollectorRenderer implements BlockEntityRenderer<SolarManaColl
 
     private void parseModelData(JsonObject modelData) {
         groupElements.clear();
+        customOrigins.clear();
         groupElements.putAll(BlockbenchModelRenderUtils.parseGroupedElements(modelData, true));
+        customOrigins.put(CRYSTAL_GROUP, calculateElementsCenter(groupElements.get(CRYSTAL_GROUP), ORIGIN_DEFAULT));
         LOGGER.debug("Solar collector model groups parsed.");
         groupElements.forEach((name, elements) -> LOGGER.debug("group={} elements={}", name, elements.size()));
+    }
+
+    private Vector3f calculateElementsCenter(List<ModelElement> elements, Vector3f fallback) {
+        if (elements == null || elements.isEmpty()) {
+            return fallback;
+        }
+        float sumX = 0.0F;
+        float sumY = 0.0F;
+        float sumZ = 0.0F;
+        for (ModelElement element : elements) {
+            sumX += (element.x1 + element.x2) * 0.5F;
+            sumY += (element.y1 + element.y2) * 0.5F;
+            sumZ += (element.z1 + element.z2) * 0.5F;
+        }
+        float count = elements.size();
+        return new Vector3f(sumX / count, sumY / count, sumZ / count);
     }
 
     private void renderGroup(PoseStack poseStack, VertexConsumer vertexConsumer,
@@ -124,10 +150,9 @@ public class SolarCollectorRenderer implements BlockEntityRenderer<SolarManaColl
         );
     }
 
-    private static final Vector3f ORIGIN_BONE    = new Vector3f(0.0F, 29.24749F / 16.0F, 0.29246F / 16.0F);
     private static final Vector3f ORIGIN_DEFAULT = new Vector3f(0.5F, 0.5F, 0.5F);
 
     private Vector3f getGroupOrigin(String groupName) {
-        return "bone".equals(groupName) ? ORIGIN_BONE : ORIGIN_DEFAULT;
+        return customOrigins.getOrDefault(groupName, ORIGIN_DEFAULT);
     }
 }
