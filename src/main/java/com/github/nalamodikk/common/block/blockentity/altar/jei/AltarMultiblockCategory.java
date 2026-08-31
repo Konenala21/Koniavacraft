@@ -406,7 +406,7 @@ public class AltarMultiblockCategory implements IRecipeCategory<AltarStructureIn
     private void renderPillar(PoseStack ps, MultiBufferSource.BufferSource buf,
                                BlockState state, RandomSource rng, int rotation) {
         if (state.getValue(AltarPillarBlock.TOP)) return;
-        ps.translate(0.5, 1.0, 0.5);
+        ps.translate(0.5, 0.0, 0.5);
         ps.mulPose(new Quaternionf().rotationY((float) Math.toRadians(-rotation)));
         var model    = Minecraft.getInstance().getBlockRenderer().getBlockModel(state);
         var consumer = buf.getBuffer(RenderType.entityCutoutNoCull(TextureAtlas.LOCATION_BLOCKS));

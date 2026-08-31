@@ -58,8 +58,8 @@ public class AltarPillarRenderer implements BlockEntityRenderer<AltarPillarBlock
                 RenderType.entityCutoutNoCull(TextureAtlas.LOCATION_BLOCKS));
 
         poseStack.pushPose();
-        // 置中在方塊 XZ，Y+1 讓 OBJ 底部（y=-1.0）對齊方塊底面（render y=0）
-        poseStack.translate(0.5, 1.0, 0.5);
+        // 置中在方塊 XZ；JSON 模型元素 Y 範圍本身就是 0~2（對齊底段+頂段兩格），不需要額外 Y 位移
+        poseStack.translate(0.5, 0.0, 0.5);
         poseStack.mulPose(new Quaternionf().rotationY((float) Math.toRadians(-rotation)));
 
         PoseStack.Pose pose = poseStack.last();

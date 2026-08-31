@@ -247,10 +247,10 @@ public class AspectAltarRenderer implements BlockEntityRenderer<AspectAltarBlock
         VertexConsumer consumer = bufferSource.getBuffer(RenderType.entityCutoutNoCull(TEXTURE));
 
         poseStack.pushPose();
-        poseStack.translate(0.5, 0.5 + bob, 0.5);
+        poseStack.translate(0.5, CUBE_CY + bob, CUBE_CZ);
         poseStack.mulPose(new Quaternionf().rotationZ((float) Math.toRadians(TILT_DEGREES)));
         poseStack.mulPose(new Quaternionf().rotationY((float) Math.toRadians(spinY)));
-        poseStack.translate(-0.5, -0.5, -0.5);
+        poseStack.translate(-0.5, -CUBE_CY, -CUBE_CZ);
 
         if (ritualActive) {
             // 儀式進行中：魔術方塊分層旋轉
