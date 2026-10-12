@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 
 ### Player Changes / 玩家更新內容
 
+The research table's connect-the-dots puzzle now fits your interface size. When your GUI scale or window leaves less room than the puzzle needs, the whole screen (grid, aspect palette, title and the note and quill slots) shrinks evenly to fit instead of running off the edges, and clicking, dragging, scrolling and tooltips still line up. On a screen with enough room it looks the same as before.
+研究台的連連看謎題現在會配合你的介面大小。當你的 GUI 縮放或視窗留給它的空間不夠時,整個畫面(格子、本源面板、標題、筆記與羽毛筆格)會等比例縮小塞進去,不再超出畫面邊緣,點擊、拖曳、滾輪和提示框也都仍然對得準。畫面空間足夠時看起來跟以前一樣。
+
+Fixed the Aspect Synthesis guide page and Nara's tutorial line: they said to drag aspects into the input slots, but the screen works by clicking. They now explain that left-clicking an aspect in the palette fills the first slot, right-clicking fills the second, clicking an input slot clears it, and clicking the result slot synthesizes.
+修正本源合成的指引頁面與娜拉教學台詞:原本寫「把本源拖進輸入格」,但介面實際是用點的。現在改成說明:在面板上左鍵點本源放進第一格、右鍵放進第二格,點輸入格可以清空,點結果格完成合成。
+
 The "structure ready" hints now tell you the current way to form a structure: use a wand rod with the Formation Core Plugin installed and right-click the altar core (it costs wand mana). They used to point to the old Advanced Tech Wand in Multiblock mode with a crouch, which no longer applies.
 結構成形的提示現在會說明目前的方式:使用裝有「成型核心插件」的魔杖杖柄,右鍵祭壇核心(會消耗杖柄魔力)。以前提示的是舊的高級科技魔杖(多方塊模式、蹲下右鍵),那已經不適用了。
 
@@ -232,6 +238,12 @@ Added a space dimension with a procedural starfield sky, physically-based planet
 新增太空維度，包含程序生成的星空天空、物理正確的行星渲染，以及完整太陽系（水星、金星、月球、火星、木星、土星、土衛六、天王星、海王星、冥王星）和比鄰星系雛形（雙星系統）。行星為真實 3D 球體，視角大小隨距離動態縮放。太陽有日冕光暈。進入維度時玩家會出現在地球軌道附近。
 
 ### Developer Notes / 開發者備註
+
+ResearchScreen (the 12x12 hex connect-the-dots puzzle) is laid out in fixed virtual coordinates and uniformly scaled to fit. init() computes uiScale = min(1, width / (CONTENT_W + 2 * FIT_MARGIN), height / (CONTENT_H + 2 * FIT_MARGIN)), floored at MIN_UI_SCALE (0.35); it never enlarges. It keeps vw and vh (the virtual screen size) and centers the whole block, including the palette rows, vertically. render() draws the dim background in real pixels, then scales the pose by uiScale for everything else and converts the mouse to virtual coordinates; mouseClicked, mouseDragged and mouseScrolled divide by uiScale too. Tooltips are hit-tested with the virtual mouse but drawn with the real mouse after the pose is popped, so they clamp to the actual screen edge. Render helpers that take the mouse now take doubles to avoid rounding error at small scales.
+ResearchScreen(12x12 六角連連看謎題)用固定的虛擬座標排版,再等比例縮放塞進畫面。init() 算 uiScale = min(1, width / (CONTENT_W + 2 * FIT_MARGIN), height / (CONTENT_H + 2 * FIT_MARGIN)),下限 MIN_UI_SCALE(0.35),不會放大。保存 vw、vh(虛擬螢幕大小),並把整塊內容(含調色盤那幾排)垂直置中。render() 先用真實像素畫暗化背景,再把 pose 乘上 uiScale 畫其餘部分、滑鼠換算成虛擬座標;mouseClicked、mouseDragged、mouseScrolled 也都除以 uiScale。提示框用虛擬滑鼠判斷、popPose 後用真實滑鼠繪製,所以會正確貼著實際螢幕邊緣。收滑鼠座標的繪製方法改用 double,避免小比例時的取整誤差。
+
+Lang: guide.koniava.research.aspect_synth.body and nara.dialogue.tutorial.aspect_synthesis.line2 (zh_tw, en_us) now describe the real AspectSynthesisScreen controls (handlePaletteClick: left button fills input1, right button fills input2; clicking an input clears it; clicking the result cell calls tryCombine).
+Lang:guide.koniava.research.aspect_synth.body 與 nara.dialogue.tutorial.aspect_synthesis.line2(zh_tw、en_us)改成描述 AspectSynthesisScreen 的實際操作(handlePaletteClick:左鍵填 input1、右鍵填 input2;點輸入格清空;點結果格呼叫 tryCombine)。
 
 Structure build UX: message.koniava.build_wand.ready_to_form and block.koniava.aspect_altar.not_formed (zh_tw and en_us) rewritten for the current activation flow: WandRodItem with the Formation core (WandCoreBehavior.FORMATION, item.koniava.formation_core) right-clicking an IWandActivatable such as the altar core; it spends wand mana and needs no crouch. BlockHighlightRenderer (the orange occupied and red missing outlines sent by BlockHighlightPacket) now draws with the new MIRenderTypes.linesNoDepth(), a copy of vanilla RenderType.LINES (POSITION_COLOR_NORMAL, LINES mode, lines shader, translucent, item entity target) plus NO_DEPTH_TEST, so outlines are not hidden by depth when the block position is enclosed or underground. The ghost projection outline in GhostProjectionHandler still uses depth-tested RenderType.lines().
 結構建造體驗:message.koniava.build_wand.ready_to_form 與 block.koniava.aspect_altar.not_formed(zh_tw、en_us)改成目前的啟動流程:WandRodItem 裝 Formation 核心(WandCoreBehavior.FORMATION、item.koniava.formation_core)右鍵 IWandActivatable(例如祭壇核心),消耗杖柄魔力、不用蹲下。BlockHighlightRenderer(BlockHighlightPacket 送來的橘色佔用與紅色缺料輪廓)現在改用新的 MIRenderTypes.linesNoDepth(),是 vanilla RenderType.LINES 的複本(POSITION_COLOR_NORMAL、LINES 模式、lines shader、半透明、item entity target)再加 NO_DEPTH_TEST,所以方塊位置被包住或在地下時輪廓不會被深度擋掉。GhostProjectionHandler 裡的投影輪廓仍是有深度測試的 RenderType.lines()。
