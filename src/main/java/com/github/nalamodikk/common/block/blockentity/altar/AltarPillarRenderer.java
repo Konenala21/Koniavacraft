@@ -58,9 +58,11 @@ public class AltarPillarRenderer implements BlockEntityRenderer<AltarPillarBlock
                 RenderType.entityCutoutNoCull(TextureAtlas.LOCATION_BLOCKS));
 
         poseStack.pushPose();
-        // 置中在方塊 XZ；JSON 模型元素 Y 範圍本身就是 0~2（對齊底段+頂段兩格），不需要額外 Y 位移
+        // 繞方塊 XZ 中心轉：移到中心 → 旋轉 → 移回去，不然模型會永久偏移半格
+        // （JSON 模型元素 Y 範圍本身就是 0~2，對齊底段+頂段兩格，不需要額外 Y 位移）
         poseStack.translate(0.5, 0.0, 0.5);
-        poseStack.mulPose(new Quaternionf().rotationY((float) Math.toRadians(-rotation)));
+        poseStack.mulPose(new Quaternionf().rotationY((float) Math.toRadians(rotation)));
+        poseStack.translate(-0.5, 0.0, -0.5);
 
         PoseStack.Pose pose = poseStack.last();
         for (BakedQuad quad : quads) {

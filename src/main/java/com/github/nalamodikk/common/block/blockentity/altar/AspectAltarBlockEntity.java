@@ -296,10 +296,10 @@ public class AspectAltarBlockEntity extends AbstractMultiblockControllerBlockEnt
         if (level == null) return;
         if (!(level.getBlockEntity(pos) instanceof AltarPillarBlockEntity pillar)) return;
         int rot;
-        if (dx < 0 && dz > 0)      rot = 90;  // SW ✓
-        else if (dx > 0 && dz > 0) rot = 0;   // SE (對調)
-        else if (dx > 0 && dz < 0) rot = 270; // NE ✓
-        else                        rot = 180; // NW (對調)
+        if (dx < 0 && dz > 0)      rot = 0;   // SW
+        else if (dx > 0 && dz > 0) rot = 270; // SE
+        else if (dx > 0 && dz < 0) rot = 180; // NE
+        else                        rot = 90;  // NW
         pillar.setRotation(rot);
     }
 
