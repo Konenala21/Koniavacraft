@@ -28,11 +28,26 @@ public final class GhostProjectionState {
     private static Map<BlockPos, BlockState> blocks = Collections.emptyMap();
     /** World-space origin; all block offsets in {@code blocks} are relative to this. */
     private static BlockPos origin = BlockPos.ZERO;
+    /** How far the origin is raised so the structure's lowest block rests on the aimed surface. */
+    private static int groundLift = 0;
 
     private GhostProjectionState() {}
 
     public static void activate(Map<BlockPos, BlockState> structureBlocks) {
+        activate(structureBlocks, structureBlocks);
+    }
+
+    /**
+     * @param groundReference blocks whose lowest layer should sit on the ground (the main structure,
+     *                        excluding optional extras such as upgrade rings that reach far below it)
+     */
+    public static void activate(Map<BlockPos, BlockState> structureBlocks, Map<BlockPos, BlockState> groundReference) {
         blocks = new HashMap<>(structureBlocks);
+        int minY = 0;
+        for (BlockPos pos : groundReference.keySet()) {
+            minY = Math.min(minY, pos.getY());
+        }
+        groundLift = -minY;
         mode   = Mode.PLACING;
         active = true;
     }
@@ -52,11 +67,13 @@ public final class GhostProjectionState {
         mode   = Mode.PLACING;
         blocks = Collections.emptyMap();
         origin = BlockPos.ZERO;
+        groundLift = 0;
     }
 
     public static boolean isActive()                       { return active; }
     public static Mode    getMode()                        { return mode; }
     public static Map<BlockPos, BlockState> getBlocks()    { return active ? blocks : Collections.emptyMap(); }
+    public static int      getGroundLift()                 { return groundLift; }
     public static BlockPos getOrigin()                     { return origin; }
     public static void setOrigin(BlockPos pos)             { origin = pos; }
 }

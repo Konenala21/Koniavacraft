@@ -119,6 +119,10 @@ public final class GhostProjectionHandler {
         BlockPos newOrigin;
         if (hit instanceof BlockHitResult blockHit) {
             newOrigin = blockHit.getBlockPos().relative(blockHit.getDirection());
+            // 結構最底層（相對座標為負）要落在指到的表面上，不然會埋進地下；指到天花板（朝下的面）不抬
+            if (blockHit.getDirection() != Direction.DOWN) {
+                newOrigin = newOrigin.above(GhostProjectionState.getGroundLift());
+            }
         } else {
             Vec3 eye  = mc.player.getEyePosition();
             Vec3 look = mc.player.getLookAngle().scale(reach);

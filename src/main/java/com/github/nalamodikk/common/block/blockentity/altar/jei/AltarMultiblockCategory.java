@@ -570,9 +570,10 @@ public class AltarMultiblockCategory implements IRecipeCategory<AltarStructureIn
                 GhostProjectionState.deactivate();
             } else {
                 Map<BlockPos, BlockState> projBlocks = buildStructureMap();
+                Map<BlockPos, BlockState> mainStructure = new HashMap<>(projBlocks);
                 for (int i = 0; i < sliderTier; i++)
                     projBlocks.putAll(buildRingMap(i));
-                GhostProjectionState.activate(projBlocks);
+                GhostProjectionState.activate(projBlocks, mainStructure);
                 // Close JEI so the player can see the world projection
                 Minecraft.getInstance().setScreen(null);
             }
