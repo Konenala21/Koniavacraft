@@ -248,7 +248,7 @@ public class ModBlocks {
     // ── 飛船魔力引擎 / 燃料槽（組裝必要骨架：核心 + ≥1 引擎 + ≥1 燃料槽）──────
     public static final DeferredBlock<ManaEngineBlock> MANA_ENGINE = registerBlock("mana_engine",
             () -> new ManaEngineBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL)
-                    .strength(3.0f).sound(SoundType.METAL).requiresCorrectToolForDrops()));
+                    .strength(3.0f).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion()));
 
     public static final DeferredBlock<ManaFuelTankBlock> MANA_FUEL_TANK = registerBlock("mana_fuel_tank",
             () -> new ManaFuelTankBlock(BlockBehaviour.Properties.of().mapColor(MapColor.METAL)

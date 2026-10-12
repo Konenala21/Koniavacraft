@@ -47,7 +47,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customShipModel(ModBlocks.SHIP_ASSEMBLY_BASE, "ship_assembly_base"); // 組裝底座地板：蕎麥麵新模型
         customShipModel(ModBlocks.SHIP_ASSEMBLY_GANTRY, "ship_assembly_gantry");
         customShipModel(ModBlocks.MANA_FUEL_TANK, "mana_fuel_tank");
-        blockWithItem(ModBlocks.MANA_ENGINE);
+        customShipModel(ModBlocks.MANA_ENGINE, "mana_engine"); // 魔力引擎：蕎麥麵火箭引擎新模型
         blockWithItem(ModBlocks.MANA_WARP_ENGINE);
         blockWithItem(ModBlocks.MANA_WARP_INPUT);
         blockWithItem(ModBlocks.MANA_ALLOY_BLOCK);
