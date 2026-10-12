@@ -29,6 +29,7 @@ import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 
+import java.util.OptionalDouble;
 import java.util.function.Supplier;
 
 public class MIRenderTypes {
@@ -137,6 +138,16 @@ public class MIRenderTypes {
         return LIGHTNING_NO_DEPTH;
     }
 
+    private static RenderType LINES_NO_DEPTH;
+
+    // 跟 vanilla RenderType.LINES 同設定，但不做深度測試：線框被方塊包住、埋進地下時仍看得到（結構建造的高亮用）
+    public static RenderType linesNoDepth() {
+        if (LINES_NO_DEPTH == null) {
+            LINES_NO_DEPTH = Factory.makeLinesNoDepth();
+        }
+        return LINES_NO_DEPTH;
+    }
+
     private static RenderType SEAL_CHAIN;
 
     // 封印鍊子：半透明、寫深度、無貼圖、POSITION_COLOR
@@ -172,6 +183,21 @@ public class MIRenderTypes {
                             .setTextureState(NO_TEXTURE)
                             .setLightmapState(NO_LIGHTMAP)
                             .setShaderState(POSITION_COLOR_SHADER)
+                            .createCompositeState(false));
+        }
+
+        private static RenderType makeLinesNoDepth() {
+            return create("koniava_lines_no_depth",
+                    DefaultVertexFormat.POSITION_COLOR_NORMAL, VertexFormat.Mode.LINES, 1536, false, false,
+                    CompositeState.builder()
+                            .setShaderState(RENDERTYPE_LINES_SHADER)
+                            .setLineState(new LineStateShard(OptionalDouble.empty()))
+                            .setLayeringState(VIEW_OFFSET_Z_LAYERING)
+                            .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                            .setOutputState(ITEM_ENTITY_TARGET)
+                            .setWriteMaskState(COLOR_WRITE)
+                            .setDepthTestState(NO_DEPTH_TEST)
+                            .setCullState(NO_CULL)
                             .createCompositeState(false));
         }
 

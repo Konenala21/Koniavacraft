@@ -1,6 +1,7 @@
 package com.github.nalamodikk.common.network.packet.client;
 
 import com.github.nalamodikk.KoniavacraftMod;
+import com.github.nalamodikk.client.screenAPI.MIRenderTypes;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
@@ -49,8 +50,10 @@ public class BlockHighlightRenderer {
         Vec3 cam = event.getCamera().getPosition();
         PoseStack poseStack = event.getPoseStack();
 
+        // 不做深度測試：被其他方塊包住或埋在地下的位置，高亮也要看得到
+        RenderType highlightType = MIRenderTypes.linesNoDepth();
         var bufferSource = mc.renderBuffers().bufferSource();
-        VertexConsumer consumer = bufferSource.getBuffer(RenderType.LINES);
+        VertexConsumer consumer = bufferSource.getBuffer(highlightType);
 
         poseStack.pushPose();
         poseStack.translate(-cam.x, -cam.y, -cam.z);
@@ -71,6 +74,6 @@ public class BlockHighlightRenderer {
         }
 
         poseStack.popPose();
-        bufferSource.endBatch(RenderType.LINES);
+        bufferSource.endBatch(highlightType);
     }
 }
