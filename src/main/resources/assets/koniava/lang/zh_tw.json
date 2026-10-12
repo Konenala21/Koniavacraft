@@ -700,7 +700,7 @@
   "nara.dialogue.tutorial.mana_crafting.line3": "打開合成台，點合成格旁邊的區域可以用 JEI 查詢所有魔力合成配方。",
   "nara.dialogue.tutorial.mana_crafting.confirm": "明白了。",
   "nara.dialogue.tutorial.aspect_synthesis.line1": "本源合成介面。把兩種基礎本源合成成更複雜的本源。",
-  "nara.dialogue.tutorial.aspect_synthesis.line2": "把本源拖進左邊的兩個輸入格，右邊會顯示合成結果。每次合成會消耗墨水羽毛筆的墨水。",
+  "nara.dialogue.tutorial.aspect_synthesis.line2": "在面板上左鍵點本源放進第一格，右鍵點本源放進第二格，右邊會顯示合成結果，點結果格完成合成。每次合成會消耗墨水羽毛筆的墨水。",
   "nara.dialogue.tutorial.aspect_synthesis.line3": "點那個發亮的區域，JEI 會列出所有合成組合。",
   "nara.dialogue.tutorial.aspect_synthesis.confirm": "明白了。",
   "nara.dialogue.tutorial.mana_deployer.line1": "魔力部署器。它會對著前方目標自動執行互動，右鍵模式用來放置或使用物品，左鍵模式用來破壞。",
@@ -1447,7 +1447,7 @@
   "guide.koniava.research.table.title": "使用研究台",
   "guide.koniava.research.table.body": "取得研究筆記後，合成研究台並放置。打開介面：\n\n左槽：放入研究筆記\n右槽：放入墨水羽毛筆\n確認後謎題開始，依照連線規則把本源格連成路徑即可完成研究。\n\n完成研究會解鎖對應的合成配方。",
   "guide.koniava.research.aspect_synth.title": "本源合成",
-  "guide.koniava.research.aspect_synth.body": "打開研究台，點擊合成按鈕進入本源合成介面。這裡可以把兩種基礎本源合成成更複雜的本源。\n\n從本源面板把本源拖進左側兩個輸入格。如果存在有效的合成組合，結果會顯示在右側。\n\n每次合成會消耗墨水羽毛筆的墨水。有 JEI 的話，點擊介面上方的按鈕可以查詢所有可用的合成配方。",
+  "guide.koniava.research.aspect_synth.body": "打開研究台，點擊合成按鈕進入本源合成介面。這裡可以把兩種基礎本源合成成更複雜的本源。\n\n在本源面板上，左鍵點一個本源放進第一格，右鍵點一個本源放進第二格（左側兩個輸入格），點輸入格可以清空那一格。如果存在有效的合成組合，結果會顯示在右側，點擊結果格就會完成合成。\n\n每次合成會消耗墨水羽毛筆的墨水。有 JEI 的話，點擊介面上方的按鈕可以查詢所有可用的合成配方。",
 
   "guide.koniava.mana.generator.title": "魔力生成器",
   "guide.koniava.mana.generator.body": "魔力生成器是整個魔力網路的起點。合成並放置後，打開介面放入燃料（類似熔爐），機器會開始燃燒並產出魔力值。\n\n魔力值存在緩衝槽中，透過導管自動推送到下游機器。",

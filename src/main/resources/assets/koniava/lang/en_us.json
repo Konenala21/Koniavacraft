@@ -695,7 +695,7 @@
   "nara.dialogue.tutorial.mana_crafting.line3": "Open the crafting table and click near the crafting grid to browse available mana recipes in JEI.",
   "nara.dialogue.tutorial.mana_crafting.confirm": "Got it.",
   "nara.dialogue.tutorial.aspect_synthesis.line1": "Aspect Synthesis. Combine two basic aspects here to produce more complex ones.",
-  "nara.dialogue.tutorial.aspect_synthesis.line2": "Drag aspects into the two input slots on the left. The result shows on the right. Each synthesis uses ink from the quill.",
+  "nara.dialogue.tutorial.aspect_synthesis.line2": "Left-click an aspect in the palette to put it in the first slot, right-click to put it in the second. The result shows on the right; click it to synthesize. Each synthesis uses ink from the quill.",
   "nara.dialogue.tutorial.aspect_synthesis.line3": "Click the highlighted area to look up all synthesis combinations in JEI.",
   "nara.dialogue.tutorial.aspect_synthesis.confirm": "Got it.",
   "nara.dialogue.tutorial.mana_deployer.line1": "Mana Deployer. It automatically interacts with whatever is in front of it. Right-click mode uses or places items. Left-click mode breaks blocks.",
@@ -1448,7 +1448,7 @@
   "guide.koniava.research.table.title": "Using the Research Table",
   "guide.koniava.research.table.body": "After getting a research note, craft and place a Research Table. Open it:\n\nLeft slot: research note\nRight slot: ink quill\nConfirm to start the puzzle, connect aspect cells following the connection rules to complete the research.\n\nCompleting research unlocks the corresponding crafting recipes.",
   "guide.koniava.research.aspect_synth.title": "Aspect Synthesis",
-  "guide.koniava.research.aspect_synth.body": "Open the Research Table and click the synthesis button to enter the Aspect Synthesis screen. Here you can combine two basic aspects to produce more complex ones.\n\nDrag aspects from the palette into the two input slots on the left. If a valid synthesis exists, the result appears on the right.\n\nEach synthesis consumes ink from the ink quill in the slot. Browse all available combinations via the JEI button in the top area of the screen.",
+  "guide.koniava.research.aspect_synth.body": "Open the Research Table and click the synthesis button to enter the Aspect Synthesis screen. Here you can combine two basic aspects to produce more complex ones.\n\nIn the palette, left-click an aspect to put it in the first input slot and right-click an aspect to put it in the second (the two slots on the left). Click an input slot to clear it. If a valid synthesis exists, the result appears on the right; click the result slot to synthesize.\n\nEach synthesis consumes ink from the ink quill in the slot. Browse all available combinations via the JEI button in the top area of the screen.",
 
   "guide.koniava.mana.generator.title": "Mana Generator",
   "guide.koniava.mana.generator.body": "The Mana Generator is the origin of every mana network. Place it, open the interface, and insert fuel (like a furnace). The machine burns fuel and produces mana, stored in its internal buffer and pushed downstream through conduits.",
